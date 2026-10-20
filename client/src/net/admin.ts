@@ -22,6 +22,7 @@ import {
   lerTeste,
 } from '../../../shared/net/admin';
 import { serverHttpUrl } from '../../../shared/net/serverUrl';
+import { chaveDoToken as chaveDaConta } from './sessao';
 import { ADMIN_REGRAS_GRAVAR_PATH, ADMIN_REGRAS_PATH, lerRegrasDaResposta, type RegrasOnline } from '../../../shared/regras';
 import { ADMIN_VISIBILIDADE_PATH, lerConfig, type ConfigDeVisibilidade, type EstadoDeVisibilidade } from '../../../shared/visibilidade';
 import { parseStatus, STATUS_PATH, type ServerStatus } from '../../../shared/net/status';
@@ -167,20 +168,26 @@ export async function sessaoDeAdminGuardada(guarda: { ler: () => string | null }
   }
 }
 
-/** Lê e grava o token do dono, deste servidor, no armazenamento do aparelho; sem armazenamento (aba anônima), vale só até recarregar. */
+/**
+ * Lê e grava o token do dono, deste servidor, no armazenamento do aparelho; sem armazenamento (aba anônima), vale só até recarregar. **Sem o token do dono, `ler` devolve a sessão da conta deste
+ * aparelho** (P106: o servidor aceita, no mesmo cabeçalho, a sessão de uma conta de administrador): quem entrou na conta de administrador uma vez não digita token nenhum, nem no painel do
+ * servidor, nem no de visibilidade, nem no mural. Se a conta não é de administrador, o servidor recusa e a tela pede o token, como antes. `gravar` e `apagar` só mexem no token do dono.
+ */
 export class TokenDoDono {
   private memoria: string | null = null;
   private readonly chave: string;
+  private readonly chaveDaSessao: string;
   constructor(
     private readonly storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null,
     gameServer: string | undefined | null,
   ) {
     this.chave = chaveDoToken(gameServer);
+    this.chaveDaSessao = chaveDaConta(gameServer);
   }
 
   ler = (): string | null => {
     try {
-      return this.storage?.getItem(this.chave) || this.memoria;
+      return this.storage?.getItem(this.chave) || this.memoria || this.storage?.getItem(this.chaveDaSessao) || null;
     } catch {
       return this.memoria;
     }

@@ -1,5 +1,7 @@
 import type { AdminAmostra, AdminErro, Resultado, Veredito } from '../../../shared/net/admin';
 import type { MotivoDeFalha } from '../net/admin';
+import { mapaDaChave } from '../../../shared/net/mapa';
+import { TEATROS } from './theater';
 
 /** As contas e os textos da janela do servidor (P93), sem DOM: o que a tela desenha sai daqui e tem teste. */
 
@@ -75,6 +77,12 @@ export const ROTULO_DO_VEREDITO: Readonly<Record<Veredito, string>> = { apto: 'A
 export const SIMBOLO_DO_RESULTADO: Readonly<Record<Resultado, string>> = { ok: '✓', atencao: '!', falha: '✗' };
 
 /** O texto de uma sala na tabela: "ARENA · 2 jogando · 5 bots · rodada 3, 2:00". */
+/** O nome do mapa de uma sala pela chave dela (`ARENA@praia` → "ESTAÇÃO DOS CABOS"): o painel diz onde a sala está em vez de mostrar o sufixo cru. */
+export function nomeDoMapa(chave: string): string {
+  const mapa = mapaDaChave(chave);
+  return TEATROS.find((t) => t.mapa === mapa)?.nome ?? mapa;
+}
+
 export function linhaDaSala(s: { codigo: string; jogadores: number; bots: number; rodada: number; restanteS: number; jogando: boolean }): string {
   const resto = s.jogando ? `${Math.floor(s.restanteS / 60)}:${String(s.restanteS % 60).padStart(2, '0')}` : 'intervalo';
   return `${s.codigo} · ${s.jogadores} jogando · ${s.bots} bots · rodada ${s.rodada}, ${resto}`;

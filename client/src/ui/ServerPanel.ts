@@ -5,6 +5,7 @@ import {
   duracao,
   linhaDaSala,
   nivelContraMeta,
+  nomeDoMapa,
   num,
   ROTULO_DO_VEREDITO,
   serie,
@@ -77,6 +78,8 @@ export class ServerPanel {
   private erroDeRede: MotivoDeFalha | null = null;
   /** Confirmando o reinício? (a barra de confirmação aparece no pé). */
   private confirmando = false;
+  /** Esperando a confirmação de esquecer o token deste aparelho (o botão que apagava o token sem perguntar fez o dono colá-lo de novo, 20/10). */
+  private esquecendo = false;
   private ocupado: 'testando' | 'avaliando' | 'reiniciando' | null = null;
   private avaliacao: AdminAvaliacao | null = null;
   private teste: AdminTeste | null = null;
@@ -365,7 +368,8 @@ export class ServerPanel {
   private linhaDeSala(s: AdminSala): HTMLElement {
     const li = el('li');
     const texto = el('span');
-    texto.append(el('b', '', s.codigo), document.createTextNode(linhaDaSala(s).slice(s.codigo.length)));
+    const cod = s.codigo.split(/[@~]/)[0] ?? s.codigo;
+    texto.append(el('b', '', cod), el('small', 'srv-mapa', ` ${nomeDoMapa(s.codigo)}`), document.createTextNode(linhaDaSala(s).slice(s.codigo.length)));
     if (s.nomes.length) texto.append(el('small', '', ` · ${s.nomes.join(', ')}`));
     li.append(texto, botao('FECHAR', 'srv-fecha', 'fechar-sala', `Fecha a sala ${s.codigo}: quem está nela cai e o jogo reconecta numa nova`));
     (li.lastElementChild as HTMLElement).dataset.sala = s.codigo;
@@ -424,13 +428,21 @@ export class ServerPanel {
     const e = this.estado;
     const n = e?.jogadores ?? 0;
     const ocupado = this.ocupado !== null;
-    const assinatura = [this.autenticado, this.confirmando, this.ocupado, n, e?.supervisionado, this.msg, this.erroDeRede].join('|');
+    const assinatura = [this.autenticado, this.confirmando, this.esquecendo, this.ocupado, n, e?.supervisionado, this.msg, this.erroDeRede].join('|');
     if (assinatura === this.assinaturaDoPe) return;
     this.assinaturaDoPe = assinatura;
     this.aviso.textContent = this.msg || (this.erroDeRede && this.erroDeRede !== 'token' && this.erroDeRede !== 'sem-token' ? textoDoMotivo(this.erroDeRede) : '');
     this.aviso.classList.toggle('aviso', !!this.erroDeRede);
     if (!this.autenticado) {
       this.acoes.replaceChildren();
+      return;
+    }
+    if (this.esquecendo) {
+      this.acoes.replaceChildren(
+        el('span', 'srv-confirma', 'Esquecer o token neste aparelho? Será preciso colá-lo de novo (ou entrar na conta de administrador).'),
+        botao('[ SIM, ESQUECER ]', 'btn-terminal srv-perigo', 'esquecer-sim'),
+        botao('[ CANCELAR ]', 'btn-terminal', 'esquecer-nao'),
+      );
       return;
     }
     if (this.confirmando) {
@@ -446,7 +458,8 @@ export class ServerPanel {
       botao('[ REGRAS DAS SALAS ]', 'btn-terminal', 'regras', 'Dificuldade, quantos bots e a pressão dos inimigos nas salas online'),
       botao('[ TESTAR ]', 'btn-terminal', 'testar', n > 0 ? 'O teste espera a sala esvaziar: há gente jogando' : 'Quatro pilotos de mentira entram pela porta do jogo e medem', ocupado || n > 0),
       botao('[ REINICIAR ]', 'btn-terminal srv-perigo', 'reiniciar', e?.supervisionado === false ? 'O servidor roda à mão: reiniciar só o desliga' : 'Salva, sai e se religa sozinho em uns segundos', ocupado),
-      botao('[ SAIR DO PAINEL ]', 'btn-terminal', 'sair', 'Esquece o token neste aparelho'),
+      botao('[ FECHAR ]', 'btn-terminal', 'fechar', 'Fecha o painel (o token continua guardado neste aparelho)'),
+      botao('esquecer token', 'btn-terminal srv-discreto', 'esquecer', 'Apaga o token guardado neste aparelho: será preciso colá-lo de novo'),
     );
   }
 
@@ -459,7 +472,16 @@ export class ServerPanel {
     switch (alvo.dataset.acao) {
       case 'fechar':
         return this.fechar();
-      case 'sair':
+      case 'esquecer':
+        this.esquecendo = true;
+        this.desenharPe();
+        return;
+      case 'esquecer-nao':
+        this.esquecendo = false;
+        this.desenharPe();
+        return;
+      case 'esquecer-sim':
+        this.esquecendo = false;
         this.o.token.apagar();
         this.autenticado = false;
         this.estado = null;
@@ -497,8 +519,9 @@ export class ServerPanel {
     if (e.key !== 'Escape') return;
     e.stopPropagation();
     e.preventDefault();
-    if (this.confirmando) {
+    if (this.confirmando || this.esquecendo) {
       this.confirmando = false;
+      this.esquecendo = false;
       this.desenharPe();
     } else this.fechar();
   }

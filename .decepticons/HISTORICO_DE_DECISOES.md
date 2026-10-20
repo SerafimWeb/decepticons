@@ -17,6 +17,10 @@
 ## [2026-10-19] O deploy do Actions desligado: o site vai pelo PC (Claude, P221)
 
 **Ordem:** não gastar o Actions à toa; manter o funcionamento sem ele. **Decisão:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = pulado). O `check` do PR continua (ele achou dois defeitos escondidos por uma semana); o deploy já estava redundante (o PC publica, de graça e provado) e falhava vermelho (secret `DEPLOY_PATH` fora da trava). **Não mexi em secret nem em configuração do GitHub.** Religar = conferir os secrets e criar a variável; nunca os dois publicadores juntos.
+## [2026-10-20] O painel do servidor não esquece o token sem perguntar, e a conta de administrador vale no lugar dele (Claude, P227)
+
+**Decisão:** (1) uma ação **destrutiva** (esquecer o token) nunca tem nome de ação **comum** (`SAIR DO PAINEL` parecia fechar): fechar é `[ FECHAR ]`, esquecer é um botão discreto com confirmação. (2) **Uma credencial só para o dono:** a sessão da conta de administrador abre tudo o que o token do dono abre (painel do servidor, visibilidade, mural), com o token do dono como prioridade quando existe; o aparelho em que ele já entrou na conta não pede token. Não mudou o que o servidor aceita (P106): só o cliente passou a oferecer a sessão que já tem.
+
 ## [2026-10-20] Os testes que rodam git e bash de verdade têm 120 s, não 30 (Claude)
 
 **Contexto:** o atualizador reprovou o deploy 5 vezes em 20/10; a última, com a máquina calma, por um único teste (o hook de push de ponta a ponta) que estourou 30 s entre 856. **Decisão:** 120 s só nos três blocos que sobem `git` e `bash` de verdade; o global fica em 30 s para que um teste comum travado continue aparecendo rápido. **Por que não só `--retry`:** o retry (#418) só entra no atualizador depois de uma verificação passar; o limite de um teste entra no mesmo ciclo. **Por que não pular o teste no atualizador:** ele é o que prova que o atalho do hook não pula um check que devia rodar; vale mais caro do que ausente.

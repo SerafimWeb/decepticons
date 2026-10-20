@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AdminAmostra } from '../../../shared/net/admin';
-import { caminhoDoGrafico, duracao, linhaDaSala, nivelContraMeta, num, serie, textoDoMotivo, voltou } from './serverData';
+import { caminhoDoGrafico, duracao, linhaDaSala, nivelContraMeta, nomeDoMapa, num, serie, textoDoMotivo, voltou } from './serverData';
 
 describe('janela do servidor: as contas da tela', () => {
   it('a duração em palavras: segundos, minutos, horas e dias', () => {
@@ -67,6 +67,14 @@ describe('janela do servidor: as contas da tela', () => {
     expect(textoDoMotivo('recusado', { erro: 'há 2 jogadores jogando', jogadores: 2 })).toBe('há 2 jogadores jogando');
     expect(textoDoMotivo('resposta')).toMatch(/versão sem as rotas/);
     expect(textoDoMotivo('token')).toMatch(/metricas-token\.txt/);
+  });
+
+  it('o nome do mapa de uma sala pela chave dela (a Cidade Neon não leva sufixo)', () => {
+    expect(nomeDoMapa('ARENA')).toBe('CIDADE NEON');
+    expect(nomeDoMapa('ARENA@praia')).toBe('ESTAÇÃO DE CABOS');
+    expect(nomeDoMapa('RIO-2@amazonia')).toBe('TERRAS RARAS');
+    expect(nomeDoMapa('X@janeiro')).toBe('8 DE JANEIRO');
+    expect(nomeDoMapa('X@lua')).toBe('CIDADE NEON'); // chave torta não derruba o painel
   });
 
   it('a linha de uma sala e o nível contra a meta', () => {

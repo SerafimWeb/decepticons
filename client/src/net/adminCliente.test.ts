@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ADMIN_HEADER, type AdminEstado } from '../../../shared/net/admin';
 import { ADMIN_TOKEN_KEY, AdminCliente, chaveDoToken, sessaoDeAdminGuardada, TokenDoDono } from './admin';
+import { chaveDoToken as chaveDaConta } from './sessao';
 
 const SERVIDOR = 'wss://jogo.selvamkt.com.br';
 const estado = (): AdminEstado => ({
@@ -145,6 +146,21 @@ describe('o token do dono, guardado só neste aparelho', () => {
     expect(chaveDoToken('wss://jogo.selvamkt.com.br')).toBe(`${ADMIN_TOKEN_KEY}|https://jogo.selvamkt.com.br`);
     // Um servidor não tem a chave do outro nem por prefixo.
     expect(chaveDoToken('wss://jogo.selvamkt.com.br')).not.toBe(chaveDoToken('wss://jogo.selvamkt.com.br.evil.com'));
+  });
+
+  it('sem o token do dono, vale a sessão da conta deste aparelho (quem entrou como administrador não digita token); o do dono manda; apagar só apaga o do dono', () => {
+    const a = armazem();
+    const t = new TokenDoDono(a, SERVIDOR);
+    expect(t.ler()).toBeNull();
+    a.d.set(chaveDaConta(SERVIDOR), 'sessao-da-conta-admin');
+    expect(t.ler()).toBe('sessao-da-conta-admin');
+    t.gravar('segredo-comprido-do-dono');
+    expect(t.ler()).toBe('segredo-comprido-do-dono');
+    t.apagar();
+    expect(t.ler()).toBe('sessao-da-conta-admin'); // a sessão da conta não é do painel: ele não a apaga
+    expect(a.d.get(chaveDaConta(SERVIDOR))).toBe('sessao-da-conta-admin');
+    // A sessão é de UM servidor, como o token do dono.
+    expect(new TokenDoDono(a, 'wss://outro-lugar.exemplo').ler()).toBeNull();
   });
 
   it('sem armazenamento (aba anônima) vale na memória até recarregar, e nada lança', () => {
