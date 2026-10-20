@@ -3,6 +3,10 @@
 ## [2026-10-19] O deploy do Actions desligado: o site vai pelo PC (Claude, P221)
 
 **Ordem:** não gastar o Actions à toa; manter o funcionamento sem ele. **Decisão:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = pulado). O `check` do PR continua (ele achou dois defeitos escondidos por uma semana); o deploy já estava redundante (o PC publica, de graça e provado) e falhava vermelho (secret `DEPLOY_PATH` fora da trava). **Não mexi em secret nem em configuração do GitHub.** Religar = conferir os secrets e criar a variável; nunca os dois publicadores juntos.
+## [2026-10-19] O teste que roda o hook acha o `bash` do Git, nunca o `bash` solto do PATH (Claude, P224)
+
+**O achado:** no Windows, `bash` no PATH pode ser o **WSL**, que responde `exit 0` mas não lê caminho `D:\...` (127). O teste do hook de push passava no Git Bash do dono e **falhava na tarefa agendada**, e o atualizador reverte a atualização inteira quando um teste falha (o site ficou 2 h sem publicar). **A decisão:** o teste usa o `bash.exe` do Git (derivado do `git --exec-path`), com o caminho do hook em barras normais; sem Git, a suíte pula. A trava do atualizador (reverter ao falhar) **continua certa**: o defeito era do teste, não dela.
+
 ## [2026-10-19] A descoberta da propriedade do Analytics exige o código de medição do CYBERMECH (Claude, P207)
 
 **Ordem:** *"já liguei a admin api, tem como você testar?"*. Testei: o Google aceitou a chave e a Admin API respondeu, **mas a única propriedade que a conta enxerga é a "odpandroid"** (o app Android do Olho do Pai), e não a do CYBERMECH.

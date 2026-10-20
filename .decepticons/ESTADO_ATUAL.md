@@ -5,6 +5,10 @@
 ## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
 
 **O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
+## O SITE PARADO POR UM TESTE QUE USAVA O `bash` ERRADO — Claude, 19/10 (branch `claude/hook-test-bash`, P224)
+
+**O que parou:** desde 21:25Z o atualizador de produção reverteu toda atualização (o site ficou em 74c2848). **A causa:** `server/hookPrePush.test.ts` chama `bash`, e **na tarefa agendada o `bash` do PATH é o lançador do WSL** (`C:\Windows\System32\bash.exe`): ele não enxerga `D:\...` e devolve 127. No Git Bash do dono passava, por isso o `check` nunca viu. O PR #411 pulava o teste só quando não havia `bash`, e **o WSL responde "ok"**: não bastou. **Agora** o teste acha o `bash.exe` ao lado do `git` (`git --exec-path`) e usa barras normais no caminho; sem ele, a suíte pula. **Prova:** os 8 testes passam rodando do PowerShell (o ambiente da tarefa). **Falta:** ver o próximo `PUBLICADO` em `.tmp/servidor/publicar-site.log` depois do merge.
+
 ## O ANALYTICS PEGAVA A PROPRIEDADE ERRADA: AGORA EXIGE O CÓDIGO DO CYBERMECH — Claude, 19/10 (branch `claude/analytics-propriedade-certa`, P207)
 
 **O Comandante (19/10):** *"já liguei a admin api, tem como você testar?"*. **Testei, e achei um problema:** o Google aceita a chave e a Admin API responde, mas a conta de serviço **só enxerga a propriedade "odpandroid"** (o app Android do Olho do Pai, no "Default Account for Firebase"), não a do CYBERMECH (`G-2CCHDCEC7X`). A regra antiga ("a única propriedade") a escolheria e o `/metricas/` mostraria números do app Android como se fossem do jogo.
