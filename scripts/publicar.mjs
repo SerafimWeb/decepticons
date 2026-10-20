@@ -128,6 +128,14 @@ export async function publicar(ops, opcoes) {
   return { ok: true, pr: n, merge: oid };
 }
 
+/**
+ * O ambiente do `git push` (e do hook que roda nele). **Com `--sem-ci` ninguém testa a combinação com a main numa máquina limpa** (P224): o hook então não pode pular o check depois de uma junção
+ * com a main (`CYBERMECH_CHECK_COMPLETO=1`, ver `scripts/juncaoJaVerificada.mjs`). Com o CI vivo o atalho vale: o CI do PR é quem testa a junção.
+ */
+export function ambienteDoPush(semCi, base = process.env) {
+  return semCi ? { ...base, CYBERMECH_CHECK_COMPLETO: '1' } : { ...base };
+}
+
 /** Lê `--chave valor` da linha de comando. */
 function opcoesDaLinha(argv) {
   const pega = (nome) => {
@@ -143,15 +151,16 @@ if (euMesmo) {
     const r = spawnSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
     return { status: r.status ?? 1, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };
   };
+  const opcoes = opcoesDaLinha(process.argv.slice(2));
   const resultado = await publicar(
     {
       git: roda,
       gh: (args) => ghReal(args),
-      empurrar: (branch) => spawnSync('git', ['push', '-u', 'origin', branch], { stdio: 'inherit' }).status ?? 1,
+      empurrar: (branch) => spawnSync('git', ['push', '-u', 'origin', branch], { stdio: 'inherit', env: ambienteDoPush(opcoes.semCi) }).status ?? 1,
       dormir: (ms) => new Promise((ok) => setTimeout(ok, ms)),
       log: (l) => console.log(l),
     },
-    opcoesDaLinha(process.argv.slice(2)),
+    opcoes,
   );
   process.exit(resultado.ok ? 0 : 1);
 }

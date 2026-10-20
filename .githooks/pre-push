@@ -40,6 +40,16 @@ if [ -n "$arvore" ] && [ -f "$pasta_ok/$arvore" ]; then
   exit 0
 fi
 
+# [AGENTS.md, regra 19c] Junção PURA com a main: a main entrou por cima de uma árvore que JÁ passou aqui, e cada arquivo que mudou veio inteiro
+# dela (ou é .md). A combinação das duas metades é testada pelo CI do PR numa máquina limpa; refazer o check inteiro aqui custa 10 a 25 minutos
+# (e a main anda nesse meio-tempo). Na dúvida roda tudo. CYBERMECH_CHECK_COMPLETO=1 desliga este atalho (use com o Actions parado, `publicar --sem-ci`).
+# Os motivos e as bordas: scripts/juncaoJaVerificada.mjs.
+if [ -n "$arvore" ] && [ -z "${CYBERMECH_CHECK_COMPLETO:-}" ] && [ -f scripts/juncaoJaVerificada.mjs ] && node scripts/juncaoJaVerificada.mjs "$sha_enviado"; then
+  mkdir -p "$pasta_ok"
+  echo "junção da main sobre árvore verificada, em $(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$pasta_ok/$arvore"
+  exit 0
+fi
+
 echo "▶ pre-push [R15]: npm run check"
 if ! npm run check --silent; then
   echo "❌ PUSH BLOQUEADO [R15]: npm run check falhou. Investigue antes de subir."
