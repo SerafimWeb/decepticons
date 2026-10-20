@@ -86,7 +86,7 @@ describe('as missões do teatro de operações', () => {
     expect(janeiro.recurso).toBe('poder');
     expect(RECURSO_NOME.poder).toBe('SEDE DOS PODERES');
     expect(janeiro.mapa).toBe('janeiro');
-    expect(janeiro.modos).toEqual(['deathmatch']); // a missão (a Sobrevivência) vem com o passo 5 da ficha
+    expect(janeiro.modos).toEqual(['deathmatch', 'survival']); // a missão (a Sobrevivência: a multidão contra os três prédios) é o passo 5 da ficha
     expect(bunker.lugar).toMatch(/MS$/);
     expect(bunker.lat).toBeLessThan(-18); // o Mato Grosso do Sul fica ao sul do paralelo 17 e a oeste de Goiás
     expect(bunker.lon).toBeLessThan(-52);

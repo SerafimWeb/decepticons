@@ -30,11 +30,13 @@ import { alvoDoChefe } from './FasesDoChefe';
 import { PORTAS, PORTAS_DA_ESTACAO, PortasDaEstacao, pesoNaPorta, portaDoPonto } from './PortasDaEstacao';
 import { AMAZONIA_POSTO_AVANCADO, AMAZONIA_RESISTENCIA, AMAZONIA_SPAWNS, rioEmX } from '../environment/AmazoniaLayout';
 import { PRACA_SPAWNS } from '../environment/PracaNascimentos';
-import { exigirChefe, exigirMapa, temEscudo } from '../environment/mapasSobDemanda';
+import { exigirChefe, exigirMapa, exigirMissaoJaneiro, temEscudo, type MissaoJaneiroCarregada } from '../environment/mapasSobDemanda';
 import { EscudoDoDraga } from './EscudoDoDraga';
 import { escotilhaDoDraga, INVASAO, InvasaoDoDraga } from './InvasaoDoDraga';
 import { TorresDeVigia } from './TorresDeVigia';
 import { MissaoDoRio } from './MissaoDoRio';
+import type { MissaoJaneiro, SituacaoDaPraca } from './MissaoJaneiro';
+import type { Multidao } from './Multidao';
 import { posicaoNaMarcha } from './DragaMarcha';
 import { ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VIDA } from '../environment/ArenaLayout';
 import { QUADRO, QuadroDeLuz } from './QuadroDeLuz';
@@ -262,6 +264,18 @@ export class Match {
   readonly nucleo: NucleoDaEstacao | null = null;
   /** A missão do rio (P180, parte C): o Draga-01 marcha rumo à aldeia; só na Amazônia, no modo Sobrevivência. */
   readonly rio: MissaoDoRio | null = null;
+  /** A missão do 8 DE JANEIRO (P217, passo 5): a regra de fim (os três prédios, a sujeira, a faxina). Só na Sobrevivência da Praça dos Três Poderes; `null` nos outros mapas e modos. */
+  readonly missaoJaneiro: MissaoJaneiro | null = null;
+  /** A multidão da missão (`sim/Multidao.ts`): uma linha de dados por figurante, sem corpo na física. O cliente a desenha; o servidor (e o jogo offline) decide a morte e a fuga. */
+  readonly multidao: Multidao | null = null;
+  /** O tick da missão do 8 DE JANEIRO (o relógio da multidão: o mesmo no servidor e no cliente, G2). */
+  private tickJaneiro = 0;
+  /** Rascunhos reaproveitados da missão (G4): a situação da Praça, onde estão os jogadores (para o susto) e quem fugiu por causa do jogador. */
+  private readonly situacaoDaPraca: SituacaoDaPraca = { naFachada: [], faltamChegar: 0, presentes: 0, eliminados: 0 };
+  private readonly pontosDoSusto: { x: number; z: number }[] = [];
+  private fugaPeloJogador = new Uint8Array(0);
+  /** O pedaço sob demanda da missão (a multidão e a regra): as constantes dela vêm daqui. `null` fora da missão. */
+  private janeiroPedaco: MissaoJaneiroCarregada | null = null;
   /** O escudo do Draga-01 (P180, parte D): três geradores que se quebram a tiro; de pé, o Draga leva 90% menos dano. `null` fora da missão do rio. */
   readonly escudo: EscudoDoDraga | null = null;
   /** As oito torres de vigia armadas da margem (P180, parte D2): atiram atravessando o rio enquanto o gerador da CERCA estiver de pé. `null` fora da missão do rio. */
@@ -359,23 +373,44 @@ export class Match {
     const praia = o.map === 'praia' && !ctf && !dominio;
     // A Amazônia (P180) abre o Deathmatch e a **missão** (a Sobrevivência: o Draga-01 marcha rumo à aldeia, parte C); o CTF e o Domínio ficam na Arena.
     const amazonia = o.map === 'amazonia' && !ctf && !dominio;
-    // A Praça dos Três Poderes (o 8 DE JANEIRO, P217) abre o Deathmatch; a missão (a Sobrevivência, com a multidão) é o passo 5 da ficha: ela ainda cai na Arena.
-    const janeiro = o.map === 'janeiro' && !survival && !ctf && !dominio;
+    // A Praça dos Três Poderes (o 8 DE JANEIRO, P217) abre o Deathmatch e a **missão** (a Sobrevivência: a multidão contra os três prédios, passo 5 da ficha); o CTF e o Domínio ficam na Arena.
+    const janeiro = o.map === 'janeiro' && !ctf && !dominio;
     // Na missão da Amazônia (TERRAS RARAS) o jogador nasce e renasce no posto avançado (um ponto só); o Deathmatch usa os pontos ao longo da margem.
     this.spawnPoints = bunker ? BUNKER_SPAWNS : praia ? PRAIA_SPAWNS : amazonia ? (survival ? [[AMAZONIA_POSTO_AVANCADO.x, AMAZONIA_POSTO_AVANCADO.z]] : AMAZONIA_SPAWNS) : janeiro ? PRACA_SPAWNS : SPAWN_POINTS;
     this.zones = bunker || amazonia || janeiro ? new ZoneSystem([]) : praia ? new ZoneSystem(PRAIA_ZONES) : new ZoneSystem();
-    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : amazonia ? 'amazonia' : janeiro ? 'janeiro' : 'arena', { transformador: survival && !praia });
+    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : amazonia ? 'amazonia' : janeiro ? 'janeiro' : 'arena', { transformador: survival && !praia && !janeiro });
     // A água da praia (P126): o mar freia e afoga quem entra nele. Nos outros mapas não há água.
     this.agua = praia ? PRAIA_AGUA : null;
     // A missão em ondas da praia defende a estação: os rebeldes que entram nos muros drenam o núcleo; a estação cair é perder a missão.
     this.nucleo = praia && survival ? new NucleoDaEstacao() : null;
     this.cabos = praia && survival ? new CabosDeDados() : null;
     this.portas = praia && survival ? new PortasDaEstacao() : null;
-    this.quadro = survival && !amazonia ? (praia ? new QuadroDeLuz() : new QuadroDeLuz(ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VIDA)) : null;
+    this.quadro = survival && !amazonia && !janeiro ? (praia ? new QuadroDeLuz() : new QuadroDeLuz(ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VIDA)) : null;
     // A missão do rio: o fim é o do Draga (cai: vitória; chega à aldeia: derrota), e sai pelo mesmo aviso de fim de missão das ondas.
     this.rio = amazonia && survival
       ? new MissaoDoRio((sobreviveu, r) => this.onMissionEnd?.(sobreviveu, 1, { wavesCleared: sobreviveu ? 1 : 0, kills: r.abates, damageDealt: r.danoCausado, survivalSeconds: r.segundos }))
       : null;
+    // A missão do 8 DE JANEIRO: a multidão chega pelas fontes do mapa e os prédios apanham; o fim sai pelo mesmo aviso de fim de missão das ondas (a tela lê o resultado inteiro em `missaoJaneiro`).
+    if (janeiro && survival) {
+      const J = exigirMissaoJaneiro();
+      this.janeiroPedaco = J;
+      const multidao = new J.Multidao(J.configDaMissaoJaneiro());
+      this.multidao = multidao;
+      this.fugaPeloJogador = new Uint8Array(multidao.total);
+      this.missaoJaneiro = new J.MissaoJaneiro(J.MESAS_POR_PREDIO, (sobreviveu, r) =>
+        this.onMissionEnd?.(sobreviveu, 1, { wavesCleared: sobreviveu ? 1 : 0, kills: r.eliminados, damageDealt: 0, survivalSeconds: r.segundos }),
+      );
+      multidao.aoChegar = (_i, predio) => {
+        this.missaoJaneiro?.aoChegar(_i, predio);
+      };
+      // Expulso é quem sai do mapa fugindo do jogador (tiro ou susto); quem foi embora por conta própria depois de cumprir o tempo na fachada não conta.
+      multidao.aoFugir = (i, causa) => {
+        if (causa === 'tiro' || causa === 'susto') this.fugaPeloJogador[i] = 1;
+      };
+      multidao.aoSair = (i) => {
+        if (this.fugaPeloJogador[i] === 1) this.missaoJaneiro?.registrarExpulso();
+      };
+    }
     // O escudo do Draga (parte D): os geradores nascem na cena como alvos destrutíveis (o mesmo registro dos coqueiros); o último a cair derruba o escudo. A defesa vem do chefe do mapa (sob demanda).
     const defesa = amazonia && survival ? exigirChefe('amazonia').defesa : undefined;
     this.escudo = defesa ? new EscudoDoDraga(defesa.geradores) : null;
@@ -438,8 +473,8 @@ export class Match {
         : {
             // Na praia as ondas nascem na areia, longe da estação (o jogador defende a estação); na Arena, nos pontos de sempre.
             // Na Amazônia (P180, parte C) o Draga-01 é o único inimigo da missão: a defesa dele (Mechs, androides, torres) vem na parte D.
-            spawns: amazonia ? defesa?.guarda.mechs ?? [] : ctf ? CTF_DEFENDER_SPAWNS : praia ? PRAIA_INIMIGOS.slice(0, SURVIVAL_MAX_MECHS) : BOT_SPAWNS.slice(0, SURVIVAL_MAX_MECHS),
-            androidSpawns: amazonia ? defesa?.guarda.androids ?? [] : ctf ? [] : praia ? PRAIA_INIMIGOS.slice(SURVIVAL_MAX_MECHS, SURVIVAL_MAX_MECHS + SURVIVAL_MAX_ANDROIDS) : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
+            spawns: amazonia ? defesa?.guarda.mechs ?? [] : janeiro ? [] : ctf ? CTF_DEFENDER_SPAWNS : praia ? PRAIA_INIMIGOS.slice(0, SURVIVAL_MAX_MECHS) : BOT_SPAWNS.slice(0, SURVIVAL_MAX_MECHS),
+            androidSpawns: amazonia ? defesa?.guarda.androids ?? [] : janeiro ? [] : ctf ? [] : praia ? PRAIA_INIMIGOS.slice(SURVIVAL_MAX_MECHS, SURVIVAL_MAX_MECHS + SURVIVAL_MAX_ANDROIDS) : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
             manifestanteSpawns: praia && !ctf ? PRAIA_MANIFESTANTES.slice(0, SURVIVAL_MAX_MANIFESTANTES) : [],
             technicianSpawns: [],
             personas: o.foes.enemyPersonas,
@@ -447,7 +482,7 @@ export class Match {
           }),
       // A força de defesa da Amazônia (parte D2) segura o posto em volta dos geradores: não corre atrás do jogador e não renasce.
       ...(defesa ? { defensores: true, alturaDoChao: (x: number, z: number) => exigirMapa('amazonia').alturaDoTerreno?.(x, z) ?? 0 } : {}),
-      bossSpawn: survival && !amazonia ? (praia ? PRAIA_TITA : COLOSSUS_SPAWN[0]) : undefined,
+      bossSpawn: survival && !amazonia && !janeiro ? (praia ? PRAIA_TITA : COLOSSUS_SPAWN[0]) : undefined,
       ...(amazonia && survival
         ? { chefeDoMapa: 'amazonia' as const, visualDoChefe: o.visualDoChefe ?? null, ...(o.marcha ? { chefeNascimento: { x: posicaoNaMarcha(o.marcha), z: rioEmX(posicaoNaMarcha(o.marcha)) } } : {}) }
         : {}),
@@ -522,7 +557,7 @@ export class Match {
     if (this.allies) this.allies.onRadio = (from, target) => this.onRadio?.(from, target, true);
     for (const b of this.bots.mechs) this.round.register(b, this.bots.nameOf(b));
     if (this.allies) for (const b of this.allies.mechs) this.round.register(b, this.allies.nameOf(b));
-    this.waves = survival && !amazonia
+    this.waves = survival && !amazonia && !janeiro
       ? new SurvivalWaves({
           onRoster: (plan) => this.applyWaveRoster(plan),
           onWaveStart: (plan) => this.onWaveStart?.(plan.wave, totalDaOnda(plan, praia), plan.mechs, plan.androids, plan.title, SURVIVAL_WAVE_PLANS.length),
@@ -534,7 +569,7 @@ export class Match {
           onMissionEnd: (survived, stats) => this.onMissionEnd?.(survived, this.waves?.wave ?? 1, stats),
         }, o.startWave, praia)
       : null;
-    if (this.waves) this.bots.setRoster(0, 0);
+    if (this.waves || this.missaoJaneiro) this.bots.setRoster(0, 0);
     this.ctf = ctf
       ? new CaptureTheFlag({
           onFlagPickup: (owner, carrier) => this.onCtfFlag?.('pickup', owner, carrier),
@@ -569,8 +604,15 @@ export class Match {
       if (this.drones?.hit(hit.collider, damage)) return;
       this.combat.onProjectileHit(hit, dir, damage, owner, w, distance);
     };
+    // O tiro do jogador também acerta a multidão da missão do 8 DE JANEIRO (ela não tem corpo na física): a linha deste passo do projétil, até onde a parede ou o chão a deixa ir.
+    const multidao = this.multidao;
+    if (multidao) {
+      this.projectiles.contraMassa = (ox, oy, oz, dx, dy, dz, alcance, dano) =>
+        multidao.presentes > 0 && multidao.atirar(ox, oy, oz, dx, dy, dz, alcance, dano, this.tickJaneiro) >= 0;
+    }
     const explode = (at: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats): void => {
       this.combat.explode(at, dir, owner, w);
+      if (multidao && w.blastRadius > 0) multidao.explodir(at.x, at.y, at.z, w.blastRadius, w.damage, this.tickJaneiro);
       this.drones?.explosion(at, w);
       this.onExplosion?.(at, w);
     };
@@ -1035,6 +1077,11 @@ export class Match {
         this.rio.fixedUpdate(dt, chefe ? chefe.simPosition.x : null);
         if (this.rio.terminou) return false;
       }
+      // A missão do 8 DE JANEIRO: a multidão avança, o jogador assusta e investe, e os prédios apanham; acabou, o mundo congela como nas ondas.
+      if (this.missaoJaneiro && this.multidao) {
+        if (!this.missaoJaneiro.terminou) this.fixedUpdateJaneiro(dt, this.multidao, this.missaoJaneiro);
+        if (this.missaoJaneiro.terminou) return false;
+      }
       // Fogo, choque e gelo: o tempo corre e o dano por segundo sai ANTES dos pilotos, para a velocidade e as travas do tick já usarem o
       // estado atualizado. Mesma ordem no servidor e no jogo offline (G14).
       for (const m of this.players) this.combat.tickStatus(m, dt);
@@ -1376,9 +1423,40 @@ export class Match {
     }
   }
 
+  /** O tick da missão do 8 DE JANEIRO (0 fora dela): o desenho da multidão lê daqui, e os testes sabem em que tick a multidão está. */
+  get tickDaMissao(): number {
+    return this.tickJaneiro;
+  }
+
+  /**
+   * Um tick da missão do 8 DE JANEIRO (P217): a multidão anda no relógio da missão; quem está perto de um jogador vivo foge (o susto); a investida do Mech (o dash) leva quem está no caminho (a
+   * "porrada" da ficha: eliminar à mão, sem arma nova); e a regra lê a situação da Praça. Custo: uma passada pela multidão (1.500) para a fachada e uma para o susto, sem alocar (G4/G5).
+   */
+  private fixedUpdateJaneiro(dt: number, multidao: Multidao, missao: MissaoJaneiro): void {
+    const { RAIO_DA_INVESTIDA, DANO_DA_INVESTIDA, RAIO_DO_SUSTO } = this.janeiroPedaco!;
+    const t = ++this.tickJaneiro;
+    multidao.avancar(t);
+    const pontos = this.pontosDoSusto;
+    while (pontos.length < this.players.length) pontos.push({ x: 0, z: 0 });
+    for (let k = 0; k < pontos.length; k++) {
+      const p = this.players[k];
+      const vivo = p !== undefined && p.alive;
+      pontos[k]!.x = vivo ? p.simPosition.x : 1e6;
+      pontos[k]!.z = vivo ? p.simPosition.z : 1e6;
+      if (vivo && p.isDashing) multidao.explodir(p.simPosition.x, 1, p.simPosition.z, RAIO_DA_INVESTIDA, DANO_DA_INVESTIDA, t);
+    }
+    multidao.assustarPorPerto(pontos, RAIO_DO_SUSTO, t);
+    const s = this.situacaoDaPraca;
+    s.naFachada = multidao.contarNaFachada(t);
+    s.faltamChegar = multidao.faltamChegar;
+    s.presentes = multidao.presentes;
+    s.eliminados = multidao.eliminados;
+    missao.fixedUpdate(dt, t, s);
+  }
+
   /** Recomeça o objetivo usando os mesmos corpos físicos e pools. */
   restartMission(): void {
-    if (!this.waves && !this.ctf && !this.dominio && !this.rio) return;
+    if (!this.waves && !this.ctf && !this.dominio && !this.rio && !this.missaoJaneiro) return;
     this.players.forEach((m, i) => {
       const [x, z] = this.ctf
         ? [CTF_BASES.blue.x + CTF_PLAYER_OFFSET_X, CTF_BASES.blue.z]
@@ -1413,6 +1491,12 @@ export class Match {
     this.round.resetScores();
     this.waves?.reset();
     this.rio?.reset();
+    if (this.missaoJaneiro && this.multidao) {
+      this.missaoJaneiro.reset();
+      this.multidao.reiniciar();
+      this.fugaPeloJogador.fill(0);
+      this.tickJaneiro = 0;
+    }
     this.nucleo?.reset();
     this.cabos?.reset();
     this.portas?.reset();

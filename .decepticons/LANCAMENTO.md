@@ -15,16 +15,16 @@
 | **Cidade Neon** | offline: Deathmatch, Sobrevivência (6 ondas, Colossus, transformador), Bandeira, Domínio; online: Deathmatch | co-op online (A1 + A2 do `CAMINHO_DO_LANCAMENTO.md`), Bandeira online |
 | **Estação dos Cabos** | offline: Deathmatch e a missão em ondas; online: Deathmatch | a missão em co-op online (A3) |
 | **Terras Raras** | EM BREVE (restrita) | já é real offline: o Comandante a abre no painel (`mapa:amazonia` → público, sem deploy) quando quiser; antes, medir a sala online no servidor |
-| **8 de Janeiro** | EM BREVE (restrita) | a missão não existe (≈ 7 PRs) e pede revisão jurídica antes: só depois |
+| **8 de Janeiro** | EM BREVE (restrita) · **prioridade atual do Comandante (P233, 20/10)** | a v1 jogável offline já existe (restrita); faltam os androides rebeldes, os faxineiros agentes, o Relatório com fatos e fontes, a missão online e a **revisão jurídica** (humana) antes de liberar |
 | Bunker | EM BREVE | — |
 
-**Regra para todos os agentes até o lançamento:** nenhum mapa, missão, arma ou modo novo. Só entra (a) o que bloqueia o lançamento, (b) bug que o playtest das duas missões achar, (c) o que o Comandante mandar. Os pacotes A1 a A7 do `CAMINHO_DO_LANCAMENTO.md` ficam para a primeira atualização.
+**Regra para todos os agentes até o lançamento:** nenhum mapa, missão, arma ou modo novo. Só entra (a) o que bloqueia o lançamento, (b) bug que o playtest das duas missões achar, (c) o que o Comandante mandar. **Exceção ordenada em 20/10 (P233): a missão do 8 de Janeiro é a prioridade atual e a Estação dos Cabos melhora.** Os pacotes A1 a A7 do `CAMINHO_DO_LANCAMENTO.md` ficam para a primeira atualização.
 
 **O que falta para abrir (conferido em 20/10):**
 
 1. **Playtest do Comandante, uma vez:** a Sobrevivência da Cidade Neon e a missão da Estação dos Cabos até o fim, em GPU real (`STATUS_REAL.md`: "falta o olho do Comandante e o equilíbrio jogando"). O que ele estranhar vira **no máximo 1 PR** de equilíbrio. *Comandante joga; Claude corrige.*
 2. **Teste com 5 a 10 pessoas de fora** (item 9): duas sessões de ~30 min na Cidade Neon online; Claude lê `/metricas` e o log. *Comandante convida.*
-3. **Fechar o atalho `?comandante=1`** (item 11): hoje **aberto** (o `deploy-site.json` não tem `comandantePorLink`, visto em 20/10). *O Comandante diz "pode fechar"; Claude faz.*
+3. **Fechar o atalho `?comandante=1`** (item 11): hoje **aberto** (o `deploy-site.json` não tem `comandantePorLink`, visto em 20/10). **O Comandante decidiu (20/10, P235) deixá-lo aberto até haver fluxo de jogadores**; com a missão do 8 de Janeiro jogável, o link a abre antes da revisão jurídica: fechar antes de liberar o conteúdo com fatos. Hoje só fecha publicando de novo; um botão no painel de visibilidade é um PR pequeno, se ele pedir.
 4. **Voz:** o `/status` do servidor mostra `tela:voz` **pública** em 20/10 (provavelmente aberta para os testes do microfone). Sem denúncia (`CAMINHO_DO_LANCAMENTO.md` § 5), **volte a `restrito`** no painel (SERVIDOR → VISIBILIDADE) antes de abrir, ou abra a voz só depois do PR da denúncia. *Comandante, no painel.*
 5. **Política e e-mail:** o nome do encarregado na política (§ 6) e o DKIM/DMARC (§ 7B), para o "esqueci a senha" não cair no spam. *Comandante.*
 6. **O servidor segue neste PC** (A1 mantido, § 6 D): nada de merge (o atualizador reinicia o servidor) com gente jogando; migrar quando chegar a 20 a 30 jogadores ao mesmo tempo.

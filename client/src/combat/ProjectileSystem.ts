@@ -51,6 +51,11 @@ const UP = new THREE.Vector3(0, 1, 0);
 export class ProjectileSystem {
   /** Chamado a cada impacto (Mech ou destrutível; quem decide é o CombatSystem). `damage` já vem com a queda por distância; `owner` = quem atirou. */
   onHit?: (hit: PhysicsHit, dir: THREE.Vector3, damage: number, owner?: RAPIER.Collider, w?: WeaponStats, distance?: number) => void;
+  /**
+   * A multidão do 8 DE JANEIRO (P217) não tem corpo na física: quem a tem ligada diz se a linha deste passo (origem, direção unitária, alcance até a parede ou o fim do passo) acertou alguém.
+   * Só vale para o tiro do lado do jogador (`!hostile`); acertou, o projétil acaba. Sem multidão, nada roda aqui.
+   */
+  contraMassa?: (ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, alcance: number, dano: number) => boolean;
   /** Um tiro saiu (o servidor do multiplayer manda como evento). */
   onFired?: (origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
   /** Quem desenha o clarão, o brilho da cabeça, o rastro e a marca (P160; só o cliente liga). */
@@ -191,6 +196,10 @@ export class ProjectileSystem {
       if (step <= 0) { this.kill(p); continue; }
       _dir.copy(p.velocity).divideScalar(speed);
       const hit = this.physics.raycast(p.pos, _dir, step, p.owner, true); // `true`: o tiro também acerta as caixas-alvo (coqueiros, P138)
+      if (this.contraMassa && !p.hostile && this.contraMassa(p.pos.x, p.pos.y, p.pos.z, _dir.x, _dir.y, _dir.z, hit ? hit.distance : step, hitDamage(p.weapon, p.traveled))) {
+        this.kill(p);
+        continue;
+      }
 
       if (hit) {
         // O resultado do raycast é reaproveitado: copia antes que o onHit dispare outro.

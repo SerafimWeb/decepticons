@@ -217,6 +217,10 @@ Fotografa a **Arena real** (`Arena.ts` com o transformador do banco, o mesmo pip
 
 `npm run build && node .decepticons/medicoes/multidao-gpu.mjs --fotos --salvar` (opções: `--cotas 0,1500,3000`, `--t 17500` o tick em que começa, `--rodadas 3`, `--tela 1280x720`): o mesmo ponto da Cidade Neon **sem e com** a multidão (`?multidao=1&cota=N&t=T`), rodadas intercaladas e a mediana, com as fotos em `.decepticons/arte/multidao-N.png`. **Achado que só a GPU real dá:** o limite de **16 atributos por vértice** (o shader não compila e a multidão some, sem erro no SwiftShader do smoke). Resultados em `medicoes/MULTIDAO.md`. **O `varrer-nan` aceita `--extra "multidao=1&cota=3000&t=9000"`** (parâmetros de link a mais): varre a praia com a multidão na cena (0 de 480 poses com NaN em 19/10).
 
+### 4.6-c A bancada da missão do 8 DE JANEIRO (`medicoes/janeiro-missao.mjs`, P233, 20/10)
+
+`npm run build && node .decepticons/medicoes/janeiro-missao.mjs` (opção `--espera 30`: segundos até a multidão chegar): joga a missão de verdade no Chrome com a GPU real (`?mapa=janeiro&modo=survival&comandante=1&depurar`), põe o Mech em frente ao Congresso, espera a multidão, atira, mede o quadro e derruba um prédio para fotografar a derrota (`arte/janeiro-missao-*.png`). Imprime o estado da missão (tick, integridade, presentes, eliminados) e os erros de página. Rodar uma vez por frente, não por mudança.
+
 ### 4.6 A bancada de GPU de verdade (`medicoes/amazonia-gpu.mjs`, P188, 18/10): onde o quadro gasta
 
 **Quando:** o Comandante diz "travou/pesou" e você precisa saber **por quê** (cenário? pós-processamento? CPU?). Serve ao `dist/` (`npm run build` antes), abre `?mapa=<mapa>&modo=<modo>&depurar` no Chrome/Edge do sistema com GPU de verdade e **sem limite de quadros nem vsync** (o fps é a capacidade da máquina).

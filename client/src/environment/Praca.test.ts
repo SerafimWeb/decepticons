@@ -73,10 +73,10 @@ describe('o layout da Praça dos Três Poderes (P217, passo 4 da ficha)', () => 
     }
   });
 
-  it('o link e o mapa: o Deathmatch abre a Praça (online também); a missão e os outros modos ainda caem na Cidade Neon até a Sobrevivência existir (passo 5)', () => {
+  it('o link e o mapa: o Deathmatch e a missão (a Sobrevivência) abrem a Praça (o Deathmatch também online); o CTF cai na Cidade Neon', () => {
     expect(mapFromSearch('?mapa=janeiro', false, 'deathmatch')).toBe('janeiro');
     expect(mapFromSearch('?mapa=janeiro&sala=X', true, 'deathmatch')).toBe('janeiro');
-    expect(mapFromSearch('?mapa=janeiro', false, 'survival')).toBe('arena');
+    expect(mapFromSearch('?mapa=janeiro', false, 'survival')).toBe('janeiro');
     expect(mapFromSearch('?mapa=janeiro', false, 'ctf')).toBe('arena');
   });
 });

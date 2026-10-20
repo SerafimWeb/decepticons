@@ -602,6 +602,26 @@ export class Multidao {
     for (let k = 0; k + 1 < e.fugas.length; k += 2) this.fugir(e.fugas[k]!, e.fugas[k + 1]!, 'rede', true);
   }
 
+  /** Recomeça a fase: o mesmo cronograma, ninguém morto, fugido nem fora do mapa. A missão recomeçada reaproveita a multidão (e o desenho dela). */
+  reiniciar(): void {
+    for (let i = 0; i < this.total; i++) this.vida[i] = this.vidaPorTipo[this.tipo[i]!]!;
+    this.morto.fill(0);
+    this.morreuEm.fill(-1);
+    this.fugiu.fill(0);
+    this.fugaEm.fill(-1);
+    this.saiuEm.fill(-1);
+    this.saiu.fill(0);
+    this.presente.fill(0);
+    this.proxNasce = 0;
+    this.proxChegada = 0;
+    this.proxFugaAuto = 0;
+    this.nFugindo = 0;
+    this.tickAtual = -1;
+    this.eliminadosN = 0;
+    this.expulsosN = 0;
+    this.posTick = -2;
+  }
+
   // ======================= o que a missão lê =======================
 
   get nasceram(): number {

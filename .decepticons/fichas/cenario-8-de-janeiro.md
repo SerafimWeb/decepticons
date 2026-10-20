@@ -90,7 +90,7 @@ O que isso compra:
 2. **`sim/Multidao.ts`** (a massa como função do tempo, **com teste de simulação**) + a bancada de CPU. ✅ (0,043 ms por tick)
 3. **O desenho da massa** (instanciado, a posição na shader, a máscara) + a bancada de GPU na GPU real. ✅ **como demonstração** (`?multidao=1`); **falta** o impostor de longe, o teto da qualidade ligado ao `Quality.ts` e `varrer-nan` (`FERRAMENTAS.md` § 4.1, porque é shader novo).
 4. **O mapa** (a Praça e a Esplanada, colisores < 310; os ônibus, os bueiros, as lixeiras) + a captura. ✅ **Deathmatch, offline e online, restrito (`mapa:janeiro`)**; **faltam** as mesas dos saguões e a sujeira (vêm com a missão). Fotos: `.decepticons/arte/praca-*.png`; a bancada `medicoes/praca-fotos.mjs`: de 105 a 176 fps (167 com 2.500 de multidão) na GPU integrada.
-5. **A missão** (a cota de chegadas, as integridades, a sujeira e os faxineiros, os androides rebeldes, o objetivo na tela no padrão do P194) + o mapa entra no catálogo de visibilidade como **restrito** (`mapa:janeiro`): só o Comandante vê até liberar.
+5. **A missão** ✅ **v1 offline (P233, 20/10: a cota de chegadas, as integridades, a sujeira com faxina abstrata, o tiro, o susto e a investida, o objetivo e a nota na tela; faltam os androides rebeldes, os faxineiros como agentes e o Relatório com fatos)** (a cota de chegadas, as integridades, a sujeira e os faxineiros, os androides rebeldes, o objetivo na tela no padrão do P194) + o mapa entra no catálogo de visibilidade como **restrito** (`mapa:janeiro`): só o Comandante vê até liberar.
 6. **A missão online** (a sala da Sobrevivência, `MULTIPLAYER.md` § 12, etapa O4): o cronograma e os eventos da § 3.
 
 ## 7. Fatos: o que o jogo pode afirmar (a regra "sátira exagera, fato é fato")
