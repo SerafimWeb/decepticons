@@ -25,8 +25,19 @@ const CSS = `
 #janeiro-painel .jp-predio.jp-baixo .jp-barra i { background: var(--alert, #ff2d3d); }
 #janeiro-painel .jp-predio.jp-baixo em { color: var(--alert, #ff2d3d); }
 #janeiro-painel .jp-predio em { font-style: normal; font-size: 12px; }
+#janeiro-abertura { position: absolute; left: 50%; top: 150px; transform: translateX(-50%); width: min(620px, 90vw); padding: 12px 18px; background: rgba(6, 8, 10, 0.84); border-left: 3px solid var(--warn, #ffe14d);
+  font-size: 13px; line-height: 1.55; letter-spacing: 1.2px; text-align: center; text-transform: uppercase; color: var(--ink, #eef2e8); text-shadow: 0 1px 2px #000; pointer-events: none; opacity: 1; transition: opacity 1.4s ease; }
+#janeiro-abertura.jp-fora { opacity: 0; }
 #janeiro-painel .jp-placar { margin-top: 6px; text-align: center; color: var(--muted, #7f9c86); font-size: 10.5px; }
 `;
+
+/**
+ * A abertura da missão (`fichas/fatos-8-de-janeiro.md` § 5, item 2): **só o que a ficha marca como 🟢**; "para pedir a ruptura" é a descrição do objetivo que o STF julgou. Aparece nos primeiros
+ * 12 s da missão, sem pausar nada, e volta quando a missão recomeça. Um teste (`JaneiroJogo.test.ts`) trava o texto na ficha.
+ */
+export const ABERTURA_DA_MISSAO = '8 de janeiro de 2023. Uma multidão sai do acampamento diante do quartel e invade os Três Poderes para pedir a ruptura da ordem democrática. Defenda os prédios.';
+/** Quanto a abertura fica na tela (ticks: 12 s). */
+const ABERTURA_TICKS = 720;
 
 const NOMES = PRACA_PREDIOS.map((p) => p.nome);
 /** A mesa (x, z) de cada prédio, na ordem de `PracaLayout`: a sujeira desenha uma marca nelas. */
@@ -94,12 +105,17 @@ export function criarJaneiroJogo(scene: THREE.Scene, match: Match, hud: HTMLElem
   placar.className = 'jp-placar';
   painel.append(grade, placar);
   hud.appendChild(painel);
+  const abertura = document.createElement('div');
+  abertura.id = 'janeiro-abertura';
+  abertura.textContent = ABERTURA_DA_MISSAO;
+  hud.appendChild(abertura);
 
   let passo = -1;
   let ultimaLinha = '';
   let ultimoPlacar = '';
 
   const atualizar = (): void => {
+    abertura.classList.toggle('jp-fora', match.tickDaMissao >= ABERTURA_TICKS);
     for (let k = 0; k < celulas.length; k++) {
       const cel = celulas[k]!;
       const fracao = Math.max(0, missao.integridade[k]! / INTEGRIDADE_MAX);
@@ -169,6 +185,7 @@ export function criarJaneiroJogo(scene: THREE.Scene, match: Match, hud: HTMLElem
       (montinho.material as THREE.Material).dispose();
       montinho.dispose();
       painel.remove();
+      abertura.remove();
       estilo.remove();
     },
   };
