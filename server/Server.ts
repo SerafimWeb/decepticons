@@ -233,6 +233,10 @@ export async function startServer(
         creating.delete(code);
         log(`sala ${code} aberta`);
         return room;
+      }).catch((erro: unknown) => {
+        // A falha não fica guardada: a próxima conexão tenta abrir a sala de novo, em vez de herdar a rejeição para sempre.
+        creating.delete(code);
+        throw erro;
       });
       creating.set(code, p);
     }
@@ -1007,6 +1011,13 @@ export async function startServer(
     };
     // As mensagens esperam a sala ficar pronta, na ordem em que chegaram.
     const room: Promise<ArenaRoom> = exigeAdmin ? new Promise<ArenaRoom>((resolver) => (liberarSala = () => resolver(roomFor(code)))) : roomFor(code);
+    // Sala que não abre (o código de um mapa não carregou, a física não subiu): cai só esta conexão. Uma rejeição solta derruba o processo e a sala de todo mundo (21/10: foi o 502 da produção).
+    const sala: Promise<ArenaRoom | null> = room.catch((erro: unknown) => {
+      log(`falha ao abrir a sala ${code}: ${erro instanceof Error ? erro.message : String(erro)}`);
+      release();
+      ws.close(1011, 'sala');
+      return null;
+    });
     if (exigeAdmin) {
       esperaDaCredencial = setTimeout(() => recusarRestrito('sem credencial'), CREDENCIAL_ESPERA_MS);
       esperaDaCredencial.unref();
@@ -1060,12 +1071,12 @@ export async function startServer(
         recusarRestrito('sem credencial');
         return;
       }
-      void room.then((r) => r.receive(peer, bytes));
+      void sala.then((r) => r?.receive(peer, bytes));
     });
     ws.on('close', () => {
       limparEspera();
       release();
-      void room.then((r) => r.leave(peer));
+      void sala.then((r) => r?.leave(peer));
     });
     ws.on('error', () => {
       release();

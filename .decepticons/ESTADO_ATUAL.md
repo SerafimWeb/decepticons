@@ -16,6 +16,11 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## O ONLINE NÃO CONECTAVA: O SERVIDOR CAÍA AO ABRIR A SALA DE UM MAPA SOB DEMANDA — Claude, 21/10 (branch `claude/servidor-runner-aberto`, P238)
+
+**O Comandante (21/10):** o jogo online dava 502 em `jogo.cybermech.online` (`jogar/?nome=serafim&mapa=janeiro:1`). **Causa:** o `scripts/server.mjs` fechava o carregador do Vite ao subir; o `import()` do mapa da Praia, da Terras Raras ou do 8 de Janeiro falhava dentro da sala, a rejeição não era tratada e o processo morria (a Praia é pública: qualquer jogador a derrubava). **Feito:** o lançador mantém o carregador aberto (+~45 MB); uma sala que não abre derruba só a conexão que a pediu (1011) e não fica em cache. 2 testes novos (um sobe o processo de verdade), 3 mutações pegas.
+**Falta (R13):** conferir na produção depois que o atualizador religar o servidor (uma sala da Praia e o atalho do Comandante no 8 de Janeiro). **Próxima sessão começa com:** o que o Comandante achar jogando o 8 de Janeiro online (a missão em si ainda é só offline: o Deathmatch da Praça é o que abre online).
+
 ## A MISSÃO DO 8 DE JANEIRO ESTÁ PRONTA NO NAVEGADOR: A ABERTURA E O ROTEIRO PARA LIBERAR — Claude, 20/10 (branch `claude/janeiro-abertura`, P233)
 
 **O Comandante (20/10):** *"conclua essa missão para finalizarmos e lançar o game!"*. **Feito:** a missão ganha a **abertura** (os primeiros 12 s: *"8 de janeiro de 2023. Uma multidão sai do acampamento diante do quartel e invade os Três Poderes para pedir a ruptura da ordem democrática. Defenda os prédios."*, a frase 🟢 que a ficha de fatos define; um teste a trava na ficha, palavra por palavra) e o **roteiro para liberá-la** (`LANCAMENTO.md` § 0). **A missão, de ponta a ponta no navegador (offline):** a abertura → a multidão chega pelas fontes e marcha às fachadas → os androides rebeldes (de preto) atacam → o jogador atira, assusta e investe → os prédios apanham da fachada e da sujeira → vence com os três de pé e a Praça vazia, ou perde → a nota (expulsos × eliminados) → o Relatório de Consequências com os fatos 🟢 e as fontes. **Tudo restrito** (`mapa:janeiro`, `tela:relatorio`).

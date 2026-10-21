@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P238 — O online não conecta: o servidor caía ao abrir a sala de um mapa (21/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P238 | 21/10 | "to tentando conectar o modo online do cybermech mas nao ta conectando" (`jogar/?nome=serafim&mapa=janeiro:1`; o console mostrou 502 em `jogo.cybermech.online` e o CORS como sintoma) | 🟡 | PR `claude/servidor-runner-aberto`. **A causa:** o `npm run server` fechava o carregador do Vite ao terminar de subir; o `import()` do mapa da Praia, da Terras Raras ou do 8 de Janeiro falhava e o processo morria (a vigia o religava e o jogo derrubava de novo). O lançador agora mantém o carregador aberto, e uma sala que não abre derruba só a conexão que a pediu (código 1011). **Falta (R13):** conferir na produção depois do merge (o atualizador religa o servidor) | Abrir `jogar/?nome=X&mapa=janeiro:1` com o atalho do Comandante: a sala do 8 de Janeiro abre; antes, 502 |
+
 ## P237 — A voz ao vivo: não chegou ao outro PC, o microfone baixo, o F10 em conflito e os canais (20/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
