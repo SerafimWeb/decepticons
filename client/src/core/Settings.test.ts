@@ -245,6 +245,18 @@ describe('Settings: o chat de voz (P205)', () => {
     expect(new Settings(memoryStorage('{"keys": {"ptt": "Escape"}}')).value.keys.ptt).toBe('KeyT');
   });
 
+  it('o ganho do microfone (P237): padrão 1, e a configuração salva é limitada a 0,5 a 4 (lixo volta ao padrão)', () => {
+    expect(DEFAULT_SETTINGS.micGain).toBe(1);
+    expect(new Settings(memoryStorage('{"micGain": 2.5}')).value.micGain).toBe(2.5);
+    expect(new Settings(memoryStorage('{"micGain": 0.1}')).value.micGain).toBe(0.5);
+    expect(new Settings(memoryStorage('{"micGain": 9}')).value.micGain).toBe(4);
+    for (const lixo of ['"alto"', 'null', '[]', '{}']) expect(new Settings(memoryStorage(`{"micGain": ${lixo}}`)).value.micGain, lixo).toBe(1);
+    const storage = memoryStorage();
+    const st = new Settings(storage);
+    st.update({ micGain: 3.2 });
+    expect(new Settings(storage).value.micGain).toBe(3.2);
+  });
+
   it('o aparelho do microfone: padrão vazio, o texto válido é mantido e o lixo (tipo errado, enorme, com controle) volta ao padrão (P212)', () => {
     expect(DEFAULT_SETTINGS.micDevice).toBe('');
     expect(new Settings(memoryStorage('{"micDevice": "abc123"}')).value.micDevice).toBe('abc123');

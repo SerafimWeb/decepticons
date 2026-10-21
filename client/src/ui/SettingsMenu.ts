@@ -52,6 +52,8 @@ export class SettingsMenu {
   private readonly selVozModo = $('setting-voz-modo') as HTMLSelectElement;
   private readonly sliderVozVolume = $('setting-voz-volume') as HTMLInputElement;
   private readonly valVozVolume = $('val-voz-volume');
+  private readonly sliderMicGain = $('setting-mic-gain') as HTMLInputElement;
+  private readonly valMicGain = $('val-mic-gain');
   private readonly selVozAparelho = $('setting-voz-aparelho') as HTMLSelectElement;
   private readonly selVozEfeito = $('setting-voz-efeito') as HTMLSelectElement;
   private readonly btnVozTestar = $('btn-voz-testar') as HTMLButtonElement;
@@ -114,6 +116,9 @@ export class SettingsMenu {
     this.sliderVozVolume.min = LIMITS.voiceVolume.min.toString();
     this.sliderVozVolume.max = LIMITS.voiceVolume.max.toString();
     this.sliderVozVolume.step = LIMITS.voiceVolume.step.toString();
+    this.sliderMicGain.min = LIMITS.micGain.min.toString();
+    this.sliderMicGain.max = LIMITS.micGain.max.toString();
+    this.sliderMicGain.step = LIMITS.micGain.step.toString();
 
     // Select options
     this.selQuality.innerHTML = (['auto', 'alta', 'media', 'baixa'] as QualityPreset[])
@@ -225,6 +230,14 @@ export class SettingsMenu {
       const val = parseFloat(this.sliderVozVolume.value);
       this.valVozVolume.textContent = `${Math.round(val * 100)}%`;
       this.settings.update({ voiceVolume: val });
+    });
+
+    // O ganho do microfone (P237): vale na hora no chat, no teste (a barra, a prévia e a dica) e na narração.
+    this.sliderMicGain.addEventListener('input', () => {
+      const val = parseFloat(this.sliderMicGain.value);
+      this.valMicGain.textContent = `${val.toFixed(1)}x`;
+      this.settings.update({ micGain: val });
+      this.micTest?.setGanho(val);
     });
 
     this.selVozAparelho.addEventListener('change', () => {
@@ -376,11 +389,12 @@ export class SettingsMenu {
       const { MicTest } = await import('../voice/MicTest');
       const ouvir = $('voz-ouvir') as HTMLInputElement;
       this.micTest = new MicTest(
-        { painel: $('voz-teste'), barra: $('voz-nivel-barra'), status: $('voz-teste-status'), botao: this.btnVozTestar, ouvir },
+        { painel: $('voz-teste'), barra: $('voz-nivel-barra'), status: $('voz-teste-status'), botao: this.btnVozTestar, ouvir, dica: $('voz-teste-dica') },
         () => this.settings.value.micDevice,
         undefined,
         () => void this.atualizarAparelhos(),
         () => this.settings.value.vozEfeito,
+        () => this.settings.value.micGain,
       );
       ouvir.addEventListener('change', () => this.micTest?.ouvirAMinhaVoz(ouvir.checked));
     }
@@ -423,6 +437,8 @@ export class SettingsMenu {
     this.selVozModo.value = s.voiceMode;
     this.sliderVozVolume.value = s.voiceVolume.toString();
     this.valVozVolume.textContent = `${Math.round(s.voiceVolume * 100)}%`;
+    this.sliderMicGain.value = s.micGain.toString();
+    this.valMicGain.textContent = `${s.micGain.toFixed(1)}x`;
     if ([...this.selVozAparelho.options].some((o) => o.value === s.micDevice)) this.selVozAparelho.value = s.micDevice;
     this.selVozEfeito.value = s.vozEfeito;
 

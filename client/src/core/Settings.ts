@@ -84,6 +84,8 @@ export interface GameSettings {
   micDevice: string;
   /** O efeito na voz da narração (F8) e do teste do microfone. O chat de voz não usa. */
   vozEfeito: VozEfeito;
+  /** O ganho do microfone (P237): 1 = sem mexer; sobe a voz de quem tem microfone baixo (fone Bluetooth). Vale no chat, no teste e na narração. */
+  micGain: number;
   keys: Record<KeyAction, string>;
 }
 
@@ -96,6 +98,7 @@ export const LIMITS = {
   glow: { min: 0.2, max: 1.2, step: 0.05 },
   volume: { min: 0, max: 1, step: 0.05 },
   voiceVolume: { min: 0, max: 1, step: 0.05 },
+  micGain: { min: 0.5, max: 4, step: 0.1 },
   enemyMechs: { min: 0, max: 3, step: 1 },
   enemyAndroids: { min: 0, max: 3, step: 1 },
   maxAttackers: { min: 0.5, max: 4, step: 0.5 },
@@ -131,6 +134,7 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
   voiceVolume: 0.8,
   micDevice: '',
   vozEfeito: 'normal',
+  micGain: 1,
   keys: Object.freeze({
     forward: 'KeyW',
     back: 'KeyS',
@@ -275,6 +279,7 @@ export function sanitizeSettings(raw: unknown): GameSettings {
     voiceVolume: num(r.voiceVolume, d.voiceVolume, LIMITS.voiceVolume.min, LIMITS.voiceVolume.max),
     micDevice: typeof r.micDevice === 'string' && r.micDevice.length <= 256 && !/[ -]/.test(r.micDevice) ? r.micDevice : d.micDevice,
     vozEfeito: VOZ_EFEITOS.includes(r.vozEfeito as VozEfeito) ? (r.vozEfeito as VozEfeito) : d.vozEfeito,
+    micGain: num(r.micGain, d.micGain, LIMITS.micGain.min, LIMITS.micGain.max),
     keys,
   };
 }

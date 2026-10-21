@@ -1,0 +1,97 @@
+{
+ "data": "2026-10-21",
+ "medidas": {
+  "picoGanho1": 0.03481425368800144,
+  "picoGanho3": 0.10426027542458623,
+  "picoGanho05": 0.017290743806014724,
+  "picoDepoisDeReabrir": 0.10366199710071278,
+  "segundosAteAcusar": 8.049
+ },
+ "verificacoes": [
+  {
+   "nome": "ALFA e BRAVO se ligam pelo WebRTC com o envio por Web Audio",
+   "ok": true,
+   "detalhe": "{\"id\":5,\"ativa\":true,\"mic\":\"ativo\",\"ligados\":1,\"semConexao\":0,\"transmitindo\":true,\"ouvindo\":1,\"falando\":[]}"
+  },
+  {
+   "nome": "o envio de ALFA vai pelo grafo de Web Audio (não pela faixa crua)",
+   "ok": true,
+   "detalhe": "{\"via\":true,\"ganho\":1}"
+  },
+  {
+   "nome": "com ganho x1 BRAVO ouve o tom de ALFA (o tom é baixo: 0,05)",
+   "ok": true,
+   "detalhe": "RMS de pico 0.0348"
+  },
+  {
+   "nome": "com ganho x3 BRAVO ouve cerca de 3 vezes mais (entre 2,3x e 3,7x)",
+   "ok": true,
+   "detalhe": "0.0348 -> 0.1043 (2.99x, 9.5 dB)"
+  },
+  {
+   "nome": "com ganho x0,5 BRAVO ouve cerca da metade (entre 0,38x e 0,65x)",
+   "ok": true,
+   "detalhe": "0.50x, -6.1 dB"
+  },
+  {
+   "nome": "o diagnóstico mostra o ganho aplicado",
+   "ok": true,
+   "detalhe": "0.5"
+  },
+  {
+   "nome": "o nível do microfone (a barra do HUD) acompanha o ganho: o tom de 0,05 com x2 dá RMS ~0,07",
+   "ok": true,
+   "detalhe": "0.0859"
+  },
+  {
+   "nome": "o microfone cai (o aparelho some): o jogo larga o microfone na hora",
+   "ok": true,
+   "detalhe": "{\"derrubou\":true,\"mic\":\"sem\"}"
+  },
+  {
+   "nome": "o jogo REABRE o microfone sozinho em alguns segundos (1,5 s de espera + o pedido)",
+   "ok": true,
+   "detalhe": "1.6 s"
+  },
+  {
+   "nome": "depois de reabrir, BRAVO volta a ouvir ALFA, com o mesmo ganho (x3)",
+   "ok": true,
+   "detalhe": "0.1037 (antes do ganho: 0.0348)"
+  },
+  {
+   "nome": "as ligações continuam de pé (ninguém precisou entrar de novo na sala)",
+   "ok": true,
+   "detalhe": "[\"conectada\"]"
+  },
+  {
+   "nome": "microfone aberto com silêncio total: nos primeiros segundos ainda está \"ok\" (o aviso espera)",
+   "ok": true,
+   "detalhe": "ok"
+  },
+  {
+   "nome": "depois de ~8 s de zero absoluto a saúde acusa \"sem-som\"",
+   "ok": true,
+   "detalhe": "8.0 s"
+  },
+  {
+   "nome": "o diagnóstico registra a saúde \"sem-som\" (a conclusão em português parte dela)",
+   "ok": true,
+   "detalhe": "sem-som"
+  },
+  {
+   "nome": "no \"segurar para falar\" solto o silêncio é esperado: o aviso some",
+   "ok": true,
+   "detalhe": "ok"
+  },
+  {
+   "nome": "quem escuta não ouve nada (o silêncio é de verdade)",
+   "ok": true,
+   "detalhe": ""
+  },
+  {
+   "nome": "nenhum erro de página",
+   "ok": true,
+   "detalhe": ""
+  }
+ ]
+}

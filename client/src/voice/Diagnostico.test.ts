@@ -18,6 +18,12 @@ const voz = (o: Partial<DiagnosticoDaVoz> = {}): DiagnosticoDaVoz => ({
   transmitindo: true,
   naLista: [3],
   ligacoes: [ligacao()],
+  ajusteDeGanho: 1,
+  viaWebAudio: true,
+  saude: 'ok',
+  nivel: 0.04,
+  faixaMuda: false,
+  reaberturas: 0,
   ...o,
 });
 const entrada = (o: Partial<EntradaDoDiagnostico> = {}): EntradaDoDiagnostico => ({
@@ -47,6 +53,18 @@ describe('concluirDiagnostico (P237): a causa mais provável, na ordem em que el
   it('microfone: recusado pelo navegador e ausente têm frases diferentes', () => {
     expect(concluirDiagnostico(entrada({ voz: voz({ estadoMic: 'negado' }) }))).toContain('bloqueou o microfone');
     expect(concluirDiagnostico(entrada({ voz: voz({ estadoMic: 'sem' }) }))).toContain('não conseguiu abrir um microfone');
+  });
+
+  it('o microfone abre mas não chega som: silêncio total e faixa parada têm frases diferentes, e vêm antes de "sozinho" e de "rede"', () => {
+    const semSom = concluirDiagnostico(entrada({ voz: voz({ saude: 'sem-som' }) }));
+    expect(semSom).toContain('silêncio total');
+    expect(semSom).toContain('botão de mudo do próprio fone');
+    const parou = concluirDiagnostico(entrada({ voz: voz({ saude: 'sem-entrega', faixaMuda: true }) }));
+    expect(parou).toContain('parou de entregar som');
+    expect(parou).toContain('reabrir sozinho');
+    // com o microfone mudo, nem "sozinho na sala" nem "rede" importam
+    expect(concluirDiagnostico(entrada({ pilotos: [], voz: voz({ saude: 'sem-som', ligacoes: [] }) }))).toContain('silêncio total');
+    expect(concluirDiagnostico(entrada({ voz: voz({ saude: 'sem-som', ligacoes: [ligacao({ estado: 'falhou' })] }) }))).toContain('silêncio total');
   });
 
   it('sozinho na sala; e com gente na sala mas ninguém na voz (o outro PC sem conta de adulto)', () => {
@@ -98,6 +116,18 @@ describe('formatarDiagnostico (P237): o relatório que o jogador copia e cola', 
     const texto = formatarDiagnostico(entrada({ pilotos: [{ id: 3, nome: 'BRAVO' }, { id: 7, nome: 'CHARLIE' }], voz: voz() }));
     expect(texto).toContain('FORA da voz: CHARLIE');
     expect(texto).not.toContain('FORA da voz: BRAVO');
+  });
+
+  it('mostra o envio: o ganho, se vai por Web Audio ou pela faixa crua, o nível, a saúde e as reaberturas', () => {
+    const texto = formatarDiagnostico(entrada({ voz: voz({ ajusteDeGanho: 2.5, nivel: 0.0712, saude: 'sem-som', faixaMuda: true, reaberturas: 3 }) }));
+    expect(texto).toContain('ganho x2.5');
+    expect(texto).toContain('por Web Audio');
+    expect(texto).toContain('nível 0.071');
+    expect(texto).toContain('saúde sem-som');
+    expect(texto).toContain('faixa PARADA');
+    expect(texto).toContain('reaberturas automáticas: 3');
+    expect(formatarDiagnostico(entrada({ voz: voz({ viaWebAudio: false }) }))).toContain('faixa crua do navegador');
+    expect(formatarDiagnostico(entrada())).not.toContain('reaberturas automáticas');
   });
 
   it('o nível de entrada só aparece quando o navegador o deu', () => {

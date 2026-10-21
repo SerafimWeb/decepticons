@@ -35,6 +35,9 @@ export function concluirDiagnostico(e: EntradaDoDiagnostico): string {
   if (!v || !v.ativa) return 'A voz ainda não entrou na sala. Espere alguns segundos; se continuar, saia e entre de novo na sala.';
   if (v.estadoMic === 'negado') return 'O navegador bloqueou o microfone neste site: clique no cadeado ao lado do endereço, permita o microfone e recarregue.';
   if (v.estadoMic === 'sem') return 'O jogo não conseguiu abrir um microfone: confira o aparelho em Configurações > GRÁFICOS E SOM e use [ TESTAR ].';
+  // O microfone abre, mas não chega som (o que o Comandante viveu em 20/10): vem antes de "sozinho" e de "rede", porque com o microfone mudo nada mais adianta.
+  if (v.saude === 'sem-entrega') return 'O navegador diz que o microfone parou de entregar som (o fone Bluetooth caiu, o aparelho foi desligado ou outro programa o pegou): confira o fone e o teste de entrada do Windows. O jogo tenta reabrir sozinho.';
+  if (v.saude === 'sem-som') return 'O microfone está aberto mas entrega silêncio total há vários segundos: confira o botão de mudo do próprio fone, se o fone está no modo microfone (no Bluetooth, mãos-livres) e o teste do Windows (Configurações > Sistema > Som > Entrada).';
   if (e.pilotos.length === 0) return 'Você está sozinho na sala: ninguém para ouvir. Entre com outra pessoa.';
   if (v.ligacoes.length === 0) return `Há ${e.pilotos.length} na sala, mas nenhum está na voz: a outra pessoa precisa de conta de maior de 18 anos com "Conversar por voz" ligado (convidado e menor não entram).`;
   const falhou = v.ligacoes.filter((l) => l.estado === 'falhou');
@@ -62,6 +65,9 @@ export function formatarDiagnostico(e: EntradaDoDiagnostico): string {
     L.push(`voz: ${v.ativa ? 'na sala' : 'FORA da sala'} · eu = ${v.meuId >= 0 ? `#${v.meuId}` : '—'} · token da conta: ${sn(v.token)}`);
     L.push(
       `microfone: ${v.estadoMic} · aparelho: "${v.rotulo || '—'}" · ${v.taxa ? `${v.taxa} Hz` : '? Hz'} · eco/ruído/ganho do navegador: ${v.eco}/${v.ruido}/${v.ganho} · modo ${v.modo} · mudo ${sn(v.mudo)} · transmitindo ${sn(v.transmitindo)}`,
+    );
+    L.push(
+      `envio: ganho x${v.ajusteDeGanho.toFixed(1)} · ${v.viaWebAudio ? 'por Web Audio' : 'faixa crua do navegador'} · nível ${v.nivel.toFixed(3)} · saúde ${v.saude}${v.faixaMuda ? ' · o navegador diz a faixa PARADA' : ''}${v.reaberturas > 0 ? ` · reaberturas automáticas: ${v.reaberturas}` : ''}`,
     );
     L.push(`na voz comigo: ${v.ligacoes.length} · ligados ${v.ligacoes.filter((l) => l.estado === 'conectada').length} · sem conexão ${v.ligacoes.filter((l) => l.estado === 'falhou').length}`);
     for (const l of v.ligacoes) {

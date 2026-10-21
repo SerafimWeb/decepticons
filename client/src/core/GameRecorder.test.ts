@@ -69,7 +69,13 @@ function ambienteDaGravacao(opcoes: { comAudio?: boolean } = {}) {
   const canvas = { captureStream: () => ({ getVideoTracks: () => [{ requestFrame: () => {} }] }) } as unknown as HTMLCanvasElement;
   const destino = { stream: { getAudioTracks: () => [{ kind: 'audio-da-mistura' }] } };
   const fontes: { conectouEm: unknown[]; desconectou: boolean }[] = [];
+  const ganhos: { gain: { value: number }; conectouEm: unknown[]; desconectou: boolean; connect(d: unknown): void; disconnect(): void }[] = [];
   const ctx = {
+    createGain: () => {
+      const g = { gain: { value: 1 }, conectouEm: [] as unknown[], desconectou: false, connect: (d: unknown) => void g.conectouEm.push(d), disconnect: () => void (g.desconectou = true) };
+      ganhos.push(g);
+      return g;
+    },
     createMediaStreamDestination: () => destino,
     createMediaStreamSource: () => {
       const f = { conectouEm: [] as unknown[], desconectou: false, connect: (d: unknown) => void f.conectouEm.push(d), disconnect: () => void (f.desconectou = true) };
@@ -86,7 +92,7 @@ function ambienteDaGravacao(opcoes: { comAudio?: boolean } = {}) {
     const faixa = { parada: false, stop() { faixa.parada = true; } };
     return { faixa, fluxo: { getTracks: () => [faixa] } as unknown as MediaStream };
   };
-  return { canvas, audio, destino, fontes, eventos, elementos, microfone };
+  return { canvas, audio, destino, fontes, ganhos, eventos, elementos, microfone };
 }
 
 describe('GameRecorder: a narração, F8 (P230)', () => {
@@ -259,6 +265,42 @@ describe('GameRecorder: o efeito na voz da narração (P231)', () => {
     r.alternar(a.microfone().fluxo, () => { throw new Error('o efeito quebrou'); });
     expect(r.gravando).toBe(true);
     expect(a.fontes[0]!.conectouEm).toEqual([a.destino]);
+    r.alternar();
+  });
+});
+
+describe('GameRecorder: o ganho do microfone na narração (P237)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('com ganho diferente de 1, a voz passa por um nó de ganho (microfone → ganho → mistura da gravação)', () => {
+    const a = ambienteDaGravacao();
+    const r = new GameRecorder(a.canvas, a.audio);
+    r.alternar(a.microfone().fluxo, null, 2.5);
+    expect(a.ganhos).toHaveLength(1);
+    expect(a.ganhos[0]!.gain.value).toBe(2.5);
+    expect(a.fontes[0]!.conectouEm, 'o microfone cru só alimenta o ganho').toEqual([a.ganhos[0]]);
+    expect(a.ganhos[0]!.conectouEm, 'e o ganho vai à mistura da gravação').toEqual([a.destino]);
+    r.alternar();
+    expect(a.ganhos[0]!.desconectou, 'parar solta o ganho').toBe(true);
+  });
+
+  it('no ganho 1 (o padrão) nem cria o nó: a voz vai direto, como antes', () => {
+    const a = ambienteDaGravacao();
+    const r = new GameRecorder(a.canvas, a.audio);
+    r.alternar(a.microfone().fluxo, null, 1);
+    expect(a.ganhos).toHaveLength(0);
+    expect(a.fontes[0]!.conectouEm).toEqual([a.destino]);
+    r.alternar();
+  });
+
+  it('com efeito e ganho: microfone → ganho → entrada do efeito; só a saída do efeito vai à mistura', () => {
+    const a = ambienteDaGravacao();
+    const r = new GameRecorder(a.canvas, a.audio);
+    const entrada = { id: 'entrada-do-efeito' };
+    const saida = { destinos: [] as unknown[], connect(d: unknown) { saida.destinos.push(d); } };
+    r.alternar(a.microfone().fluxo, () => ({ entrada, saida, desligar() {} }) as never, 3);
+    expect(a.ganhos[0]!.conectouEm).toEqual([entrada]);
+    expect(saida.destinos).toEqual([a.destino]);
     r.alternar();
   });
 });

@@ -978,5 +978,10 @@
  "Diagnóstico da voz": "Диагностика голоса",
  "[ VER E COPIAR ]": "[ ПОКАЗАТЬ И СКОПИРОВАТЬ ]",
  "[ COPIADO ]": "[ СКОПИРОВАНО ]",
- "Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.": "Если голос не работает между двумя игроками: показывает, что происходит, и наиболее вероятную причину."
+ "Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.": "Если голос не работает между двумя игроками: показывает, что происходит, и наиболее вероятную причину.",
+ "SEM SOM NO MICROFONE: CONFIRA O BOTÃO DE MUDO DO FONE E O WINDOWS": "НЕТ ЗВУКА В МИКРОФОНЕ: ПРОВЕРЬТЕ КНОПКУ MUTE НА ГАРНИТУРЕ И WINDOWS",
+ "O NAVEGADOR PAROU DE RECEBER O MICROFONE: CONFIRA O FONE E O WINDOWS": "БРАУЗЕР ПЕРЕСТАЛ ПОЛУЧАТЬ МИКРОФОН: ПРОВЕРЬТЕ ГАРНИТУРУ И WINDOWS",
+ "Ganho do microfone": "Усиление микрофона",
+ "Sobe a sua voz para quem escuta, no teste e na gravação. Fones Bluetooth costumam pedir ganho; o teste do microfone sugere um valor.": "Делает ваш голос громче для слушателей, в проверке и в записи. Bluetooth-гарнитурам часто нужно усиление; проверка микрофона предложит значение.",
+ "Voz baixa: suba o ganho do microfone para x{0}.": "Тихий голос: увеличьте усиление микрофона до x{0}."
 }

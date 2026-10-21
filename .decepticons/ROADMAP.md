@@ -111,7 +111,7 @@
 - [x] Gravação nativa de gameplay em alta qualidade (F9, tecla escondida, só para o dono): captura direto do WebGL, sem OBS, com áudio do jogo (Claude, 28/09) #ux
 - [x] **Narração (P230, 20/10):** `F8` grava a partida com a voz de quem joga (offline e online; o microfone só na mistura da gravação, só conta de maior de 18 anos, aparelho escolhido nas Configurações); provado no Chrome real (Claude) #ux
 - [x] **A voz diz por que não funciona (P237 PR 1, 20/10):** aviso com o motivo no canto, HUD "n na sala sem voz" e [ VER E COPIAR ] (relatório com a rota de rede e a conclusão); a narração vai do F10 para o F8 (Claude) #ux
-- [ ] **Ganho do microfone (P237 PR 2):** ajuste nas Configurações aplicado ao chat, ao teste e à narração, e o nível ao vivo; é o que o Captain 300 pede (Claude) #ux
+- [x] **O microfone que não está bem (P237 PR 2, 20/10):** ganho 0,5x a 4x (chat, teste com dica, narração), barra do nível e alerta "sem som" no HUD, reabertura automática quando o fone cai; medido no Chrome real (Claude) #ux
 - [ ] **Canais de voz: todos / time / jogador escolhido (P237 PR 3):** o envio por ligação já permite; o canal "time" espera o contrato de rede com o time de cada piloto (Claude) #ux
 - [x] **Efeitos na voz (P231, 20/10):** Locutor militar, Lorde sombrio e Grande Irmão (cadeia de áudio sob demanda) na narração e na prévia do teste do microfone, afinável por tabela; medido no Chrome real; falta o ouvido do Comandante (Claude) #ux
 - [x] Segundo piloto selecionável no Hangar: andróide A-1 com blaster e motosserra (troca recarrega a partida) #mechs

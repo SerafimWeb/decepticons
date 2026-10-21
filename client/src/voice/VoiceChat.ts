@@ -1,5 +1,7 @@
 import { messageType } from '../../../shared/net/messages';
 import { abrirMicrofone } from './abrirMicrofone';
+import { EnvioDeVoz } from './EnvioDeVoz';
+import { type SaudeDoMic, VigiaDoMic } from './saudeDoMic';
 import { codificarPronto, codificarSinal, lerLista, lerSinal, VOZ, type Sinal } from '../../../shared/net/voz';
 import { normalizeKey } from '../core/Settings';
 import { MicController, type EstadoMic, type ModoMic } from './MicController';
@@ -19,12 +21,15 @@ export interface Ambiente {
   novaConexao(cfg: RTCConfiguration): RTCPeerConnection;
   /** O microfone (`aparelho`: o `deviceId` escolhido, vazio = o padrão); rejeita com `NotAllowedError` se o jogador recusar e `NotFoundError` se não houver. */
   pedirMicrofone(aparelho: string): Promise<MediaStream>;
+  /** O contexto de áudio **só do envio da voz** (ganho, nível e portas por colega: `EnvioDeVoz`); `null` ou ausente = o chat manda a faixa crua do microfone, como antes. */
+  novoContextoDeEnvio?(): AudioContext | null;
 }
 
 export const AMBIENTE_DO_NAVEGADOR: Ambiente = {
   novaConexao: (cfg) => new RTCPeerConnection(cfg),
   // O pedido único do jogo (o mesmo do teste do microfone): o aparelho escolhido é `exact`; cai no padrão só se ele sumiu (`abrirMicrofone.ts`).
   pedirMicrofone: (aparelho) => abrirMicrofone(aparelho),
+  novoContextoDeEnvio: () => (typeof AudioContext === 'undefined' ? null : new AudioContext({ latencyHint: 'interactive' })),
 };
 
 export interface VozOpcoes {
@@ -73,6 +78,13 @@ export interface DiagnosticoDaVoz {
   /** Os ids que o servidor diz estarem na voz (a última `LISTA`), tirando o meu. */
   naLista: number[];
   ligacoes: DiagnosticoDeLigacao[];
+  /** O ajuste de ganho do jogador (o `ganho` acima é o controle automático do navegador), se o envio passa pelo grafo de Web Audio (`false` = a faixa crua), a saúde do microfone, o nível que sai (RMS, 0 a 1), se o navegador diz a faixa parada, e quantas vezes o jogo reabriu o microfone sozinho. */
+  ajusteDeGanho: number;
+  viaWebAudio: boolean;
+  saude: SaudeDoMic;
+  nivel: number;
+  faixaMuda: boolean;
+  reaberturas: number;
 }
 
 interface Ligacao {
@@ -110,19 +122,40 @@ export class VoiceChat {
   private aparelho = '';
   /** A última `LISTA` do servidor (quem está na voz), para o diagnóstico. */
   private naLista: number[] = [];
+  /** O ajuste de ganho do jogador (1 = sem mexer) e o grafo de envio que o aplica (`null` = faixa crua). */
+  private ganho = 1;
+  private envio: EnvioDeVoz | null = null;
+  /** O vigia da saúde, o último nível lido e se o navegador disse que a faixa parou de receber dado (`mute`). */
+  private readonly vigia = new VigiaDoMic();
+  private nivel = 0;
+  private faixaMuda = false;
+  /** A reabertura automática do microfone (o fone Bluetooth cai e volta): o relógio da próxima tentativa e quantas já foram. */
+  private reabrirTimer: ReturnType<typeof setTimeout> | undefined;
+  private tentativasDeReabrir = 0;
+  private readonly aoMudarOsAparelhos = (): void => {
+    // Plugou o fone ou o Bluetooth voltou: se estamos na voz sem microfone, tenta de novo agora (sem esperar o relógio).
+    if (this.noServidor && !this.fluxo && this.estado === 'sem') {
+      clearTimeout(this.reabrirTimer);
+      this.tentativasDeReabrir = 0;
+      void this.abrirMic();
+    }
+  };
 
   constructor(private readonly o: VozOpcoes) {
     this.spatial = new VoiceSpatial(o.saida);
     this.ambiente = o.ambiente ?? AMBIENTE_DO_NAVEGADOR;
     this.ice = o.ice ?? ICE_PADRAO;
+    (globalThis as { navigator?: Navigator }).navigator?.mediaDevices?.addEventListener?.('devicechange', this.aoMudarOsAparelhos);
   }
 
   // ---------- o que o jogo diz ----------
 
-  /** As configurações do jogador: voz ligada, modo do microfone, volume da voz dos outros e o aparelho do microfone (vazio = o padrão). */
-  configurar(ligada: boolean, modo: ModoMic, volume: number, aparelho = ''): void {
+  /** As configurações do jogador: voz ligada, modo do microfone, volume da voz dos outros, o aparelho do microfone (vazio = o padrão) e o ganho do microfone (1 = sem mexer, até 4). */
+  configurar(ligada: boolean, modo: ModoMic, volume: number, aparelho = '', ganho = 1): void {
     this.mic.setModo(modo);
     this.spatial.setVolume(volume);
+    this.ganho = ganho;
+    this.envio?.setGanho(ganho);
     const trocou = aparelho !== this.aparelho;
     this.aparelho = aparelho;
     if (ligada !== this.ligada) {
@@ -295,6 +328,12 @@ export class VoiceChat {
       transmitindo: this.mic.transmitindo,
       naLista: [...this.naLista],
       ligacoes,
+      ajusteDeGanho: this.ganho,
+      viaWebAudio: this.envio !== null,
+      saude: this.vigia.estado,
+      nivel: this.nivel,
+      faixaMuda: this.faixaMuda,
+      reaberturas: this.tentativasDeReabrir,
     };
   }
 
@@ -303,6 +342,8 @@ export class VoiceChat {
     this.sincronizar();
     this.fecharTodas();
     this.spatial.dispose();
+    clearTimeout(this.reabrirTimer);
+    (globalThis as { navigator?: Navigator }).navigator?.mediaDevices?.removeEventListener?.('devicechange', this.aoMudarOsAparelhos);
   }
 
   // ---------- entrar e sair da voz ----------
@@ -340,29 +381,109 @@ export class VoiceChat {
       }
       this.fluxo = fluxo;
       this.estado = 'ativo';
+      this.tentativasDeReabrir = 0;
+      this.faixaMuda = faixa.muted;
+      // O navegador avisa quando o sistema para de entregar som ao microfone (o fone Bluetooth caiu, o aparelho foi desligado): o HUD diz, e voltando a entregar o aviso some.
+      faixa.addEventListener('mute', () => {
+        if (this.fluxo === fluxo) this.faixaMuda = true;
+      });
+      faixa.addEventListener('unmute', () => {
+        if (this.fluxo === fluxo) this.faixaMuda = false;
+      });
+      // O microfone terminou sozinho (o fone caiu, foi desplugado): solta o que era dele e **tenta de novo** (o Bluetooth costuma voltar em segundos), em vez de deixar a pessoa muda até recarregar.
       faixa.addEventListener('ended', () => {
         if (this.fluxo !== fluxo) return;
-        this.fluxo = null;
-        this.estado = 'sem';
-        this.mic.usar(null);
-        for (const l of this.lista) void l.sender?.replaceTrack(null).catch(() => {});
+        this.largarFluxo();
+        this.agendarReabertura();
       });
       this.mic.usar(faixa);
-      for (const l of this.lista) void l.sender?.replaceTrack(faixa).catch(() => {});
+      this.montarEnvio(faixa);
+      for (const l of this.lista) void this.entregarMic(l);
     } catch (e) {
       if (geracao !== this.geracaoMic) return;
       const nome = (e as { name?: string } | null)?.name;
       this.estado = nome === 'NotAllowedError' || nome === 'SecurityError' ? 'negado' : 'sem';
+      if (this.estado === 'sem') this.agendarReabertura();
     }
   }
 
   private soltarMic(): void {
     this.geracaoMic++;
+    clearTimeout(this.reabrirTimer);
+    this.tentativasDeReabrir = 0;
     if (this.fluxo) for (const t of this.fluxo.getTracks()) t.stop();
+    this.largarFluxo();
+  }
+
+  /** Larga o microfone atual: o fluxo, o grafo de envio e a faixa de cada colega. Quem chama decide se tenta reabrir. */
+  private largarFluxo(): void {
     this.fluxo = null;
     this.estado = 'sem';
+    this.faixaMuda = false;
+    this.nivel = 0;
     this.mic.usar(null);
+    this.envio?.dispose();
+    this.envio = null;
+    this.vigia.reiniciar();
     for (const l of this.lista) void l.sender?.replaceTrack(null).catch(() => {});
+  }
+
+  /** Tenta reabrir o microfone depois de um tempo (1,5 s, 3 s, 6 s, 12 s, 24 s: cinco vezes). Recusa do jogador não se repete; a voz desligada também não. */
+  private agendarReabertura(): void {
+    clearTimeout(this.reabrirTimer);
+    if (!this.noServidor || this.estado === 'negado' || this.tentativasDeReabrir >= 5) return;
+    const espera = 1500 * 2 ** this.tentativasDeReabrir;
+    this.reabrirTimer = setTimeout(() => {
+      if (!this.noServidor || this.fluxo) return;
+      this.tentativasDeReabrir++;
+      void this.abrirMic().then(() => {
+        if (!this.fluxo) this.agendarReabertura();
+      });
+    }, espera);
+  }
+
+  /** Monta o envio por Web Audio (ganho, nível e portas por colega). Se o navegador não deixa, fica a faixa crua. */
+  private montarEnvio(faixa: MediaStreamTrack): void {
+    this.envio?.dispose();
+    this.envio = null;
+    const ctx = this.ambiente.novoContextoDeEnvio?.() ?? null;
+    if (!ctx) return;
+    try {
+      this.envio = new EnvioDeVoz(ctx, faixa, this.ganho);
+    } catch {
+      this.envio = null;
+      try {
+        void ctx.close();
+      } catch {
+        // sem o que fechar
+      }
+    }
+  }
+
+  /** O contexto do envio ficou suspenso (o navegador não deixou tocar áudio sem gesto): volta à faixa crua em vez de mandar silêncio. */
+  private abandonarEnvio(): void {
+    this.envio?.dispose();
+    this.envio = null;
+    const faixa = this.fluxo?.getAudioTracks()[0] ?? null;
+    for (const l of this.lista) void l.sender?.replaceTrack(faixa).catch(() => {});
+  }
+
+  /**
+   * A saúde do microfone (P237): lê o nível (a ~10 Hz, pelo HUD) e diz se ele está bem, entrega só silêncio total há tempo demais, ou se o navegador diz que a faixa parou. Sem o grafo de envio só se
+   * sabe o segundo caso (`mute` da faixa).
+   */
+  saudeDoMic(agora: number): SaudeDoMic {
+    const faixa = this.fluxo?.getAudioTracks()[0];
+    if (!faixa) return 'ok';
+    if (this.envio && !this.envio.funcionando && performance.now() - this.envio.criadoEm > 2500) this.abandonarEnvio();
+    const leitura = this.envio?.ler();
+    this.nivel = leitura ? leitura.rms : 0;
+    return this.vigia.ler(agora, leitura ? leitura.pico : 1, !this.faixaMuda, this.mic.transmitindo);
+  }
+
+  /** O nível do que sai do microfone agora (RMS, 0 a 1, já com o ganho): a barra do HUD. */
+  get nivelDoMic(): number {
+    return this.nivel;
   }
 
   // ---------- as ligações ----------
@@ -426,8 +547,9 @@ export class VoiceChat {
 
   /** Põe o microfone (se já temos) na ligação. */
   private async entregarMic(l: Ligacao): Promise<void> {
-    const faixa = this.fluxo?.getAudioTracks()[0];
-    if (faixa && l.sender) await l.sender.replaceTrack(faixa);
+    const crua = this.fluxo?.getAudioTracks()[0];
+    const faixa = this.envio?.faixaPara(l.id) ?? crua;
+    if (faixa && l.sender) await l.sender.replaceTrack(faixa).catch(() => {});
   }
 
   private nova(id: number): Ligacao {
@@ -452,6 +574,7 @@ export class VoiceChat {
   private falhou(l: Ligacao): void {
     if (this.ligacoes.get(l.id) !== l) return;
     l.estado = 'falhou';
+    this.envio?.soltarPar(l.id);
     this.spatial.remover(l.id);
     try {
       l.pc.close();
@@ -465,6 +588,7 @@ export class VoiceChat {
     if (!l) return;
     this.ligacoes.delete(id);
     this.lista.splice(this.lista.indexOf(l), 1);
+    this.envio?.soltarPar(id);
     this.spatial.remover(id);
     try {
       l.pc.close();

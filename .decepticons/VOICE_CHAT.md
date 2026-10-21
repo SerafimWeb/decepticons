@@ -142,6 +142,20 @@ Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qu
 
 **Limite honesto:** o jogo **não tem servidor de retransmissão (TURN)**: se o roteador ou a rede de um dos lados bloquear a conexão direta, a ligação falha e a conclusão diz isso. Em casa, dois PCs na mesma rede se acham pelo endereço local (medido: menos de 1 s no Brave). **Prova:** `medicoes/voz-diagnostico.mjs` (Chrome real: convidado vê o aviso; dois adultos "Tudo certo"; adulto com convidado na sala conclui a causa) e fotos `arte/voz-aviso-claude.png`, `arte/voz-diagnostico-claude.png`.
 
+## 5g. O microfone que não está bem: ganho, saúde e reabertura (P237 PR 2, 20/10)
+
+**O grafo de envio (`voice/EnvioDeVoz.ts`):** a faixa crua do microfone passa por um grafo de Web Audio **só do chat**, num `AudioContext` próprio (a voz não depende do áudio do jogo): **microfone → ganho → limitador (−3 dB, razão 20) → analisador**, e do limitador sai **uma porta (0 ou 1) por colega** até o destino dele, de onde vem a faixa que o WebRTC manda (`replaceTrack`). Dá o **ganho** (0,5x a 4x), a **leitura do nível** (a barra do HUD e a saúde) e as **portas por colega** (a base dos canais). Se o navegador não monta o grafo, ou o contexto fica suspenso por mais de 2,5 s, o chat volta à faixa crua.
+
+**A saúde (`voice/saudeDoMic.ts`):** `ok`; `sem-som` (microfone aberto entregando zero absoluto por 8 s: mudo no fone, fone fora do modo microfone, aparelho morto); `sem-entrega` (o navegador diz a faixa parada: `mute`). Só julga com o microfone **aberto** (mudo e "segurar para falar" solto não contam). O HUD mostra a frase; o diagnóstico (§ 5f) conclui por ela.
+
+**A reabertura (`VoiceChat`):** a faixa que termina (`ended`: o fone Bluetooth some) larga o grafo e a faixa de cada colega e **tenta de novo** em 1,5, 3, 6, 12 e 24 s; `devicechange` (o fone volta) tenta na hora; recusa do jogador e voz desligada não se repetem. As ligações com os colegas não caem.
+
+**O ganho (Configurações > CHAT DE VOZ):** vale no chat, no teste do microfone (a barra mostra o que o chat vai mandar; com voz captada mas baixa a dica diz "suba o ganho para x2,5") e na narração. Fones Bluetooth em modo mãos-livres (16 kHz) costumam pedir ganho.
+
+**O que NÃO é do jogo:** se o Windows mesmo não recebe som do microfone (o Gravador de Voz também não), o defeito é do fone ou do Bluetooth: botão de mudo ou braço do microfone do fone, escolher a entrada certa (USB ou Hands-Free) em Som > Entrada, e, no Bluetooth, remover o fone e **parear de novo** (o modo mãos-livres trava depois de alternar perfis).
+
+**Prova:** `medicoes/voz-microfone.mjs` (Chrome real, 17 verificações: ganho x3 = +9,5 dB no outro lado, x0,5 = −6,1 dB, microfone derrubado reaberto em 1,6 s, silêncio total acusado aos 8,0 s), `voz.mjs` (26/26 pelo grafo novo), `voz-teste-mic.mjs` (o controle na tela real) e `arte/voz-ganho-claude.png`.
+
 ## 6. O que falta
 
 1. **O ouvido do Comandante:** a bancada prova que o áudio chega e que o volume cai com a distância; **se a voz soa bem** (eco, volume, o alcance de 12 a 160 m) é dele. Os números do alcance são proposta (`ALCANCE_DA_VOZ`).

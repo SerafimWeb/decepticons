@@ -1,15 +1,16 @@
 import type { ModoMic } from './MicController';
+import { barraDoNivel, type SaudeDoMic } from './saudeDoMic';
 import type { VoiceChat } from './VoiceChat';
 
 /** O que o HUD precisa saber do chat de voz (o `VoiceChat` serve; o teste passa um falso). */
-export type VozParaHud = Pick<VoiceChat, 'ativa' | 'estadoMic' | 'ligados' | 'semConexao' | 'colegas' | 'falando' | 'aoBotao'> & { readonly mic: Pick<VoiceChat['mic'], 'mode' | 'mudo' | 'apertada' | 'transmitindo'> };
+export type VozParaHud = Pick<VoiceChat, 'ativa' | 'estadoMic' | 'ligados' | 'semConexao' | 'colegas' | 'falando' | 'aoBotao' | 'saudeDoMic' | 'nivelDoMic'> & { readonly mic: Pick<VoiceChat['mic'], 'mode' | 'mudo' | 'apertada' | 'transmitindo'> };
 
 /**
  * A linha de estado, a partir do que o jogador precisa saber: o microfone está aberto, mudo, pedindo, ou não existe. Texto puro, sem DOM (testável). Cada texto é uma chave do
  * dicionário de idiomas (`public/locales`), com o nome da tecla na lacuna `{0}`: o teste `VoiceHud.test.ts` confere que os seis idiomas têm todas. No **toque** (P209) não há tecla:
  * o texto fala do botão de microfone da tela.
  */
-export function textoDeEstado(v: VozParaHud, tecla: string, toque = false): string {
+export function textoDeEstado(v: VozParaHud, tecla: string, toque = false, saude: SaudeDoMic = 'ok'): string {
   switch (v.estadoMic) {
     case 'pedindo':
       return 'PEDINDO O MICROFONE…';
@@ -18,6 +19,9 @@ export function textoDeEstado(v: VozParaHud, tecla: string, toque = false): stri
     case 'sem':
       return 'SÓ OUVINDO: SEM MICROFONE';
     default: {
+      // O microfone abriu mas o som não chega (o que o Comandante viveu em 20/10, P237): a tela diz, em vez de a pessoa falar sozinha achando que o chat quebrou.
+      if (saude === 'sem-entrega') return 'O NAVEGADOR PAROU DE RECEBER O MICROFONE: CONFIRA O FONE E O WINDOWS';
+      if (saude === 'sem-som') return 'SEM SOM NO MICROFONE: CONFIRA O BOTÃO DE MUDO DO FONE E O WINDOWS';
       const modo: ModoMic = v.mic.mode;
       if (modo === 'ptt') return v.mic.apertada ? 'FALANDO' : toque ? 'SEGURE O BOTÃO PARA FALAR' : `SEGURE [${tecla}] PARA FALAR`;
       if (toque) return v.mic.mudo ? 'MUDO' : 'MICROFONE ABERTO';
@@ -60,6 +64,10 @@ export class VoiceHud {
   private readonly el = document.createElement('div');
   private readonly estado = document.createElement('div');
   private readonly rede = document.createElement('div');
+  /** A barra do nível do seu microfone (P237): se o jogo está recebendo a sua voz, e com que força. */
+  private readonly nivel = document.createElement('div');
+  private readonly nivelBarra = document.createElement('i');
+  private barraAtual = -1;
   private readonly fala = document.createElement('div');
   private readonly botao = document.createElement('button');
   private proximo = 0;
@@ -83,8 +91,12 @@ export class VoiceHud {
     this.el.hidden = true;
     this.estado.className = 'voz-estado';
     this.rede.className = 'voz-rede';
+    this.nivel.className = 'voz-nivel';
+    this.nivel.setAttribute('role', 'meter');
+    this.nivel.setAttribute('aria-label', 'Nível do microfone');
+    this.nivel.append(this.nivelBarra);
     this.fala.className = 'voz-fala';
-    this.el.append(this.estado, this.rede, this.fala);
+    this.el.append(this.estado, this.nivel, this.rede, this.fala);
     parent.append(this.el);
 
     // O botão fica no `body`, depois da camada de toque (`#touch-controls`): o CSS o mostra só ao lado dela e acima dela (z-index), senão a zona de mira engoliria o toque.
@@ -119,12 +131,16 @@ export class VoiceHud {
     if (this.el.hidden === ativa) this.el.hidden = !ativa;
     this.botao.classList.toggle('ativo', ativa);
     if (!ativa) return;
-    const estado = textoDeEstado(this.voz, this.tecla(), this.toque());
+    const saude = this.voz.saudeDoMic(agora);
+    const estado = textoDeEstado(this.voz, this.tecla(), this.toque(), saude);
     if (estado !== this.textoEstado) this.estado.textContent = this.textoEstado = estado;
     const rede = textoDeRede(this.voz, this.foraDaVoz());
     if (rede !== this.textoRede) this.rede.textContent = this.textoRede = rede;
     // O microfone aberto e transmitindo acende; mudo ou sem microfone apaga.
-    const classe = this.voz.mic.transmitindo ? 'voz-hud voz-no-ar' : 'voz-hud';
+    const classe = (this.voz.mic.transmitindo ? 'voz-hud voz-no-ar' : 'voz-hud') + (saude === 'ok' ? '' : ' voz-alerta');
+    // A barra anda de 5 em 5 por cento: o navegador só redesenha quando ela muda de verdade.
+    const barra = this.voz.estadoMic === 'ativo' ? Math.round(barraDoNivel(this.voz.nivelDoMic) / 5) * 5 : 0;
+    if (barra !== this.barraAtual) this.nivelBarra.style.width = `${(this.barraAtual = barra)}%`;
     if (classe !== this.classe) this.el.className = this.classe = classe;
     const eb = estadoDoBotao(this.voz);
     if (eb !== this.estadoBotao) {

@@ -41,6 +41,8 @@ export class GameRecorder {
   private fonteMic: MediaStreamAudioSourceNode | null = null;
   /** O efeito na voz (P231), entre o microfone e a mistura da gravação; `null` = a voz vai pura. */
   private cadeia: CadeiaDeVoz | null = null;
+  /** O ganho do microfone (P237), só quando o jogador mexeu nele. */
+  private ganhoMic: GainNode | null = null;
   private microfone: MediaStream | null = null;
   private aviso: HTMLElement | null = null;
   private avisoTimer: ReturnType<typeof setTimeout> | undefined;
@@ -56,7 +58,7 @@ export class GameRecorder {
 
   /** Liga/desliga (a mesma tecla faz as duas coisas). Sem suporte do navegador, não faz nada — silencioso,
    * como o resto do jogo trata recurso ausente. */
-  alternar(microfone: MediaStream | null = null, efeito: FabricaDeCadeiaDeVoz | null = null): void {
+  alternar(microfone: MediaStream | null = null, efeito: FabricaDeCadeiaDeVoz | null = null, ganho = 1): void {
     if (this.gravando) {
       soltarMicrofone(microfone); // um microfone que chegou tarde (o pedido de permissão demorou) não fica aberto
       void this.parar();
@@ -68,7 +70,7 @@ export class GameRecorder {
       this.avisar('NARRAÇÃO: o áudio do jogo ainda não começou. Clique no jogo e tente de novo.');
       return;
     }
-    this.iniciar(microfone, efeito);
+    this.iniciar(microfone, efeito, ganho);
     if (!this.gravando) soltarMicrofone(microfone); // sem suporte: o microfone aberto à toa é solto na hora
   }
 
@@ -95,7 +97,7 @@ export class GameRecorder {
     this.videoTrack?.requestFrame();
   }
 
-  private iniciar(microfone: MediaStream | null, efeito: FabricaDeCadeiaDeVoz | null): void {
+  private iniciar(microfone: MediaStream | null, efeito: FabricaDeCadeiaDeVoz | null, ganho: number): void {
     if (this.gravando) return;
     if (typeof this.canvas.captureStream !== 'function' || typeof MediaRecorder === 'undefined') return;
     const mime = melhorFormato();
@@ -116,11 +118,19 @@ export class GameRecorder {
         this.fonteMic = ctx.createMediaStreamSource(microfone);
         // O efeito entra entre o microfone e a mistura; se ele falhar ao montar, a voz vai pura (um take sem efeito vale mais que um take perdido).
         this.cadeia = montarCadeia(efeito, ctx);
+        // O ganho do jogador (P237) entra antes do efeito; no 1 (o padrão) nem cria o nó.
+        let voz: AudioNode = this.fonteMic;
+        if (ganho !== 1) {
+          this.ganhoMic = ctx.createGain();
+          this.ganhoMic.gain.value = ganho;
+          this.fonteMic.connect(this.ganhoMic);
+          voz = this.ganhoMic;
+        }
         if (this.cadeia) {
-          this.fonteMic.connect(this.cadeia.entrada);
+          voz.connect(this.cadeia.entrada);
           this.cadeia.saida.connect(this.audioDest);
         } else {
-          this.fonteMic.connect(this.audioDest);
+          voz.connect(this.audioDest);
         }
         this.microfone = microfone;
       }
@@ -185,6 +195,14 @@ export class GameRecorder {
   private limparAudioDest(): void {
     this.cadeia?.desligar();
     this.cadeia = null;
+    if (this.ganhoMic) {
+      try {
+        this.ganhoMic.disconnect();
+      } catch {
+        // já desconectado
+      }
+      this.ganhoMic = null;
+    }
     if (this.fonteMic) {
       try {
         this.fonteMic.disconnect();
