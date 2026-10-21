@@ -1431,9 +1431,16 @@ export class Game {
     try {
       const [{ VoiceChat }, { VoiceHud }, { anexarMudo }] = await Promise.all([import('../voice/VoiceChat'), import('../voice/VoiceHud'), import('../voice/MudoNaRede')]);
       this.anexarMudo = anexarMudo;
-      const voz = new VoiceChat({ enviar: (bytes) => this.online?.enviarVoz(bytes), saida: () => this.audio.output, token: () => this.sessao?.tokenDaVoz() ?? null });
-      voz.ligarTeclas(() => this.settings.value.keys.ptt);
-      this.vozHud = new VoiceHud(document.getElementById('hud')!, voz, (id) => this.online?.nomeDe(id), () => keyLabel(this.settings.value.keys.ptt), () => this.input.touchMode, () => Math.max(0, (this.online?.pilotos().length ?? 0) - voz.colegas));
+      // `timeDe`: as salas online ainda não têm times (o servidor não os atribui), então o canal "time" fica fechado até o contrato de rede com o time de cada piloto (P237 PR 3).
+      const voz = new VoiceChat({ enviar: (bytes) => this.online?.enviarVoz(bytes), saida: () => this.audio.output, token: () => this.sessao?.tokenDaVoz() ?? null, timeDe: () => null });
+      voz.ligarTeclas(
+        () => this.settings.value.keys.ptt,
+        () => ({ time: this.settings.value.keys.pttTime, privado: this.settings.value.keys.pttPrivado, alvo: this.settings.value.keys.alvoPrivado }),
+      );
+      this.vozHud = new VoiceHud(document.getElementById('hud')!, voz, (id) => this.online?.nomeDe(id), () => keyLabel(this.settings.value.keys.ptt), () => this.input.touchMode, () => Math.max(0, (this.online?.pilotos().length ?? 0) - voz.colegas), () => {
+        const k = this.settings.value.keys;
+        return { time: keyLabel(k.pttTime), privado: keyLabel(k.pttPrivado), alvo: keyLabel(k.alvoPrivado) };
+      });
       this.voz = voz;
       this.aplicarVoz(this.settings.value);
       if (this.vozId !== null) voz.entrouNaSala(this.vozId);

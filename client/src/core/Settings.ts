@@ -8,7 +8,7 @@ import { NARRACOES, type Narracao } from '../audio/falas';
 import { BOT_NAMES, NAME_MAX } from './botNames';
 
 /** Ações do teclado que o jogador pode trocar. O valor é `KeyboardEvent.code` (posição física). */
-export type KeyAction = 'forward' | 'back' | 'left' | 'right' | 'jump' | 'dash' | 'secondary' | 'camera' | 'shield' | 'ptt';
+export type KeyAction = 'forward' | 'back' | 'left' | 'right' | 'jump' | 'dash' | 'secondary' | 'camera' | 'shield' | 'ptt' | 'pttTime' | 'pttPrivado' | 'alvoPrivado';
 /** Como o microfone do chat de voz abre (`voice/MicController.ts`): aberto (a tecla alterna o mudo) ou só enquanto a tecla está apertada. */
 export type VoiceMode = 'sempre' | 'ptt';
 /** O efeito na voz de quem narra e no teste do microfone (P231, `voice/EfeitosDeVoz.ts`): `normal` = sem efeito. */
@@ -146,6 +146,10 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
     shield: 'Control',
     camera: 'KeyV',
     ptt: 'KeyT',
+    // Os canais da voz (P237 PR 3): segurar para falar só com o time, segurar para falar só com o jogador escolhido, e trocar o jogador escolhido.
+    pttTime: 'KeyY',
+    pttPrivado: 'KeyU',
+    alvoPrivado: 'KeyG',
   }),
 });
 
@@ -161,6 +165,9 @@ export const KEY_ACTIONS: readonly { action: KeyAction; label: string }[] = [
   { action: 'camera', label: 'Trocar câmera' },
   { action: 'shield', label: 'Escudo: ligar/desligar' },
   { action: 'ptt', label: 'Chat de voz: falar / mudo' },
+  { action: 'pttTime', label: 'Chat de voz: falar só com o time' },
+  { action: 'pttPrivado', label: 'Chat de voz: falar só com o jogador escolhido' },
+  { action: 'alvoPrivado', label: 'Chat de voz: trocar o jogador escolhido' },
 ];
 
 export const QUALITY_LABELS: Record<QualityPreset, string> = {

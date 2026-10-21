@@ -156,6 +156,16 @@ Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qu
 
 **Prova:** `medicoes/voz-microfone.mjs` (Chrome real, 17 verificações: ganho x3 = +9,5 dB no outro lado, x0,5 = −6,1 dB, microfone derrubado reaberto em 1,6 s, silêncio total acusado aos 8,0 s), `voz.mjs` (26/26 pelo grafo novo), `voz-teste-mic.mjs` (o controle na tela real) e `arte/voz-ganho-claude.png`.
 
+## 5h. Canais de voz: todos / time / jogador escolhido (P237 PR 3, 21/10)
+
+**Como se usa:** **T** fala com todos (aberto, ou segurar, como sempre); segurar **Y** fala só com o **time**; segurar **U** fala só com o **jogador escolhido**; **G** troca o escolhido entre os colegas na voz (com um só colega ele já é o alvo). As três teclas se remapeiam em Configurações > CONTROLES. O HUD mostra "CANAIS [Y] TIME · [U] BRAVO · [G] TROCAR" e, enquanto se fala num canal, "FALANDO SÓ PARA O TIME" ou "FALANDO SÓ PARA BRAVO" (borda azul ou magenta). Apertar uma tecla de canal vale mesmo com o microfone mudo; soltar volta ao estado de antes.
+
+**Como funciona (`voice/canais.ts`, `VoiceChat`, `EnvioDeVoz`):** o canal é o que está apertado agora (`canalDe`: privado > time > todos). `permite(canal, colega, regras)` diz se um colega ouve; o `VoiceChat` abre ou fecha a **porta** de cada colega no `EnvioDeVoz` (instantâneo, sem renegociar). **Falha fechada:** sala sem times, eu sem time, ou jogador escolhido que saiu = a tecla do canal não fala com ninguém; sem o envio por Web Audio as teclas de canal não fazem nada; a porta de um colega que chega no meio da fala nasce no estado do canal de agora; a tecla de canal presa quando o microfone cai é solta.
+
+**O que falta: o time de cada piloto na sala online.** O servidor não atribui times (o `ArenaRoom` nem os cita; `setTeam` só existe na simulação, para o CTF e a Arena offline). `VozOpcoes.timeDe` já espera a resposta; hoje devolve `null`, e o HUD diz "SALA SEM TIMES: NINGUÉM OUVE O CANAL DO TIME". É um contrato de rede (o roster com o time de cada piloto) da frente do CTF online. **Limite honesto:** quem fala decide quem ouve (o servidor só decide quem entra na voz); quem recebe não vê que foi um sussurro; a lista da REDE (`tela:chat`) não tem botão de alvo.
+
+**Prova:** `medicoes/voz-canais.mjs` (Chrome real, 5 navegadores, 12 verificações: o escolhido recebe 0,346 e os outros 0,0000; sala sem times, ninguém; colega que entra no meio do sussurro, 0,0000), `voz-diagnostico.mjs` (o HUD e a aba CONTROLES no jogo real) e as fotos `arte/voz-canais-claude.png` e `arte/voz-canais-teclas-claude.png`.
+
 ## 6. O que falta
 
 1. **O ouvido do Comandante:** a bancada prova que o áudio chega e que o volume cai com a distância; **se a voz soa bem** (eco, volume, o alcance de 12 a 160 m) é dele. Os números do alcance são proposta (`ALCANCE_DA_VOZ`).

@@ -3,7 +3,7 @@ import { barraDoNivel, type SaudeDoMic } from './saudeDoMic';
 import type { VoiceChat } from './VoiceChat';
 
 /** O que o HUD precisa saber do chat de voz (o `VoiceChat` serve; o teste passa um falso). */
-export type VozParaHud = Pick<VoiceChat, 'ativa' | 'estadoMic' | 'ligados' | 'semConexao' | 'colegas' | 'falando' | 'aoBotao' | 'saudeDoMic' | 'nivelDoMic'> & { readonly mic: Pick<VoiceChat['mic'], 'mode' | 'mudo' | 'apertada' | 'transmitindo'> };
+export type VozParaHud = Pick<VoiceChat, 'ativa' | 'estadoMic' | 'ligados' | 'semConexao' | 'colegas' | 'falando' | 'aoBotao' | 'saudeDoMic' | 'nivelDoMic' | 'canal' | 'alvo' | 'temTimes' | 'canaisDisponiveis'> & { readonly mic: Pick<VoiceChat['mic'], 'mode' | 'mudo' | 'apertada' | 'transmitindo'> };
 
 /**
  * A linha de estado, a partir do que o jogador precisa saber: o microfone está aberto, mudo, pedindo, ou não existe. Texto puro, sem DOM (testável). Cada texto é uma chave do
@@ -41,6 +41,17 @@ export function textoDeRede(v: VozParaHud, foraDaVoz = 0): string {
   return foraDaVoz > 0 ? `${foraDaVoz} NA SALA SEM VOZ` : '';
 }
 
+/**
+ * A linha dos canais (P237 PR 3): enquanto se fala só com o time ou só com um jogador, diz com quem; no resto do tempo, com colegas na voz, lembra as teclas ("CANAIS [Y] TIME · [U] BRAVO · [G] TROCAR").
+ * Sala sem times: a tecla do time não fala com ninguém, e a linha diz isso (falha fechada). `nomeDoAlvo` é o nome do jogador do canal privado (`undefined` = ninguém escolhido).
+ */
+export function textoDeCanal(v: VozParaHud, nomeDoAlvo: string | undefined, teclas: { time: string; privado: string; alvo: string }): string {
+  if (v.canal === 'time') return v.temTimes ? 'FALANDO SÓ PARA O TIME' : 'SALA SEM TIMES: NINGUÉM OUVE O CANAL DO TIME';
+  if (v.canal === 'privado') return nomeDoAlvo ? `FALANDO SÓ PARA ${nomeDoAlvo}` : `SEM JOGADOR ESCOLHIDO: [${teclas.alvo}] ESCOLHE`;
+  if (!v.canaisDisponiveis || v.colegas === 0) return '';
+  return `CANAIS [${teclas.time}] TIME · [${teclas.privado}] ${nomeDoAlvo ?? '—'} · [${teclas.alvo}] TROCAR`;
+}
+
 /** O estado do botão de microfone da tela de toque: no ar (transmitindo), mudo, em espera (o "segurar" solto), pedindo o microfone ao navegador, ou sem microfone. */
 export type EstadoDoBotao = 'no-ar' | 'mudo' | 'espera' | 'pedindo' | 'sem';
 
@@ -66,6 +77,9 @@ export class VoiceHud {
   private readonly rede = document.createElement('div');
   /** A barra do nível do seu microfone (P237): se o jogo está recebendo a sua voz, e com que força. */
   private readonly nivel = document.createElement('div');
+  /** A linha dos canais (P237 PR 3). */
+  private readonly canal = document.createElement('div');
+  private textoCanal = '';
   private readonly nivelBarra = document.createElement('i');
   private barraAtual = -1;
   private readonly fala = document.createElement('div');
@@ -86,17 +100,20 @@ export class VoiceHud {
     private readonly toque: () => boolean = () => false,
     /** Quantas pessoas da sala estão fora da voz (o jogo conta: pilotos menos os que estão na voz comigo). */
     private readonly foraDaVoz: () => number = () => 0,
+    /** As teclas dos canais, como o jogador as vê (P237 PR 3). */
+    private readonly teclasDeCanal: () => { time: string; privado: string; alvo: string } = () => ({ time: 'Y', privado: 'U', alvo: 'G' }),
   ) {
     this.el.className = 'voz-hud';
     this.el.hidden = true;
     this.estado.className = 'voz-estado';
     this.rede.className = 'voz-rede';
     this.nivel.className = 'voz-nivel';
+    this.canal.className = 'voz-canal';
     this.nivel.setAttribute('role', 'meter');
     this.nivel.setAttribute('aria-label', 'Nível do microfone');
     this.nivel.append(this.nivelBarra);
     this.fala.className = 'voz-fala';
-    this.el.append(this.estado, this.nivel, this.rede, this.fala);
+    this.el.append(this.estado, this.nivel, this.canal, this.rede, this.fala);
     parent.append(this.el);
 
     // O botão fica no `body`, depois da camada de toque (`#touch-controls`): o CSS o mostra só ao lado dela e acima dela (z-index), senão a zona de mira engoliria o toque.
@@ -137,7 +154,10 @@ export class VoiceHud {
     const rede = textoDeRede(this.voz, this.foraDaVoz());
     if (rede !== this.textoRede) this.rede.textContent = this.textoRede = rede;
     // O microfone aberto e transmitindo acende; mudo ou sem microfone apaga.
-    const classe = (this.voz.mic.transmitindo ? 'voz-hud voz-no-ar' : 'voz-hud') + (saude === 'ok' ? '' : ' voz-alerta');
+    const alvo = this.voz.alvo;
+    const canal = textoDeCanal(this.voz, alvo === null ? undefined : (this.nomeDe(alvo) ?? `#${alvo}`), this.teclasDeCanal());
+    if (canal !== this.textoCanal) this.canal.textContent = this.textoCanal = canal;
+    const classe = (this.voz.mic.transmitindo ? 'voz-hud voz-no-ar' : 'voz-hud') + (saude === 'ok' ? '' : ' voz-alerta') + (this.voz.canal === 'time' ? ' voz-no-time' : this.voz.canal === 'privado' ? ' voz-no-privado' : '');
     // A barra anda de 5 em 5 por cento: o navegador só redesenha quando ela muda de verdade.
     const barra = this.voz.estadoMic === 'ativo' ? Math.round(barraDoNivel(this.voz.nivelDoMic) / 5) * 5 : 0;
     if (barra !== this.barraAtual) this.nivelBarra.style.width = `${(this.barraAtual = barra)}%`;

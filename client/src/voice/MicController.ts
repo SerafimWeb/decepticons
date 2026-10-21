@@ -1,3 +1,5 @@
+import { type Canal, canalDe } from './canais';
+
 /** Como o microfone abre: `sempre` (aberto, a tecla alterna o mudo) ou `ptt` (só enquanto a tecla está apertada). */
 export type ModoMic = 'sempre' | 'ptt';
 
@@ -19,17 +21,23 @@ export class MicController {
   mudo = false;
   /** A tecla do PTT está apertada agora. */
   apertada = false;
+  /** As teclas dos canais (P237): "só o time" e "só o jogador escolhido" apertadas agora. Valem mesmo com o microfone mudo (apertar é pedir para falar). */
+  time = false;
+  privado = false;
   private faixa: FaixaMic | null = null;
 
   /** Liga a faixa do microfone (ou tira, com `null`) e acerta o estado dela. */
   usar(faixa: FaixaMic | null): void {
     this.faixa = faixa;
+    // Sem microfone as teclas de canal não podem ficar "apertadas" para sempre (o soltar da tecla se perde): ao voltar o microfone ninguém fala sem apertar de novo.
+    if (!faixa) this.soltarCanais();
     this.aplicar();
   }
 
   setModo(modo: ModoMic): void {
     this.mode = modo;
     this.apertada = false;
+    this.soltarCanais();
     this.aplicar();
   }
 
@@ -40,10 +48,33 @@ export class MicController {
     this.aplicar();
   }
 
-  /** A janela perdeu o foco: o PTT não pode ficar preso aberto. */
+  /** A tecla de um canal (P237): `down` ao apertar, `false` ao soltar. */
+  aoTeclaCanal(canal: 'time' | 'privado', down: boolean): void {
+    if (canal === 'time') this.time = down;
+    else this.privado = down;
+    this.aplicar();
+  }
+
+  private soltarCanais(): void {
+    this.time = false;
+    this.privado = false;
+  }
+
+  /** A janela perdeu o foco: o PTT e as teclas dos canais não podem ficar presos abertos. */
   soltar(): void {
     this.apertada = false;
+    this.soltarCanais();
     this.aplicar();
+  }
+
+  /** A voz está aberta para **todos** pelo modo de sempre (aberto e sem mudo, ou o PTT apertado)? */
+  private get abertoParaTodos(): boolean {
+    return this.mode === 'sempre' ? !this.mudo : this.apertada;
+  }
+
+  /** O canal em que o microfone fala agora, ou `null` se está calado. */
+  get canal(): Canal | null {
+    return this.faixa === null ? null : canalDe(this.abertoParaTodos, this.time, this.privado);
   }
 
   get temMic(): boolean {
@@ -52,7 +83,7 @@ export class MicController {
 
   /** Está mandando voz agora? */
   get transmitindo(): boolean {
-    return this.faixa !== null && (this.mode === 'sempre' ? !this.mudo : this.apertada);
+    return this.faixa !== null && (this.time || this.privado || this.abertoParaTodos);
   }
 
   private aplicar(): void {

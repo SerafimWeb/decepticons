@@ -24,6 +24,10 @@ const voz = (o: Partial<DiagnosticoDaVoz> = {}): DiagnosticoDaVoz => ({
   nivel: 0.04,
   faixaMuda: false,
   reaberturas: 0,
+  canal: 'todos',
+  alvoPrivado: null,
+  temTimes: false,
+  canaisDisponiveis: true,
   ...o,
 });
 const entrada = (o: Partial<EntradaDoDiagnostico> = {}): EntradaDoDiagnostico => ({
@@ -128,6 +132,21 @@ describe('formatarDiagnostico (P237): o relatório que o jogador copia e cola', 
     expect(texto).toContain('reaberturas automáticas: 3');
     expect(formatarDiagnostico(entrada({ voz: voz({ viaWebAudio: false }) }))).toContain('faixa crua do navegador');
     expect(formatarDiagnostico(entrada())).not.toContain('reaberturas automáticas');
+  });
+
+  it('mostra os canais: em qual fala, o jogador escolhido (pelo nome), se a sala tem times e se os canais funcionam', () => {
+    const base = formatarDiagnostico(entrada());
+    expect(base).toContain('canais: falando para todos');
+    expect(base).toContain('jogador escolhido: ninguém');
+    expect(base).toContain('a sala NÃO tem times (o canal do time fica fechado)');
+    expect(base).toContain('canais disponíveis');
+    const privado = formatarDiagnostico(entrada({ voz: voz({ canal: 'privado', alvoPrivado: 3, temTimes: true }) }));
+    expect(privado).toContain('falando só para o jogador escolhido');
+    expect(privado).toContain('jogador escolhido: BRAVO');
+    expect(privado).toContain('a sala tem times');
+    expect(formatarDiagnostico(entrada({ voz: voz({ canal: 'time' }) }))).toContain('falando só para o time');
+    expect(formatarDiagnostico(entrada({ voz: voz({ canal: null }) }))).toContain('falando em nenhum (calado)');
+    expect(formatarDiagnostico(entrada({ voz: voz({ canaisDisponiveis: false }) }))).toContain('INDISPONÍVEIS (sem o envio por Web Audio)');
   });
 
   it('o nível de entrada só aparece quando o navegador o deu', () => {

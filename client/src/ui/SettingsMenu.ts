@@ -82,6 +82,9 @@ export class SettingsMenu {
       camera: $('key-camera') as HTMLButtonElement,
       shield: $('key-shield') as HTMLButtonElement,
       ptt: $('key-ptt') as HTMLButtonElement,
+      pttTime: $('key-ptt-time') as HTMLButtonElement,
+      pttPrivado: $('key-ptt-privado') as HTMLButtonElement,
+      alvoPrivado: $('key-alvo-privado') as HTMLButtonElement,
     };
 
     this.tabs = attachSettingsTabs(this.modal);

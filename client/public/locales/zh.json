@@ -983,5 +983,13 @@
  "O NAVEGADOR PAROU DE RECEBER O MICROFONE: CONFIRA O FONE E O WINDOWS": "浏览器不再接收麦克风：请检查耳机和 Windows",
  "Ganho do microfone": "麦克风增益",
  "Sobe a sua voz para quem escuta, no teste e na gravação. Fones Bluetooth costumam pedir ganho; o teste do microfone sugere um valor.": "让听你说话的人听得更清楚，对测试和录制都有效。蓝牙耳机通常需要增益；麦克风测试会建议一个数值。",
- "Voz baixa: suba o ganho do microfone para x{0}.": "声音太小：请将麦克风增益提高到 x{0}。"
+ "Voz baixa: suba o ganho do microfone para x{0}.": "声音太小：请将麦克风增益提高到 x{0}。",
+ "FALANDO SÓ PARA O TIME": "仅对队伍说话",
+ "SALA SEM TIMES: NINGUÉM OUVE O CANAL DO TIME": "房间没有队伍：没有人能听到队伍频道",
+ "FALANDO SÓ PARA {0}": "仅对 {0} 说话",
+ "SEM JOGADOR ESCOLHIDO: [{0}] ESCOLHE": "未选择玩家：按 [{0}] 选择",
+ "CANAIS [{0}] TIME · [{1}] {2} · [{3}] TROCAR": "频道 [{0}] 队伍 · [{1}] {2} · [{3}] 切换",
+ "Chat de voz: falar só com o time": "语音聊天：仅对队伍说话",
+ "Chat de voz: falar só com o jogador escolhido": "语音聊天：仅对所选玩家说话",
+ "Chat de voz: trocar o jogador escolhido": "语音聊天：切换所选玩家"
 }

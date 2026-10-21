@@ -4596,6 +4596,13 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .voz-hud.voz-alerta { color: var(--warn); border-left-color: var(--warn); }
 .voz-hud.voz-alerta .voz-nivel i { background: var(--warn); }
 .voz-aviso-ganho { color: var(--accent); }
+/* A linha dos canais (P237 PR 3): as teclas em cinza; falando só com o time (azul) ou só com um jogador (magenta), a linha e a borda acendem. */
+.voz-canal { color: var(--muted); font-size: 10px; letter-spacing: 1px; }
+.voz-canal:empty { display: none; }
+.voz-hud.voz-no-time { border-left-color: #4aa3ff; }
+.voz-hud.voz-no-time .voz-canal { color: #4aa3ff; }
+.voz-hud.voz-no-privado { border-left-color: #ff4fd8; }
+.voz-hud.voz-no-privado .voz-canal { color: #ff4fd8; }
 .voz-aviso-ganho:empty { display: none; }
 /* O aviso de por que a voz não está ligada (P237): no mesmo canto do indicador, em aviso, e só aparece numa sala com outras pessoas. */
 .voz-hud.voz-aviso { color: var(--warn); border-left-color: var(--warn); }

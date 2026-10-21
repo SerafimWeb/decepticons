@@ -9,6 +9,7 @@ import {
   KEY_ACTIONS,
   LIMITS,
   MIN_CALIBRATION_COUNTS,
+  RESERVED_KEYS,
   sanitizeSettings,
   sensitivityForCm360,
   Settings,
@@ -213,6 +214,21 @@ describe('mira e brilho (dono, 11/10: "a mira está grossa e os tiros geram muit
 });
 
 describe('Settings: o chat de voz (P205)', () => {
+  it('as teclas dos canais da voz (P237 PR 3): padrões Y, U e G, todas remapeáveis, e nenhuma repete outra ação nem uma tecla reservada', () => {
+    expect(DEFAULT_SETTINGS.keys.pttTime).toBe('KeyY');
+    expect(DEFAULT_SETTINGS.keys.pttPrivado).toBe('KeyU');
+    expect(DEFAULT_SETTINGS.keys.alvoPrivado).toBe('KeyG');
+    expect(KEY_ACTIONS.map((k) => k.action)).toEqual(expect.arrayContaining(['pttTime', 'pttPrivado', 'alvoPrivado']));
+    const padroes = Object.values(DEFAULT_SETTINGS.keys);
+    expect(new Set(padroes).size, 'duas ações com a mesma tecla padrão').toBe(padroes.length);
+    for (const reservada of RESERVED_KEYS) expect(padroes).not.toContain(reservada);
+    const st = new Settings(memoryStorage());
+    st.update({ keys: { ...st.value.keys, pttTime: 'KeyF' } });
+    expect(st.value.keys.pttTime).toBe('KeyF');
+    expect(new Settings(memoryStorage('{"keys": {"pttPrivado": "Escape"}}')).value.keys.pttPrivado, 'tecla reservada volta ao padrão').toBe('KeyU');
+    expect(new Settings(memoryStorage('{"keys": {"alvoPrivado": 5}}')).value.keys.alvoPrivado, 'lixo volta ao padrão').toBe('KeyG');
+  });
+
   it('o padrão: voz ligada, microfone sempre aberto, 80% de volume e a tecla T', () => {
     expect(DEFAULT_SETTINGS).toMatchObject({ voiceOn: true, voiceMode: 'sempre', voiceVolume: 0.8 });
     expect(DEFAULT_SETTINGS.keys.ptt).toBe('KeyT');

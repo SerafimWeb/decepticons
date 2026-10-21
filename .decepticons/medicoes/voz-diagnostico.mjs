@@ -9,6 +9,7 @@ import { apontarJogoPara, gerarWav, guardarSessao, tokenDeConta } from './vozLib
  *  A. CONVIDADO numa sala com um adulto na voz: aviso no canto da tela com o motivo; sem indicador de voz; sem pedir o microfone;
  *  B. ADULTO + colega adulto: ligados; o diagnóstico mostra a ligação, a rota de rede e conclui "Tudo certo";
  *  C. ADULTO + colega CONVIDADO (o caso do Comandante): o HUD diz "n na sala sem voz" e o diagnóstico conclui que a outra pessoa precisa de conta de maior de 18 anos.
+ *  B (P237 PR 3): os canais no jogo real: o HUD lembra as teclas, segurar U diz "FALANDO SÓ PARA BRAVO", segurar Y numa sala sem times diz que ninguém ouve, e a aba CONTROLES tem as três teclas novas.
  * É a versão focada da `voz-idade.mjs` (que prova o portão de idade inteiro): cabe na folga de memória da máquina compartilhada.
  *
  *   node .decepticons/medicoes/voz-diagnostico.mjs     # sai com 1 se algo falhar; fotos em arte/voz-aviso-claude.png e arte/voz-diagnostico-claude.png
@@ -137,7 +138,32 @@ try {
   conferir('B. ADULTO: o indicador de voz aparece com o microfone aberto', !!ligou);
   const tB = await tela(adulto);
   conferir('B. ADULTO na voz: nenhum aviso de "sem voz" (a voz está ligada)', tB.aviso === '', tB.aviso);
+  // ---- os canais (P237 PR 3) no jogo de verdade: o HUD lembra as teclas e diz com quem se fala
+  const linhaCanal = () => adulto.evaluate(() => document.querySelector('.voz-canal')?.textContent ?? '');
+  const lembra = await ate(async () => (await linhaCanal()).includes('CANAIS [Y] TIME'), 60_000);
+  conferir('B. o HUD lembra os canais com as teclas e o único colega como alvo: "CANAIS [Y] TIME · [U] BRAVO · [G] TROCAR"', !!lembra && (await linhaCanal()).includes('[U] BRAVO') && (await linhaCanal()).includes('[G] TROCAR'), await linhaCanal());
+  await adulto.keyboard.down('KeyU');
+  const sussurra = await ate(async () => (await linhaCanal()) === 'FALANDO SÓ PARA BRAVO', 15_000);
+  const classeU = await adulto.evaluate(() => document.querySelector('.voz-hud:not(.voz-aviso)')?.className ?? '');
+  conferir('B. segurando U o HUD diz "FALANDO SÓ PARA BRAVO" e acende a borda do privado', !!sussurra && classeU.includes('voz-no-privado'), `${await linhaCanal()} | ${classeU}`);
+  await adulto.screenshot({ path: resolve(ARTE, 'voz-canais-claude.png') });
+  await adulto.keyboard.up('KeyU');
+  await adulto.keyboard.down('KeyY');
+  const semTimes = await ate(async () => (await linhaCanal()).includes('SALA SEM TIMES'), 15_000);
+  conferir('B. segurando Y numa sala sem times o HUD diz que ninguém ouve o canal do time (falha fechada)', !!semTimes, await linhaCanal());
+  await adulto.keyboard.up('KeyY');
+  const volta = await ate(async () => (await linhaCanal()).startsWith('CANAIS'), 15_000);
+  conferir('B. soltando as teclas a linha volta a lembrar os canais', !!volta, await linhaCanal());
   await abrirConfiguracoes(adulto);
+  await adulto.evaluate(() => document.querySelector('.settings-tab[data-tab="controles"]')?.click());
+  await adulto.waitForTimeout(400);
+  const linhasDeTecla = await adulto.evaluate(() => ({ time: document.getElementById('key-ptt-time')?.textContent, privado: document.getElementById('key-ptt-privado')?.textContent, alvo: document.getElementById('key-alvo-privado')?.textContent }));
+  conferir('B. a aba CONTROLES tem as três teclas novas: [ Y ] time, [ U ] jogador escolhido, [ G ] trocar o jogador', linhasDeTecla.time === '[ Y ]' && linhasDeTecla.privado === '[ U ]' && linhasDeTecla.alvo === '[ G ]', JSON.stringify(linhasDeTecla));
+  await adulto.evaluate(() => document.getElementById('key-ptt-time')?.scrollIntoView({ block: 'center' }));
+  await adulto.waitForTimeout(300);
+  await adulto.screenshot({ path: resolve(ARTE, 'voz-canais-teclas-claude.png') });
+  await adulto.evaluate(() => document.querySelector('.settings-tab[data-tab="graficos"]')?.click());
+  await adulto.waitForTimeout(300);
   await ate(() => adulto.evaluate(() => !document.getElementById('voz-controles').hidden), 90_000);
   const bom = await relatorio(adulto, (txt) => txt.includes('CONCLUSÃO: Tudo certo'));
   conferir('B. o diagnóstico mostra a ligação com BRAVO, a rota de rede e conclui "Tudo certo"', !!bom && bom.includes('BRAVO: conectada') && /rota (host|srflx|relay)/.test(bom), (bom ?? (await adulto.evaluate(() => document.getElementById('voz-diag').textContent))).replace(/\n/g, ' | ').slice(0, 420));

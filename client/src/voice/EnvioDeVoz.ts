@@ -51,12 +51,12 @@ export class EnvioDeVoz {
     this.ganho.gain.value = g;
   }
 
-  /** A faixa que vai a um colega (cria a porta dele na primeira vez). A porta nasce aberta. */
-  faixaPara(id: number): MediaStreamTrack | null {
+  /** A faixa que vai a um colega (cria a porta dele na primeira vez). `aberta` é o estado em que a porta **nasce**: um colega que chega no meio de uma fala só para o time nasce com a porta fechada. */
+  faixaPara(id: number, aberta = true): MediaStreamTrack | null {
     let p = this.pares.get(id);
     if (!p) {
       const porta = this.ctx.createGain();
-      porta.gain.value = 1;
+      porta.gain.value = aberta ? 1 : 0;
       const destino = this.ctx.createMediaStreamDestination();
       this.limitador.connect(porta);
       porta.connect(destino);

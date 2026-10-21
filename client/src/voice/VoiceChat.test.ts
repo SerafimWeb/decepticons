@@ -82,7 +82,7 @@ const fluxoComFaixa = () => {
 };
 
 /** Quem manda o quê: o teste lê as mensagens que o chat mandou ao servidor. */
-function montar(opts: { saida?: boolean; token?: string | null; envio?: { ctx: unknown } } = {}) {
+function montar(opts: { saida?: boolean; token?: string | null; envio?: { ctx: unknown }; timeDe?: (id: number) => number | null } = {}) {
   let token: string | null | undefined = opts.token;
   const enviadas: Uint8Array[] = [];
   let resolverMic!: (f: MediaStream) => void;
@@ -100,7 +100,7 @@ function montar(opts: { saida?: boolean; token?: string | null; envio?: { ctx: u
       });
     },
   };
-  const chat = new VoiceChat({ enviar: (b) => enviadas.push(b), saida: () => (opts.saida ? ({} as never) : null), ambiente, ...(token === undefined ? {} : { token: () => token ?? null }) });
+  const chat = new VoiceChat({ enviar: (b) => enviadas.push(b), saida: () => (opts.saida ? ({} as never) : null), ambiente, ...(token === undefined ? {} : { token: () => token ?? null }), ...(opts.timeDe ? { timeDe: opts.timeDe } : {}) });
   return {
     chat,
     enviadas,
@@ -1126,5 +1126,281 @@ describe('VoiceChat: o envio por Web Audio, a saúde e a reabertura do microfone
     aparelhos.emitir('devicechange');
     await andar();
     expect(t.pedidos.n).toBe(2);
+  });
+});
+
+describe('VoiceChat: os canais todos / time / jogador escolhido (P237 PR 3)', () => {
+  beforeEach(() => {
+    FakePC.todas = [];
+    vi.stubGlobal('MediaStream', class { constructor(public tracks: unknown[] = []) {} getTracks() { return this.tracks; } getAudioTracks() { return this.tracks; } });
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  /** Eu sou o 1 e entro na voz com os colegas 3, 4 e 5. `porta(i)` lê a porta do i-ésimo colega (0 = o 3, 1 = o 4, 2 = o 5): 1 aberta, 0 fechada. */
+  async function comColegas(timeDe?: (id: number) => number | null, ids = [3, 4, 5]) {
+    const envio = contextoDeEnvioFalso();
+    const t = montar({ token: 'abc', envio, ...(timeDe ? { timeDe } : {}) });
+    t.chat.configurar(true, 'sempre', 0.8);
+    t.chat.entrouNaSala(1);
+    const m = fluxoComFaixa();
+    t.resolverMic(m.fluxo);
+    await andar();
+    t.chat.receber(codificarLista([1, ...ids]));
+    await andar();
+    /** A porta de um colega: segue a faixa que o transceptor dele recebeu até o destino e daí até o ganho que a alimenta. */
+    const porta = (i: number): number => {
+      const transceptor = (t.pcs()[i] as unknown as { transceptores: Transceptor[] }).transceptores[0]!;
+      const faixa = transceptor.trocas.at(-1) as { id: string };
+      const k = envio.faixasDeDestino.findIndex((f) => f.id === faixa.id);
+      const destino = envio.nos.filter((n) => n.tipo === 'destino')[k]!;
+      return envio.nos.find((n) => n.tipo === 'gain' && n.destinos.includes(destino))!.gain.value;
+    };
+    return { t, envio, m, porta };
+  }
+  const portas = (c: { porta: (i: number) => number }, n = 3) => Array.from({ length: n }, (_, i) => c.porta(i));
+  // times: eu (1) e os colegas 3 e 4 no time 1; o 5 no time 2
+  const times: Record<number, number> = { 1: 1, 3: 1, 4: 1, 5: 2 };
+
+  it('sem apertar nada (todos): as portas de todos os colegas ficam abertas', async () => {
+    const c = await comColegas((id) => times[id] ?? null);
+    expect(portas(c)).toEqual([1, 1, 1]);
+    expect(c.t.chat.canal).toBe('todos');
+  });
+
+  it('segurando o canal do time: só os do meu time ouvem (3 e 4); o 5, do outro time, não; soltando, volta a todos', async () => {
+    const c = await comColegas((id) => times[id] ?? null);
+    c.t.chat.aoCanal('time', true);
+    expect(c.t.chat.canal).toBe('time');
+    expect(portas(c)).toEqual([1, 1, 0]);
+    c.t.chat.aoCanal('time', false);
+    expect(portas(c)).toEqual([1, 1, 1]);
+    expect(c.t.chat.canal).toBe('todos');
+  });
+
+  it('o canal do time numa sala SEM times fecha TODAS as portas: nunca vira "todos" (falha fechada)', async () => {
+    const c = await comColegas();
+    c.t.chat.aoCanal('time', true);
+    expect(portas(c), 'ninguém ouve').toEqual([0, 0, 0]);
+    expect(c.t.chat.temTimes).toBe(false);
+    expect(c.t.chat.canal, 'o microfone está falando, para ninguém').toBe('time');
+  });
+
+  it('o canal privado: só o jogador escolhido ouve; sem escolha, ninguém; com um só colega, ele é o alvo sem escolher', async () => {
+    const c = await comColegas();
+    c.t.chat.aoCanal('privado', true);
+    expect(portas(c), 'três colegas e nenhum escolhido: ninguém ouve').toEqual([0, 0, 0]);
+    expect(c.t.chat.alvo).toBeNull();
+    c.t.chat.definirAlvo(4);
+    expect(portas(c)).toEqual([0, 1, 0]);
+    c.t.chat.aoCanal('privado', false);
+    expect(portas(c)).toEqual([1, 1, 1]);
+
+    const u = await comColegas(undefined, [3]);
+    u.t.chat.aoCanal('privado', true);
+    expect(u.t.chat.alvo, 'o único colega é o alvo').toBe(3);
+    expect(portas(u, 1)).toEqual([1]);
+  });
+
+  it('trocar o jogador escolhido anda pelos colegas na voz (3 → 4 → 5 → 3) e as portas acompanham', async () => {
+    const c = await comColegas();
+    c.t.chat.trocarAlvo();
+    expect(c.t.chat.alvo).toBe(3);
+    c.t.chat.trocarAlvo();
+    expect(c.t.chat.alvo).toBe(4);
+    c.t.chat.trocarAlvo();
+    c.t.chat.trocarAlvo();
+    expect(c.t.chat.alvo).toBe(3);
+    c.t.chat.aoCanal('privado', true);
+    expect(portas(c)).toEqual([1, 0, 0]);
+    c.t.chat.trocarAlvo(); // trocar o alvo no meio da fala move a voz para o próximo na hora
+    expect(portas(c)).toEqual([0, 1, 0]);
+  });
+
+  it('o privado vale mais que o do time quando as duas teclas estão apertadas', async () => {
+    const c = await comColegas((id) => times[id] ?? null);
+    c.t.chat.definirAlvo(5);
+    c.t.chat.aoCanal('time', true);
+    c.t.chat.aoCanal('privado', true);
+    expect(portas(c)).toEqual([0, 0, 1]);
+    c.t.chat.aoCanal('privado', false);
+    expect(portas(c)).toEqual([1, 1, 0]);
+  });
+
+  it('um colega que CHEGA no meio de uma fala só para o time nasce com a porta fechada (não ouve o que não devia)', async () => {
+    const c = await comColegas((id) => ({ ...times, 6: 2 })[id] ?? null);
+    c.t.chat.aoCanal('time', true);
+    c.t.chat.receber(codificarLista([1, 3, 4, 5, 6]));
+    await andar();
+    expect(portas(c, 4)).toEqual([1, 1, 0, 0]);
+  });
+
+  it('um colega que chega no meio de uma fala privada para outro também nasce fechado', async () => {
+    const c = await comColegas();
+    c.t.chat.definirAlvo(4);
+    c.t.chat.aoCanal('privado', true);
+    c.t.chat.receber(codificarLista([1, 3, 4, 5, 6]));
+    await andar();
+    expect(portas(c, 4)).toEqual([0, 1, 0, 0]);
+  });
+
+  it('um colega que me OFERTA no meio de uma fala só para o time (id menor que o meu: a porta nasce depois de vários await) também nasce fechado', async () => {
+    const envio = contextoDeEnvioFalso();
+    const t = montar({ token: 'abc', envio, timeDe: (id) => ({ 9: 1, 3: 1, 5: 2 })[id] ?? null });
+    t.chat.configurar(true, 'sempre', 0.8);
+    t.chat.entrouNaSala(9); // eu sou o 9: o 3 e o 5 têm id menor e é ELES que me oferecem
+    t.resolverMic(fluxoComFaixa().fluxo);
+    await andar();
+    t.chat.receber(codificarLista([9, 3]));
+    t.chat.receber(codificarSinal({ id: 3, tipo: 'oferta', sdp: SDP }));
+    await andar();
+    t.chat.aoCanal('time', true);
+    t.chat.receber(codificarLista([9, 3, 5]));
+    t.chat.receber(codificarSinal({ id: 5, tipo: 'oferta', sdp: SDP })); // o 5 (do outro time) chega no meio da fala do time
+    await andar();
+    const porta = (i: number): number => {
+      const transceptor = (t.pcs()[i] as unknown as { transceptores: Transceptor[] }).transceptores[0]!;
+      const faixa = transceptor.trocas.at(-1) as { id: string };
+      const k = envio.faixasDeDestino.findIndex((f) => f.id === faixa.id);
+      const destino = envio.nos.filter((n) => n.tipo === 'destino')[k]!;
+      return envio.nos.find((n) => n.tipo === 'gain' && n.destinos.includes(destino))!.gain.value;
+    };
+    expect(porta(0), 'o 3 é do meu time: ouve').toBe(1);
+    expect(porta(1), 'o 5 é do outro time e chegou no meio da fala: a porta dele nasceu fechada').toBe(0);
+  });
+
+  it('um segundo colega que entra desfaz o "único colega é o alvo": o privado que ia só para o primeiro fecha, sem esperar outra tecla', async () => {
+    const c = await comColegas(undefined, [3]);
+    c.t.chat.aoCanal('privado', true);
+    expect(c.t.chat.alvo, 'com um só colega ele é o alvo').toBe(3);
+    expect(c.porta(0)).toBe(1);
+    c.t.chat.receber(codificarLista([1, 3, 4])); // chegou o 4: agora são dois e ninguém foi escolhido
+    await andar();
+    expect(c.t.chat.alvo).toBeNull();
+    expect(c.porta(0), 'a porta do 3 fecha: o alvo deixou de ser claro').toBe(0);
+    expect(c.porta(1), 'a do recém-chegado também nasce fechada').toBe(0);
+  });
+
+  it('o jogador escolhido que sai da voz deixa de ser o alvo: ninguém ouve o privado até escolher outro', async () => {
+    const c = await comColegas();
+    c.t.chat.definirAlvo(4);
+    c.t.chat.receber(codificarLista([1, 3, 5]));
+    await andar();
+    expect(c.t.chat.alvo, 'sobraram dois: nenhum escolhido').toBeNull();
+    c.t.chat.aoCanal('privado', true);
+    expect([c.porta(0), c.porta(2)], 'as portas dos que ficaram (o 3 e o 5; o índice 1 era o 4, que saiu)').toEqual([0, 0]);
+  });
+
+  it('quando os times da sala mudam, as portas acompanham (reavaliarCanais)', async () => {
+    const mutavel: Record<number, number> = { 1: 1, 3: 1, 4: 2, 5: 2 };
+    const c = await comColegas((id) => mutavel[id] ?? null);
+    c.t.chat.aoCanal('time', true);
+    expect(portas(c)).toEqual([1, 0, 0]);
+    mutavel[4] = 1;
+    c.t.chat.reavaliarCanais();
+    expect(portas(c)).toEqual([1, 1, 0]);
+  });
+
+  it('SEM o envio por Web Audio as teclas de canal não fazem nada: nunca arrisca mandar a voz a todos', async () => {
+    const t = montar({ token: 'abc', timeDe: (id) => times[id] ?? null });
+    t.chat.configurar(true, 'sempre', 0.8);
+    t.chat.entrouNaSala(1);
+    t.resolverMic(fluxoComFaixa().fluxo);
+    await andar();
+    t.chat.aoCanal('time', true);
+    t.chat.aoCanal('privado', true);
+    expect(t.chat.mic.time).toBe(false);
+    expect(t.chat.mic.privado).toBe(false);
+    expect(t.chat.canal).toBe('todos');
+    expect(t.chat.canaisDisponiveis).toBe(false);
+  });
+
+  it('fora da voz ou sem microfone as teclas de canal não fazem nada', async () => {
+    const envio = contextoDeEnvioFalso();
+    const t = montar({ token: 'abc', envio });
+    t.chat.aoCanal('time', true); // nem entrou na voz
+    expect(t.chat.mic.time).toBe(false);
+    t.chat.configurar(true, 'sempre', 0.8);
+    t.chat.entrouNaSala(1); // na voz, mas o microfone ainda está pedindo
+    t.chat.aoCanal('time', true);
+    expect(t.chat.mic.time).toBe(false);
+  });
+
+  it('o diagnóstico mostra o canal, o jogador escolhido, se há times e se os canais funcionam', async () => {
+    const c = await comColegas((id) => times[id] ?? null);
+    c.t.chat.definirAlvo(4);
+    c.t.chat.aoCanal('privado', true);
+    const d = await c.t.chat.diagnostico();
+    expect(d).toMatchObject({ canal: 'privado', alvoPrivado: 4, temTimes: true, canaisDisponiveis: true });
+  });
+
+  describe('o teclado', () => {
+    /** Um `window` de mentira: guarda os ouvintes para o teste disparar teclas. */
+    function janela() {
+      const w = new Emissor();
+      vi.stubGlobal('window', w);
+      const tecla = (tipo: 'keydown' | 'keyup', code: string, extra: object = {}) => w.emitir(tipo, { code, repeat: false, target: { tagName: 'BODY' }, ...extra });
+      return { w, tecla };
+    }
+    const canais = () => ({ time: 'KeyY', privado: 'KeyU', alvo: 'KeyG' });
+
+    it('Y e U seguram o time e o privado; G troca o alvo; T continua mudando o mudo', async () => {
+      const { tecla } = janela();
+      const c = await comColegas((id) => times[id] ?? null);
+      const desliga = c.t.chat.ligarTeclas(() => 'KeyT', canais);
+      tecla('keydown', 'KeyY');
+      expect(portas(c)).toEqual([1, 1, 0]);
+      tecla('keyup', 'KeyY');
+      expect(portas(c)).toEqual([1, 1, 1]);
+      tecla('keydown', 'KeyG'); // escolhe o 3
+      tecla('keydown', 'KeyU');
+      expect(portas(c)).toEqual([1, 0, 0]);
+      tecla('keyup', 'KeyU');
+      tecla('keydown', 'KeyT'); // o mudo de sempre
+      expect(c.t.chat.mic.mudo).toBe(true);
+      tecla('keyup', 'KeyT');
+      desliga();
+    });
+
+    it('apertar a tecla do time com o microfone MUDO ainda fala com o time (apertar é pedir para falar)', async () => {
+      const { tecla } = janela();
+      const c = await comColegas((id) => times[id] ?? null);
+      c.t.chat.ligarTeclas(() => 'KeyT', canais);
+      tecla('keydown', 'KeyT'); // muda o microfone
+      expect(c.t.chat.mic.transmitindo).toBe(false);
+      tecla('keydown', 'KeyY');
+      expect(c.t.chat.mic.transmitindo).toBe(true);
+      expect(portas(c)).toEqual([1, 1, 0]);
+      tecla('keyup', 'KeyY');
+      expect(c.t.chat.mic.transmitindo).toBe(false);
+    });
+
+    it('tecla repetida (segurar) e digitar num campo de texto não contam', async () => {
+      const { tecla } = janela();
+      const c = await comColegas((id) => times[id] ?? null);
+      c.t.chat.ligarTeclas(() => 'KeyT', canais);
+      tecla('keydown', 'KeyY', { repeat: true });
+      expect(c.t.chat.canal).toBe('todos');
+      tecla('keydown', 'KeyY', { target: { tagName: 'INPUT' } });
+      expect(c.t.chat.canal, 'digitando no chat de texto: Y é uma letra').toBe('todos');
+    });
+
+    it('a janela que perde o foco com a tecla apertada solta o canal e as portas voltam', async () => {
+      const { w, tecla } = janela();
+      const c = await comColegas((id) => times[id] ?? null);
+      c.t.chat.ligarTeclas(() => 'KeyT', canais);
+      tecla('keydown', 'KeyY');
+      expect(portas(c)).toEqual([1, 1, 0]);
+      w.emitir('blur');
+      expect(c.t.chat.mic.time).toBe(false);
+      expect(portas(c), 'soltou: todas as portas voltam').toEqual([1, 1, 1]);
+    });
+
+    it('sem a função dos canais (o chat de antes) só a tecla de sempre vale', async () => {
+      const { tecla } = janela();
+      const c = await comColegas((id) => times[id] ?? null);
+      c.t.chat.ligarTeclas(() => 'KeyT');
+      tecla('keydown', 'KeyY');
+      expect(c.t.chat.canal).toBe('todos');
+    });
   });
 });

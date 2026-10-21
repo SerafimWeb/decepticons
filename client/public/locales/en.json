@@ -983,5 +983,13 @@
  "O NAVEGADOR PAROU DE RECEBER O MICROFONE: CONFIRA O FONE E O WINDOWS": "THE BROWSER STOPPED RECEIVING THE MICROPHONE: CHECK THE HEADSET AND WINDOWS",
  "Ganho do microfone": "Microphone gain",
  "Sobe a sua voz para quem escuta, no teste e na gravação. Fones Bluetooth costumam pedir ganho; o teste do microfone sugere um valor.": "Raises your voice for the people listening, in the test and in recordings. Bluetooth headsets usually need gain; the microphone test suggests a value.",
- "Voz baixa: suba o ganho do microfone para x{0}.": "Low voice: raise the microphone gain to x{0}."
+ "Voz baixa: suba o ganho do microfone para x{0}.": "Low voice: raise the microphone gain to x{0}.",
+ "FALANDO SÓ PARA O TIME": "TALKING TO THE TEAM ONLY",
+ "SALA SEM TIMES: NINGUÉM OUVE O CANAL DO TIME": "ROOM WITHOUT TEAMS: NO ONE HEARS THE TEAM CHANNEL",
+ "FALANDO SÓ PARA {0}": "TALKING ONLY TO {0}",
+ "SEM JOGADOR ESCOLHIDO: [{0}] ESCOLHE": "NO PLAYER CHOSEN: [{0}] PICKS",
+ "CANAIS [{0}] TIME · [{1}] {2} · [{3}] TROCAR": "CHANNELS [{0}] TEAM · [{1}] {2} · [{3}] SWITCH",
+ "Chat de voz: falar só com o time": "Voice chat: talk to the team only",
+ "Chat de voz: falar só com o jogador escolhido": "Voice chat: talk to the chosen player only",
+ "Chat de voz: trocar o jogador escolhido": "Voice chat: switch the chosen player"
 }

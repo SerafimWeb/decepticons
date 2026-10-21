@@ -75,3 +75,93 @@ describe('MicController: quando o microfone transmite (P205)', () => {
     expect(m.temMic).toBe(false);
   });
 });
+
+describe('MicController: as teclas dos canais (P237 PR 3)', () => {
+  it('o canal de quem fala: todos (aberto), calado (mudo), time e privado (teclas apertadas); o privado vale mais que o do time', () => {
+    const m = new MicController();
+    m.usar(faixa());
+    expect(m.canal).toBe('todos');
+    m.aoTecla(true); // mudo
+    expect(m.canal).toBeNull();
+    m.aoTeclaCanal('time', true);
+    expect(m.canal).toBe('time');
+    m.aoTeclaCanal('privado', true);
+    expect(m.canal).toBe('privado');
+    m.aoTeclaCanal('privado', false);
+    expect(m.canal).toBe('time');
+    m.aoTeclaCanal('time', false);
+    expect(m.canal, 'soltou tudo: volta ao estado do mudo').toBeNull();
+  });
+
+  it('apertar uma tecla de canal abre o microfone MESMO mudo e no "segurar para falar" solto (apertar é pedir para falar)', () => {
+    const m = new MicController();
+    const f = faixa();
+    m.usar(f);
+    m.aoTecla(true); // mudo
+    expect(f.enabled).toBe(false);
+    m.aoTeclaCanal('time', true);
+    expect(f.enabled).toBe(true);
+    expect(m.transmitindo).toBe(true);
+    m.aoTeclaCanal('time', false);
+    expect(f.enabled, 'soltou: volta a mudo').toBe(false);
+
+    const p = new MicController();
+    const g = faixa();
+    p.usar(g);
+    p.setModo('ptt');
+    expect(g.enabled).toBe(false);
+    p.aoTeclaCanal('privado', true);
+    expect(g.enabled).toBe(true);
+    p.aoTeclaCanal('privado', false);
+    expect(g.enabled).toBe(false);
+  });
+
+  it('o PTT de todos continua o mesmo: com a tecla do time apertada o canal é o do time, e ao soltar volta a "todos" se o PTT ainda está apertado', () => {
+    const m = new MicController();
+    m.usar(faixa());
+    m.setModo('ptt');
+    m.aoTecla(true);
+    expect(m.canal).toBe('todos');
+    m.aoTeclaCanal('time', true);
+    expect(m.canal).toBe('time');
+    m.aoTeclaCanal('time', false);
+    expect(m.canal).toBe('todos');
+    m.aoTecla(false);
+    expect(m.canal).toBeNull();
+  });
+
+  it('a janela que perde o foco solta as teclas dos canais também (nada fica preso aberto)', () => {
+    const m = new MicController();
+    const f = faixa();
+    m.usar(f);
+    m.setModo('ptt');
+    m.aoTeclaCanal('time', true);
+    m.aoTeclaCanal('privado', true);
+    m.soltar();
+    expect(m.time).toBe(false);
+    expect(m.privado).toBe(false);
+    expect(f.enabled).toBe(false);
+  });
+
+  it('sem microfone as teclas de canal se soltam: ao voltar o microfone ninguém fala sem apertar de novo', () => {
+    const m = new MicController();
+    m.usar(faixa());
+    m.setModo('ptt');
+    m.aoTeclaCanal('time', true);
+    m.usar(null); // o fone caiu com a tecla apertada: o "soltar" da tecla se perde
+    expect(m.time).toBe(false);
+    const nova = faixa();
+    m.usar(nova);
+    expect(nova.enabled, 'o microfone novo nasce calado').toBe(false);
+    expect(m.canal).toBeNull();
+  });
+
+  it('trocar o modo solta as teclas dos canais; sem microfone não há canal', () => {
+    const m = new MicController();
+    expect(m.canal).toBeNull();
+    m.usar(faixa());
+    m.aoTeclaCanal('privado', true);
+    m.setModo('sempre');
+    expect(m.privado).toBe(false);
+  });
+});
