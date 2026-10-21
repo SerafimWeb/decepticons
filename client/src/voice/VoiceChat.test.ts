@@ -1268,16 +1268,81 @@ describe('VoiceChat: os canais todos / time / jogador escolhido (P237 PR 3)', ()
     expect(porta(1), 'o 5 é do outro time e chegou no meio da fala: a porta dele nasceu fechada').toBe(0);
   });
 
-  it('um segundo colega que entra desfaz o "único colega é o alvo": o privado que ia só para o primeiro fecha, sem esperar outra tecla', async () => {
+  it('o alvo do sussurro é CONGELADO ao apertar a tecla: se chega um segundo colega, a voz continua só para o primeiro; soltando e apertando de novo, ninguém foi escolhido', async () => {
     const c = await comColegas(undefined, [3]);
     c.t.chat.aoCanal('privado', true);
     expect(c.t.chat.alvo, 'com um só colega ele é o alvo').toBe(3);
     expect(c.porta(0)).toBe(1);
-    c.t.chat.receber(codificarLista([1, 3, 4])); // chegou o 4: agora são dois e ninguém foi escolhido
+    c.t.chat.receber(codificarLista([1, 3, 4])); // chegou o 4 no meio do sussurro
+    await andar();
+    expect(c.t.chat.alvo, 'o sussurro continua para o 3 (o alvo congelado)').toBe(3);
+    expect(c.porta(0)).toBe(1);
+    expect(c.porta(1), 'o recém-chegado nasce fechado').toBe(0);
+    c.t.chat.aoCanal('privado', false);
+    c.t.chat.aoCanal('privado', true); // agora são dois e ninguém foi escolhido
+    expect(c.t.chat.alvo).toBeNull();
+    expect(portas(c, 2)).toEqual([0, 0]);
+  });
+
+  it('SEGURANÇA: o alvo que SAI no meio do sussurro não passa a voz para outro colega (nem o "único que sobrou"): ninguém ouve até soltar e apertar de novo', async () => {
+    const c = await comColegas(undefined, [3, 4]);
+    c.t.chat.definirAlvo(4);
+    c.t.chat.aoCanal('privado', true);
+    expect([c.porta(0), c.porta(1)]).toEqual([0, 1]);
+    c.t.chat.receber(codificarLista([1, 3])); // o 4 saiu: sobrou só o 3, que NÃO foi o escolhido
+    await andar();
+    expect(c.t.chat.alvo, 'o alvo congelado saiu: ninguém').toBeNull();
+    expect(c.porta(0), 'o 3 NÃO herda o sussurro').toBe(0);
+    c.t.chat.aoCanal('privado', false);
+    c.t.chat.aoCanal('privado', true); // soltou e apertou de novo: agora o único colega é o alvo, e a pessoa vê o nome dele no HUD
+    expect(c.t.chat.alvo).toBe(3);
+    expect(c.porta(0)).toBe(1);
+  });
+
+  it('SEGURANÇA: o único colega sai no meio do sussurro e chega um desconhecido: o desconhecido NÃO ouve (a voz era para quem saiu)', async () => {
+    const c = await comColegas(undefined, [3]);
+    c.t.chat.aoCanal('privado', true);
+    c.t.chat.receber(codificarLista([1])); // o 3 saiu
+    await andar();
+    c.t.chat.receber(codificarLista([1, 6])); // chegou o 6
     await andar();
     expect(c.t.chat.alvo).toBeNull();
-    expect(c.porta(0), 'a porta do 3 fecha: o alvo deixou de ser claro').toBe(0);
-    expect(c.porta(1), 'a do recém-chegado também nasce fechada').toBe(0);
+    expect(c.porta(1), 'a porta do 6 (o índice 1: a segunda ligação) nasceu fechada e fica fechada').toBe(0);
+  });
+
+  it('SEGURANÇA: o contexto de envio que não roda é abandonado COM uma tecla de canal apertada: as teclas se soltam antes de a faixa crua voltar (nunca vai a todos)', async () => {
+    vi.useFakeTimers();
+    const envio = contextoDeEnvioFalso('suspended');
+    const t = montar({ token: 'abc', envio, timeDe: (id) => times[id] ?? null });
+    t.chat.configurar(true, 'ptt', 0.8); // "segurar para falar": calado, só falaria pelo canal
+    t.chat.entrouNaSala(1);
+    const m = fluxoComFaixa();
+    t.resolverMic(m.fluxo);
+    await andar();
+    t.chat.receber(codificarLista([1, 3, 4, 5]));
+    await andar();
+    t.chat.aoCanal('time', true);
+    expect(m.faixa.enabled, 'o microfone abre só para o canal do time').toBe(true);
+    vi.advanceTimersByTime(3000);
+    t.chat.saudeDoMic(3200); // o contexto não saiu do suspenso: abandona o envio
+    await andar();
+    expect((await t.chat.diagnostico()).viaWebAudio).toBe(false);
+    expect(t.chat.mic.time, 'a tecla do canal foi solta').toBe(false);
+    expect(m.faixa.enabled, 'a faixa crua voltou DESLIGADA: nada vai a todos').toBe(false);
+    expect(t.chat.canal).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('soltar a tecla do canal passa sempre, mesmo sem o envio por Web Audio (a tecla nunca fica presa)', async () => {
+    const t = montar({ token: 'abc' }); // sem contexto de envio
+    t.chat.configurar(true, 'sempre', 0.8);
+    t.chat.entrouNaSala(1);
+    t.resolverMic(fluxoComFaixa().fluxo);
+    await andar();
+    t.chat.mic.aoTeclaCanal('time', true); // como se a tecla tivesse ficado apertada por outro caminho
+    expect(t.chat.mic.time).toBe(true);
+    t.chat.aoCanal('time', false);
+    expect(t.chat.mic.time).toBe(false);
   });
 
   it('o jogador escolhido que sai da voz deixa de ser o alvo: ninguém ouve o privado até escolher outro', async () => {

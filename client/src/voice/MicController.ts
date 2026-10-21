@@ -60,6 +60,12 @@ export class MicController {
     this.privado = false;
   }
 
+  /** Solta as teclas dos canais agora e refaz a faixa (o chat chama quando perde a porta por colega: sem ela uma tecla de canal apertada mandaria a voz a todos). */
+  liberarCanais(): void {
+    this.soltarCanais();
+    this.aplicar();
+  }
+
   /** A janela perdeu o foco: o PTT e as teclas dos canais não podem ficar presos abertos. */
   soltar(): void {
     this.apertada = false;

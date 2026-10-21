@@ -2,28 +2,33 @@
  "data": "2026-10-21",
  "medidas": {
   "todos": [
-   0.34735052974981706,
-   0.34622804006820734,
-   0.3473793782987497
+   0.3481287387421678,
+   0.34778467712204586,
+   0.3455689806853918
   ],
   "privado": [
-   0.34548911267911786,
-   0.000005036985447996844,
-   0.000007728852703798278
+   0.3433061070421796,
+   0.000005071016661006895,
+   0.000005561112318875153
   ],
   "time": [
-   0.34403683842269145,
-   0.000005327045843784249,
-   0.00000797280074991433
+   0.3472231741527859,
+   0.000005256193357611458,
+   0.000005492577667725137
   ],
   "semTimes": [
-   0.000005433308328221818,
-   0.000005592682175269202,
-   0.000008195010516375064
+   0.00000511943542988359,
+   0.0000050939227686464116,
+   0.000005614683999225512
   ],
   "entrouNoMeio": [
-   0.34726482933853436,
-   0.000009566141225373406
+   0.34846329549869576,
+   0.000007884974736700579
+  ],
+  "alvoSaiu": [
+   0.000005295763025081238,
+   0.000005202679759574787,
+   0.000006940756948454653
   ]
  },
  "verificacoes": [
@@ -40,7 +45,7 @@
   {
    "nome": "todos: BRAVO, CHARLIE e DELTA ouvem ALFA",
    "ok": true,
-   "detalhe": "0.347 / 0.346 / 0.347"
+   "detalhe": "0.348 / 0.348 / 0.346"
   },
   {
    "nome": "privado: o canal é o privado e o alvo é o BRAVO",
@@ -50,17 +55,17 @@
   {
    "nome": "privado: só o BRAVO ouve; CHARLIE e DELTA não recebem nada",
    "ok": true,
-   "detalhe": "0.3455 / 0.0000 / 0.0000"
+   "detalhe": "0.3433 / 0.0000 / 0.0000"
   },
   {
    "nome": "soltando a tecla do privado os três voltam a ouvir (todos)",
    "ok": true,
-   "detalhe": "0.345 / 0.348 / 0.345"
+   "detalhe": "0.347 / 0.346 / 0.346"
   },
   {
    "nome": "time: só o BRAVO (do meu time) ouve; CHARLIE e DELTA (do outro time) não recebem nada",
    "ok": true,
-   "detalhe": "0.3440 / 0.0000 / 0.0000"
+   "detalhe": "0.3472 / 0.0000 / 0.0000"
   },
   {
    "nome": "sala SEM times: ALFA está no canal do time e NINGUÉM ouve (falha fechada: nunca vira \"todos\")",
@@ -75,12 +80,17 @@
   {
    "nome": "o colega que entrou no meio do sussurro NÃO ouve nada (a porta dele nasceu fechada); o BRAVO segue ouvindo",
    "ok": true,
-   "detalhe": "0.3473 / 0.0000"
+   "detalhe": "0.3485 / 0.0000"
   },
   {
-   "nome": "soltando o sussurro, o ECHO passa a ouvir",
+   "nome": "o alvo SAI no meio do sussurro: a voz NÃO passa para ninguém (CHARLIE, DELTA e ECHO seguem sem ouvir) e o HUD fica sem alvo",
    "ok": true,
-   "detalhe": "0.348 / 0.346"
+   "detalhe": "0.0000 / 0.0000 / 0.0000 {\"canal\":\"privado\",\"alvo\":null,\"temTimes\":false,\"disponiveis\":true}"
+  },
+  {
+   "nome": "soltando o sussurro, os que ficaram (CHARLIE e ECHO) passam a ouvir",
+   "ok": true,
+   "detalhe": "0.346 / 0.343"
   },
   {
    "nome": "nenhum erro de página",

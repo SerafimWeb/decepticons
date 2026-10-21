@@ -10,7 +10,8 @@ import { gerarWav, tokenDeConta } from './vozLib.mjs';
  *  2. privado: só o jogador escolhido ouve (BRAVO), os outros nada; solta e todos voltam a ouvir;
  *  3. time: só o time ouve (BRAVO, do mesmo time); os do outro time nada;
  *  4. sala SEM times: o canal do time não fala com ninguém (falha fechada, nunca vira "todos");
- *  5. um colega que ENTRA no meio de um sussurro não ouve nada (a porta dele nasce fechada) e, soltando, ouve.
+ *  5. um colega que ENTRA no meio de um sussurro não ouve nada (a porta dele nasce fechada) e, soltando, ouve;
+ *  6. o alvo que SAI no meio do sussurro: a voz não passa para ninguém (o alvo é congelado ao apertar a tecla).
  *
  *   node .decepticons/medicoes/voz-canais.mjs     # sai com 1 se algo falhar; grava medicoes/voz-canais-<data>.json
  *
@@ -146,10 +147,17 @@ try {
   const p5 = await ouvir([bravo, echo], 3000);
   medidas.entrouNoMeio = p5;
   conferir('o colega que entrou no meio do sussurro NÃO ouve nada (a porta dele nasceu fechada); o BRAVO segue ouvindo', p5[0] > OUVE && p5[1] < NADA, fmt(p5, 4));
+  // 6. o alvo SAI no meio do sussurro (revisão de segurança): a voz não passa para ninguém, nem para quem já estava na sala
+  await bravo.close();
+  await dormir(2500);
+  const p6 = await ouvir([charlie, delta, echo], 3000);
+  medidas.alvoSaiu = p6;
+  const c6 = await alfa.evaluate(() => window.__voz.canalAtual());
+  conferir('o alvo SAI no meio do sussurro: a voz NÃO passa para ninguém (CHARLIE, DELTA e ECHO seguem sem ouvir) e o HUD fica sem alvo', p6.every((x) => x < NADA) && c6.alvo === null, `${fmt(p6, 4)} ${JSON.stringify(c6)}`);
   await alfa.evaluate(() => window.__voz.canal('privado', false));
   await dormir(800);
-  const p5b = await ouvir([bravo, echo]);
-  conferir('soltando o sussurro, o ECHO passa a ouvir', p5b.every((x) => x > OUVE), fmt(p5b));
+  const p5b = await ouvir([charlie, echo]);
+  conferir('soltando o sussurro, os que ficaram (CHARLIE e ECHO) passam a ouvir', p5b.every((x) => x > OUVE), fmt(p5b));
   conferir('nenhum erro de página', erros.length === 0, erros.slice(0, 3).join(' | '));
 } finally {
   await browser?.close().catch(() => {});
