@@ -791,24 +791,7 @@ async function check() {
     if (linhasArma < 6) failures.push(`oficina: a tabela do arsenal saiu com ${linhasArma} armas`);
     if (linhasEscudo < 4) failures.push(`oficina: a tabela de resistências saiu com ${linhasEscudo} escudos metálicos`);
     if (selosEstado < 3) failures.push(`oficina: só ${selosEstado} selos de estado (o STATUS_REAL.md mudou de formato ou as linhas mudaram de nome)`);
-    // O mapa tem de ser clicável (bug de 06/10: os ícones da legenda estouravam, cobriam o mapa e engoliam os cliques).
-    const iconeMax = await page.evaluate(() => Math.max(...[...document.querySelectorAll('.arq-legenda svg')].map((s) => s.getBoundingClientRect().width)));
-    if (!(iconeMax > 0 && iconeMax <= 24)) failures.push(`oficina: ícone da legenda do mapa com ${Math.round(iconeMax)}px de largura (devia ter 14)`);
-    await page.locator('#mapa > summary').click();
-    const alvoMapa = page.locator('.arq .mod').first();
-    await alvoMapa.scrollIntoViewIfNeeded();
-    const caixa = await alvoMapa.boundingBox();
-    if (!caixa) failures.push('oficina: o primeiro módulo do mapa não tem caixa na tela');
-    else {
-      await page.mouse.click(caixa.x + caixa.width / 2, caixa.y + caixa.height / 2);
-      const fixados = await page.locator('.arq .mod.pin').count();
-      const painelMapa = (await page.locator('#arq-detalhe').innerText()).toLowerCase();
-      const nomeMapa = ((await alvoMapa.getAttribute('aria-label')) ?? '').split(':')[0].toLowerCase();
-      if (fixados !== 1) failures.push(`oficina: o clique no módulo do mapa não o fixou (${fixados} fixados): algo cobre o mapa?`);
-      if (!nomeMapa || !painelMapa.includes(nomeMapa) || !painelMapa.includes('usado por')) failures.push(`oficina: o painel do mapa não mostrou o módulo clicado ("${nomeMapa}")`);
-      await page.keyboard.press('Escape');
-      if ((await page.locator('.arq .mod.pin').count()) !== 0) failures.push('oficina: Esc não soltou o módulo fixado do mapa');
-    }
+    // (O mapa da arquitetura, que tinha aqui os testes de clique, só existe na oficina interna: `node scripts/oficina.mjs --interno`.)
     // Landing na raiz: é por ela que se entra no jogo.
     await page.goto(base);
     const title = await page.title();
