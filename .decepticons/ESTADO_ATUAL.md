@@ -16,6 +16,11 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## A VITRINE: O SITE SÓ MOSTRA O SUPERFICIAL — Claude, 21/10 (branch `claude/fechar-vitrine`, P240)
+
+**O Comandante (21/10):** *"guardando nossos segredos a sete chaves e divulgando só o superficial"*, e a lista do Dan só para ele, com login de administrador. **Achado:** a `/sala-de-controle/` pública publicava a hospedagem, o túnel, tokens, o Protocolo, todos os PRs e a queda do servidor; a oficina, as dívidas do código e o mapa da arquitetura. **Feito:** a sala virou a página do esquadrão (628 KB → 35 KB); a oficina só tem o jogo; versão interna local (`npm run painel -- --interno`, `node scripts/oficina.mjs --interno`); guarda `scripts/site/vitrine.mjs` no `npm run check` e no `--verify`; textos da landing e do console nos 6 idiomas. Política: **`VITRINE.md`**.
+**Falta:** a **Mesa** interna (decisões, pendências, o que está em andamento) **atrás do login de administrador** (`GET /admin/mesa` no servidor, nunca arquivo público) e a página completa interna no mesmo acesso: próximo PR. Cópias antigas feitas por terceiros não se recolhem.
+
 ## O ONLINE NÃO CONECTAVA: O SERVIDOR CAÍA AO ABRIR A SALA DE UM MAPA SOB DEMANDA — Claude, 21/10 (branch `claude/servidor-runner-aberto`, P238)
 
 **O Comandante (21/10):** o jogo online dava 502 em `jogo.cybermech.online` (`jogar/?nome=serafim&mapa=janeiro:1`). **Causa:** o `scripts/server.mjs` fechava o carregador do Vite ao subir; o `import()` do mapa da Praia, da Terras Raras ou do 8 de Janeiro falhava dentro da sala, a rejeição não era tratada e o processo morria (a Praia é pública: qualquer jogador a derrubava). **Feito:** o lançador mantém o carregador aberto (+~45 MB); uma sala que não abre derruba só a conexão que a pediu (1011) e não fica em cache. 2 testes novos (um sobe o processo de verdade), 3 mutações pegas.

@@ -18,7 +18,9 @@ import { salaSite } from './site/sala.mjs';
 const argv = process.argv.slice(2);
 const CHECK = argv.includes('--check');
 const SITE = argv.includes('--site');
-const OUT = resolve(argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : '.tmp/painel/painel.html');
+// A versão interna da página do esquadrão, completa (só no PC do Comandante). A do site (`--site`) é só o superficial: `scripts/site/sala.mjs`, `.decepticons/VITRINE.md`.
+const INTERNO = argv.includes('--interno');
+const OUT = resolve(argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : INTERNO ? '.tmp/painel/sala-interna.html' : '.tmp/painel/painel.html');
 // No site, os links são relativos; no arquivo local, apontam para o site publicado.
 const BASE = SITE ? '../' : (process.env.SITE_URL || 'https://cybermech.online/').replace(/\/?$/, '/');
 
@@ -877,15 +879,16 @@ const bodyLocal = `
 `;
 
 // No site, a sala de controle usa o sistema visual novo (scripts/site/hud.mjs e sala.mjs); o painel local segue como era.
-const sala = SITE ? salaSite({ BASE, TEAM, act, prs, log, asked, last, stats, estado, fronts, fromGithub, nf, when, flow: FLOW, bodyLocal, m }) : null;
+const sala = SITE || INTERNO ? salaSite({ BASE, TEAM, act, prs, log, asked, last, stats, estado, fronts, fromGithub, nf, when, flow: FLOW, bodyLocal, m, modo: INTERNO ? 'interno' : 'publico' }) : null;
 const body = sala ? sala.body : bodyLocal;
 
 const html = pagina({
-  title: SITE ? 'Sala de controle · CYBERMECH' : 'Painel de Missão CYBERMECH',
-  description: 'Como o CYBERMECH é feito: Dan e uma equipe de IAs sob o Protocolo Serafim UM, com cada decisão, teste e entrega à vista.',
-  css: (SITE ? hudCss(BASE) + HUD_PAGE_CSS : '') + css + COMBAT_GUIDE_CSS + (SITE ? sala.css : ''),
+  title: SITE ? 'Esquadrão · CYBERMECH' : INTERNO ? 'Sala de controle interna · CYBERMECH' : 'Painel de Missão CYBERMECH',
+  description: SITE ? 'O esquadrão do CYBERMECH: direção humana e uma equipe de IAs construindo um combate de Mechs. Teste a versão e veja o que observar ao jogar.' : 'Sala de controle do CYBERMECH: o painel completo do projeto.',
+  // A página pública não leva o CSS nem o JS das seções que ela não tem (frentes, decisões, entregas): só o do esquadrão e do guia de combate.
+  css: (sala ? hudCss(BASE) + HUD_PAGE_CSS : '') + (SITE ? '' : css) + COMBAT_GUIDE_CSS + (sala ? sala.css : ''),
   body,
-  script: sala ? `${script}
+  script: SITE ? sala.js : sala ? `${script}
 ${sala.js}` : script,
 });
 

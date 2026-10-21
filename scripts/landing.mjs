@@ -197,7 +197,7 @@ ${hudNav({ base: '', current: 'inicio', status: Boolean(game.net.statusUrl) })}
 <section class="section squad" aria-labelledby="esquadra">${ghost('ESQUADRÃO')}<div class="container">
   ${sectionHeading({ n: '07', label: 'Esquadrão', title: 'UM COMANDANTE.', em: 'UMA ESQUADRA DE IAs.', id: 'esquadra', aside: '<p>Cada IA trabalha no próprio território de arquivos e prova o que entrega com testes. Ninguém muda o rumo sem o aval do Comandante.</p>' })}
   <ul class="squad-grid">${squad.map(([id, name, role, c]) => `<li class="reveal" style="--c:${c}"><img src="${art(`eq-${id}.jpg`)}" width="350" height="232" alt="" loading="lazy"><div><h3>${name}</h3><p class="label">${role}</p></div></li>`).join('')}</ul>
-  <p class="squad-cta">${gameButton({ label: 'Conheça a esquadra e acompanhe o desenvolvimento', href: './sala-de-controle/', event: 'click_como_e_feito', variant: 'ghost' })}</p>
+  <p class="squad-cta">${gameButton({ label: 'Conheça a esquadra', href: './sala-de-controle/', event: 'click_como_e_feito', variant: 'ghost' })}</p>
 </div></section>
 
 <section class="section briefing" aria-labelledby="primeira-missao"><div class="container brief-grid"><div class="reveal">${sectionHeading({ n: '08', label: 'Primeira partida', title: 'PRONTO PARA', em: 'ASSUMIR O CONTROLE?', id: 'primeira-missao' })}<p class="lead">Abra o jogo e aguarde a preparação da partida. Clique em Jogar para assumir o Mech; pressione Esc quando quiser ajustar sua montagem ou as configurações.</p>${gameButton({ label: 'ENTRAR NO COCKPIT', href: './jogar/', event: 'click_cockpit', variant: 'big' })}</div>
@@ -207,7 +207,7 @@ ${hudNav({ base: '', current: 'inicio', status: Boolean(game.net.statusUrl) })}
   <details><summary>Preciso criar uma conta?</summary><p>Não. Você pode começar a jogar sem cadastro. A progressão atual fica salva neste navegador.</p></details>
   <details><summary>Posso jogar sozinho?</summary><p>Sim. Arena e Sobrevivência têm oponentes controlados pela IA e não dependem de uma sala multiplayer disponível.</p></details>
   <details><summary>O jogo funciona no celular?</summary><p>Há controles de toque em teste. Para a experiência principal, use um computador com mouse, teclado e navegador compatível com WebGL2.</p></details>
-  <details><summary>Onde acompanho as atualizações?</summary><p>O <a href="./sala-de-controle/">Esquadrão</a> apresenta a equipe, as entregas e o desenvolvimento. A <a href="./oficina/">Oficina</a> reúne os atributos e as análises de combate.</p></details></div></section>
+  <details><summary>Onde acompanho as atualizações?</summary><p>O <a href="./sala-de-controle/">Esquadrão</a> apresenta a equipe e o que observar ao jogar. A <a href="./oficina/">Oficina</a> reúne os atributos e as análises de combate.</p></details></div></section>
 </main>
 ${hudFooter({ base: '' })}`;
 

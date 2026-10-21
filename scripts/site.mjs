@@ -20,6 +20,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statS
 import { createServer } from 'node:http';
 import { extname, join, resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
+import { vazamentos } from './site/vitrine.mjs';
 
 const OUT = resolve('.tmp/site');
 const GAME = join(OUT, 'jogar');
@@ -761,15 +762,14 @@ async function check() {
     page.on('response', (r) => r.status() >= 400 && !/fonts.g/.test(r.url()) && failures.push(`HTTP ${r.status()}: ${r.url()}`));
     // Sala de controle: página própria, links internos vivos, sem o codinome.
     await page.goto(`${base}sala-de-controle/`);
-    if ((await page.title()) !== 'Sala de controle · CYBERMECH') failures.push(`título da sala de controle: "${await page.title()}"`);
+    if ((await page.title()) !== 'Esquadrão · CYBERMECH') failures.push(`título do esquadrão: "${await page.title()}"`);
     await pageSane(page, 'sala de controle', failures);
     await publicPage(page, 'sala de controle', failures);
     await antiCopy(page, 'sala de controle', failures);
-    // Gestão: quadro, burn-up e linha do tempo saem do histórico do ROADMAP (precisa do git inteiro).
-    if ((await page.locator('section[aria-labelledby="gestao"] .lane').count()) < 2) failures.push('sala de controle: a seção de gestão sumiu (sem o histórico do ROADMAP no git?)');
-    // Novidades e fichas de design saem dos documentos: sem elas, o parser não achou as tabelas.
-    if ((await page.locator('.news li').count()) < 2) failures.push('sala de controle: sem novidades (decisões e entregas)');
-    if ((await page.locator('.sheets li').count()) < 1) failures.push('sala de controle: sem as fichas de design');
+    // A vitrine é só o superficial (`.decepticons/VITRINE.md`): nenhuma seção de processo, decisões, entregas, gestão ou protocolo pode voltar à página pública.
+    for (const id of ['gestao', 'diario', 'entregas', 'protocolo', 'frentes', 'atividade', 'fluxo', 'fichas', 'novidades', 'evolucao', 'ritmo', 'rota', 'proximas-decisoes']) {
+      if ((await page.locator(`section[aria-labelledby="${id}"]`).count()) > 0) failures.push(`esquadrão: a seção interna "${id}" voltou à página pública (veja .decepticons/VITRINE.md)`);
+    }
     // Endereço antigo: leva para a sala de controle.
     await page.goto(`${base}bastidores/`);
     await page.waitForURL(/sala-de-controle\/$/, { timeout: 20000 }).catch(() => failures.push('bastidores/: não levou para a sala de controle'));
@@ -780,21 +780,8 @@ async function check() {
     await publicPage(page, 'oficina', failures);
     await antiCopy(page, 'oficina', failures);
     if ((await page.locator('.minis .g').count()) < 6) failures.push('oficina: faltam os gráficos da bancada (a simulação do jogo não carregou)');
-    // O mapa da arquitetura (SVG gerado no build): tem de sair com os módulos e as ligações.
-    const arqMods = await page.locator('.arq .mod').count();
-    const arqEdges = await page.locator('.arq .edge').count();
-    if (arqMods < 10) failures.push(`oficina: o mapa da arquitetura saiu com ${arqMods} módulos`);
-    if (arqEdges < 20) failures.push(`oficina: o mapa da arquitetura saiu com ${arqEdges} ligações`);
-    // O ícone de cada módulo (um por tipo de elemento, a ideia do grafo do ABBADON): um por chip, um por frente.
-    const arqIcones = await page.locator('.arq .mod svg').count();
-    const legendaIcones = await page.locator('.arq-legenda svg').count();
-    if (arqIcones < arqMods) failures.push(`oficina: o mapa saiu com ${arqIcones} ícones para ${arqMods} módulos`);
-    if (legendaIcones < 8) failures.push(`oficina: a legenda do mapa saiu com ${legendaIcones} ícones de frente`);
-    // A saúde técnica, lida do repositório no build: os indicadores e a lista de onde ainda falta teste.
-    const saudeCards = await page.locator('.saude .read').count();
-    const saudeRows = await page.locator('.saude tbody tr').count();
-    if (saudeCards < 4) failures.push(`oficina: a saúde técnica saiu com ${saudeCards} indicadores`);
-    if (saudeRows < 1) failures.push('oficina: a saúde técnica saiu sem a lista dos módulos sem teste');
+    // O mapa da arquitetura e a saúde técnica (testes por módulo, onde falta teste) são o retrato das nossas fraquezas: só existem na oficina interna (`--interno`).
+    if ((await page.locator('.arq, .saude, #mapa').count()) > 0) failures.push('oficina: o mapa da arquitetura ou a saúde técnica voltou à página pública (veja .decepticons/VITRINE.md)');
     // O guia (robôs, arsenal, escudos) é lido do código do jogo e do quadro de estado: vazio, é porque algum dos dois mudou de formato.
     const cartoesRobo = await page.locator('[data-workshop-chassis]').count();
     const linhasArma = await page.locator('table.arsenal tbody tr').count();
@@ -916,9 +903,16 @@ async function verify(url) {
   if (!/user-select:\s*none/.test(homeText)) failures.push(`${root}: a landing saiu sem a camada anti-cópia (texto selecionável)`);
   // A hospedagem responde 200 com uma página HTML para arquivo inexistente: status não basta.
   const shop = await get(`${root}oficina/`);
-  if (!(await shop.text()).includes('Oficina · CYBERMECH')) failures.push(`${root}oficina/: não é a oficina`);
+  const shopHtml = await shop.text();
+  if (!shopHtml.includes('Oficina · CYBERMECH')) failures.push(`${root}oficina/: não é a oficina`);
   const control = await get(`${root}sala-de-controle/`);
-  if (!(await control.text()).includes('SALA DE CONTROLE')) failures.push(`${root}sala-de-controle/: não é a sala de controle`);
+  const controlHtml = await control.text();
+  if (!controlHtml.includes('O ESQUADRÃO')) failures.push(`${root}sala-de-controle/: não é a página do esquadrão`);
+  // A vitrine (`.decepticons/VITRINE.md`): nenhum termo de infraestrutura, segurança ou processo no texto das páginas públicas. Vale também no `--verify` do site publicado.
+  for (const [nome, html] of [['/', homeText], ['oficina/', shopHtml], ['sala-de-controle/', controlHtml]]) {
+    const achados = vazamentos(html);
+    if (achados.length) failures.push(`${root}${nome === '/' ? '' : nome}: a vitrine vaza (${achados.join(', ')}); veja .decepticons/VITRINE.md`);
+  }
   const metricas = await get(`${root}metricas/`);
   const metricasHtml = await metricas.text();
   if (!metricasHtml.includes('Métricas · CYBERMECH')) failures.push(`${root}metricas/: não é a página de métricas`);

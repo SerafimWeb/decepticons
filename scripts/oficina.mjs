@@ -17,15 +17,18 @@ import { HUD_PAGE_CSS, hudCss, hudFooter, hudNav, limpaRotulos, pageHero } from 
 import { COMBAT_GUIDE_CSS, WORKSHOP_SCRIPT, familiasDeNumeros, workshopGuide } from './site/combat-guide.mjs';
 
 const argv = process.argv.slice(2);
-const OUT = resolve(argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : '.tmp/site/oficina/index.html');
+// A oficina do site é só o **jogo**: robôs, armas, escudos, calor. O mapa da arquitetura e a saúde técnica (testes por módulo, onde falta teste, conversões forçadas) são o retrato das nossas fraquezas e do
+// nosso desenho interno: ficam só na versão `--interno`, no PC do Comandante (`.decepticons/VITRINE.md`; a guarda é `scripts/site/vitrine.mjs`).
+const INTERNO = argv.includes('--interno');
+const OUT = resolve(argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : INTERNO ? '.tmp/painel/oficina-interna.html' : '.tmp/site/oficina/index.html');
 const m = marcos();
 const game = await jogo();
 const status = statusReal();
 // O mapa da arquitetura: módulos, testes e frentes (arquitetura()) e a equipe de cada frente (das etiquetas dos PRs).
 // A mesma leitura do repositório alimenta a saúde técnica: testes por módulo, onde falta teste e o orçamento de banda.
-const arq = arquitetura();
-const grafo = grafoOficina(arq, porModulo(entregas().prs));
-const saude = saudeOficina(saudeTecnica(arq, game));
+const arq = INTERNO ? arquitetura() : null;
+const grafo = INTERNO ? grafoOficina(arq, porModulo(entregas().prs)) : null;
+const saude = INTERNO ? saudeOficina(saudeTecnica(arq, game)) : '';
 
 /** Espaço sem quebra: o número e a unidade nunca se separam na virada de linha ("20 / s" sozinho na linha de baixo). */
 const NB = ' ';
@@ -258,7 +261,7 @@ function build() {
 
 
   ${workshopGuide(game, status)}
-  <details id="mapa" class="mapa"><summary>Explorar arquitetura e módulos do jogo</summary>${grafo.html}</details>
+  ${INTERNO ? `<details id="mapa" class="mapa"><summary>Explorar arquitetura e módulos do jogo</summary>${grafo.html}</details>` : ''}
 
   <section aria-labelledby="calor">
     <span class="kicker">// termodinâmica · ${esc(V.name)}</span>
@@ -323,7 +326,7 @@ function build() {
 const css = `
   ${COMBAT_GUIDE_CSS}
   ${CHART_CSS}
-  ${GRAFO_CSS}
+  ${INTERNO ? GRAFO_CSS : ''}
   .o-hero { display: grid; gap: 16px; padding-top: 30px; }
   .pitch { font-size: 17px; line-height: 1.6; color: var(--text); max-width: 64ch; text-wrap: pretty; }
   .read .d { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
@@ -364,7 +367,7 @@ const html = pagina({
   description: 'A bancada de testes do CYBERMECH: robôs, armas, escudos e calor medidos pela simulação do jogo a cada versão.',
   css: hudCss('../') + HUD_PAGE_CSS + css,
   body,
-  script: `${grafo.script}\n${WORKSHOP_SCRIPT}`,
+  script: INTERNO ? `${grafo.script}\n${WORKSHOP_SCRIPT}` : WORKSHOP_SCRIPT,
 });
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, html);

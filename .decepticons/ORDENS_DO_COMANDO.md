@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P240 — A lista do Dan é interna, e o site só mostra o superficial (21/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P240 | 21/10 | "essa lista pro dan tem que ser interna, só eu, com meu login de super admin (ou admin apenas) posso acessar isso, e não estar available pro público. temos que começar a profissionalizar e levar isso como uma grande marca ou grandes estúdios de criação, **guardando nossos segredos a sete chaves e divulgando só o superficial**, o que possamos ou devemos mostrar pra captar novos leads. Não faço questão de divulgarmos questões técnicas que custaram pra aprendermos, assim protegemos nossa propriedade intelectual e não ensinamos a clonarem nossas ideias e processos." (antes: "preciso de um dashboard … como um trello, notion … tudo que depende de minhas decisões") | 🟡 | **Vitrine fechada neste PR:** a `/sala-de-controle/` (628 KB, publicava hospedagem, túnel, tokens, o Protocolo, todos os PRs e a confissão da queda) virou a página do esquadrão (35 KB, só a equipe e o guia ao jogador); a oficina deixou de publicar o mapa da arquitetura e as dívidas do código; guarda automática no `npm run check`. A política: `VITRINE.md`. **Falta:** a **Mesa** (quadro de decisões, pendências e o que está em andamento) **atrás do login de administrador**, no servidor (`GET /admin/mesa`, nunca arquivo público), e a página completa interna no mesmo acesso. Hoje o interno é só local (`npm run painel -- --interno`) | `https://cybermech.online/sala-de-controle/` (agora curta); `npm run check` reprova se um termo de infraestrutura ou processo voltar; `.decepticons/VITRINE.md` |
+
 ## P239 — Resiliência: "NAO VAMOS QUEBRAR A TOA" (21/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
