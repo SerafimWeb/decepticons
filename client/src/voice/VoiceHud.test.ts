@@ -2,11 +2,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { carregarDicionario, IDIOMAS, traduzir, type Dicionario } from '../i18n/i18n';
-import { estadoDoBotao, GLIFO_DO_BOTAO, textoDeEstado, textoDeRede, VoiceHud, type VozParaHud } from './VoiceHud';
+import { estadoDoBotao, GLIFO_DO_BOTAO, textoDeCanal, textoDeEstado, textoDeRede, VoiceHud, type VozParaHud } from './VoiceHud';
 import { TEXTO_SEM_VOZ } from './VozNasConfiguracoes';
 
 const RAIZ = resolve(__dirname, '../..');
 
+const vozC = (o: Partial<VozParaHud> = {}): VozParaHud => ({ ...voz(), ...o });
 const voz = (o: { estadoMic?: VozParaHud['estadoMic']; mode?: 'sempre' | 'ptt'; mudo?: boolean; apertada?: boolean; semConexao?: number; colegas?: number } = {}): VozParaHud => ({
   ativa: true,
   estadoMic: o.estadoMic ?? 'ativo',
@@ -17,6 +18,10 @@ const voz = (o: { estadoMic?: VozParaHud['estadoMic']; mode?: 'sempre' | 'ptt'; 
   aoBotao: () => {},
   saudeDoMic: () => 'ok',
   nivelDoMic: 0,
+  canal: null,
+  alvo: null,
+  temTimes: false,
+  canaisDisponiveis: true,
   mic: { mode: o.mode ?? 'sempre', mudo: o.mudo ?? false, apertada: o.apertada ?? false, transmitindo: false },
 });
 
@@ -106,6 +111,14 @@ describe('o chat de voz nas seis línguas (P205)', () => {
     textoDeEstado(voz(), 'T', false, 'sem-som'),
     textoDeEstado(voz(), 'T', false, 'sem-entrega'),
     'Ganho do microfone',
+    textoDeCanal(vozC({ canal: 'time', temTimes: true }), undefined, { time: 'Y', privado: 'U', alvo: 'G' }),
+    textoDeCanal(vozC({ canal: 'time', temTimes: false }), undefined, { time: 'Y', privado: 'U', alvo: 'G' }),
+    textoDeCanal(vozC({ canal: 'privado' }), 'BRAVO', { time: 'Y', privado: 'U', alvo: 'G' }),
+    textoDeCanal(vozC({ canal: 'privado' }), undefined, { time: 'Y', privado: 'U', alvo: 'G' }),
+    textoDeCanal(vozC({ canal: null, colegas: 1 }), 'BRAVO', { time: 'Y', privado: 'U', alvo: 'G' }),
+    'Chat de voz: falar só com o time',
+    'Chat de voz: falar só com o jogador escolhido',
+    'Chat de voz: trocar o jogador escolhido',
     'Sobe a sua voz para quem escuta, no teste e na gravação. Fones Bluetooth costumam pedir ganho; o teste do microfone sugere um valor.',
     textoDeRede(voz({ colegas: 1 }), 2),
     ...Object.values(TEXTO_SEM_VOZ),
@@ -189,5 +202,68 @@ describe('VoiceHud: o desenho (P237): a saúde do microfone chega à tela', () =
     expect(hud({ nivel: 1 }).barra).toBe('100%');
     expect(hud({ nivel: 0 }).barra).toBe('0%');
     expect(hud({ nivel: 0.5, estadoMic: 'sem' }).barra, 'sem microfone a barra não mostra nível').toBe('0%');
+  });
+});
+
+describe('textoDeCanal (P237 PR 3): com quem se está falando', () => {
+  const teclas = { time: 'Y', privado: 'U', alvo: 'G' };
+  const v = (o: Partial<VozParaHud> = {}): VozParaHud => ({ ...voz(), ...o });
+
+  it('falando só com o time: diz; sala sem times: diz que ninguém ouve (falha fechada)', () => {
+    expect(textoDeCanal(v({ canal: 'time', temTimes: true }), undefined, teclas)).toBe('FALANDO SÓ PARA O TIME');
+    expect(textoDeCanal(v({ canal: 'time', temTimes: false }), undefined, teclas)).toBe('SALA SEM TIMES: NINGUÉM OUVE O CANAL DO TIME');
+  });
+
+  it('falando só com um jogador: o nome dele; sem escolha, diz qual tecla escolhe', () => {
+    expect(textoDeCanal(v({ canal: 'privado' }), 'BRAVO', teclas)).toBe('FALANDO SÓ PARA BRAVO');
+    expect(textoDeCanal(v({ canal: 'privado' }), undefined, teclas)).toBe('SEM JOGADOR ESCOLHIDO: [G] ESCOLHE');
+  });
+
+  it('em "todos" ou calado, com colegas na voz: as teclas e o jogador escolhido; sem colegas ou sem canais, nada', () => {
+    expect(textoDeCanal(v({ canal: 'todos', colegas: 2 }), 'BRAVO', teclas)).toBe('CANAIS [Y] TIME · [U] BRAVO · [G] TROCAR');
+    expect(textoDeCanal(v({ canal: null, colegas: 1 }), undefined, teclas)).toBe('CANAIS [Y] TIME · [U] — · [G] TROCAR');
+    expect(textoDeCanal(v({ canal: 'todos', colegas: 0 }), undefined, teclas)).toBe('');
+    expect(textoDeCanal(v({ canal: 'todos', colegas: 2, canaisDisponiveis: false }), 'BRAVO', teclas)).toBe('');
+  });
+
+  it('as teclas que o jogador remapeou entram no texto', () => {
+    expect(textoDeCanal(v({ canal: null, colegas: 1 }), 'BRAVO', { time: 'F', privado: 'R', alvo: 'X' })).toBe('CANAIS [F] TIME · [R] BRAVO · [X] TROCAR');
+  });
+});
+
+describe('VoiceHud: os canais na tela (P237 PR 3)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  function hud(o: Partial<VozParaHud> = {}) {
+    vi.stubGlobal('document', { createElement: () => el() });
+    const v: VozParaHud = { ...voz(), ...o, mic: { mode: 'sempre', mudo: false, apertada: false, transmitindo: true } };
+    const h = new VoiceHud(el() as unknown as HTMLElement, v, (id) => (id === 3 ? 'BRAVO' : undefined), () => 'T');
+    h.atualizar(1000);
+    const interno = h as unknown as { el: Record<string, any>; canal: Record<string, any> };
+    return { classe: interno.el.className as string, canal: interno.canal.textContent as string };
+  }
+
+  it('falando só com o time: a linha e a borda do time acendem', () => {
+    const h = hud({ canal: 'time', temTimes: true });
+    expect(h.canal).toBe('FALANDO SÓ PARA O TIME');
+    expect(h.classe).toContain('voz-no-time');
+    expect(h.classe).not.toContain('voz-no-privado');
+  });
+
+  it('falando só com um jogador: o nome dele (do roster) e a borda do privado', () => {
+    const h = hud({ canal: 'privado', alvo: 3 });
+    expect(h.canal).toBe('FALANDO SÓ PARA BRAVO');
+    expect(h.classe).toContain('voz-no-privado');
+  });
+
+  it('um alvo que o roster não conhece aparece pelo número', () => {
+    expect(hud({ canal: 'privado', alvo: 9 }).canal).toBe('FALANDO SÓ PARA #9');
+  });
+
+  it('em "todos" nenhuma borda de canal, e com colegas a linha lembra as teclas', () => {
+    const h = hud({ canal: 'todos', alvo: 3, colegas: 1 });
+    expect(h.classe).not.toContain('voz-no-time');
+    expect(h.classe).not.toContain('voz-no-privado');
+    expect(h.canal).toBe('CANAIS [Y] TIME · [U] BRAVO · [G] TROCAR');
   });
 });

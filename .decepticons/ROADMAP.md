@@ -112,7 +112,8 @@
 - [x] **Narração (P230, 20/10):** `F8` grava a partida com a voz de quem joga (offline e online; o microfone só na mistura da gravação, só conta de maior de 18 anos, aparelho escolhido nas Configurações); provado no Chrome real (Claude) #ux
 - [x] **A voz diz por que não funciona (P237 PR 1, 20/10):** aviso com o motivo no canto, HUD "n na sala sem voz" e [ VER E COPIAR ] (relatório com a rota de rede e a conclusão); a narração vai do F10 para o F8 (Claude) #ux
 - [x] **O microfone que não está bem (P237 PR 2, 20/10):** ganho 0,5x a 4x (chat, teste com dica, narração), barra do nível e alerta "sem som" no HUD, reabertura automática quando o fone cai; medido no Chrome real (Claude) #ux
-- [ ] **Canais de voz: todos / time / jogador escolhido (P237 PR 3):** o envio por ligação já permite; o canal "time" espera o contrato de rede com o time de cada piloto (Claude) #ux
+- [x] **Canais de voz: todos / time / jogador escolhido (P237 PR 3, 21/10):** T todos, segurar Y só o time, segurar U só o jogador escolhido, G troca o escolhido; porta por colega, falha fechada; medido no Chrome real (Claude) #ux
+- [ ] **O time de cada piloto na sala online (contrato de rede):** sem ele o canal do time não fala com ninguém; `VozOpcoes.timeDe` já espera (CTF online) #ux
 - [x] **Efeitos na voz (P231, 20/10):** Locutor militar, Lorde sombrio e Grande Irmão (cadeia de áudio sob demanda) na narração e na prévia do teste do microfone, afinável por tabela; medido no Chrome real; falta o ouvido do Comandante (Claude) #ux
 - [x] Segundo piloto selecionável no Hangar: andróide A-1 com blaster e motosserra (troca recarrega a partida) #mechs
 - [x] Hangar 2.0, camada 1: galpão 3D próprio com pedestal de holograma, o Mech girando, armas aplicadas na hora #ux

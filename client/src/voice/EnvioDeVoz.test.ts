@@ -107,6 +107,16 @@ describe('EnvioDeVoz (P237): o grafo de envio da voz', () => {
     for (const p of portas) expect(limitador.destinos).toContain(p);
   });
 
+  it('a porta pode nascer FECHADA (um colega que chega no meio de uma fala só para o time não ouve nada)', () => {
+    const k = contexto();
+    const e = new EnvioDeVoz(k.ctx, {} as MediaStreamTrack, 1);
+    e.faixaPara(3, false);
+    e.faixaPara(4);
+    const [p3, p4] = k.nos.filter((x) => x.tipo === 'gain').slice(1) as [No, No];
+    expect(p3.gain.value).toBe(0);
+    expect(p4.gain.value, 'o padrão é nascer aberta').toBe(1);
+  });
+
   it('a porta de um colega abre e fecha sem mexer nas dos outros (é assim que um canal escolhe quem ouve)', () => {
     const k = contexto();
     const e = new EnvioDeVoz(k.ctx, {} as MediaStreamTrack, 1);

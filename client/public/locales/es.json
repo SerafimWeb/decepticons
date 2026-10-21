@@ -983,5 +983,13 @@
  "O NAVEGADOR PAROU DE RECEBER O MICROFONE: CONFIRA O FONE E O WINDOWS": "EL NAVEGADOR DEJÓ DE RECIBIR EL MICRÓFONO: REVISA EL AURICULAR Y WINDOWS",
  "Ganho do microfone": "Ganancia del micrófono",
  "Sobe a sua voz para quem escuta, no teste e na gravação. Fones Bluetooth costumam pedir ganho; o teste do microfone sugere um valor.": "Sube tu voz para quien escucha, en la prueba y en la grabación. Los auriculares Bluetooth suelen necesitar ganancia; la prueba del micrófono sugiere un valor.",
- "Voz baixa: suba o ganho do microfone para x{0}.": "Voz baja: sube la ganancia del micrófono a x{0}."
+ "Voz baixa: suba o ganho do microfone para x{0}.": "Voz baja: sube la ganancia del micrófono a x{0}.",
+ "FALANDO SÓ PARA O TIME": "HABLANDO SOLO CON EL EQUIPO",
+ "SALA SEM TIMES: NINGUÉM OUVE O CANAL DO TIME": "SALA SIN EQUIPOS: NADIE OYE EL CANAL DEL EQUIPO",
+ "FALANDO SÓ PARA {0}": "HABLANDO SOLO CON {0}",
+ "SEM JOGADOR ESCOLHIDO: [{0}] ESCOLHE": "SIN JUGADOR ELEGIDO: [{0}] ELIGE",
+ "CANAIS [{0}] TIME · [{1}] {2} · [{3}] TROCAR": "CANALES [{0}] EQUIPO · [{1}] {2} · [{3}] CAMBIAR",
+ "Chat de voz: falar só com o time": "Chat de voz: hablar solo con el equipo",
+ "Chat de voz: falar só com o jogador escolhido": "Chat de voz: hablar solo con el jugador elegido",
+ "Chat de voz: trocar o jogador escolhido": "Chat de voz: cambiar el jugador elegido"
 }

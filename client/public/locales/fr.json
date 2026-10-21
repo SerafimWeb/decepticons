@@ -983,5 +983,13 @@
  "O NAVEGADOR PAROU DE RECEBER O MICROFONE: CONFIRA O FONE E O WINDOWS": "LE NAVIGATEUR NE REÇOIT PLUS LE MICRO : VÉRIFIEZ LE CASQUE ET WINDOWS",
  "Ganho do microfone": "Gain du micro",
  "Sobe a sua voz para quem escuta, no teste e na gravação. Fones Bluetooth costumam pedir ganho; o teste do microfone sugere um valor.": "Augmente votre voix pour ceux qui écoutent, dans le test et à l’enregistrement. Les casques Bluetooth demandent souvent du gain ; le test du micro suggère une valeur.",
- "Voz baixa: suba o ganho do microfone para x{0}.": "Voix faible : augmentez le gain du micro à x{0}."
+ "Voz baixa: suba o ganho do microfone para x{0}.": "Voix faible : augmentez le gain du micro à x{0}.",
+ "FALANDO SÓ PARA O TIME": "PAROLE UNIQUEMENT À L'ÉQUIPE",
+ "SALA SEM TIMES: NINGUÉM OUVE O CANAL DO TIME": "SALLE SANS ÉQUIPES : PERSONNE N'ENTEND LE CANAL D'ÉQUIPE",
+ "FALANDO SÓ PARA {0}": "PAROLE UNIQUEMENT À {0}",
+ "SEM JOGADOR ESCOLHIDO: [{0}] ESCOLHE": "AUCUN JOUEUR CHOISI : [{0}] CHOISIT",
+ "CANAIS [{0}] TIME · [{1}] {2} · [{3}] TROCAR": "CANAUX [{0}] ÉQUIPE · [{1}] {2} · [{3}] CHANGER",
+ "Chat de voz: falar só com o time": "Chat vocal : parler uniquement à l'équipe",
+ "Chat de voz: falar só com o jogador escolhido": "Chat vocal : parler uniquement au joueur choisi",
+ "Chat de voz: trocar o jogador escolhido": "Chat vocal : changer le joueur choisi"
 }

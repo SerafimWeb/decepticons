@@ -1,5 +1,6 @@
 import { messageType } from '../../../shared/net/messages';
 import { abrirMicrofone } from './abrirMicrofone';
+import { type Canal, permite, proximoAlvo, type RegrasDoCanal } from './canais';
 import { EnvioDeVoz } from './EnvioDeVoz';
 import { type SaudeDoMic, VigiaDoMic } from './saudeDoMic';
 import { codificarPronto, codificarSinal, lerLista, lerSinal, VOZ, type Sinal } from '../../../shared/net/voz';
@@ -44,6 +45,8 @@ export interface VozOpcoes {
   token?(): string | null;
   ambiente?: Ambiente;
   ice?: readonly RTCIceServer[];
+  /** O time de cada jogador da sala (P237 PR 3): `null` = a sala não tem times (hoje o servidor ainda não os atribui). Sem ele o canal "time" fica fechado: nunca vira "todos" (falha fechada). */
+  timeDe?(id: number): number | null;
 }
 
 /** Um retrato de uma ligação com um colega, para o diagnóstico (P237): se o áudio está indo e vindo e por qual rota de rede. */
@@ -85,6 +88,11 @@ export interface DiagnosticoDaVoz {
   nivel: number;
   faixaMuda: boolean;
   reaberturas: number;
+  /** Os canais (P237 PR 3): em qual o microfone fala agora, o alvo do privado, se a sala tem times e se os canais funcionam (precisam do envio por Web Audio). */
+  canal: Canal | null;
+  alvoPrivado: number | null;
+  temTimes: boolean;
+  canaisDisponiveis: boolean;
 }
 
 interface Ligacao {
@@ -132,6 +140,10 @@ export class VoiceChat {
   /** A reabertura automática do microfone (o fone Bluetooth cai e volta): o relógio da próxima tentativa e quantas já foram. */
   private reabrirTimer: ReturnType<typeof setTimeout> | undefined;
   private tentativasDeReabrir = 0;
+  /** O jogador que o canal privado escolheu (`null` = ninguém escolhido; com um só colega na voz, ele é o alvo: ver `alvo`). */
+  private alvoPrivado: number | null = null;
+  /** O alvo do sussurro EM CURSO, **congelado ao apertar a tecla** (revisão de segurança): se ele sai, ou chega outro colega, a voz não muda de destinatário; ninguém ouve até soltar e apertar de novo. */
+  private alvoDaFala: number | null = null;
   private readonly aoMudarOsAparelhos = (): void => {
     // Plugou o fone ou o Bluetooth voltou: se estamos na voz sem microfone, tenta de novo agora (sem esperar o relógio).
     if (this.noServidor && !this.fluxo && this.estado === 'sem') {
@@ -212,20 +224,40 @@ export class VoiceChat {
     }
   }
 
-  /** Liga a tecla do chat (PTT, ou mudo no modo "sempre"). Devolve quem desliga. */
-  ligarTeclas(tecla: () => string): () => void {
+  /** Liga a tecla do chat (PTT, ou mudo no modo "sempre") e, se vierem, as dos canais (P237): segurar a do time, segurar a do jogador escolhido, e trocar o jogador escolhido. Devolve quem desliga. */
+  ligarTeclas(tecla: () => string, canais?: () => { time: string; privado: string; alvo: string }): () => void {
     const noCampo = (alvo: EventTarget | null): boolean => {
       const t = alvo as HTMLElement | null;
       return !!t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
     };
     const aperta = (e: KeyboardEvent) => {
-      if (e.repeat || normalizeKey(e.code) !== tecla() || noCampo(e.target)) return;
-      this.aoBotao(true);
+      if (e.repeat || noCampo(e.target)) return;
+      const k = normalizeKey(e.code);
+      if (k === tecla()) {
+        this.aoBotao(true);
+        return;
+      }
+      const c = canais?.();
+      if (!c) return;
+      if (k === c.time) this.aoCanal('time', true);
+      else if (k === c.privado) this.aoCanal('privado', true);
+      else if (k === c.alvo) this.trocarAlvo();
     };
     const solta = (e: KeyboardEvent) => {
-      if (normalizeKey(e.code) === tecla()) this.aoBotao(false);
+      const k = normalizeKey(e.code);
+      if (k === tecla()) {
+        this.aoBotao(false);
+        return;
+      }
+      const c = canais?.();
+      if (!c) return;
+      if (k === c.time) this.aoCanal('time', false);
+      else if (k === c.privado) this.aoCanal('privado', false);
     };
-    const perdeuFoco = () => this.mic.soltar();
+    const perdeuFoco = () => {
+      this.mic.soltar();
+      this.rotear();
+    };
     window.addEventListener('keydown', aperta);
     window.addEventListener('keyup', solta);
     window.addEventListener('blur', perdeuFoco);
@@ -234,6 +266,85 @@ export class VoiceChat {
       window.removeEventListener('keyup', solta);
       window.removeEventListener('blur', perdeuFoco);
     };
+  }
+
+  /**
+   * A tecla de um canal (P237 PR 3): enquanto apertada, o áudio vai **só** a quem o canal permite (o time, ou o jogador escolhido) e a todos os outros a porta fica fechada. **Sem o envio por Web Audio
+   * não há porta por colega, então a tecla não faz nada** (nunca arrisca mandar a voz a todos). Sem microfone ou fora da voz, também não.
+   */
+  aoCanal(canal: 'time' | 'privado', down: boolean): void {
+    if (!down) {
+      // Soltar passa SEMPRE (mesmo sem o envio): a tecla de canal nunca pode ficar presa.
+      this.mic.aoTeclaCanal(canal, false);
+      if (canal === 'privado') this.alvoDaFala = null;
+      this.rotear();
+      return;
+    }
+    if (!this.noServidor || !this.mic.temMic || !this.envio) return;
+    if (canal === 'privado') this.alvoDaFala = this.escolhido();
+    this.mic.aoTeclaCanal(canal, true);
+    this.rotear();
+  }
+
+  /** Troca o jogador do canal privado para o próximo colega na voz (volta ao primeiro depois do último). */
+  trocarAlvo(): void {
+    this.alvoPrivado = proximoAlvo(this.ids(), this.alvoPrivado);
+    if (this.mic.privado) this.alvoDaFala = this.escolhido(); // trocar no meio do sussurro é uma escolha do jogador: a voz vai ao novo alvo
+    this.rotear();
+  }
+
+  /** Escolhe o jogador do canal privado (ou `null` para nenhum). */
+  definirAlvo(id: number | null): void {
+    this.alvoPrivado = id;
+    if (this.mic.privado) this.alvoDaFala = this.escolhido();
+    this.rotear();
+  }
+
+  /** O jogador que o canal privado escolheu: o que o jogador escolheu, ou o único colega na voz. `null` = ninguém. */
+  private escolhido(): number | null {
+    return this.alvoPrivado ?? (this.lista.length === 1 ? this.lista[0]!.id : null);
+  }
+
+  /** O alvo do privado: com a tecla apertada, o alvo **congelado** no momento em que se apertou (`null` se ele saiu); solta, o escolhido. */
+  get alvo(): number | null {
+    return this.mic.privado ? this.alvoDaFala : this.escolhido();
+  }
+
+  /** Em qual canal o meu microfone fala agora (`null` = calado). */
+  get canal(): Canal | null {
+    return this.mic.canal;
+  }
+
+  /** A sala tem times para o canal "time" (eu estou num)? */
+  get temTimes(): boolean {
+    return this.o.timeDe?.(this.meuId) != null;
+  }
+
+  /** Os canais precisam do envio por Web Audio (uma porta por colega); sem ele só existe "todos". */
+  get canaisDisponiveis(): boolean {
+    return this.envio !== null;
+  }
+
+  /** Chamar quando os times da sala mudam: refaz quem ouve. */
+  reavaliarCanais(): void {
+    this.rotear();
+  }
+
+  private ids(): number[] {
+    return this.lista.map((l) => l.id);
+  }
+
+  private regras(): RegrasDoCanal {
+    const timeDe = this.o.timeDe ?? (() => null);
+    return { timeDe, meuTime: timeDe(this.meuId), alvo: this.alvo };
+  }
+
+  /** Abre ou fecha a porta de cada colega conforme o canal em que falo agora. */
+  private rotear(): void {
+    if (!this.envio) return;
+    const canal = this.mic.canal;
+    const regras = this.regras();
+    for (const l of this.lista) this.envio.abrirPara(l.id, permite(canal, l.id, regras));
   }
 
   /**
@@ -334,6 +445,10 @@ export class VoiceChat {
       nivel: this.nivel,
       faixaMuda: this.faixaMuda,
       reaberturas: this.tentativasDeReabrir,
+      canal: this.mic.canal,
+      alvoPrivado: this.alvo,
+      temTimes: this.temTimes,
+      canaisDisponiveis: this.canaisDisponiveis,
     };
   }
 
@@ -462,6 +577,9 @@ export class VoiceChat {
 
   /** O contexto do envio ficou suspenso (o navegador não deixou tocar áudio sem gesto): volta à faixa crua em vez de mandar silêncio. */
   private abandonarEnvio(): void {
+    // Sem as portas por colega não há como falar só com o time ou com um jogador: solta as teclas de canal ANTES de a faixa crua voltar (senão ela iria a todos).
+    this.mic.liberarCanais();
+    this.alvoDaFala = null;
     this.envio?.dispose();
     this.envio = null;
     const faixa = this.fluxo?.getAudioTracks()[0] ?? null;
@@ -548,7 +666,8 @@ export class VoiceChat {
   /** Põe o microfone (se já temos) na ligação. */
   private async entregarMic(l: Ligacao): Promise<void> {
     const crua = this.fluxo?.getAudioTracks()[0];
-    const faixa = this.envio?.faixaPara(l.id) ?? crua;
+    // A porta do colega nasce no estado do canal de agora: quem chega no meio de uma fala só para o time não ouve nada.
+    const faixa = this.envio?.faixaPara(l.id, permite(this.mic.canal, l.id, this.regras())) ?? crua;
     if (faixa && l.sender) await l.sender.replaceTrack(faixa).catch(() => {});
   }
 
@@ -590,6 +709,8 @@ export class VoiceChat {
     this.lista.splice(this.lista.indexOf(l), 1);
     this.envio?.soltarPar(id);
     this.spatial.remover(id);
+    if (this.alvoPrivado === id) this.alvoPrivado = null;
+    if (this.alvoDaFala === id) this.alvoDaFala = null;
     try {
       l.pc.close();
     } catch {

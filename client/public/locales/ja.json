@@ -983,5 +983,13 @@
  "O NAVEGADOR PAROU DE RECEBER O MICROFONE: CONFIRA O FONE E O WINDOWS": "ブラウザがマイクを受信できなくなりました：ヘッドセットとWindowsを確認してください",
  "Ganho do microfone": "マイクのゲイン",
  "Sobe a sua voz para quem escuta, no teste e na gravação. Fones Bluetooth costumam pedir ganho; o teste do microfone sugere um valor.": "聞いている人にあなたの声を大きく届けます（テストと録画にも反映）。Bluetoothヘッドセットはゲインが必要なことが多く、マイクテストが値を提案します。",
- "Voz baixa: suba o ganho do microfone para x{0}.": "声が小さい：マイクのゲインをx{0}に上げてください。"
+ "Voz baixa: suba o ganho do microfone para x{0}.": "声が小さい：マイクのゲインをx{0}に上げてください。",
+ "FALANDO SÓ PARA O TIME": "チームだけに話しています",
+ "SALA SEM TIMES: NINGUÉM OUVE O CANAL DO TIME": "チームのないルーム：チームチャンネルは誰にも聞こえません",
+ "FALANDO SÓ PARA {0}": "{0}だけに話しています",
+ "SEM JOGADOR ESCOLHIDO: [{0}] ESCOLHE": "相手が未選択：[{0}]で選択",
+ "CANAIS [{0}] TIME · [{1}] {2} · [{3}] TROCAR": "チャンネル [{0}] チーム · [{1}] {2} · [{3}] 切替",
+ "Chat de voz: falar só com o time": "ボイスチャット：チームだけに話す",
+ "Chat de voz: falar só com o jogador escolhido": "ボイスチャット：選んだプレイヤーだけに話す",
+ "Chat de voz: trocar o jogador escolhido": "ボイスチャット：選んだプレイヤーを切り替える"
 }

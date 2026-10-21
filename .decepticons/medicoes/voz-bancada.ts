@@ -43,7 +43,9 @@ const ambiente: Ambiente = {
 };
 
 let meuId = -1;
-const chat = new VoiceChat({ enviar: (b) => cliente.enviarVoz(b), saida: () => ({ ctx, out }), ambiente, ...(q.has('token') ? { token: () => q.get('token') } : {}) });
+/** Os times da sala (P237 PR 3): a bancada não tem servidor que os atribua; o teste diz quem é de qual time (id da unidade → time). Vazio = a sala não tem times. */
+const times: Record<number, number> = {};
+const chat = new VoiceChat({ enviar: (b) => cliente.enviarVoz(b), saida: () => ({ ctx, out }), ambiente, timeDe: (id) => times[id] ?? null, ...(q.has('token') ? { token: () => q.get('token') } : {}) });
 const cliente: NetClient = new NetClient(`${q.get('servidor')}/?sala=${q.get('sala') ?? 'VOZBANCADA'}`, {
   welcome: (m) => {
     meuId = m.id;
@@ -113,4 +115,14 @@ async function enviado(): Promise<{ pacotes: number; bytes: number }> {
     return !!fluxo;
   },
   estadoMic: () => chat.estadoMic,
+  /** P237 PR 3: os canais. */
+  definirTimes: (novos: Record<number, number>) => {
+    for (const k of Object.keys(times)) delete times[Number(k)];
+    Object.assign(times, novos);
+    chat.reavaliarCanais();
+  },
+  canal: (canal: 'time' | 'privado', down: boolean) => chat.aoCanal(canal, down),
+  escolherAlvo: (id: number | null) => chat.definirAlvo(id),
+  trocarAlvo: () => chat.trocarAlvo(),
+  canalAtual: () => ({ canal: chat.canal, alvo: chat.alvo, temTimes: chat.temTimes, disponiveis: chat.canaisDisponiveis }),
 };

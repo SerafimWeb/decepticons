@@ -69,6 +69,9 @@ export function formatarDiagnostico(e: EntradaDoDiagnostico): string {
     L.push(
       `envio: ganho x${v.ajusteDeGanho.toFixed(1)} · ${v.viaWebAudio ? 'por Web Audio' : 'faixa crua do navegador'} · nível ${v.nivel.toFixed(3)} · saúde ${v.saude}${v.faixaMuda ? ' · o navegador diz a faixa PARADA' : ''}${v.reaberturas > 0 ? ` · reaberturas automáticas: ${v.reaberturas}` : ''}`,
     );
+    L.push(
+      `canais: falando ${v.canal === null ? 'em nenhum (calado)' : v.canal === 'todos' ? 'para todos' : v.canal === 'time' ? 'só para o time' : 'só para o jogador escolhido'} · jogador escolhido: ${v.alvoPrivado === null ? 'ninguém' : (e.pilotos.find((p) => p.id === v.alvoPrivado)?.nome ?? `#${v.alvoPrivado}`)} · time: ${v.temTimes ? 'a sala tem times' : 'a sala NÃO tem times (o canal do time fica fechado)'} · canais ${v.canaisDisponiveis ? 'disponíveis' : 'INDISPONÍVEIS (sem o envio por Web Audio)'}`,
+    );
     L.push(`na voz comigo: ${v.ligacoes.length} · ligados ${v.ligacoes.filter((l) => l.estado === 'conectada').length} · sem conexão ${v.ligacoes.filter((l) => l.estado === 'falhou').length}`);
     for (const l of v.ligacoes) {
       const nome = e.pilotos.find((p) => p.id === l.id)?.nome ?? `#${l.id}`;
