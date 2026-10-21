@@ -18,6 +18,8 @@ interface Cenario {
   prExistente?: number;
   checksNaoAparecem?: boolean;
   ci?: string;
+  /** O que cada leitura do check devolve, em ordem ('' = leitura vazia); a última se repete. */
+  ciSequencia?: string[];
   estado?: string;
   mergeou?: boolean;
   /** Em qual chamada de `gh pr merge` o merge de fato sai (o GitHub às vezes só aceita na 2ª). */
@@ -31,6 +33,7 @@ function palco(c: Cenario = {}) {
   const log: string[] = [];
   let mergeChamado = false;
   let mergesChamados = 0;
+  let ultimoCi = ci;
   const git = (args: string[]): RespostaComando => {
     const a = args.join(' ');
     chamadas.push(`git ${a}`);
@@ -48,7 +51,11 @@ function palco(c: Cenario = {}) {
     if (a.startsWith('pr list')) return ok(prExistente ? `${prExistente}\n` : '\n');
     if (a.startsWith('pr create')) return ok('https://github.com/SerafimWeb/decepticons/pull/77\n');
     if (a === 'pr checks 77 --watch') return ok();
-    if (a === 'pr checks 77' || a === `pr checks ${prExistente}`) return ok(checksNaoAparecem ? 'etiquetas\tpass\t6s\n' : `check\t${ci}\t3m40s\netiquetas\tpass\t6s\n`);
+    if (a === 'pr checks 77' || a === `pr checks ${prExistente}`) {
+      // `ciSequencia`: o que cada leitura do check devolve, na ordem ('' = leitura vazia); a última se repete.
+      if (c.ciSequencia?.length) ultimoCi = c.ciSequencia.length > 1 ? c.ciSequencia.shift()! : c.ciSequencia[0]!;
+      return ok(checksNaoAparecem ? 'etiquetas\tpass\t6s\n' : ultimoCi === '' ? '' : `check\t${ultimoCi}\t3m40s\netiquetas\tpass\t6s\n`);
+    }
     if (a.startsWith('pr view') && a.includes('state,mergeStateStatus')) return ok(JSON.stringify({ state: 'OPEN', mergeStateStatus: estado }));
     if (a.startsWith('pr merge')) {
       mergeChamado = true;
@@ -158,6 +165,31 @@ describe('publicar: o que ele recusa', () => {
     expect(r.ok).toBe(false);
     expect(r.motivo).toContain('fail');
     expect(p.sem().some((c) => c.startsWith('gh pr merge') || c.startsWith('gh api -X'))).toBe(false);
+  });
+
+  it('o --watch volta cedo, com o CI ainda pendente ou a leitura vazia (21/10, #436): espera o resultado em vez de reprovar um PR verde', async () => {
+    const p = palco({ ciSequencia: ['pending', 'pending', '', 'pending', 'pass'] });
+    const r = await publicar(p.ops, OPC);
+    expect(r.ok).toBe(true);
+    expect(p.chamadas.filter((c) => c === 'dormir').length).toBeGreaterThanOrEqual(3);
+    expect(p.sem().some((c) => c.startsWith('gh pr merge'))).toBe(true);
+  });
+
+  it('o CI que acaba vermelho depois de ficar pendente: não mergeia (a espera não vira "aprovado")', async () => {
+    const p = palco({ ciSequencia: ['pending', 'pending', 'fail'] });
+    const r = await publicar(p.ops, OPC);
+    expect(r.ok).toBe(false);
+    expect(r.motivo).toContain('fail');
+    expect(p.sem().some((c) => c.startsWith('gh pr merge') || c.startsWith('gh api -X'))).toBe(false);
+  });
+
+  it('o CI que nunca sai do pendente: desiste no teto, sem mergear', async () => {
+    const p = palco({ ciSequencia: ['pending'] });
+    const r = await publicar(p.ops, OPC);
+    expect(r.ok).toBe(false);
+    expect(r.motivo).toContain('pending');
+    expect(p.chamadas.filter((c) => c === 'dormir').length).toBeGreaterThanOrEqual(99);
+    expect(p.sem().some((c) => c.startsWith('gh pr merge'))).toBe(false);
   });
 
   it('CI que nunca cria a linha "check" (PR em conflito não roda o CI): falha sem mergear', async () => {

@@ -53,6 +53,8 @@ Abrir `cybermech.online` ao público: **jogo grátis no navegador**, com **dois 
 
 | 11 | **Fechar o atalho do Comandante** (P224) | O `?comandante=1` abre, no site publicado, as fases restritas para quem digitar o link. É interruptor de desenvolvimento: no lançamento se fecha com uma linha. **Dois passos juntos:** (a) escrever `"comandantePorLink": false` em `.tmp/servidor/deploy-site.json` e publicar de novo; (b) o **servidor recusar mapa restrito a quem não é administrador** (**feito:** pacote A0, P226) | O (b) está feito; **o Comandante diz "pode fechar" e o Claude faz o (a)** | `https://cybermech.online/?comandante=1` **não** mostra o IMPLANTAR do 8 DE JANEIRO, e a conta de administrador continua abrindo o modo Comandante. **Lembrete automático:** enquanto estiver aberto, cada publicação do site escreve `LEMBRETE DE LANÇAMENTO` no log (`.tmp/servidor/publicar-site.log`) |
 
+> **Estabilidade (21/10, P239):** os itens **5 (monitor externo) e 8 (servidor fora do PC de trabalho)** são exatamente o que faltou na noite em que o online ficou fora do ar. O diagnóstico com dados, as lacunas já fechadas e as que dependem do Comandante estão em **`RESILIENCIA.md`**; "sete dias seguidos sem queda não planejada, sob o monitor externo" entra no "pronto quando" do item 9.
+
 **Ordem:** 1 → 2, 3, 4 (a auditoria diz o que corrigir primeiro) → 7 (rápido) → 5 e 6; 8, 9 e 10 são do Comandante e andam em paralelo; o 9 só depois do 8.
 
 ## 3. Fora do lançamento (congelado)
