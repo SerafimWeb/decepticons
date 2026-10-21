@@ -111,10 +111,18 @@ const TYPES = {
   '.jpg': 'image/jpeg',
 };
 
-/** Build do jogo lido do git (tag, commits desde ela e hash); argumentos em lista, sem shell. */
+/**
+ * O rótulo do build que o rodapé do jogo mostra: o número de commits e o hash curto ("build 287 · d239293"), lidos do git; argumentos em lista, sem shell.
+ * O `git describe` mostrava o nome de uma tag velha e o "g" que o próprio git põe antes do hash (`checkpoint/explosoes-v1-287-gd239293`): informação de desenvolvedor para o jogador.
+ */
 function buildId() {
-  const r = spawnSync('git', ['describe', '--tags', '--always'], { encoding: 'utf8' });
-  return r.status === 0 ? r.stdout.trim() : 'dev';
+  const git = (...args) => {
+    const r = spawnSync('git', args, { encoding: 'utf8' });
+    return r.status === 0 ? r.stdout.trim() : '';
+  };
+  const commits = git('rev-list', '--count', 'HEAD');
+  const hash = git('rev-parse', '--short', 'HEAD');
+  return commits && hash ? `build ${commits} · ${hash}` : 'dev';
 }
 
 function run(cmd, args, env) {

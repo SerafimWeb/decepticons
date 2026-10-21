@@ -4,6 +4,7 @@ import { REINICIO_AVISO_S } from '../shared/net/constants';
 import { CODIGO_REINICIO } from './admin';
 import { pastaDados } from './dados';
 import { vigiarParada } from './parada';
+import { instalarRedeDeSeguranca } from './redeDeSeguranca';
 import { soltarAjudanteDeReinicio } from './religar';
 import { Registro, REGISTRO_PASTA } from './registro';
 import { DEFAULT_HOST, startServer } from './Server';
@@ -18,6 +19,8 @@ const registro = new Registro(join(pastaDados(resolve(import.meta.dirname, '..')
 registro.podar();
 setInterval(() => registro.podar(), 6 * 60 * 60 * 1000).unref();
 const dizer = (linha: string): void => registro.escrever(linha);
+// Uma promessa que falha sem ninguém tratar não derruba mais o servidor de todo mundo (P239): fica no registro, com a causa, e o servidor segue.
+instalarRedeDeSeguranca(process, dizer);
 const port = Number(process.env.PORT ?? 2567);
 const host = process.env.HOST ?? DEFAULT_HOST;
 /** A versão do código em que o servidor roda (o hash curto do git; a pasta do servidor é uma worktree), para o painel mostrar. */

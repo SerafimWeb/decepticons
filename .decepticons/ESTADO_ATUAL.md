@@ -19,7 +19,12 @@
 ## O ONLINE NÃO CONECTAVA: O SERVIDOR CAÍA AO ABRIR A SALA DE UM MAPA SOB DEMANDA — Claude, 21/10 (branch `claude/servidor-runner-aberto`, P238)
 
 **O Comandante (21/10):** o jogo online dava 502 em `jogo.cybermech.online` (`jogar/?nome=serafim&mapa=janeiro:1`). **Causa:** o `scripts/server.mjs` fechava o carregador do Vite ao subir; o `import()` do mapa da Praia, da Terras Raras ou do 8 de Janeiro falhava dentro da sala, a rejeição não era tratada e o processo morria (a Praia é pública: qualquer jogador a derrubava). **Feito:** o lançador mantém o carregador aberto (+~45 MB); uma sala que não abre derruba só a conexão que a pediu (1011) e não fica em cache. 2 testes novos (um sobe o processo de verdade), 3 mutações pegas.
-**Falta (R13):** conferir na produção depois que o atualizador religar o servidor (uma sala da Praia e o atalho do Comandante no 8 de Janeiro). **Próxima sessão começa com:** o que o Comandante achar jogando o 8 de Janeiro online (a missão em si ainda é só offline: o Deathmatch da Praça é o que abre online).
+**Provado na produção (13:50Z, 0 jogadores, pelo túnel):** Cidade Neon e Praia abrem, o 8 de Janeiro sem credencial recusa, o `uptimeS` só cresce. **Não visto (R13):** a sala do 8 de Janeiro aberta com a credencial do Comandante (a missão em si é só offline).
+
+## RESILIÊNCIA: REDE DE SEGURANÇA DO PROCESSO, FUMAÇA POR MAPA E O RÓTULO DO BUILD — Claude, 21/10 (branch `claude/resiliencia-do-servidor`, P239)
+
+**O Comandante (21/10):** *"quero ter segurança de que NAO VAMOS QUEBRAR A TOA!"*. **Feito:** `server/redeDeSeguranca.ts` (rejeição não tratada é registrada e o servidor segue; tempestade de mais de 10 em 1 min sai para religar limpo), `npm run fumaca` (abre uma sala de cada mapa como anônimo; `server/fumaca.ts`) e o rodapé `build 287 · d239293` no lugar de `checkpoint/explosoes-v1-287-gd239293`. O diagnóstico com dados e as 8 lacunas estão em **`.decepticons/RESILIENCIA.md`**; o que só o Comandante decide (monitor externo A14, onde o servidor mora) e a cura de religar em segundos dependem do item 8 do `LANCAMENTO.md`.
+**Falta:** o atualizador rodar a fumaça depois de religar e **voltar sozinho ao commit anterior** se reprovar (próximo PR; mexe no supervisor de produção, por isso vai separado e testado).
 
 ## A MISSÃO DO 8 DE JANEIRO ESTÁ PRONTA NO NAVEGADOR: A ABERTURA E O ROTEIRO PARA LIBERAR — Claude, 20/10 (branch `claude/janeiro-abertura`, P233)
 

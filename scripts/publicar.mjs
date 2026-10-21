@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { gh as ghReal } from './ghSeguro.mjs';
 
 const TENTATIVAS_CHECK = 40; // × 6 s: o CI leva até alguns segundos para criar a linha `check`
+const TENTATIVAS_RESULTADO = 100; // × 15 s (~25 min): o CI leva ~4 min; o teto só existe para não esperar para sempre um CI travado
 const TENTATIVAS_ESTADO = 10;
 const TENTATIVAS_MERGE = 4; // o GitHub às vezes ainda não calculou a mergeabilidade quando o CI acaba: o 1º merge falha e o 2º passa (11/10, #231)
 
@@ -80,7 +81,14 @@ export async function publicar(ops, opcoes) {
     if (!existe) return falha(`o CI não criou a linha "check" no PR #${n} (conflito com a main? veja o PR no GitHub; sem Actions, use --sem-ci)`);
     log('esperando o CI terminar…');
     gh(['pr', 'checks', String(n), '--watch']);
-    const resultado = /^check\t(\w+)/m.exec(gh(['pr', 'checks', String(n)]).stdout)?.[1];
+    // O --watch pode voltar na hora (pelo fallback da credencial do Git ele não acompanha): ler o resultado UMA vez reprovava um PR verde (21/10, #436: "check: sem resultado", e o CI passou 4 min depois).
+    // Por isso espera o `check` chegar a um estado final (pass, fail, cancel, skipping); `pending` e a leitura vazia (erro transitório) esperam.
+    let resultado;
+    for (let i = 0; i < TENTATIVAS_RESULTADO; i++) {
+      resultado = /^check\t(\w+)/m.exec(gh(['pr', 'checks', String(n)]).stdout)?.[1];
+      if (resultado && resultado !== 'pending') break;
+      await dormir(15000);
+    }
     if (resultado !== 'pass') return falha(`o CI não passou (check: ${resultado ?? 'sem resultado'}); PR #${n} aberto e branch preservado. Se o Actions está sem cota ou pagamento, rode de novo com --sem-ci`);
   }
 
