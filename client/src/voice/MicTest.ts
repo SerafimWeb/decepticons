@@ -6,6 +6,10 @@
 
 import type { VozEfeito } from '../core/Settings';
 import { abrirMicrofone } from './abrirMicrofone';
+import { barraDoNivel, nivelDaOnda, sugestaoDeGanho } from './saudeDoMic';
+
+/** O nível da onda e a barra moram em `saudeDoMic.ts` (o chat os usa sem puxar o teste do microfone); o teste os reexporta. */
+export { barraDoNivel, nivelDaOnda };
 import type { CadeiaDeVoz } from './EfeitosDeVoz';
 
 /** Os textos do painel: cada um é uma chave do dicionário de idiomas (`public/locales`); o teste confere que os seis idiomas têm todas. */
@@ -16,6 +20,7 @@ export const TEXTO_DO_TESTE = Object.freeze({
   semSinal: 'Sem sinal: fale mais perto, ou escolha outro aparelho.',
   silencioTotal: 'Silêncio total: este aparelho não entrega som (mudo ou desligado no Windows). Escolha outro da lista.',
   usando: 'Aparelho em uso: {0}',
+  baixa: 'Voz baixa: suba o ganho do microfone para x{0}.',
   negado: 'O navegador bloqueou o microfone neste site. Clique no cadeado ao lado do endereço, permita o microfone e teste de novo.',
   semAparelho: 'Nenhum microfone encontrado. Conecte um e teste de novo.',
   emUso: 'O microfone está em uso por outro programa. Feche-o e teste de novo.',
@@ -36,28 +41,6 @@ export function classificarFalha(e: unknown): FalhaDoMic {
   if (nome === 'NotFoundError' || nome === 'DevicesNotFoundError') return 'semAparelho';
   if (nome === 'NotReadableError' || nome === 'TrackStartError' || nome === 'AbortError') return 'emUso';
   return 'outra';
-}
-
-/**
- * O volume da onda (amostras de -1 a 1): o RMS de 0 a 1 e o pico (a maior amostra, em módulo). **Em ponto flutuante, não em bytes:** um byte só enxerga passos de 0,0078, e um fone Bluetooth
- * (o do Comandante) entrega voz baixinha (RMS de 0,01) que em bytes quase não aparece.
- */
-export function nivelDaOnda(onda: Float32Array): { rms: number; pico: number } {
-  let soma = 0;
-  let pico = 0;
-  for (let i = 0; i < onda.length; i++) {
-    const v = onda[i]!;
-    soma += v * v;
-    const a = v < 0 ? -v : v;
-    if (a > pico) pico = a;
-  }
-  return { rms: onda.length === 0 ? 0 : Math.sqrt(soma / onda.length), pico };
-}
-
-/** O RMS na barra (0 a 100): em decibéis, de −60 dBFS (vazio) a 0 dBFS (cheio); a fala normal fica entre 50 e 80. */
-export function barraDoNivel(rms: number): number {
-  const db = 20 * Math.log10(Math.max(rms, 1e-5));
-  return Math.round(Math.min(100, Math.max(0, ((db + 60) / 60) * 100)));
 }
 
 /** A partir deste RMS (~−42 dBFS) o microfone "está captando": voz comum num fone Bluetooth passa disso; o chiado do quarto (~0,001) fica bem abaixo. Era 0,02, que deixava de fora o fone do Comandante. */
@@ -89,6 +72,8 @@ export interface PecasDoTeste {
   ouvir: { checked: boolean };
   /** Onde dizer qual aparelho abriu (o navegador diz o nome na faixa). Sem ele, procura `#voz-teste-aparelho` (a seção das Configurações). */
   aparelho?: { textContent: string | null };
+  /** Onde sugerir o ganho (P237): a voz foi captada mas está baixa (fone Bluetooth). Sem ele, procura `#voz-teste-dica`. */
+  dica?: { textContent: string | null };
 }
 
 /** O que o teste pede ao navegador: separado para o teste de unidade trocar por um falso (o microfone de verdade só se prova num Chrome, `medicoes/voz-teste-mic.mjs`). */
@@ -121,8 +106,11 @@ export class MicTest {
   private fluxo: MediaStream | null = null;
   private ctx: AudioContext | null = null;
   private volta: GainNode | null = null;
+  /** O ganho do jogador (P237): o nível da barra, a prévia e a dica já saem dele, o que o chat vai mandar. */
+  private ganhoNo: GainNode | null = null;
+  private ganhoAplicado = 1;
   /** O microfone dentro do contexto e o efeito que ele atravessa até a volta (P231). */
-  private fonteDoMic: MediaStreamAudioSourceNode | null = null;
+  private fonteDoMic: AudioNode | null = null;
   private cadeia: CadeiaDeVoz | null = null;
   /** Para onde a fonte está ligada (a entrada da cadeia ou a volta direta): é de onde ela é desligada ao trocar. */
   private destinoDaVoz: AudioNode | null = null;
@@ -151,6 +139,8 @@ export class MicTest {
     private readonly aoAbrir: () => void = () => {},
     /** O efeito que a prévia "ouvir a minha voz" aplica (P231); o nível da barra é sempre o do microfone puro. */
     private readonly efeito: () => VozEfeito = () => 'normal',
+    /** O ganho do microfone (P237): 1 = sem mexer, até 4. */
+    private readonly ganho: () => number = () => 1,
   ) {}
 
   get rodando(): boolean {
@@ -181,14 +171,20 @@ export class MicTest {
       const fonte = ctx.createMediaStreamSource(fluxo);
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 1024;
-      fonte.connect(analyser);
       const volta = ctx.createGain();
       volta.gain.value = this.p.ouvir.checked ? 1 : 0;
       volta.connect(ctx.destination);
+      // O ganho entre o microfone e tudo o resto: a barra, a prévia e a dica mostram o que o chat vai mandar.
+      const ganho = ctx.createGain();
+      this.ganhoAplicado = this.ganho();
+      ganho.gain.value = this.ganhoAplicado;
+      fonte.connect(ganho);
+      ganho.connect(analyser);
       this.ctx = ctx;
       this.analyser = analyser;
       this.volta = volta;
-      this.fonteDoMic = fonte;
+      this.ganhoNo = ganho;
+      this.fonteDoMic = ganho;
       void this.ligarVolta();
       this.inicio = this.ambiente.agora();
       this.pico = 0;
@@ -208,6 +204,13 @@ export class MicTest {
     } finally {
       this.abrindo = false;
     }
+  }
+
+  /** O jogador mexeu no ganho com o teste ligado: vale na hora (a barra, a prévia e a dica). O pico visto até aqui acompanha o ganho, para o estado não voltar a "sem sinal" por causa do ajuste. */
+  setGanho(g: number): void {
+    if (this.ganhoNo) this.ganhoNo.gain.value = g;
+    if (this.ganhoAplicado > 0) this.pico *= g / this.ganhoAplicado;
+    this.ganhoAplicado = g;
   }
 
   /** "Ouvir a minha voz": liga ou desliga a volta do som (o jogador avisado dos fones). */
@@ -277,6 +280,8 @@ export class MicTest {
     this.fluxo = null;
     this.analyser = null;
     this.volta = null;
+    this.ganhoNo = null;
+    this.dizerDica('');
     if (this.ctx) void this.ctx.close();
     this.ctx = null;
     if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', this.aoEsconder);
@@ -310,6 +315,8 @@ export class MicTest {
     if (rms > this.pico) this.pico = rms;
     if (pico > this.picoAmostra) this.picoAmostra = pico;
     this.mexerBarra(barraDoNivel(rms));
+    const sugerido = sugestaoDeGanho(this.pico, this.ganhoAplicado);
+    this.dizerDica(sugerido === null ? '' : TEXTO_DO_TESTE.baixa.replace('{0}', sugerido.toFixed(1)));
     const estado = estadoDoTeste(agora - this.inicio, this.pico, this.picoAmostra);
     if (this.p.painel.dataset.estado !== estado) {
       this.p.painel.dataset.estado = estado;
@@ -328,6 +335,12 @@ export class MicTest {
   private dizerAparelho(nome: string): void {
     const el = this.p.aparelho ?? (typeof document !== 'undefined' ? document.getElementById('voz-teste-aparelho') : null);
     if (el) el.textContent = nome ? TEXTO_DO_TESTE.usando.replace('{0}', nome) : '';
+  }
+
+  /** Sugere o ganho quando a voz foi captada mas está baixa; vazio apaga. */
+  private dizerDica(texto: string): void {
+    const el = this.p.dica ?? (typeof document !== 'undefined' ? document.getElementById('voz-teste-dica') : null);
+    if (el && el.textContent !== texto) el.textContent = texto;
   }
 
   private dizer(texto: string): void {

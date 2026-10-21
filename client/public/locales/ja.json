@@ -978,5 +978,10 @@
  "Diagnóstico da voz": "ボイスの診断",
  "[ VER E COPIAR ]": "[ 表示してコピー ]",
  "[ COPIADO ]": "[ コピーしました ]",
- "Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.": "2人のプレイヤー間でボイスが動かないとき：状況と最も可能性の高い原因を表示します。"
+ "Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.": "2人のプレイヤー間でボイスが動かないとき：状況と最も可能性の高い原因を表示します。",
+ "SEM SOM NO MICROFONE: CONFIRA O BOTÃO DE MUDO DO FONE E O WINDOWS": "マイクに音が入っていません：ヘッドセットのミュートボタンとWindowsを確認してください",
+ "O NAVEGADOR PAROU DE RECEBER O MICROFONE: CONFIRA O FONE E O WINDOWS": "ブラウザがマイクを受信できなくなりました：ヘッドセットとWindowsを確認してください",
+ "Ganho do microfone": "マイクのゲイン",
+ "Sobe a sua voz para quem escuta, no teste e na gravação. Fones Bluetooth costumam pedir ganho; o teste do microfone sugere um valor.": "聞いている人にあなたの声を大きく届けます（テストと録画にも反映）。Bluetoothヘッドセットはゲインが必要なことが多く、マイクテストが値を提案します。",
+ "Voz baixa: suba o ganho do microfone para x{0}.": "声が小さい：マイクのゲインをx{0}に上げてください。"
 }

@@ -2,24 +2,24 @@
   "data": "2026-10-20",
   "medidas": {
     "falando": {
-      "pacotesPorSegundo": 50,
-      "kbpsComCabecalhos": 36
+      "pacotesPorSegundo": 53,
+      "kbpsComCabecalhos": 38
     },
     "espacial": {
-      "perto": 0.2851,
-      "meio": 0.1143,
+      "perto": 0.3456,
+      "meio": 0.1396,
       "longe": 0
     },
     "silencio": {
-      "pacotesPorSegundo": 8,
-      "kbpsComCabecalhos": 2.9
+      "pacotesPorSegundo": 5.5,
+      "kbpsComCabecalhos": 1.9
     }
   },
   "verificacoes": [
     {
       "nome": "dois navegadores se ligam por WebRTC (a sinalização passou pelo servidor, o áudio vai direto)",
       "ok": true,
-      "detalhe": "[{\"id\":5,\"ativa\":true,\"mic\":\"ativo\",\"ligados\":1,\"semConexao\":0,\"transmitindo\":true,\"ouvindo\":1,\"falando\":[6]},{\"id\":6,\"ativa\":true,\"mic\":\"ativo\",\"ligados\":1,\"semConexao\":0,\"transmitindo\":true,\"ouvindo\":1,\"falando\":[5]}]"
+      "detalhe": "[{\"id\":5,\"ativa\":true,\"mic\":\"ativo\",\"ligados\":1,\"semConexao\":0,\"transmitindo\":true,\"ouvindo\":1,\"falando\":[]},{\"id\":6,\"ativa\":true,\"mic\":\"ativo\",\"ligados\":1,\"semConexao\":0,\"transmitindo\":true,\"ouvindo\":1,\"falando\":[]}]"
     },
     {
       "nome": "o microfone falso foi aceito nos dois (estado \"ativo\")",
@@ -39,7 +39,7 @@
     {
       "nome": "falando, a voz custa ~50 pacotes/s e cabe em ~40 kbps por colega (carga + cabeçalhos)",
       "ok": true,
-      "detalhe": "50 pacotes/s, 36 kbps"
+      "detalhe": "53 pacotes/s, 38 kbps"
     },
     {
       "nome": "mudo: ALFA aperta T e a faixa fecha",
@@ -59,7 +59,7 @@
     {
       "nome": "espacial: a 5 m a voz sai no volume cheio",
       "ok": true,
-      "detalhe": "RMS 0.2851"
+      "detalhe": "RMS 0.3456"
     },
     {
       "nome": "espacial: a 100 m cai para ~40% (queda em linha reta entre 12 m e 160 m)",
@@ -119,7 +119,7 @@
     {
       "nome": "microfone tardio: a ligação nasce antes de ele existir (o microfone ainda está pedindo)",
       "ok": true,
-      "detalhe": "{\"id\":5,\"ativa\":true,\"mic\":\"pedindo\",\"ligados\":1,\"semConexao\":0,\"transmitindo\":false,\"ouvindo\":1,\"falando\":[]}"
+      "detalhe": "{\"id\":5,\"ativa\":true,\"mic\":\"pedindo\",\"ligados\":1,\"semConexao\":0,\"transmitindo\":false,\"ouvindo\":1,\"falando\":[6]}"
     },
     {
       "nome": "microfone tardio: DELTA já ouve BRAVO enquanto espera o microfone",
@@ -139,7 +139,7 @@
     {
       "nome": "silêncio: com o DTX o microfone aberto quase não manda pacote (sem DTX seriam ~50/s)",
       "ok": true,
-      "detalhe": "8.0 pacotes/s, 2.9 kbps"
+      "detalhe": "5.5 pacotes/s, 1.9 kbps"
     },
     {
       "nome": "nenhum erro de página nas bancadas",

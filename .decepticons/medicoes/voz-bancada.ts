@@ -10,6 +10,8 @@ const q = new URLSearchParams(location.search);
 const modo = (q.get('modo') ?? 'sempre') as ModoMic;
 const micModo = q.get('mic') ?? 'normal';
 const dsp = q.get('dsp') !== '0';
+/** O ganho do microfone (P237): 1 = sem mexer. A bancada o muda ao vivo por `__voz.mudarGanho`. */
+let ganho = Number(q.get('ganho') ?? 1);
 
 const ctx = new AudioContext();
 const out = ctx.createGain();
@@ -30,6 +32,8 @@ setInterval(() => {
 
 const ambiente: Ambiente = {
   novaConexao: AMBIENTE_DO_NAVEGADOR.novaConexao,
+  // O envio por Web Audio (ganho, nível, portas): a bancada usa o mesmo do jogo, então todas as provas de voz passam por ele.
+  ...(q.get('envio') === 'cru' ? {} : { novoContextoDeEnvio: AMBIENTE_DO_NAVEGADOR.novoContextoDeEnvio }),
   pedirMicrofone: async () => {
     if (micModo === 'negar') throw new DOMException('recusado', 'NotAllowedError');
     if (micModo === 'tarde') await new Promise((r) => setTimeout(r, 8000));
@@ -49,7 +53,7 @@ const cliente: NetClient = new NetClient(`${q.get('servidor')}/?sala=${q.get('sa
   closed: () => chat.saiuDaSala(),
 });
 cliente.join(q.get('nome') ?? 'BANCADA', 'v1.vector09.plasma-0.rockets-0');
-chat.configurar(true, modo, 0.8);
+chat.configurar(true, modo, 0.8, '', ganho);
 chat.ligarTeclas(() => 'KeyT');
 
 /** Onde eu estou e onde os outros estão (a bancada não tem mundo: o teste diz). */
@@ -88,6 +92,25 @@ async function enviado(): Promise<{ pacotes: number; bytes: number }> {
   zerarPico: () => (pico = 0),
   pico: () => pico,
   contexto: () => ctx.state,
-  mudarModo: (m: ModoMic) => chat.configurar(true, m, 0.8),
-  desligar: (ligada: boolean) => chat.configurar(ligada, modo, 0.8),
+  mudarModo: (m: ModoMic) => chat.configurar(true, m, 0.8, '', ganho),
+  desligar: (ligada: boolean) => chat.configurar(ligada, modo, 0.8, '', ganho),
+  /** P237: o ganho do microfone muda ao vivo. */
+  mudarGanho: (g: number) => {
+    ganho = g;
+    chat.configurar(true, modo, 0.8, '', ganho);
+  },
+  /** P237: a saúde do microfone e o nível que sai (o que o HUD lê a 10 Hz). */
+  saude: () => chat.saudeDoMic(performance.now()),
+  nivelDoMic: () => chat.nivelDoMic,
+  diagnostico: () => chat.diagnostico(),
+  /** P237: o microfone "cai" (o fone Bluetooth some): a faixa para e o navegador avisa que terminou. O jogo tem de reabrir sozinho. */
+  derrubarMic: () => {
+    const fluxo = (chat as unknown as { fluxo: MediaStream | null }).fluxo;
+    for (const f of fluxo?.getAudioTracks() ?? []) {
+      f.stop();
+      f.dispatchEvent(new Event('ended')); // `stop()` não dispara `ended`; o aparelho que some dispara
+    }
+    return !!fluxo;
+  },
+  estadoMic: () => chat.estadoMic,
 };

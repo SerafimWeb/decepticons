@@ -4590,6 +4590,13 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .voz-hud[hidden] { display: none; }
 .voz-hud.voz-no-ar { color: var(--accent); border-left-color: var(--accent); }
 .voz-rede { color: var(--warn); }
+/* A barra do nível do seu microfone no HUD (P237) e o alerta de microfone sem som. */
+.voz-nivel { height: 3px; margin: 3px 0 2px; background: rgba(255, 255, 255, 0.12); }
+.voz-nivel i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.1s linear; }
+.voz-hud.voz-alerta { color: var(--warn); border-left-color: var(--warn); }
+.voz-hud.voz-alerta .voz-nivel i { background: var(--warn); }
+.voz-aviso-ganho { color: var(--accent); }
+.voz-aviso-ganho:empty { display: none; }
 /* O aviso de por que a voz não está ligada (P237): no mesmo canto do indicador, em aviso, e só aparece numa sala com outras pessoas. */
 .voz-hud.voz-aviso { color: var(--warn); border-left-color: var(--warn); }
 .voz-diag { margin: 6px 0 0; padding: 8px; max-height: 220px; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 11px; line-height: 1.45; color: var(--ink); background: rgba(6, 8, 10, 0.7); border: 1px dashed var(--muted); user-select: text; }

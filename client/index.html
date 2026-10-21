@@ -449,6 +449,14 @@
               </div>
             </div>
             <div class="setting-row">
+              <label for="setting-mic-gain">Ganho do microfone</label>
+              <div class="setting-ctrl">
+                <input type="range" id="setting-mic-gain" />
+                <span id="val-mic-gain" class="setting-val">1.0x</span>
+              </div>
+            </div>
+            <p class="setting-hint">Sobe a sua voz para quem escuta, no teste e na gravação. Fones Bluetooth costumam pedir ganho; o teste do microfone sugere um valor.</p>
+            <div class="setting-row">
               <label for="setting-voz-efeito">Efeito na minha voz</label>
               <div class="setting-ctrl">
                 <select id="setting-voz-efeito">
@@ -470,6 +478,7 @@
               <div class="voz-nivel" role="meter" aria-label="Nível do microfone"><i id="voz-nivel-barra"></i></div>
               <p id="voz-teste-status" class="setting-hint"></p>
               <p id="voz-teste-aparelho" class="setting-hint"></p>
+              <p id="voz-teste-dica" class="setting-hint voz-aviso-ganho"></p>
               <label class="voz-eco"><input type="checkbox" id="voz-ouvir" /> Ouvir a minha voz (use fones: sem eles dá microfonia)</label>
             </div>
             <div class="setting-row">

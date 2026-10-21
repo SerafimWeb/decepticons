@@ -19,7 +19,7 @@
     {
       "nome": "o painel do teste abre, a barra mexe e o texto diz \"funcionando\"",
       "ok": true,
-      "detalhe": "{\"visivel\":true,\"barra\":\"54%\",\"status\":\"Funcionando: o microfone está captando a sua voz.\",\"botao\":\"[ PARAR O TESTE ]\"}"
+      "detalhe": "{\"visivel\":true,\"barra\":\"52%\",\"status\":\"Funcionando: o microfone está captando a sua voz.\",\"botao\":\"[ PARAR O TESTE ]\"}"
     },
     {
       "nome": "o botão vira \"PARAR O TESTE\"",
@@ -83,6 +83,26 @@
     },
     {
       "nome": "trocar de efeito com o teste ligado não dá erro de página",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "o ajuste de ganho do microfone existe (0,5 a 4) e começa em 1,0x",
+      "ok": true,
+      "detalhe": "{\"existe\":true,\"min\":\"0.5\",\"max\":\"4\",\"valor\":\"1\",\"texto\":\"1.0x\"}"
+    },
+    {
+      "nome": "com o teste ligado, baixar o ganho para 0,5 baixa a barra do nível NA HORA (a barra mostra o que o chat vai mandar)",
+      "ok": true,
+      "detalhe": "52% -> 42%"
+    },
+    {
+      "nome": "mexer no ajuste salva a escolha e mostra o valor (2,5x)",
+      "ok": true,
+      "detalhe": "{\"salvo\":2.5,\"texto\":\"2.5x\"}"
+    },
+    {
+      "nome": "mexer no ganho com o teste ligado não dá erro de página",
       "ok": true,
       "detalhe": ""
     },

@@ -978,5 +978,10 @@
  "Diagnóstico da voz": "语音诊断",
  "[ VER E COPIAR ]": "[ 查看并复制 ]",
  "[ COPIADO ]": "[ 已复制 ]",
- "Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.": "如果两位玩家之间语音不工作：显示发生了什么以及最可能的原因。"
+ "Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.": "如果两位玩家之间语音不工作：显示发生了什么以及最可能的原因。",
+ "SEM SOM NO MICROFONE: CONFIRA O BOTÃO DE MUDO DO FONE E O WINDOWS": "麦克风没有声音：请检查耳机的静音按钮和 Windows",
+ "O NAVEGADOR PAROU DE RECEBER O MICROFONE: CONFIRA O FONE E O WINDOWS": "浏览器不再接收麦克风：请检查耳机和 Windows",
+ "Ganho do microfone": "麦克风增益",
+ "Sobe a sua voz para quem escuta, no teste e na gravação. Fones Bluetooth costumam pedir ganho; o teste do microfone sugere um valor.": "让听你说话的人听得更清楚，对测试和录制都有效。蓝牙耳机通常需要增益；麦克风测试会建议一个数值。",
+ "Voz baixa: suba o ganho do microfone para x{0}.": "声音太小：请将麦克风增益提高到 x{0}。"
 }

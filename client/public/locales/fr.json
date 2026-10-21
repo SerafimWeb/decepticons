@@ -978,5 +978,10 @@
  "Diagnóstico da voz": "Diagnostic de la voix",
  "[ VER E COPIAR ]": "[ VOIR ET COPIER ]",
  "[ COPIADO ]": "[ COPIÉ ]",
- "Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.": "Si la voix ne fonctionne pas entre deux joueurs : affiche ce qui se passe et la cause la plus probable."
+ "Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.": "Si la voix ne fonctionne pas entre deux joueurs : affiche ce qui se passe et la cause la plus probable.",
+ "SEM SOM NO MICROFONE: CONFIRA O BOTÃO DE MUDO DO FONE E O WINDOWS": "PAS DE SON SUR LE MICRO : VÉRIFIEZ LE BOUTON MUET DU CASQUE ET WINDOWS",
+ "O NAVEGADOR PAROU DE RECEBER O MICROFONE: CONFIRA O FONE E O WINDOWS": "LE NAVIGATEUR NE REÇOIT PLUS LE MICRO : VÉRIFIEZ LE CASQUE ET WINDOWS",
+ "Ganho do microfone": "Gain du micro",
+ "Sobe a sua voz para quem escuta, no teste e na gravação. Fones Bluetooth costumam pedir ganho; o teste do microfone sugere um valor.": "Augmente votre voix pour ceux qui écoutent, dans le test et à l’enregistrement. Les casques Bluetooth demandent souvent du gain ; le test du micro suggère une valeur.",
+ "Voz baixa: suba o ganho do microfone para x{0}.": "Voix faible : augmentez le gain du micro à x{0}."
 }

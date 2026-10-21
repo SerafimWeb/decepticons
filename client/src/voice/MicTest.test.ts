@@ -106,17 +106,18 @@ function fonteFalsa() {
   return f;
 }
 
-function montar(opcoes: { efeito?: () => VozEfeito; cadeiaDeVoz?: AmbienteDoTeste['cadeiaDeVoz'] } = {}) {
+function montar(opcoes: { efeito?: () => VozEfeito; cadeiaDeVoz?: AmbienteDoTeste['cadeiaDeVoz']; ganho?: () => number } = {}) {
   const faixa = new FaixaFalsa();
   const fonte = fonteFalsa();
   const fluxo = { getTracks: () => [faixa], getAudioTracks: () => [faixa] } as unknown as MediaStream;
-  const estado = { amp: 0, agora: 0, abertos: [] as string[], fechado: 0, volta: { gain: { value: -1 }, connect: () => {} }, resolverAbrir: null as null | ((f: MediaStream) => void), recusarAbrir: null as null | ((e: unknown) => void), pendente: false };
+  const estado = { amp: 0, agora: 0, abertos: [] as string[], fechado: 0, volta: Object.assign(fonteFalsa(), { gain: { value: -1 } }), resolverAbrir: null as null | ((f: MediaStream) => void), recusarAbrir: null as null | ((e: unknown) => void), pendente: false };
   const quadros: (() => void)[] = [];
   const analyser = {
     fftSize: 1024,
     getFloatTimeDomainData: (a: Float32Array) => a.set(onda(estado.amp, a.length)),
     connect: () => {},
   };
+  const nos: ReturnType<typeof fonteFalsa>[] = [];
   const ctx = {
     resume: async () => {},
     close: async () => {
@@ -124,7 +125,12 @@ function montar(opcoes: { efeito?: () => VozEfeito; cadeiaDeVoz?: AmbienteDoTest
     },
     createMediaStreamSource: () => fonte,
     createAnalyser: () => analyser,
-    createGain: () => estado.volta,
+    // o primeiro `createGain` do teste é a volta da voz; o segundo, o ganho do jogador (P237): cada nó anota para onde foi ligado
+    createGain: () => {
+      const n = nos.length === 0 ? estado.volta : Object.assign(fonteFalsa(), { gain: { value: 1 } });
+      nos.push(n);
+      return n;
+    },
     destination: {},
   };
   const ambiente: AmbienteDoTeste = {
@@ -150,13 +156,14 @@ function montar(opcoes: { efeito?: () => VozEfeito; cadeiaDeVoz?: AmbienteDoTest
     botao: { textContent: TEXTO_DO_TESTE.testar as string | null },
     ouvir: { checked: false },
     aparelho: { textContent: '' as string | null },
+    dica: { textContent: '' as string | null },
   };
   let aparelho = '';
   let abriu = 0;
-  const teste = new MicTest(pecas, () => aparelho, ambiente, () => abriu++, opcoes.efeito);
+  const teste = new MicTest(pecas, () => aparelho, ambiente, () => abriu++, opcoes.efeito, opcoes.ganho);
   /** Roda o próximo quadro agendado (o laço do teste). */
   const quadro = () => quadros.shift()?.();
-  return { teste, pecas, rolagens, estado, faixa, fonte, analyser, quadro, quadrosPendentes: () => quadros.length, setAparelho: (a: string) => (aparelho = a), abriu: () => abriu };
+  return { teste, pecas, rolagens, estado, faixa, fonte, analyser, ganhoNo: () => nos[1] as ReturnType<typeof fonteFalsa> & { gain: { value: number } }, quadro, quadrosPendentes: () => quadros.length, setAparelho: (a: string) => (aparelho = a), abriu: () => abriu };
 }
 
 describe('MicTest: o painel (P212)', () => {
@@ -340,7 +347,7 @@ describe('MicTest: o painel (P212)', () => {
 
 describe('o teste do microfone e o aviso de "sozinho" nas seis línguas (P212)', () => {
   afterEach(() => carregarDicionario(null));
-  const textos = [...Object.values(TEXTO_DO_TESTE).map((t) => t.replace('{0}', '1')), 'Nível do microfone', 'NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES', 'Aparelho do microfone', 'Testar o microfone', 'Ouvir a minha voz (use fones: sem eles dá microfonia)', 'Efeito na minha voz', 'Sem efeito', 'Locutor militar', 'Lorde sombrio', 'Grande Irmão', 'Vale na narração (F8) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.'];
+  const textos = [...Object.values(TEXTO_DO_TESTE).map((t) => t.replace('{0}', '1')), 'Nível do microfone', 'NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES', 'Aparelho do microfone', 'Testar o microfone', 'Ouvir a minha voz (use fones: sem eles dá microfonia)', 'Ganho do microfone', 'Efeito na minha voz', 'Sem efeito', 'Locutor militar', 'Lorde sombrio', 'Grande Irmão', 'Vale na narração (F8) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.'];
 
   for (const { id } of IDIOMAS.filter((i) => i.id !== 'pt')) {
     it(`${id}: todo texto do painel está traduzido`, () => {
@@ -361,8 +368,8 @@ describe('MicTest: o efeito na prévia "ouvir a minha voz" (P231)', () => {
   it('sem efeito, a voz vai direto à volta (e o nível da barra é sempre o do microfone puro)', async () => {
     const t = montar({ efeito: () => 'normal' });
     await t.teste.iniciar();
-    expect(t.fonte.destinos).toContain(t.analyser);
-    expect(t.fonte.destinos).toContain(t.estado.volta);
+    expect(t.ganhoNo().destinos).toContain(t.analyser);
+    expect(t.ganhoNo().destinos).toContain(t.estado.volta);
   });
 
   it('com efeito, o microfone vai à cadeia e só a cadeia vai à volta: a voz pura nunca toca; a barra segue medindo o microfone puro', async () => {
@@ -372,9 +379,9 @@ describe('MicTest: o efeito na prévia "ouvir a minha voz" (P231)', () => {
     await t.teste.iniciar();
     await Promise.resolve(); // o pedido do efeito termina
     expect(pedidos).toEqual(['sombrio']);
-    expect(t.fonte.destinos).toContain(cadeia.entrada);
-    expect(t.fonte.destinos, 'a voz crua não vai à volta').not.toContain(t.estado.volta);
-    expect(t.fonte.destinos, 'a barra mede o microfone puro').toContain(t.analyser);
+    expect(t.ganhoNo().destinos).toContain(cadeia.entrada);
+    expect(t.ganhoNo().destinos, 'a voz crua não vai à volta').not.toContain(t.estado.volta);
+    expect(t.ganhoNo().destinos, 'a barra mede o microfone puro').toContain(t.analyser);
     expect(cadeia.saida.destinos).toEqual([t.estado.volta]);
   });
 
@@ -388,12 +395,12 @@ describe('MicTest: o efeito na prévia "ouvir a minha voz" (P231)', () => {
     await t.teste.trocarEfeito();
     expect(cadeias.map((c) => c.nome)).toEqual(['locutor', 'irmao']);
     expect(cadeias[0]!.desligada, 'a cadeia velha foi desligada').toBe(1);
-    expect(t.fonte.destinos).toContain(cadeias[1]!.entrada);
-    expect(t.fonte.destinos).not.toContain(cadeias[0]!.entrada);
+    expect(t.ganhoNo().destinos).toContain(cadeias[1]!.entrada);
+    expect(t.ganhoNo().destinos).not.toContain(cadeias[0]!.entrada);
     atual = 'normal';
     await t.teste.trocarEfeito();
     expect(cadeias[1]!.desligada).toBe(1);
-    expect(t.fonte.destinos).toContain(t.estado.volta);
+    expect(t.ganhoNo().destinos).toContain(t.estado.volta);
   });
 
   it('um efeito que chega atrasado, depois de outra troca, é descartado e desligado (o último pedido ganha)', async () => {
@@ -421,8 +428,8 @@ describe('MicTest: o efeito na prévia "ouvir a minha voz" (P231)', () => {
     await Promise.resolve();
     expect(cadeias.map((c) => c.nome)).toEqual(['irmao', 'locutor']);
     expect(cadeias[1]!.desligada, 'o atrasado é desligado, não ligado').toBe(1);
-    expect(t.fonte.destinos).toContain(cadeias[0]!.entrada);
-    expect(t.fonte.destinos).not.toContain(cadeias[1]!.entrada);
+    expect(t.ganhoNo().destinos).toContain(cadeias[0]!.entrada);
+    expect(t.ganhoNo().destinos).not.toContain(cadeias[1]!.entrada);
   });
 
   it('um efeito que não baixa deixa a prévia com a voz pura (e sem erro)', async () => {
@@ -430,7 +437,7 @@ describe('MicTest: o efeito na prévia "ouvir a minha voz" (P231)', () => {
     await t.teste.iniciar();
     await Promise.resolve();
     await Promise.resolve();
-    expect(t.fonte.destinos).toContain(t.estado.volta);
+    expect(t.ganhoNo().destinos).toContain(t.estado.volta);
     expect(t.teste.rodando).toBe(true);
   });
 
@@ -454,7 +461,7 @@ describe('MicTest: o efeito na prévia "ouvir a minha voz" (P231)', () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(cadeias[0]!.desligada, 'chegou depois de parar: desligada na hora').toBe(1);
-    expect(t.fonte.destinos).not.toContain(cadeias[0]!.entrada);
+    expect(t.ganhoNo().destinos).not.toContain(cadeias[0]!.entrada);
 
     const t2 = montar({ efeito: () => 'irmao', cadeiaDeVoz: async (_c, e) => { const c = cadeiaFalsa(e); cadeias.push(c); return c as unknown as CadeiaDeVoz; } });
     await t2.teste.iniciar();
@@ -462,5 +469,69 @@ describe('MicTest: o efeito na prévia "ouvir a minha voz" (P231)', () => {
     const c2 = cadeias[1]!;
     t2.teste.parar();
     expect(c2.desligada).toBe(1);
+  });
+});
+
+describe('MicTest: o ganho do microfone e a dica (P237)', () => {
+  it('o ganho do jogador entra entre o microfone e tudo: a barra, a prévia e o efeito saem dele; a fonte só alimenta o ganho', async () => {
+    const t = montar({ ganho: () => 2.5 });
+    await t.teste.iniciar();
+    expect(t.ganhoNo().gain.value).toBe(2.5);
+    expect(t.fonte.destinos, 'o microfone cru só vai ao ganho').toEqual([t.ganhoNo()]);
+    expect(t.ganhoNo().destinos).toContain(t.analyser);
+    expect(t.ganhoNo().destinos).toContain(t.estado.volta);
+  });
+
+  it('mexer no ganho com o teste ligado vale na hora, sem reiniciar', async () => {
+    const t = montar({ ganho: () => 1 });
+    await t.teste.iniciar();
+    t.teste.setGanho(3);
+    expect(t.ganhoNo().gain.value).toBe(3);
+    t.teste.setGanho(0.5);
+    expect(t.ganhoNo().gain.value).toBe(0.5);
+  });
+
+  it('voz captada mas baixa: a dica sugere o ganho; voz boa não sugere nada; no máximo não há o que subir', async () => {
+    const t = montar({ ganho: () => 1 });
+    await t.teste.iniciar();
+    t.estado.amp = 0.028; // RMS ~ 0,02: captada (passa de 0,008) mas baixa (o alvo é 0,1)
+    t.estado.agora = 300;
+    t.quadro();
+    expect(t.pecas.dica!.textContent).toBe('Voz baixa: suba o ganho do microfone para x4.0.');
+    t.teste.setGanho(4);
+    t.quadro();
+    expect(t.pecas.dica!.textContent, 'já no máximo: nada a sugerir').toBe('');
+    const b = montar({ ganho: () => 1 });
+    await b.teste.iniciar();
+    b.estado.amp = 0.2; // RMS ~ 0,14: já está boa
+    b.estado.agora = 300;
+    b.quadro();
+    expect(b.pecas.dica!.textContent).toBe('');
+  });
+
+  it('sem voz (só o chiado) não há dica; e a dica some ao parar o teste', async () => {
+    const t = montar({ ganho: () => 1 });
+    await t.teste.iniciar();
+    t.estado.amp = 0.0005;
+    t.estado.agora = 300;
+    t.quadro();
+    expect(t.pecas.dica!.textContent).toBe('');
+    t.estado.amp = 0.028;
+    t.quadro();
+    expect(t.pecas.dica!.textContent).not.toBe('');
+    t.teste.parar();
+    expect(t.pecas.dica!.textContent).toBe('');
+  });
+
+  it('depois de mexer no ganho a sugestão continua coerente: o pico visto até ali é reescalado (sem isso sugeriria o valor do ganho velho)', async () => {
+    const t = montar({ ganho: () => 1 });
+    await t.teste.iniciar();
+    t.estado.amp = 0.07; // RMS ~ 0,0495 com o ganho 1: sugere x2.0
+    t.estado.agora = 300;
+    t.quadro();
+    expect(t.pecas.dica!.textContent).toBe('Voz baixa: suba o ganho do microfone para x2.0.');
+    t.teste.setGanho(1.5); // o pico visto (0,0495) passa a valer 0,074: o ideal continua sendo x2.0 (sem reescalar daria x3.0)
+    t.quadro();
+    expect(t.pecas.dica!.textContent).toBe('Voz baixa: suba o ganho do microfone para x2.0.');
   });
 });

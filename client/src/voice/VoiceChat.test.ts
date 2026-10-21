@@ -70,6 +70,7 @@ class FakePC extends Emissor {
 
 class Faixa extends Emissor {
   enabled = true;
+  muted = false;
   parada = false;
   stop() {
     this.parada = true;
@@ -81,7 +82,7 @@ const fluxoComFaixa = () => {
 };
 
 /** Quem manda o quê: o teste lê as mensagens que o chat mandou ao servidor. */
-function montar(opts: { saida?: boolean; token?: string | null } = {}) {
+function montar(opts: { saida?: boolean; token?: string | null; envio?: { ctx: unknown } } = {}) {
   let token: string | null | undefined = opts.token;
   const enviadas: Uint8Array[] = [];
   let resolverMic!: (f: MediaStream) => void;
@@ -89,6 +90,7 @@ function montar(opts: { saida?: boolean; token?: string | null } = {}) {
   const pedidos = { n: 0, aparelhos: [] as string[] };
   const ambiente: Ambiente = {
     novaConexao: (cfg) => new FakePC(cfg) as unknown as RTCPeerConnection,
+    ...(opts.envio ? { novoContextoDeEnvio: () => opts.envio!.ctx as AudioContext } : {}),
     pedirMicrofone: (aparelho) => {
       pedidos.n++;
       pedidos.aparelhos.push(aparelho);
@@ -854,5 +856,275 @@ describe('VoiceChat.diagnostico (P237): o retrato que explica por que "não ouç
     };
     const d = await t.chat.diagnostico();
     expect(d.ligacoes[0]).toMatchObject({ id: 3, rota: '', enviados: 0, recebidos: 0, nivel: null });
+  });
+});
+
+/** O contexto de áudio do envio, de mentira: anota os nós e entrega uma onda que o teste escolhe (o nível e a saúde do microfone leem dela). */
+function contextoDeEnvioFalso(estado: 'running' | 'suspended' = 'running') {
+  const nos: { tipo: string; destinos: unknown[]; gain: { value: number } }[] = [];
+  const faixasDeDestino: { id: string; stop(): void }[] = [];
+  let onda: Float32Array = new Float32Array(1024);
+  const no = (tipo: string) => {
+    const n = {
+      tipo,
+      destinos: [] as unknown[],
+      gain: { value: 1 },
+      threshold: { value: 0 },
+      knee: { value: 0 },
+      ratio: { value: 0 },
+      attack: { value: 0 },
+      release: { value: 0 },
+      fftSize: 0,
+      stream: undefined as unknown,
+      connect(d: unknown) {
+        n.destinos.push(d);
+      },
+      disconnect() {},
+      getFloatTimeDomainData(a: Float32Array) {
+        a.set(onda.subarray(0, a.length));
+      },
+    };
+    nos.push(n);
+    return n;
+  };
+  const ctx = {
+    state: estado,
+    fechado: false,
+    resume: async () => {},
+    close: async () => {
+      ctx.fechado = true;
+    },
+    createMediaStreamSource: () => no('fonte'),
+    createGain: () => no('gain'),
+    createDynamicsCompressor: () => no('limitador'),
+    createAnalyser: () => no('analisador'),
+    createMediaStreamDestination: () => {
+      const faixa = { id: `destino-${faixasDeDestino.length}`, stop() {} };
+      faixasDeDestino.push(faixa);
+      const d = no('destino');
+      d.stream = { getAudioTracks: () => [faixa], getTracks: () => [faixa] };
+      return d;
+    },
+  };
+  return { ctx, nos, faixasDeDestino, definirOnda: (a: Float32Array) => (onda = a) };
+}
+const ondaCom = (v: number) => new Float32Array(1024).fill(v);
+
+describe('VoiceChat: o envio por Web Audio, a saúde e a reabertura do microfone (P237 PR 2)', () => {
+  beforeEach(() => {
+    FakePC.todas = [];
+    vi.stubGlobal('MediaStream', class { constructor(public tracks: unknown[] = []) {} getTracks() { return this.tracks; } getAudioTracks() { return this.tracks; } });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  /** Entra na sala, abre o microfone e liga ao colega 3 (o id menor oferece). */
+  async function naVozComColega(t: ReturnType<typeof montar>, ganho = 1) {
+    t.chat.configurar(true, 'sempre', 0.8, '', ganho);
+    t.chat.entrouNaSala(1);
+    const m = fluxoComFaixa();
+    t.resolverMic(m.fluxo);
+    await andar();
+    t.chat.receber(codificarLista([1, 3]));
+    await andar();
+    return m;
+  }
+
+  it('com o contexto de envio, cada colega recebe a faixa do DESTINO dele, nunca a faixa crua do microfone', async () => {
+    const envio = contextoDeEnvioFalso();
+    const t = montar({ token: 'abc', envio });
+    const { faixa } = await naVozComColega(t);
+    const transceptor = (t.pcs()[0] as unknown as { transceptores: Transceptor[] }).transceptores[0]!;
+    expect(transceptor.trocas.at(-1)).toBe(envio.faixasDeDestino[0]);
+    expect(transceptor.trocas, 'a faixa crua nunca foi para o colega').not.toContain(faixa);
+    const d = await t.chat.diagnostico();
+    expect(d.viaWebAudio).toBe(true);
+  });
+
+  it('o ganho do jogador chega ao nó de ganho: ao abrir o microfone e a cada mudança', async () => {
+    const envio = contextoDeEnvioFalso();
+    const t = montar({ token: 'abc', envio });
+    await naVozComColega(t, 2);
+    const ganho = envio.nos.filter((n) => n.tipo === 'gain')[0]!;
+    expect(ganho.gain.value).toBe(2);
+    t.chat.configurar(true, 'sempre', 0.8, '', 3.5);
+    expect(ganho.gain.value).toBe(3.5);
+    expect((await t.chat.diagnostico()).ajusteDeGanho).toBe(3.5);
+  });
+
+  it('o limitador fica depois do ganho (o ganho nunca estoura o codec)', async () => {
+    const envio = contextoDeEnvioFalso();
+    const t = montar({ token: 'abc', envio });
+    await naVozComColega(t);
+    const limitador = envio.nos.find((n) => n.tipo === 'limitador') as unknown as { threshold: { value: number }; ratio: { value: number } };
+    expect(limitador.threshold.value).toBe(-3);
+    expect(limitador.ratio.value).toBe(20);
+    const ganho = envio.nos.filter((n) => n.tipo === 'gain')[0]!;
+    expect(ganho.destinos).toContain(limitador);
+  });
+
+  it('o colega que sai leva a porta dele: a faixa do destino é solta e o envio dele some', async () => {
+    const envio = contextoDeEnvioFalso();
+    const t = montar({ token: 'abc', envio });
+    await naVozComColega(t);
+    t.chat.receber(codificarLista([1]));
+    await andar();
+    expect((await t.chat.diagnostico()).ligacoes).toHaveLength(0);
+  });
+
+  it('sem contexto de envio (o navegador não deixa), a faixa crua vai direto, como antes', async () => {
+    const t = montar({ token: 'abc' });
+    const { faixa } = await naVozComColega(t);
+    const transceptor = (t.pcs()[0] as unknown as { transceptores: Transceptor[] }).transceptores[0]!;
+    expect(transceptor.trocas.at(-1)).toBe(faixa);
+    expect((await t.chat.diagnostico()).viaWebAudio).toBe(false);
+  });
+
+  it('contexto que não sai do suspenso: depois de 2,5 s o chat larga o envio e volta à faixa crua (em vez de mandar silêncio)', async () => {
+    vi.useFakeTimers();
+    const envio = contextoDeEnvioFalso('suspended');
+    const t = montar({ token: 'abc', envio });
+    const { faixa } = await naVozComColega(t);
+    t.chat.saudeDoMic(100);
+    expect((await t.chat.diagnostico()).viaWebAudio, 'ainda dentro dos 2,5 s').toBe(true);
+    vi.advanceTimersByTime(3000);
+    t.chat.saudeDoMic(3200);
+    await andar();
+    const transceptor = (t.pcs()[0] as unknown as { transceptores: Transceptor[] }).transceptores[0]!;
+    expect(transceptor.trocas.at(-1)).toBe(faixa);
+    expect((await t.chat.diagnostico()).viaWebAudio).toBe(false);
+    expect(envio.ctx.fechado).toBe(true);
+  });
+
+  it('saúde: microfone aberto que entrega zero absoluto por 8 s vira "sem-som"; qualquer som, ou o mudo, zera', async () => {
+    const envio = contextoDeEnvioFalso();
+    const t = montar({ token: 'abc', envio });
+    await naVozComColega(t);
+    envio.definirOnda(ondaCom(0));
+    expect(t.chat.saudeDoMic(0)).toBe('ok');
+    expect(t.chat.saudeDoMic(7999)).toBe('ok');
+    expect(t.chat.saudeDoMic(8000)).toBe('sem-som');
+    envio.definirOnda(ondaCom(0.01));
+    expect(t.chat.saudeDoMic(8100), 'um sopro de som zera o aviso na hora').toBe('ok');
+    envio.definirOnda(ondaCom(0));
+    expect(t.chat.saudeDoMic(8200)).toBe('ok');
+    expect(t.chat.saudeDoMic(16300)).toBe('sem-som');
+    t.chat.aoBotao(true); // modo "sempre": a tecla muda o microfone
+    expect(t.chat.saudeDoMic(16400), 'mudo escolhido: o silêncio é o esperado').toBe('ok');
+    expect((await t.chat.diagnostico()).saude).toBe('ok');
+  });
+
+  it('saúde: o navegador diz que a faixa parou (mute) e volta (unmute)', async () => {
+    const envio = contextoDeEnvioFalso();
+    const t = montar({ token: 'abc', envio });
+    const { faixa } = await naVozComColega(t);
+    envio.definirOnda(ondaCom(0.02));
+    expect(t.chat.saudeDoMic(0)).toBe('ok');
+    (faixa as unknown as Emissor).emitir('mute');
+    expect(t.chat.saudeDoMic(100)).toBe('sem-entrega');
+    expect((await t.chat.diagnostico()).faixaMuda).toBe(true);
+    (faixa as unknown as Emissor).emitir('unmute');
+    expect(t.chat.saudeDoMic(200)).toBe('ok');
+  });
+
+  it('o nível do microfone (a barra do HUD) é o RMS do que sai, já com o ganho', async () => {
+    const envio = contextoDeEnvioFalso();
+    const t = montar({ token: 'abc', envio });
+    await naVozComColega(t);
+    envio.definirOnda(ondaCom(0.05));
+    t.chat.saudeDoMic(0);
+    expect(t.chat.nivelDoMic).toBeCloseTo(0.05, 5);
+  });
+
+  it('o microfone termina sozinho (o fone caiu): larga tudo e REABRE em 1,5 s, 3 s, 6 s…; abrindo, o contador zera', async () => {
+    vi.useFakeTimers();
+    const t = montar({ token: 'abc' });
+    const m1 = await naVozComColega(t);
+    expect(t.pedidos.n).toBe(1);
+    (m1.faixa as unknown as Emissor).emitir('ended');
+    await andar();
+    expect(t.chat.estadoMic).toBe('sem');
+    await vi.advanceTimersByTimeAsync(1499);
+    expect(t.pedidos.n, 'ainda não').toBe(1);
+    await vi.advanceTimersByTimeAsync(2);
+    expect(t.pedidos.n, 'a primeira tentativa, aos 1,5 s').toBe(2);
+    t.recusarMic(Object.assign(new Error('sem fone'), { name: 'NotFoundError' }));
+    await andar();
+    await vi.advanceTimersByTimeAsync(2999);
+    expect(t.pedidos.n).toBe(2);
+    await vi.advanceTimersByTimeAsync(2);
+    expect(t.pedidos.n, 'a segunda, 3 s depois').toBe(3);
+    const m2 = fluxoComFaixa();
+    t.resolverMic(m2.fluxo);
+    await andar();
+    expect(t.chat.estadoMic).toBe('ativo');
+    // abriu: o contador zera, e o próximo "terminou" volta a esperar só 1,5 s
+    (m2.faixa as unknown as Emissor).emitir('ended');
+    await andar();
+    await vi.advanceTimersByTimeAsync(1502);
+    expect(t.pedidos.n).toBe(4);
+  });
+
+  it('para de tentar depois de cinco vezes, e a voz que volta ao ar zera a conta', async () => {
+    vi.useFakeTimers();
+    const t = montar({ token: 'abc' });
+    const m = await naVozComColega(t);
+    (m.faixa as unknown as Emissor).emitir('ended');
+    await andar();
+    for (let i = 0; i < 5; i++) {
+      await vi.advanceTimersByTimeAsync(1500 * 2 ** i + 5);
+      t.recusarMic(Object.assign(new Error('sem fone'), { name: 'NotFoundError' }));
+      await andar();
+    }
+    expect(t.pedidos.n, 'a original e cinco tentativas').toBe(6);
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(t.pedidos.n, 'não insiste para sempre').toBe(6);
+    expect((await t.chat.diagnostico()).reaberturas).toBe(5);
+  });
+
+  it('o jogador que RECUSOU o microfone não é incomodado de novo; e a voz desligada cancela a tentativa', async () => {
+    vi.useFakeTimers();
+    const t = montar({ token: 'abc' });
+    const m = await naVozComColega(t);
+    (m.faixa as unknown as Emissor).emitir('ended');
+    await andar();
+    await vi.advanceTimersByTimeAsync(1600);
+    expect(t.pedidos.n).toBe(2);
+    t.recusarMic(Object.assign(new Error('recusou'), { name: 'NotAllowedError' }));
+    await andar();
+    expect(t.chat.estadoMic).toBe('negado');
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(t.pedidos.n, 'recusa não se repete').toBe(2);
+
+    FakePC.todas = [];
+    const u = montar({ token: 'abc' });
+    const m2 = await naVozComColega(u);
+    (m2.faixa as unknown as Emissor).emitir('ended');
+    await andar();
+    u.chat.configurar(false, 'sempre', 0.8); // desligou a voz com a tentativa agendada
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(u.pedidos.n, 'voz desligada: ninguém reabre').toBe(1);
+  });
+
+  it('plugou o fone de volta (devicechange): tenta abrir na hora, sem esperar o relógio', async () => {
+    vi.useFakeTimers();
+    const aparelhos = new Emissor();
+    vi.stubGlobal('navigator', { mediaDevices: aparelhos });
+    const t = montar({ token: 'abc' });
+    const m = await naVozComColega(t);
+    (m.faixa as unknown as Emissor).emitir('ended');
+    await andar();
+    expect(t.pedidos.n).toBe(1);
+    aparelhos.emitir('devicechange');
+    await andar();
+    expect(t.pedidos.n, 'sem esperar 1,5 s').toBe(2);
+    // com o microfone já aberto, o evento não pede outro
+    t.resolverMic(fluxoComFaixa().fluxo);
+    await andar();
+    aparelhos.emitir('devicechange');
+    await andar();
+    expect(t.pedidos.n).toBe(2);
   });
 });

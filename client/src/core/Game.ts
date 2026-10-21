@@ -1198,10 +1198,10 @@ export class Game {
     void this.abrirNarracao();
   }
 
-  private comecarGravacao(microfone: MediaStream | null, efeito: FabricaDeCadeiaDeVoz | null = null): void {
+  private comecarGravacao(microfone: MediaStream | null, efeito: FabricaDeCadeiaDeVoz | null = null, ganho = 1): void {
     this.quality.setAdaptive(false);
     this.setPixelRatio(maxPixelRatio());
-    this.recorder.alternar(microfone, efeito);
+    this.recorder.alternar(microfone, efeito, ganho);
   }
 
   private async abrirNarracao(): Promise<void> {
@@ -1220,7 +1220,7 @@ export class Game {
         for (const faixa of microfone.getTracks()) faixa.stop(); // já começou a gravar enquanto o navegador perguntava
         return;
       }
-      this.comecarGravacao(microfone, fabrica);
+      this.comecarGravacao(microfone, fabrica, this.settings.value.micGain);
     } catch {
       this.recorder.avisar('NARRAÇÃO: não consegui abrir o microfone. Teste em Configurações > GRÁFICOS E SOM > CHAT DE VOZ.');
     }
@@ -1420,7 +1420,7 @@ export class Game {
     const quer = vozDeveLigar(s.voiceOn, funcionalidadeVisivel('tela:voz'), this.sessao?.estado.idade);
     // Só quem quer a voz e está numa sala online baixa o pedaço dela.
     if (quer && !this.voz && this.online && this.vozId !== null) void this.carregarVoz();
-    this.voz?.configurar(quer, s.voiceMode, s.voiceVolume, s.micDevice);
+    this.voz?.configurar(quer, s.voiceMode, s.voiceVolume, s.micDevice, s.micGain);
     this.pintarPilotos(); // o botão do mudo aparece e some com a voz
   }
 

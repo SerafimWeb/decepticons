@@ -154,6 +154,34 @@ try {
   conferir('depois da primeira escolha o pedaço dos efeitos foi baixado, uma vez', pedidos.filter((u) => u.includes('EfeitosDeVoz')).length >= 1, String(pedidos.filter((u) => u.includes('EfeitosDeVoz')).length));
   conferir('trocar de efeito com o teste ligado não dá erro de página', erros.size === 0, [...erros].join(' | '));
 
+  // ---- o ajuste de ganho do microfone (P237): o controle, a escolha salva, o valor na tela e a barra do teste reagindo
+  const gan = await page.evaluate(() => {
+    const s = document.getElementById('setting-mic-gain');
+    return { existe: !!s, min: s?.min, max: s?.max, valor: s?.value, texto: document.getElementById('val-mic-gain')?.textContent };
+  });
+  conferir('o ajuste de ganho do microfone existe (0,5 a 4) e começa em 1,0x', gan.existe && gan.min === '0.5' && gan.max === '4' && gan.valor === '1' && gan.texto === '1.0x', JSON.stringify(gan));
+  const barraAntes = await page.evaluate(() => Number.parseInt(document.getElementById('voz-nivel-barra').style.width, 10));
+  await page.evaluate(() => {
+    const s = document.getElementById('setting-mic-gain');
+    s.value = '0.5';
+    s.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await page.waitForTimeout(1200);
+  const barraMenos = await page.evaluate(() => Number.parseInt(document.getElementById('voz-nivel-barra').style.width, 10));
+  conferir('com o teste ligado, baixar o ganho para 0,5 baixa a barra do nível NA HORA (a barra mostra o que o chat vai mandar)', barraMenos < barraAntes, `${barraAntes}% -> ${barraMenos}%`);
+  await page.evaluate(() => {
+    const s = document.getElementById('setting-mic-gain');
+    s.value = '2.5';
+    s.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await page.waitForTimeout(800);
+  const salvoG = await page.evaluate(() => ({ salvo: JSON.parse(localStorage.getItem('cybermech.settings.v1') ?? '{}').micGain, texto: document.getElementById('val-mic-gain').textContent }));
+  conferir('mexer no ajuste salva a escolha e mostra o valor (2,5x)', salvoG.salvo === 2.5 && salvoG.texto === '2.5x', JSON.stringify(salvoG));
+  await page.evaluate(() => document.getElementById('setting-mic-gain').scrollIntoView({ block: 'center' }));
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: resolve('.decepticons', 'arte', 'voz-ganho-claude.png') });
+  conferir('mexer no ganho com o teste ligado não dá erro de página', erros.size === 0, [...erros].join(' | '));
+
   await page.evaluate(() => document.getElementById('btn-voz-testar').click());
   await page.waitForTimeout(500);
   const parou = await page.evaluate(() => ({ escondido: document.getElementById('voz-teste').hidden, botao: document.getElementById('btn-voz-testar').textContent, ouvir: document.getElementById('voz-ouvir').checked }));

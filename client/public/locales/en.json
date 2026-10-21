@@ -978,5 +978,10 @@
  "Diagnóstico da voz": "Voice diagnostics",
  "[ VER E COPIAR ]": "[ VIEW AND COPY ]",
  "[ COPIADO ]": "[ COPIED ]",
- "Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.": "If voice does not work between two players: shows what is going on and the most likely cause."
+ "Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.": "If voice does not work between two players: shows what is going on and the most likely cause.",
+ "SEM SOM NO MICROFONE: CONFIRA O BOTÃO DE MUDO DO FONE E O WINDOWS": "NO SOUND FROM THE MICROPHONE: CHECK THE HEADSET MUTE BUTTON AND WINDOWS",
+ "O NAVEGADOR PAROU DE RECEBER O MICROFONE: CONFIRA O FONE E O WINDOWS": "THE BROWSER STOPPED RECEIVING THE MICROPHONE: CHECK THE HEADSET AND WINDOWS",
+ "Ganho do microfone": "Microphone gain",
+ "Sobe a sua voz para quem escuta, no teste e na gravação. Fones Bluetooth costumam pedir ganho; o teste do microfone sugere um valor.": "Raises your voice for the people listening, in the test and in recordings. Bluetooth headsets usually need gain; the microphone test suggests a value.",
+ "Voz baixa: suba o ganho do microfone para x{0}.": "Low voice: raise the microphone gain to x{0}."
 }
