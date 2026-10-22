@@ -59,7 +59,7 @@ export const SESSAO_HEADER = 'x-cybermech-sessao';
  * A versão do texto da política de privacidade (`/privacidade/`) que quem cria a conta aceita. **Mudou o texto em algo que o titular precisa saber de novo? Mude esta data junto**
  * (e o texto em `scripts/privacidade.mjs`): a conta guarda a versão que a pessoa aceitou, e um navegador com a versão velha é mandado recarregar antes de criar conta.
  */
-export const POLITICA_VERSAO = '2026-10-19.2';
+export const POLITICA_VERSAO = '2026-10-21.1';
 
 /** O que o formulário de criar conta manda além do e-mail e da senha: as duas caixas marcadas (política lida; maior de 18 anos ou com autorização do responsável). */
 export interface AceiteDaPolitica {
@@ -110,6 +110,24 @@ export type IdadeDaConta = 'adulto' | 'menor' | 'sem-idade';
 export function idadeDaConta(nascimento: string | null | undefined, agora: Date = new Date()): IdadeDaConta {
   if (validarNascimento(nascimento, agora) === null) return 'sem-idade';
   return ehMaiorDeIdade(nascimento, agora) ? 'adulto' : 'menor';
+}
+
+/**
+ * **A porteira da voz, num lugar só (o cliente e o servidor leem esta linha).** `true` = a regra da P211: só conta de maior de idade ouve e fala. `false` = **FASE DE TESTES** (21/10, P241;
+ * ordem do Comandante: "essa regra de 18 anos tá muito restritiva… vamos apenas não dar acesso ao microfone… LIBERA VOZ PRA CONVIDADO E CONTA SEM IDADE"): convidado e conta sem idade informada
+ * falam e ouvem; **quem se declarou menor só ouve (sem microfone)**. Voltar à regra da P211 é mudar esta linha, publicar o jogo e o servidor (item no `LANCAMENTO.md`: decidir isto antes de abrir o jogo
+ * ao público). Não é à prova de um menor que joga como convidado: a idade é declarada, e o áudio vai entre os navegadores, então só o cliente impede o microfone de quem se declarou menor.
+ */
+export const VOZ_SO_PARA_ADULTO_DECLARADO = false;
+
+/** Esta faixa de idade pode FALAR (abrir o microfone, ou o da narração)? `adulto` sempre; `sem-idade` (inclui o convidado) só na fase de testes; `menor` nunca. */
+export function idadePodeFalar(idade: IdadeDaConta, soAdultoDeclarado: boolean = VOZ_SO_PARA_ADULTO_DECLARADO): boolean {
+  return idade === 'adulto' || (!soAdultoDeclarado && idade === 'sem-idade');
+}
+
+/** Esta faixa pode ENTRAR na voz e OUVIR os outros? Na fase de testes, todas (o menor só ouve); na regra da P211, só o adulto. É o que o servidor confere no `PRONTO`. */
+export function idadePodeOuvir(idade: IdadeDaConta, soAdultoDeclarado: boolean = VOZ_SO_PARA_ADULTO_DECLARADO): boolean {
+  return !soAdultoDeclarado || idade === 'adulto';
 }
 
 /** O corpo de `POST /conta/nascimento`: `{ nascimento: "AAAA-MM" }`. */

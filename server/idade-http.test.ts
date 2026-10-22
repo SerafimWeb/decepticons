@@ -188,7 +188,7 @@ describe('a idade pelo HTTP e a voz só de maior de idade, pela rede de verdade 
   };
   const espera = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-  it('na sala de verdade: dois adultos conversam; menor, sem idade, convidado e sessão inventada não entram na voz nem trocam sinal com ninguém', async () => {
+  it('na sala de verdade (fase de testes, P241): adulto, menor, sem idade, convidado e sessão inventada entram na voz e trocam sinal; o microfone do menor é negado no cliente, não aqui', async () => {
     const nomes = ['Ana', 'Beto', 'Menor', 'SemIdade', 'Convidado', 'Inventada'] as const;
     const tokens: Record<string, string> = {
       Ana: await token('ana-voz@x.com', ADULTO),
@@ -205,38 +205,34 @@ describe('a idade pelo HTTP e a voz só de maior de idade, pela rede de verdade 
     const id = (n: (typeof nomes)[number]) => decodeWelcome(c[n].de(MSG.WELCOME)[0]!)!.id;
 
     for (const n of nomes) c[n].ws.send(codificarPronto(true, tokens[n]!));
-    await ate(() => c.Ana.de(VOZ.LISTA).length > 0 && lerLista(c.Ana.de(VOZ.LISTA).at(-1)!)!.length === 2);
-    expect(lerLista(c.Ana.de(VOZ.LISTA).at(-1)!)!.sort()).toEqual([id('Ana'), id('Beto')].sort());
+    await ate(() => c.Ana.de(VOZ.LISTA).length > 0 && lerLista(c.Ana.de(VOZ.LISTA).at(-1)!)!.length === nomes.length);
+    expect(lerLista(c.Ana.de(VOZ.LISTA).at(-1)!)!.sort(), 'todos na lista da voz').toEqual(nomes.map((n) => id(n)).sort());
     await espera(300);
 
-    // O menor tenta falar com a Ana e a Ana com o menor: nada passa.
-    c.Menor.ws.send(codificarSinal({ id: id('Ana'), tipo: 'oferta', sdp: SDP }));
-    c.Ana.ws.send(codificarSinal({ id: id('Menor'), tipo: 'oferta', sdp: SDP }));
-    // Já os dois adultos se falam.
-    c.Ana.ws.send(codificarSinal({ id: id('Beto'), tipo: 'oferta', sdp: SDP }));
-    await ate(() => c.Beto.de(VOZ.SINAL).length > 0);
-    expect(lerSinal(c.Beto.de(VOZ.SINAL)[0]!)).toEqual({ id: id('Ana'), tipo: 'oferta', sdp: SDP });
-    await espera(300);
-    expect(c.Ana.de(VOZ.SINAL), 'a Ana não recebeu sinal do menor').toHaveLength(0);
-    for (const n of ['Menor', 'SemIdade', 'Convidado', 'Inventada'] as const) {
-      expect(c[n].de(VOZ.LISTA), `${n} não recebe a lista`).toHaveLength(0);
-      expect(c[n].de(VOZ.SINAL), `${n} não recebe sinal`).toHaveLength(0);
-    }
+    // A Ana oferece a cada um dos outros, e cada um recebe com o remetente certo (o servidor troca o remetente pelo id de verdade).
+    for (const n of nomes) if (n !== 'Ana') c.Ana.ws.send(codificarSinal({ id: id(n), tipo: 'oferta', sdp: SDP }));
+    await ate(() => nomes.filter((n) => n !== 'Ana').every((n) => c[n].de(VOZ.SINAL).length > 0));
+    for (const n of nomes) if (n !== 'Ana') expect(lerSinal(c[n].de(VOZ.SINAL)[0]!), `${n} recebeu a oferta da Ana`).toEqual({ id: id('Ana'), tipo: 'oferta', sdp: SDP });
+    // E quem só ouve (o menor) responde: a resposta chega à Ana.
+    c.Menor.ws.send(codificarSinal({ id: id('Ana'), tipo: 'resposta', sdp: SDP }));
+    await ate(() => c.Ana.de(VOZ.SINAL).length > 0);
+    expect(lerSinal(c.Ana.de(VOZ.SINAL)[0]!)).toEqual({ id: id('Menor'), tipo: 'resposta', sdp: SDP });
     for (const n of nomes) c[n].ws.close();
   });
 
-  it('informar a idade na sala abre a voz: o PRONTO seguinte, com o mesmo token, passa a valer', async () => {
+  it('conta sem idade já entra na voz (P241); informar a idade na sala não a tira de lá', async () => {
     const t = await token('tarde@x.com');
     const sozinho = cliente('IDADEVOZ2');
     await sozinho.aberto;
     sozinho.ws.send(new Uint8Array(encodeJoin(w, { protocol: PROTOCOL_VERSION, name: 'Tarde', build: BUILD })));
     await ate(() => sozinho.de(MSG.WELCOME).length > 0);
     sozinho.ws.send(codificarPronto(true, t));
-    await espera(300);
-    expect(sozinho.de(VOZ.LISTA), 'sem idade informada: fora da voz').toHaveLength(0);
+    await ate(() => sozinho.de(VOZ.LISTA).length > 0);
+    expect(lerLista(sozinho.de(VOZ.LISTA).at(-1)!)).toHaveLength(1);
     expect((await post(CONTA_NASCIMENTO_PATH, { nascimento: ADULTO }, t)).status).toBe(200);
     sozinho.ws.send(codificarPronto(true, t));
-    await ate(() => sozinho.de(VOZ.LISTA).length > 0);
+    await espera(300);
+    expect(sozinho.de(VOZ.LISTA), 'o mesmo jogador de novo na voz não repete a lista').toHaveLength(1);
     sozinho.ws.close();
   });
 });

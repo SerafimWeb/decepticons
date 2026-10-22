@@ -69,7 +69,7 @@ const body = `
         '**Não vendemos dados e não há publicidade.** O Google Analytics do site só liga se você aceitar.',
         '**O endereço IP não é guardado.** Ele existe só na memória do servidor enquanto você está conectado, e nos registros técnicos aparece cortado (o último trecho é mascarado).',
         '**No chat de voz, os outros jogadores da sala podem ver o seu endereço IP**, porque a voz vai direto de um navegador ao outro (nunca passa pelo nosso servidor, e **nada é gravado**). Você liga e desliga em Configurações, e o jogo funciona sem a voz.',
-        '**O chat de voz é só para maiores de 18 anos.** O cadastro pergunta o mês e o ano de nascimento; contas de menores de 18 anos, contas sem a idade informada e quem joga sem conta **não têm o microfone nem ouvem os outros jogadores**: ficam só com o áudio do jogo.',
+        '**No chat de voz, contas de menores de 18 anos só ouvem.** O cadastro pergunta o mês e o ano de nascimento; contas de menores de 18 anos **não têm o microfone** (só ouvem o chat de voz e o áudio do jogo). Quem joga sem conta, ou ainda não informou a idade, pode falar e ouvir: o jogo não tem como saber a idade dessas pessoas.',
       ])}
     </section>
 
@@ -144,7 +144,7 @@ const body = `
 
     <section aria-labelledby="h-menores">
       <h2 id="h-menores">6. Crianças e adolescentes</h2>
-      <p>O CYBERMECH não é dirigido a crianças (menores de 12 anos). Para <b>criar uma conta</b>, a pessoa informa o mês e o ano de nascimento e declara ter 18 anos ou mais, ou ter a autorização de um responsável. <b>Contas de menores de 18 anos não têm chat de voz</b>: sem microfone e sem ouvir os outros jogadores, só o áudio do jogo. <b>Jogar sem conta</b> não coleta dados pessoais. Se você é responsável por um menor que criou conta sem autorização, apague a conta no jogo ou fale com o canal do encarregado.</p>
+      <p>O CYBERMECH não é dirigido a crianças (menores de 12 anos). Para <b>criar uma conta</b>, a pessoa informa o mês e o ano de nascimento e declara ter 18 anos ou mais, ou ter a autorização de um responsável. <b>Contas de menores de 18 anos só ouvem o chat de voz, sem microfone</b>; o áudio do jogo segue normal. <b>Jogar sem conta</b> não coleta dados pessoais e, por isso, o jogo não sabe a idade de quem joga assim: essa pessoa usa a voz como as demais. Se você é responsável por um menor que criou conta sem autorização, apague a conta no jogo ou fale com o canal do encarregado.</p>
     </section>
 
     <section aria-labelledby="h-seguranca">
@@ -155,7 +155,7 @@ const body = `
     <section aria-labelledby="h-mudancas">
       <h2 id="h-mudancas">8. Mudanças nesta política</h2>
       <p>Quando mudarmos o que guardamos ou para quê, esta página muda, a versão e a data mudam junto, e quem for criar uma conta aceita a versão nova. A sua conta guarda a versão que você aceitou e quando. Mudanças que afetem contas já existentes serão avisadas no jogo.</p>
-      <p class="versao">Versão atual: ${esc(POLITICA_VERSAO)}. O que mudou em relação à de 19/10/2026: o cadastro pergunta o mês e o ano de nascimento, e o chat de voz passa a ser só para maiores de 18 anos. Em relação à de 18/10/2026: o chat de voz (o seu IP visto pelos outros jogadores da sala e o STUN do Google).</p>
+      <p class="versao">Versão atual: ${esc(POLITICA_VERSAO)}. O que mudou em relação à de 19/10/2026: o chat de voz deixou de ser só para maiores de 18 anos; quem joga sem conta e contas sem a idade informada passam a falar e ouvir, e contas de menores de 18 anos só ouvem, sem microfone. Em relação à de 18/10/2026: o cadastro pergunta o mês e o ano de nascimento, e o chat de voz (o seu IP visto pelos outros jogadores da sala e o STUN do Google).</p>
     </section>
   </main>
 `;

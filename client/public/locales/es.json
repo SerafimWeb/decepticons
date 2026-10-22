@@ -991,5 +991,8 @@
  "CANAIS [{0}] TIME · [{1}] {2} · [{3}] TROCAR": "CANALES [{0}] EQUIPO · [{1}] {2} · [{3}] CAMBIAR",
  "Chat de voz: falar só com o time": "Chat de voz: hablar solo con el equipo",
  "Chat de voz: falar só com o jogador escolhido": "Chat de voz: hablar solo con el jugador elegido",
- "Chat de voz: trocar o jogador escolhido": "Chat de voz: cambiar el jugador elegido"
+ "Chat de voz: trocar o jogador escolhido": "Chat de voz: cambiar el jugador elegido",
+ "Contas de menores de 18 anos só ouvem o chat de voz: sem microfone. O áudio do jogo segue normal.": "Las cuentas de menores de 18 años solo escuchan el chat de voz: sin micrófono. El audio del juego sigue normal.",
+ "Conta de menor de 18 anos: o chat de voz só ouve (sem microfone). O áudio do jogo segue normal.": "Cuenta de menor de 18 años: el chat de voz es solo de escucha (sin micrófono). El audio del juego sigue normal.",
+ "Informe o mês e o ano de nascimento da sua conta. Quem tem menos de 18 anos só ouve o chat de voz, sem microfone. Só dá para informar uma vez.": "Indica el mes y el año de nacimiento de tu cuenta. Quien tiene menos de 18 años solo escucha el chat de voz, sin micrófono. Solo se puede indicar una vez."
 }

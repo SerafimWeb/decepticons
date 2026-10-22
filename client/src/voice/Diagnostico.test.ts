@@ -19,6 +19,8 @@ const voz = (o: Partial<DiagnosticoDaVoz> = {}): DiagnosticoDaVoz => ({
   naLista: [3],
   ligacoes: [ligacao()],
   ajusteDeGanho: 1,
+  podeFalar: true,
+  soMixagem: false,
   viaWebAudio: true,
   saude: 'ok',
   nivel: 0.04,
@@ -34,6 +36,8 @@ const entrada = (o: Partial<EntradaDoDiagnostico> = {}): EntradaDoDiagnostico =>
   agora: '2026-10-20T20:00:00.000Z',
   navegador: 'Brave 155',
   online: true,
+  sala: 'ARENA · mapa padrão',
+  conta: 'maior de 18 anos',
   eleg: 'liberada',
   motivo: null,
   voiceOn: true,
@@ -72,10 +76,27 @@ describe('concluirDiagnostico (P237): a causa mais provável, na ordem em que el
   });
 
   it('sozinho na sala; e com gente na sala mas ninguém na voz (o outro PC sem conta de adulto)', () => {
-    expect(concluirDiagnostico(entrada({ pilotos: [], voz: voz({ ligacoes: [] }) }))).toContain('sozinho na sala');
+    const sozinho = concluirDiagnostico(entrada({ pilotos: [], voz: voz({ ligacoes: [] }) }));
+    expect(sozinho).toContain('sozinho na sala');
+    expect(sozinho, 'o relatório do Comandante (21/10) dizia só "sozinho"; a causa podia ser sala ou mapa diferentes').toContain('salas ou mapas diferentes');
     const c = concluirDiagnostico(entrada({ pilotos: [{ id: 3, nome: 'BRAVO' }], voz: voz({ ligacoes: [], naLista: [] }) }));
     expect(c).toContain('nenhum está na voz');
-    expect(c).toContain('conta de maior de 18 anos');
+    expect(c).toContain('"Conversar por voz" ligado');
+    expect(c, 'na fase de testes (P241) a idade não é o motivo').not.toContain('conta de maior de 18 anos');
+  });
+
+  it('a "Mixagem estéreo" (grava o som do PC, não a voz) é dita pelo nome e vem antes de "sozinho" (o Comandante a teve aberta em 21/10, nível 0,000)', () => {
+    const c = concluirDiagnostico(entrada({ pilotos: [], voz: voz({ estadoMic: 'sem', soMixagem: true }) }));
+    expect(c).toContain('Mixagem estéreo');
+    expect(c).toContain('não a sua voz');
+  });
+
+  it('conta de menor (só ouve): as conclusões do microfone não valem; sozinho e rede continuam valendo', () => {
+    const ouve = (o: Partial<DiagnosticoDaVoz>) => voz({ podeFalar: false, estadoMic: 'sem', transmitindo: false, ...o });
+    expect(concluirDiagnostico(entrada({ voz: ouve({}) }))).toContain('só ouve');
+    expect(concluirDiagnostico(entrada({ voz: ouve({}) })), 'sem microfone não se fala em "não conseguiu abrir um microfone"').not.toContain('abrir um microfone');
+    expect(concluirDiagnostico(entrada({ pilotos: [], voz: ouve({ ligacoes: [] }) }))).toContain('sozinho na sala');
+    expect(concluirDiagnostico(entrada({ voz: ouve({ ligacoes: [ligacao({ estado: 'falhou' })] }) }))).toContain('servidor de retransmissão');
   });
 
   it('rede: a ligação que falhou, e a que ainda está conectando', () => {
@@ -101,6 +122,7 @@ describe('formatarDiagnostico (P237): o relatório que o jogador copia e cola', 
     expect(texto).toContain('2026-10-20T20:00:00.000Z');
     expect(texto).toContain('Brave 155');
     expect(texto).toContain('conta: maior de 18 anos');
+    expect(texto, 'a sala e o mapa, para comparar os dois PCs').toContain('sala online: sim (ARENA · mapa padrão)');
     expect(texto).toContain('aparelho: "Fone (Captain 300)"');
     expect(texto).toContain('16000 Hz');
     expect(texto).toContain('BRAVO: conectada');
@@ -110,7 +132,7 @@ describe('formatarDiagnostico (P237): o relatório que o jogador copia e cola', 
   });
 
   it('sem o pedaço da voz carregado, diz que não carregou e conclui pelo motivo da conta', () => {
-    const texto = formatarDiagnostico(entrada({ voz: null, motivo: 'convidado', eleg: 'convidado' }));
+    const texto = formatarDiagnostico(entrada({ voz: null, motivo: 'convidado', eleg: 'convidado', conta: 'convidado' }));
     expect(texto).toContain('voz: não carregada');
     expect(texto).toContain('conta: convidado');
     expect(texto).toContain('CONCLUSÃO: Você está como convidado');

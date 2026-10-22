@@ -103,7 +103,9 @@ Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qu
 
 **Prova:** `medicoes/voz-teste-mic.mjs` (Chrome com microfone falso; 14 verificações, inclusive o caso do navegador que bloqueia o microfone); foto `arte/voz-teste-microfone-claude.png`; 15 de 15 mutações à mão pegas.
 
-## 5d. Só para maiores de 18 anos (P211, 19/10)
+## 5d. Só para maiores de 18 anos (P211, 19/10) — SUSPENSO na fase de testes (P241, 21/10)
+
+> **Hoje a regra é outra** (ordem do Comandante em 21/10: "essa regra de 18 anos ta muito restritiva… LIBERA VOZ PRA CONVIDADO E CONTA SEM IDADE"): `VOZ_SO_PARA_ADULTO_DECLARADO = false` em `shared/net/auth.ts`. **Convidado e conta sem idade falam e ouvem; o menor declarado entra na voz só para ouvir** (sem microfone: o cliente nunca o pede, `microfoneLiberado`; a narração F8 segue a mesma regra). O servidor admite todos no `PRONTO` (`autorizarPorSessao`, `server/voz.ts`) e o convidado manda o token vazio. **Limite:** o áudio vai entre os navegadores, então só o cliente impede o microfone do menor, e um menor que joga como convidado fala. A política pública mudou junto (`2026-10-21.1`). O texto abaixo descreve a **regra da P211, que volta** com `VOZ_SO_PARA_ADULTO_DECLARADO = true` (os testes provam as duas) e que o Comandante decide antes de abrir ao público (`LANCAMENTO.md`).
 
 **A ordem do Comandante:** *"no início, perguntar a IDADE pra fazer o cadastro do login. Menores de 18 anos NÃO TÊM ACESSO ao microfone nem aos áudios dos outros jogadores, apenas o áudio do jogo."*
 
@@ -111,7 +113,7 @@ Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qu
 
 **Como o servidor impõe (o cliente só poupa a viagem):**
 - O `PRONTO` leva o **token da sessão** (`[tipo][ligado][token utf8, até 200 bytes]`). `RelayDeVoz` chama o `autorizar(token)` que a sala recebe do servidor (`room.definirAutorizacaoDeVoz`): confere a sessão no banco e a idade da conta. **Padrão: negar** (sem autorizador, ninguém entra). Quem não passa não entra na lista, não recebe `LISTA` nem `SINAL`, e ninguém recebe os dele. Quem **já estava** e manda um `PRONTO` que não vale (sessão vencida) **sai** e os outros recebem a lista nova.
-- Um cliente adulterado (que não confere a idade e manda o token de um menor, ou nenhum) é recusado do mesmo jeito: provado no Chrome (`medicoes/voz-idade.mjs`, cenário 6).
+- Um cliente adulterado (que não confere a idade e manda o token de um menor, ou nenhum) é recusado do mesmo jeito **na regra da P211** (testes em `server/voz.test.ts`); na fase de testes todos entram e o `voz-idade.mjs` (cenário 6) diz o limite.
 - O cliente (`elegibilidadeDaVoz`, `vozDeveLigar`) só **esconde** os controles (voz e teste do microfone) e **nem pede o microfone** ao navegador quando a conta não é adulta; mostra a frase certa (convidado: *crie uma conta*; sem idade: *informe o mês e o ano*; menor: *sem chat de voz, o áudio do jogo segue normal*).
 
 **O cadastro e a conta:**
@@ -120,7 +122,7 @@ Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qu
 - A data vai no arquivo de **Baixar meus dados** e some quando a conta é apagada. A política passou a `2026-10-19.2`, falando do mês e do ano de nascimento e da voz só para maiores de 18 anos; o `PRIVACIDADE.md` ganhou a linha.
 - O formulário da conta virou **pedaço sob demanda** (`import()`); quem restaura a sessão é o próprio jogo, porque a voz precisa da idade antes de a tela existir.
 
-**Prova:** `medicoes/voz-idade.mjs` (Chrome com microfone falso; adulto, convidado, menor, sem idade informando na hora, cadastro pela tela como adulto e como menor, e cliente adulterado); fotos `arte/idade-cadastro-claude.png` e `arte/idade-menor-sem-voz-claude.png`; testes de simulação em `shared/net/auth.test.ts` (as fronteiras do mês), `server/voz.test.ts`, `server/voz-sala.test.ts`, `server/idade-http.test.ts` (contas, HTTP e a sala de verdade com contas reais) e a bateria do cliente; **32 mutações à mão, todas pegas**.
+**Prova:** `medicoes/voz-idade.mjs` (Chrome com microfone falso; adulto, convidado, menor, sem idade informando na hora, cadastro pela tela como adulto e como menor, e cliente adulterado); fotos `arte/idade-cadastro-claude.png` e `arte/idade-menor-so-ouve-claude.png`; testes de simulação em `shared/net/auth.test.ts` (as fronteiras do mês), `server/voz.test.ts`, `server/voz-sala.test.ts`, `server/idade-http.test.ts` (contas, HTTP e a sala de verdade com contas reais) e a bateria do cliente; **32 mutações à mão, todas pegas**.
 
 **Limite honesto (R13):** a idade é **declarada** pela pessoa, não verificada. Quem mente na data entra como adulto. Verificar de verdade exigiria documento ou terceiro (custo e dado sensível), contra o pedido do Comandante de ser simples e sem custo. A regra reduz o risco; **não o elimina**, e a política diz que a data é informada pela pessoa.
 
@@ -165,6 +167,12 @@ Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qu
 **O que falta: o time de cada piloto na sala online.** O servidor não atribui times (o `ArenaRoom` nem os cita; `setTeam` só existe na simulação, para o CTF e a Arena offline). `VozOpcoes.timeDe` já espera a resposta; hoje devolve `null`, e o HUD diz "SALA SEM TIMES: NINGUÉM OUVE O CANAL DO TIME". É um contrato de rede (o roster com o time de cada piloto) da frente do CTF online. **Limite honesto:** quem fala decide quem ouve (o servidor só decide quem entra na voz); quem recebe não vê que foi um sussurro; a lista da REDE (`tela:chat`) não tem botão de alvo.
 
 **Prova:** `medicoes/voz-canais.mjs` (Chrome real, 5 navegadores, 13 verificações: o escolhido recebe 0,346 e os outros 0,0000; sala sem times, ninguém; colega que entra no meio do sussurro, e alvo que sai no meio dele, 0,0000), `voz-diagnostico.mjs` (o HUD e a aba CONTROLES no jogo real) e as fotos `arte/voz-canais-claude.png` e `arte/voz-canais-teclas-claude.png`.
+
+## 5i. Quando a voz não sai: a "Mixagem estéreo" e a sala (P241, 21/10)
+
+**O que o relatório do Comandante mostrou** (Configurações > CHAT DE VOZ > [ VER E COPIAR ], com duas contas de adulto e "ninguém ouve ninguém"): `aparelho: "Mixagem estéreo (Realtek(R) Audio)"`, `nível 0.000`, `na sala (sem contar você): 0`. A **mixagem estéreo** do Windows grava o **som que o computador toca**, não a voz; aberta como microfone, manda silêncio (ou a música e as outras conversas do PC) para a sala. E a sala tinha **ninguém**: dois PCs só se ouvem na **mesma sala (`?sala=`) e no mesmo mapa** (`mapa=` abre outra sala no servidor).
+
+**O que o jogo faz agora:** `abrirMicrofone` (`voice/abrirMicrofone.ts`) **nunca devolve a mixagem**: se o que abriu (o padrão do Windows, ou a escolha salva) tem nome de mixagem (`ehMixagemDoSistema`, `voice/aparelhos.ts`: "mixagem", "stereo mix", "what u hear", "loopback"…), larga e abre o primeiro microfone de verdade (os que parecem microfone vêm primeiro); se só há a mixagem, não abre nada e o diagnóstico diz o motivo. A lista de aparelhos das Configurações também não a oferece. O diagnóstico ganhou a linha `sala online: sim (ARENA · mapa padrão)` e a conclusão "sozinho na sala" agora diz que, se a outra pessoa já entrou, **vocês estão em salas ou mapas diferentes**. **Prova:** `voice/abrirMicrofone.test.ts` (8 testes), `Diagnostico.test.ts`; 8 mutações à mão pegas. **Não provado:** no PC do Comandante (precisa do ouvido dele).
 
 ## 6. O que falta
 

@@ -347,6 +347,20 @@ export class OnlineSession implements Pilot {
   }
 
   /** Na sala e recebendo o estado. */
+  /** O código da sala em que esta sessão entra (o diagnóstico da voz o mostra: dois PCs só se ouvem na mesma sala e no mesmo mapa). */
+  get sala(): string {
+    return this.o.room;
+  }
+
+  /** O mapa pedido na conexão (`padrão` = a Cidade Neon, que não leva `mapa` na URL). */
+  get mapa(): string {
+    try {
+      return new URL(this.o.url).searchParams.get('mapa') ?? 'padrão';
+    } catch {
+      return 'padrão';
+    }
+  }
+
   get joined(): boolean {
     return this.myId >= 0;
   }

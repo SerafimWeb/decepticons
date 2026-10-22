@@ -476,7 +476,7 @@ describe('LoginPanel — LGPD (P192): aceite ao criar e "Meus dados" na conta', 
     expect(html()).not.toContain('// IDADE');
     panel.setIdade('menor');
     expect(parent.querySelector('#btn-login-nascimento')).toBeNull();
-    expect(html()).toContain('Conta de menor de 18 anos: sem chat de voz');
+    expect(html()).toContain('Conta de menor de 18 anos: o chat de voz só ouve (sem microfone)');
     expect(html()).toContain('O áudio do jogo segue normal');
   });
 

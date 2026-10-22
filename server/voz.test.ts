@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { codificarPronto, codificarSinal, lerLista, lerSinal, VOZ } from '../shared/net/voz';
-import { RelayDeVoz } from './voz';
+import { autorizarPorSessao, RelayDeVoz } from './voz';
 
 const SDP = 'v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\ns=-\r\n';
 
@@ -166,5 +166,44 @@ describe('RelayDeVoz: só conta de maior de idade entra na voz (P211)', () => {
     t.relay.pronto(2, 20, codificarPronto(true, 'adulto'));
     t.relay.pronto(1, 10, codificarPronto(false));
     expect(t.relay.naVoz).toBe(1);
+  });
+});
+
+describe('autorizarPorSessao (P211 e P241): o token do PRONTO vira a faixa de idade da conta', () => {
+  const ano = new Date().getUTCFullYear();
+  const contas: Record<string, { nascimento: string | null }> = {
+    'tk-adulto-123': { nascimento: '1990-01' },
+    'tk-menor-1234': { nascimento: `${ano - 10}-03` },
+    'tk-semidade-1': { nascimento: null },
+  };
+  const validar = (token: string) => contas[token] ?? null;
+  const confere = (soAdulto: boolean) => {
+    const f = autorizarPorSessao(validar, soAdulto);
+    return {
+      adulto: f('tk-adulto-123'),
+      menor: f('tk-menor-1234'),
+      semIdade: f('tk-semidade-1'),
+      convidado: f(''),
+      vencido: f('tk-que-nao-existe'),
+      curto: f('abc'),
+      comprido: f('x'.repeat(201)),
+    };
+  };
+
+  it('regra da P211 (soAdulto = true): só o adulto entra; menor, sem idade, convidado, sessão vencida e token torto ficam fora', () => {
+    expect(confere(true)).toEqual({ adulto: true, menor: false, semIdade: false, convidado: false, vencido: false, curto: false, comprido: false });
+  });
+
+  it('fase de testes (soAdulto = false): todos entram na lista da voz (o menor só ouve: o microfone é negado no cliente)', () => {
+    expect(confere(false)).toEqual({ adulto: true, menor: true, semIdade: true, convidado: true, vencido: true, curto: true, comprido: true });
+  });
+
+  it('o relé com a fase de testes deixa o convidado e o adulto se ouvirem; com a regra da P211, o convidado fica fora', () => {
+    for (const [soAdulto, esperado] of [[false, 2], [true, 1]] as const) {
+      const t = montar(autorizarPorSessao(validar, soAdulto));
+      t.relay.pronto(1, 10, codificarPronto(true, 'tk-adulto-123'));
+      t.relay.pronto(2, 20, codificarPronto(true, ''));
+      expect(t.relay.naVoz, `soAdulto=${soAdulto}`).toBe(esperado);
+    }
   });
 });

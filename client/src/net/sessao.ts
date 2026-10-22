@@ -1,4 +1,4 @@
-import { mesclarProgresso, progressoIgual, type ContaResposta, type IdadeDaConta, type ProgressoPiloto } from '../../../shared/net/auth';
+import { idadePodeOuvir, mesclarProgresso, progressoIgual, VOZ_SO_PARA_ADULTO_DECLARADO, type ContaResposta, type IdadeDaConta, type ProgressoPiloto } from '../../../shared/net/auth';
 import { serverHttpUrl } from '../../../shared/net/serverUrl';
 
 /**
@@ -96,11 +96,11 @@ export class SessaoPiloto {
   }
 
   /**
-   * O token da sessão **só para o chat de voz** (P211): o `PRONTO` o leva e o servidor confere a idade. `null` sem conta de maior de idade: o cliente nem tenta entrar na voz (o servidor confere de qualquer jeito, isto só poupa a viagem).
-   * Não sai daqui para mais nada.
+   * O token da sessão **só para o chat de voz** (P211): o `PRONTO` o leva e o servidor confere a idade. `null` se esta faixa de idade não entra na voz: o cliente nem tenta (o servidor confere de qualquer jeito,
+   * isto só poupa a viagem). Na fase de testes (P241) o convidado entra: o token dele é vazio, e o servidor o trata como convidado. Não sai daqui para mais nada.
    */
-  tokenDaVoz(): string | null {
-    return this.token !== null && this.idadeAtual === 'adulto' ? this.token : null;
+  tokenDaVoz(soAdulto: boolean = VOZ_SO_PARA_ADULTO_DECLARADO): string | null {
+    return idadePodeOuvir(this.idadeAtual, soAdulto) ? (this.token ?? '') : null;
   }
 
   /** Abre o jogo: se há token guardado e o servidor ainda o aceita, volta logado e sincroniza; senão fica como convidado. */

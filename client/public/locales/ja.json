@@ -991,5 +991,8 @@
  "CANAIS [{0}] TIME · [{1}] {2} · [{3}] TROCAR": "チャンネル [{0}] チーム · [{1}] {2} · [{3}] 切替",
  "Chat de voz: falar só com o time": "ボイスチャット：チームだけに話す",
  "Chat de voz: falar só com o jogador escolhido": "ボイスチャット：選んだプレイヤーだけに話す",
- "Chat de voz: trocar o jogador escolhido": "ボイスチャット：選んだプレイヤーを切り替える"
+ "Chat de voz: trocar o jogador escolhido": "ボイスチャット：選んだプレイヤーを切り替える",
+ "Contas de menores de 18 anos só ouvem o chat de voz: sem microfone. O áudio do jogo segue normal.": "18歳未満のアカウントはボイスチャットを聞くだけで、マイクは使えません。ゲームの音声は通常どおりです。",
+ "Conta de menor de 18 anos: o chat de voz só ouve (sem microfone). O áudio do jogo segue normal.": "18歳未満のアカウント：ボイスチャットは聞くだけです（マイクなし）。ゲームの音声は通常どおりです。",
+ "Informe o mês e o ano de nascimento da sua conta. Quem tem menos de 18 anos só ouve o chat de voz, sem microfone. Só dá para informar uma vez.": "アカウントの生まれた月と年を入力してください。18歳未満の方はボイスチャットを聞くだけで、マイクは使えません。入力できるのは一度だけです。"
 }

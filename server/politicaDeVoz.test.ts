@@ -54,23 +54,25 @@ describe('a política de privacidade fala do chat de voz (P205, 19/10)', () => {
   });
 });
 
-describe('a política fala da idade e da voz só para maiores de 18 anos (P211, 19/10)', () => {
+describe('a política fala da idade e da voz (P211, 19/10; fase de testes, P241, 21/10: o menor só ouve)', () => {
   const html = paginaDaPolitica();
   const texto = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 
-  it('a tabela da conta lista o mês e o ano de nascimento, e o resumo do topo diz que a voz é só para maiores de 18 anos', () => {
+  it('a tabela da conta lista o mês e o ano de nascimento, e o resumo do topo diz que o menor de 18 anos só ouve (sem microfone)', () => {
     expect(texto, 'a linha "Você cria uma conta" tem o nascimento').toMatch(/Você cria uma conta .*o mês e o ano de nascimento\*? \(sem o dia\)/);
     const resumo = texto.slice(texto.indexOf('Em poucas palavras'), texto.indexOf('1. Quem trata os seus dados'));
     expect(resumo).toMatch(/o mês e o ano do seu nascimento/);
-    expect(resumo).toMatch(/O chat de voz é só para maiores de 18 anos/);
-    expect(resumo).toMatch(/não têm o microfone nem ouvem os outros jogadores/);
+    expect(resumo).toMatch(/contas de menores de 18 anos só ouvem/i);
+    expect(resumo).toMatch(/não têm o microfone/);
+    expect(resumo, 'quem joga sem conta fala e ouve, e a política diz isso com franqueza').toMatch(/Quem joga sem conta, ou ainda não informou a idade, pode falar e ouvir/);
   });
 
-  it('a seção das crianças diz que contas de menores não têm chat de voz, e o aviso de mudança cita a mudança', () => {
+  it('a seção das crianças diz que contas de menores só ouvem o chat de voz, e o aviso de mudança cita a mudança', () => {
     const menores = texto.slice(texto.indexOf('6. Crianças e adolescentes'), texto.indexOf('7. Segurança'));
-    expect(menores).toMatch(/Contas de menores de 18 anos não têm chat de voz/);
+    expect(menores).toMatch(/Contas de menores de 18 anos só ouvem o chat de voz, sem microfone/);
+    expect(menores).toMatch(/o jogo não sabe a idade de quem joga assim/);
     expect(menores).toMatch(/informa o mês e o ano de nascimento/);
-    expect(texto).toMatch(/em relação à de 19\/10\/2026: o cadastro pergunta o mês e o ano de nascimento/i);
+    expect(texto).toMatch(/em relação à de 19\/10\/2026: o chat de voz deixou de ser só para maiores de 18 anos/i);
   });
 
   it('a versão vigente não volta a ser anterior à que descreve a idade, e o inventário (PRIVACIDADE.md) tem a linha da idade', () => {
