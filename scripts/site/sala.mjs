@@ -1,8 +1,12 @@
 /**
- * Sala de controle no sistema visual do site: esquadrão (as IAs e o Dan), atividade (mapa de calor por dia da
- * semana e hora, registro de entregas e commits) e "como um pedido vira jogo". Todos os números vêm do git e dos
- * documentos do projeto (`dados.mjs`); aqui só se monta o HTML. O resto da página (guia, novidades, protocolo,
- * evolução, rota, frentes, decisões, entregas) é o markup antigo, extraído por `id` e reaproveitado.
+ * A página do esquadrão no sistema visual do site, em duas versões (`modo`):
+ *
+ * - **`publico`** (a que vai ao ar em `/sala-de-controle/`): **só o superficial**, o que serve para quem ainda não nos conhece: quem faz o jogo e o que observar ao jogar. Nada de infraestrutura,
+ *   segurança, processo, protocolo, decisões, entregas, métricas de engenharia nem planos. Em 21/10 essa página publicava tudo isso (a hospedagem, o túnel, o protocolo, os títulos de todos os PRs, até a
+ *   confissão de uma queda do servidor), e o Comandante mandou fechar: **o que custou aprender é propriedade intelectual e não se ensina a clonar** (`.decepticons/VITRINE.md`). A guarda que impede a volta
+ *   é `scripts/site/vitrine.mjs`, que roda no `npm run check`.
+ * - **`interno`** (`npm run painel -- --interno`, só no PC do Comandante): a página completa, com atividade, "como um pedido vira jogo", protocolo, evolução, gestão, frentes, decisões e entregas. Os números vêm
+ *   do git e dos documentos do projeto (`dados.mjs`); aqui só se monta o HTML. O resto da página é o markup antigo, extraído por `id` e reaproveitado.
  */
 import { brDate, esc } from './tema.mjs';
 import { hudFooter, hudNav, ico, limpaRotulos, pageHero } from './hud.mjs';
@@ -18,12 +22,21 @@ const SQUAD = {
   codex: { label: 'OpenAI', c: '#3bd68a', title: 'Visual e render', art: 'eq-codex.jpg' },
   qwen: { label: 'Alibaba', c: '#b07bff', title: 'Qualidade e documentação', art: 'cena-colossusv4.jpg' },
 };
+/** O que a versão pública diz de cada integrante: uma frase curada, de vitrine. O texto de `ESTADO_ATUAL.md` (`t.role`) descreve o processo e só vale para a versão interna. */
+const PAPEL_PUBLICO = {
+  dono: 'Direção de produto e game design. Define a visão do jogo e conduz a avaliação de jogabilidade.',
+  claude: 'Arquitetura e engenharia: simulação, combate e inteligência dos bots.',
+  gemini: 'Interface e som: HUD, configurações, som sintetizado e a versão para celular.',
+  codex: 'Visual e desempenho de render do mundo 3D: efeitos, cenário e modelos.',
+  qwen: 'Qualidade e documentação do jogo.',
+};
 const TAG_COLOR = { entrega: '#5dff8a', claude: '#ff6a5a', gemini: '#4aa3ff', codex: '#3bd68a', qwen: '#b07bff', dono: '#ffd000', equipe: '#97a1ac' };
 const FLOW_ICON = ['file', 'scan', 'folder', 'code', 'chip', 'shield', 'bolt', 'target'];
 
 const kpi = (icon, label, value, small = '') => `<div class="kpi panel">${ico(icon, 38)}<div><span class="k">${label}</span><span class="v">${value}${small ? `<small>${small}</small>` : ''}</span></div></div>`;
 
-export function salaSite({ BASE, TEAM, act, prs, log, asked, last, stats, estado, fronts, fromGithub, nf, when, flow, bodyLocal, m }) {
+export function salaSite({ BASE, TEAM, act, prs, log, asked, last, stats, estado, fronts, fromGithub, nf, when, flow, bodyLocal, m, modo = 'publico' }) {
+  const interno = modo === 'interno';
   const FRONT_NAME = Object.fromEntries(fronts.map((f) => [f.tag, f.name]));
   const prTitle = new Map(prs.map((p) => [p.n, p.title]));
 
@@ -41,10 +54,10 @@ export function salaSite({ BASE, TEAM, act, prs, log, asked, last, stats, estado
     return `<article class="sq panel reveal" style="--c:${s.c}">
       <header><span class="org">${esc(s.label)}</span><span class="idx" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span></header>
       <h3>${esc(t.name)}</h3><p class="sub">${esc(s.title)}</p>
-      <dl>${nums.map(([k, v]) => `<div><dt>${k}</dt><dd>${typeof v === 'number' ? nf(v) : v}</dd></div>`).join('')}</dl>
+      ${interno ? `<dl>${nums.map(([k, v]) => `<div><dt>${k}</dt><dd>${typeof v === 'number' ? nf(v) : v}</dd></div>`).join('')}</dl>` : ''}
       <img src="${BASE}jogar/press/${s.art}" alt="" width="350" height="232" loading="lazy">
-      <p class="desc">${esc(t.role)}</p>
-      ${list.length ? `<h4>${t.key !== 'dono' && !byFront.length ? 'Últimos commits' : 'Em atividade'}</h4><ul>${list.map((f) => `<li>${ico('hex', 16)}${esc(f)}</li>`).join('')}</ul>` : ''}
+      <p class="desc">${esc(interno ? t.role : (PAPEL_PUBLICO[t.key] ?? ''))}</p>
+      ${interno && list.length ? `<h4>${t.key !== 'dono' && !byFront.length ? 'Últimos commits' : 'Em atividade'}</h4><ul>${list.map((f) => `<li>${ico('hex', 16)}${esc(f)}</li>`).join('')}</ul>` : ''}
     </article>`;
   }).join('');
 
@@ -78,21 +91,23 @@ export function salaSite({ BASE, TEAM, act, prs, log, asked, last, stats, estado
   /* ---------- o resto da página: o markup antigo, por id ---------- */
   const grab = (id) => bodyLocal.match(new RegExp(`<section aria-labelledby="${id}">[\\s\\S]*?</section>`))?.[0] ?? '';
   const combatNav = bodyLocal.match(/<nav class="combat-nav"[\s\S]*?<\/nav>/)?.[0] ?? '';
-  const rest = ['validar-build', 'proximas-decisoes', 'novidades', 'mesa', 'fichas', 'protocolo', 'evolucao', 'ritmo', 'rota', 'gestao', 'frentes', 'diario', 'entregas'].map(grab).join('\n');
+  const rest = (interno ? ['validar-build', 'proximas-decisoes', 'novidades', 'mesa', 'fichas', 'protocolo', 'evolucao', 'ritmo', 'rota', 'gestao', 'frentes', 'diario', 'entregas'] : ['validar-build']).map(grab).join('\n');
 
   const body = `
   ${hudNav({ base: BASE, current: 'sala' })}
   <main id="conteudo">
   ${pageHero({
     base: BASE,
-    eyebrowText: `Esquadrão${m.day ? ` · dia ${m.day} do projeto` : ''}`,
-    title: 'SALA DE CONTROLE',
-    sub: 'DA OPERAÇÃO',
+    eyebrowText: interno ? `Esquadrão${m.day ? ` · dia ${m.day} do projeto` : ''}` : 'Esquadrão',
+    title: interno ? 'SALA DE CONTROLE' : 'O ESQUADRÃO',
+    sub: interno ? 'DA OPERAÇÃO' : 'DO CYBERMECH',
     art: 'cena-escala.jpg',
-    pitch: 'Dan e uma equipe de IAs construindo um combate que responde às suas decisões. Acompanhe o que mudou, teste a versão e confira o que ainda precisa evoluir. O histórico e os indicadores desta página vêm do repositório.',
+    pitch: interno
+      ? 'Dan e uma equipe de IAs construindo um combate que responde às suas decisões. Acompanhe o que mudou, teste a versão e confira o que ainda precisa evoluir. O histórico e os indicadores desta página vêm do repositório.'
+      : 'Direção humana e uma esquadra de IAs construindo um combate de Mechs que responde às suas decisões. Teste a versão e veja o que observar ao jogar.',
   })}
   <div class="page">
-    <div class="sitrep kpis">
+    ${interno ? `    <div class="sitrep kpis">
       ${m.day ? kpi('clock', 'Dia de projeto', m.day, `desde ${brDate(m.first)}`) : ''}
       ${kpi('code', 'Commits', nf(act.total))}
       ${kpi('cube', 'Entregas', nf(prs.length), 'PRs no ar')}
@@ -100,17 +115,17 @@ export function salaSite({ BASE, TEAM, act, prs, log, asked, last, stats, estado
       ${kpi('bars', 'Linhas de código', nf(last.loc), 'TypeScript')}
       ${kpi('target', 'Roadmap', `${stats.pct}%`, `${stats.done}/${stats.total}`)}
       ${m.version ? kpi('hex', 'Versão', esc(m.version)) : ''}
-    </div>
+    </div>` : ''}
 
     <section aria-labelledby="equipe">
       <span class="kicker">// esquadrão</span>
       <h2 id="equipe">A equipe</h2>
-      <p class="lede">Direção humana, desenvolvimento assistido por IA. Responsabilidades definidas, contribuições rastreáveis e revisão cruzada sustentam a evolução do Cybermech. Cada IA trabalha no próprio território de arquivos; nenhuma aprova o próprio código.</p>
+      <p class="lede">${interno ? 'Direção humana, desenvolvimento assistido por IA. Responsabilidades definidas, contribuições rastreáveis e revisão cruzada sustentam a evolução do Cybermech. Cada IA trabalha no próprio território de arquivos; nenhuma aprova o próprio código.' : 'Direção humana, desenvolvimento assistido por IA.'}</p>
       <div class="sq-grid">${squadHtml}</div>
-      ${fromGithub ? '' : '<p class="source">Sem acesso ao GitHub neste build: entregas contadas pelo git, sem etiquetas de frente e agente.</p>'}
+      ${fromGithub || !interno ? '' : '<p class="source">Sem acesso ao GitHub neste build: entregas contadas pelo git, sem etiquetas de frente e agente.</p>'}
     </section>
 
-    <section aria-labelledby="atividade">
+    ${interno ? `    <section aria-labelledby="atividade">
       <span class="kicker">// dados da base · registro do git</span>
       <h2 id="atividade">Atividade</h2>
       <p class="lede">Cada commit e cada entrega, com quem fez e quando. O mapa mostra as horas de trabalho: quanto mais aceso, mais commits naquele dia da semana e horário.</p>
@@ -122,30 +137,24 @@ export function salaSite({ BASE, TEAM, act, prs, log, asked, last, stats, estado
       </div>
       ${heat}
       ${log_}
-    </section>
+    </section>` : ''}
 
-    <section aria-labelledby="fluxo">
+    ${interno ? `    <section aria-labelledby="fluxo">
       <span class="kicker">// da ideia ao game</span>
       <h2 id="fluxo">Como um pedido vira jogo</h2>
       <p class="lede">O ciclo de desenvolvimento, do requisito à avaliação em partida. Cada passo é registrado no repositório e conferido por teste ou por quem joga.</p>
       <ol class="flow">${flowHtml}</ol>
       <p class="loop">↺ e o ciclo recomeça no 01</p>
-    </section>
+    </section>` : ''}
 
-    ${combatNav}
+    ${interno ? combatNav : ''}
     ${rest}
   </div>
   </main>
   ${hudFooter({ base: BASE })}`;
 
-  const css = `
-.kpis{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
-.kpi{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;padding:24px 26px}
-.kpi .ico{color:var(--amber);stroke-width:1.3}
-.kpi .k{display:block;font:600 13px/1.3 var(--fh);letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
-.kpi>div{min-width:0}
-.kpi .v{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin-top:6px;font:italic 700 clamp(34px,3.4vw,50px)/1 var(--fh);color:var(--amber)}
-.kpi small{font:500 14px var(--fb);font-style:normal;letter-spacing:.01em;color:var(--muted)}
+  /* O CSS do esquadrão (as duas versões) e o do que só a versão interna tem (KPIs, atividade, registro, fluxo): a pública não leva regra sem uso. */
+  const cssEsquadrao = `
 .sq-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:24px;align-items:stretch}
 .sq{grid-column:span 2;display:flex;flex-direction:column;gap:12px;padding:26px 26px 28px;min-width:0}
 .sq:nth-child(n+4){grid-column:span 3}
@@ -155,16 +164,27 @@ export function salaSite({ BASE, TEAM, act, prs, log, asked, last, stats, estado
 .sq .idx{font:italic 700 34px/1 var(--fh);color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.45)}
 .sq h3{margin:4px 0 0;font:italic 700 clamp(40px,4vw,58px)/.95 var(--fh);letter-spacing:.01em;text-transform:uppercase;color:#fff}
 .sq .sub{margin:0;font:600 14px/1.3 var(--fh);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.sq img{display:block;width:calc(100% + 52px);max-width:none;margin:8px -26px 4px;aspect-ratio:350/200;object-fit:cover}
+.sq .desc{margin:0;font-size:16.5px;line-height:1.55;color:var(--text);opacity:.88}
+@media(max-width:1180px){.sq-grid{grid-template-columns:repeat(2,1fr)}.sq,.sq:nth-child(n+4){grid-column:auto}.sq:last-child{grid-column:1/-1}}
+@media(max-width:860px){.sq-grid{grid-template-columns:1fr}}
+`;
+  const cssInterno = `
 .sq dl{display:flex;gap:34px;margin:10px 0 4px}
 .sq dt{font:600 12.5px/1.3 var(--fh);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 .sq dd{margin:4px 0 0;font:italic 700 clamp(34px,3.4vw,48px)/1 var(--fh);color:var(--c)}
-.sq img{display:block;width:calc(100% + 52px);max-width:none;margin:8px -26px 4px;aspect-ratio:350/200;object-fit:cover}
-.sq .desc{margin:0;font-size:16.5px;line-height:1.55;color:var(--text);opacity:.88}
 .sq h4{margin:10px 0 0;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);font:700 13.5px/1 var(--fh);letter-spacing:.22em;text-transform:uppercase;color:var(--c)}
 .sq ul{list-style:none;margin:0;padding:0;display:grid;gap:9px}
 .sq li{display:flex;align-items:flex-start;gap:12px;font-size:16px;line-height:1.4;color:var(--text)}
 .sq li .ico{margin-top:3px}
 .sq li .ico{color:var(--c);stroke-width:1.5}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.kpi{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;padding:24px 26px}
+.kpi .ico{color:var(--amber);stroke-width:1.3}
+.kpi .k{display:block;font:600 13px/1.3 var(--fh);letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.kpi>div{min-width:0}
+.kpi .v{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin-top:6px;font:italic 700 clamp(34px,3.4vw,50px)/1 var(--fh);color:var(--amber)}
+.kpi small{font:500 14px var(--fb);font-style:normal;letter-spacing:.01em;color:var(--muted)}
 .wk{margin:0;padding:24px 26px 20px;display:grid;gap:18px}
 .wk figcaption{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;font:600 14px/1.3 var(--fh);letter-spacing:.16em;text-transform:uppercase;color:var(--bone)}
 .wk .lg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);letter-spacing:.12em}
@@ -195,15 +215,17 @@ export function salaSite({ BASE, TEAM, act, prs, log, asked, last, stats, estado
 .step .sample{padding-left:12px;border-left:3px solid var(--amber);font-size:14.5px;color:var(--text)}
 .step:not(:last-child)::after{color:var(--amber)}
 .loop{margin:6px 0 0;font:700 13.5px var(--fh);letter-spacing:.16em;text-transform:uppercase;color:var(--green)}
-@media(max-width:1180px){.sq-grid{grid-template-columns:repeat(2,1fr)}.sq,.sq:nth-child(n+4){grid-column:auto}.sq:last-child{grid-column:1/-1}}
-@media(max-width:860px){.sq-grid{grid-template-columns:1fr}.logl li{grid-template-columns:1fr auto;row-gap:6px}.logl time{grid-column:1}.logl .tg{grid-column:2;grid-row:1}.logl .msg{grid-column:1/-1}.logl code{display:none}.wk-grid{grid-template-columns:34px repeat(24,minmax(0,1fr));gap:3px}.wk-grid .c{height:22px}.wk-grid .hr{font-size:10px}.kpi{padding:18px 20px}}
+@media(max-width:860px){.logl li{grid-template-columns:1fr auto;row-gap:6px}.logl time{grid-column:1}.logl .tg{grid-column:2;grid-row:1}.logl .msg{grid-column:1/-1}.logl code{display:none}.wk-grid{grid-template-columns:34px repeat(24,minmax(0,1fr));gap:3px}.wk-grid .c{height:22px}.wk-grid .hr{font-size:10px}.kpi{padding:18px 20px}}
 `;
+  const css = interno ? cssEsquadrao + cssInterno : cssEsquadrao;
 
-  const js = `(() => {
+  const js = interno
+    ? `(() => {
   const box = document.querySelector('.logbox'); if (!box) return;
   const tabs = [...box.querySelectorAll('[data-f]')]; const rows = [...box.querySelectorAll('.logl li')];
   tabs.forEach((t) => t.addEventListener('click', () => { const f = t.dataset.f; tabs.forEach((x) => x.setAttribute('aria-selected', String(x === t))); rows.forEach((r) => { r.hidden = f !== 'todos' && r.dataset.k !== f; }); }));
-})();`;
+})();`
+    : '';
 
   return { body: limpaRotulos(body), css, js };
 }
