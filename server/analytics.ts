@@ -115,6 +115,11 @@ export class GoogleAnalytics {
     this.esperaMaxMs = o.esperaMaxMs ?? ESPERA_MAX_MS;
   }
 
+  /** O estado conhecido **agora**, sem esperar o Google nem disparar uma atualização (para o Watchdog, `server/admin.ts`: `/admin/avaliar` é síncrono e não pode travar nisto). `carregando` até a primeira resposta chegar. */
+  estadoConhecido(): GaEstado['estado'] {
+    return this.cache?.estado.estado ?? 'carregando';
+  }
+
   /** O estado atual do Analytics para o `/metricas`. Nunca lança e nunca demora mais que `ESPERA_MAX_MS`. */
   async obter(): Promise<GaEstado> {
     const agora = this.agora();

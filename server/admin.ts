@@ -318,7 +318,20 @@ function checar(nome: string, valor: number, unidade: string, meta: { ok: number
 export interface ContextoDaAvaliacao {
   uptimeS: number;
   recusasPorTaxa: number;
+  /**
+   * Watchdog (AUDITORIA_SEGURANCA.md A14, LANCAMENTO.md §5): horas desde a cópia de segurança das contas mais recente
+   * (`idadeDoBackupNoDisco`); `null` = nenhuma cópia encontrada; **ausente** = este servidor não guarda contas em disco
+   * (banco em memória, testes) e a checagem nem aparece.
+   */
+  backupIdadeH?: number | null;
+  /** O estado do Google Analytics agora (`GoogleAnalytics.estadoConhecido()`, sem esperar a rede). Ausente = sem Analytics neste servidor. */
+  analytics?: 'ok' | 'desligado' | 'erro' | 'carregando';
+  /** O e-mail de "esqueci a senha" está pronto para mandar (`Mailer.configurado()`)? Ausente = sem mailer neste servidor. */
+  emailConfigurado?: boolean;
 }
+
+/** Quantas horas uma cópia de segurança pode esperar: o padrão copia a cada 6 h, então 30 h já perdeu 4 rodadas e 54 h perdeu quase 2 dias. */
+const META_BACKUP_H = { ok: 30, falha: 54 } as const;
 
 /**
  * O veredito sobre a janela de amostras: tick, atraso do laço, CPU, memória (e a tendência dela), tráfego por jogador e cortes por
@@ -361,6 +374,34 @@ export function avaliar(amostras: readonly AdminAmostra[], ctx: ContextoDaAvalia
   }
   if (ctx.recusasPorTaxa > 0) {
     checagens.push({ nome: 'Cortes por taxa alta', valor: String(ctx.recusasPorTaxa), limite: '0', resultado: 'atencao', dica: 'Alguém mandou mensagens rápido demais e foi cortado (`servidor.log`). Pode ser só um navegador travado.' });
+  }
+  if (ctx.backupIdadeH !== undefined) {
+    if (ctx.backupIdadeH === null) {
+      checagens.push({ nome: 'Cópia de segurança das contas', valor: 'nenhuma cópia encontrada', limite: `até ${META_BACKUP_H.ok} h`, resultado: 'falha', dica: 'A cópia de segurança nunca rodou ou a pasta `backups/` está vazia; veja o log (procure "cópia de segurança").' });
+    } else {
+      checagens.push(checar('Cópia de segurança das contas', ctx.backupIdadeH, 'h', META_BACKUP_H, 'A cópia diária não rodou a tempo; veja o log (procure "cópia de segurança") e se o servidor ficou de pé nas últimas horas.', (x) => String(Math.round(x))));
+    }
+  }
+  if (ctx.analytics !== undefined) {
+    const resultado: Resultado = ctx.analytics === 'ok' ? 'ok' : ctx.analytics === 'erro' ? 'falha' : 'atencao';
+    checagens.push({
+      nome: 'Analytics (GA4)',
+      valor: ctx.analytics,
+      limite: 'ok',
+      resultado,
+      ...(resultado === 'ok'
+        ? {}
+        : { dica: ctx.analytics === 'erro' ? 'O Google recusou ou falhou: veja `/metricas` (campo `analytics`) para o motivo exato.' : 'Não bloqueia o jogo (só os números de `/metricas`): falta a chave, a propriedade certa, ou ainda está carregando (LANCAMENTO.md §6C).' }),
+    });
+  }
+  if (ctx.emailConfigurado !== undefined) {
+    checagens.push({
+      nome: 'E-mail de "esqueci a senha"',
+      valor: ctx.emailConfigurado ? 'configurado' : 'não configurado',
+      limite: 'configurado',
+      resultado: ctx.emailConfigurado ? 'ok' : 'atencao',
+      ...(ctx.emailConfigurado ? {} : { dica: 'Sem e-mail, quem perde a senha depende de `npm run admin -- link-senha` (DEPLOY.md §4g); não bloqueia o jogo.' }),
+    });
   }
   const rank: Record<Resultado, number> = { ok: 0, atencao: 1, falha: 2 };
   const pior = checagens.reduce<Resultado>((p, c) => (rank[c.resultado] > rank[p] ? c.resultado : p), 'ok');

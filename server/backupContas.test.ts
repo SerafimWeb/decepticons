@@ -1,8 +1,8 @@
 import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { aposentar, BACKUPS_PASTA, fazerBackup, GUARDAR, nomeDoBackup } from './backupContas';
+import { aposentar, BACKUPS_PASTA, fazerBackup, GUARDAR, idadeDoBackupH, idadeDoBackupNoDisco, nomeDoBackup } from './backupContas';
 import { Contas } from './contas';
 import { startServer } from './Server';
 
@@ -88,5 +88,51 @@ describe('a cópia de segurança das contas', () => {
     const estranho = join(dados, "o'piloto.db");
     banco.copiarPara(estranho);
     expect(existsSync(estranho)).toBe(true);
+  });
+});
+
+describe('idade da cópia de segurança (Watchdog, server/admin.ts)', () => {
+  const agora = new Date('2026-10-22T12:00:00Z');
+  const pastas2: string[] = [];
+  const abertas2: Contas[] = [];
+  const pasta2 = (): string => {
+    const p = mkdtempSync(join(tmpdir(), 'cybermech-backup-idade-'));
+    pastas2.push(p);
+    return p;
+  };
+  afterEach(() => {
+    for (const c of abertas2.splice(0)) c.close();
+    for (const p of pastas2.splice(0)) rmSync(p, { recursive: true, force: true });
+  });
+
+  it('sem nenhum arquivo de cópia (lixo não conta), devolve null', () => {
+    expect(idadeDoBackupH([], agora)).toBeNull();
+    expect(idadeDoBackupH([{ nome: 'LEIA-ME.txt', mtimeMs: agora.getTime() }], agora)).toBeNull();
+  });
+
+  it('usa a modificação mais recente entre as cópias, não o nome', () => {
+    const h = idadeDoBackupH(
+      [
+        { nome: 'contas-2026-10-20.db', mtimeMs: new Date('2026-10-20T06:00:00Z').getTime() },
+        { nome: 'contas-2026-10-22.db', mtimeMs: new Date('2026-10-22T06:00:00Z').getTime() }, // a mais nova
+      ],
+      agora,
+    );
+    expect(h).toBeCloseTo(6, 5); // 12h - 6h
+  });
+
+  it('no disco: pasta ausente (banco em memória, ou nunca copiou) devolve null sem lançar', () => {
+    expect(idadeDoBackupNoDisco(resolve('.tmp', 'admin-teste', 'pasta-que-nao-existe'))).toBeNull();
+  });
+
+  it('no disco: depois de uma cópia de verdade, a idade é de poucos segundos', async () => {
+    const dados = pasta2();
+    const banco = new Contas(join(dados, 'contas.db'));
+    abertas2.push(banco);
+    fazerBackup(banco, dados, new Date());
+    const h = idadeDoBackupNoDisco(dados);
+    expect(h).not.toBeNull();
+    expect(h!).toBeGreaterThanOrEqual(0);
+    expect(h!).toBeLessThan(0.01); // menos de 36 s
   });
 });

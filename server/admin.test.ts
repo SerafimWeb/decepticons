@@ -127,6 +127,47 @@ describe('avaliar: o veredito sobre a última hora', () => {
   });
 });
 
+describe('avaliar: o Watchdog (backup, Analytics, e-mail — campos opcionais do contexto)', () => {
+  it('sem os campos, as checagens nem aparecem (servidor de teste em memória, sem Analytics nem e-mail)', () => {
+    const r = avaliar(janela(100), CTX);
+    for (const nome of ['Cópia de segurança das contas', 'Analytics (GA4)', 'E-mail de "esqueci a senha"']) {
+      expect(r.checagens.some((c) => c.nome === nome), nome).toBe(false);
+    }
+  });
+
+  it('a cópia de segurança: no limite ok, depois atenção, depois falha; sem nenhuma cópia, falha direto', () => {
+    const idade = (h: number) => avaliar(janela(100), { ...CTX, backupIdadeH: h }).checagens.find((c) => c.nome === 'Cópia de segurança das contas');
+    expect(idade(5)).toMatchObject({ resultado: 'ok' });
+    expect(idade(40)).toMatchObject({ resultado: 'atencao' });
+    expect(idade(60)).toMatchObject({ resultado: 'falha' });
+    expect(idade(60)!.dica).toBeTruthy();
+    const nenhuma = avaliar(janela(100), { ...CTX, backupIdadeH: null }).checagens.find((c) => c.nome === 'Cópia de segurança das contas');
+    expect(nenhuma).toMatchObject({ valor: 'nenhuma cópia encontrada', resultado: 'falha' });
+  });
+
+  it('o Analytics: ok passa, carregando/desligado é só atenção (não bloqueia o jogo), erro é falha', () => {
+    const ga = (estado: 'ok' | 'desligado' | 'erro' | 'carregando') => avaliar(janela(100), { ...CTX, analytics: estado }).checagens.find((c) => c.nome === 'Analytics (GA4)')!;
+    expect(ga('ok')).toMatchObject({ resultado: 'ok' });
+    expect(ga('ok').dica).toBeUndefined();
+    expect(ga('desligado')).toMatchObject({ resultado: 'atencao' });
+    expect(ga('carregando')).toMatchObject({ resultado: 'atencao' });
+    expect(ga('erro')).toMatchObject({ resultado: 'falha' });
+  });
+
+  it('o e-mail de "esqueci a senha": configurado é ok, sem configurar é só atenção', () => {
+    expect(avaliar(janela(100), { ...CTX, emailConfigurado: true }).checagens.find((c) => c.nome === 'E-mail de "esqueci a senha"')).toMatchObject({ resultado: 'ok' });
+    const sem = avaliar(janela(100), { ...CTX, emailConfigurado: false }).checagens.find((c) => c.nome === 'E-mail de "esqueci a senha"');
+    expect(sem).toMatchObject({ resultado: 'atencao' });
+    expect(sem!.dica).toBeTruthy();
+  });
+
+  it('falha no backup ou no Analytics vira PROBLEMA; atenção no e-mail não puxa o veredito além de ATENÇÃO', () => {
+    expect(avaliar(janela(100), { ...CTX, backupIdadeH: 60 }).veredito).toBe('problema');
+    expect(avaliar(janela(100), { ...CTX, analytics: 'erro' }).veredito).toBe('problema');
+    expect(avaliar(janela(100), { ...CTX, emailConfigurado: false }).veredito).toBe('atencao');
+  });
+});
+
 describe('o reinício pelo painel', () => {
   it('sai com um código de erro, diferente do 0 do parar.flag (que é parar de verdade); quem religa é o ajudante, não a tarefa', () => {
     expect(CODIGO_REINICIO).toBeGreaterThan(0);
