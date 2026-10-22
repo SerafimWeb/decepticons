@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { BACKUP_REMOTO_ARQUIVO, caminhoRemotoSeguro, cifrar, configurar, decifrar, enviarBackupOffsite, type Executor } from './backupOffsite';
+import { BACKUP_REMOTO_ARQUIVO, CHAVE_EXEMPLO, caminhoRemotoSeguro, cifrar, configurar, decifrar, enviarBackupOffsite, type Executor } from './backupOffsite';
 
 describe('caminhoRemotoSeguro: nunca sob public_html, nunca com o que o shell remoto possa interpretar', () => {
   it('aceita um caminho absoluto simples', () => {
@@ -52,6 +52,14 @@ describe('configurar: lê backup-remoto.json da pasta de dados; desligado sem el
     const dados = pasta();
     writeFileSync(join(dados, BACKUP_REMOTO_ARQUIVO), JSON.stringify({ host: 'h', user: 'u', key: '/k', path: '/home/u/backups-cybermech', chave: 'frase' }));
     expect(configurar(dados)).toMatchObject({ host: 'h', user: 'u', path: '/home/u/backups-cybermech' });
+  });
+
+  it('a frase de exemplo nunca liga o recurso (mesmo com o resto do arquivo certo)', () => {
+    const dados = pasta();
+    writeFileSync(join(dados, BACKUP_REMOTO_ARQUIVO), JSON.stringify({ host: 'h', user: 'u', key: '/k', path: '/home/u/backups-cybermech', chave: CHAVE_EXEMPLO }));
+    const avisos: string[] = [];
+    expect(configurar(dados, (l) => avisos.push(l))).toBeNull();
+    expect(avisos[0]).toMatch(/frase de exemplo/);
   });
 
   it('campo faltando, JSON quebrado ou caminho sob public_html: null e um aviso (nunca lança)', () => {
