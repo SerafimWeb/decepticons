@@ -4,8 +4,8 @@
  * **Fonte única do texto.** O inventário de fatos que sustenta cada linha está em `.decepticons/PRIVACIDADE.md`; quando o código passar a guardar algo novo, o texto muda **aqui**,
  * a `POLITICA_VERSAO` (`shared/net/auth.ts`) muda junto, e o inventário também. A conta guarda a versão que a pessoa aceitou ao criá-la.
  *
- * O contato do encarregado vem da variável `CYBERMECH_CONTATO_PRIVACIDADE` ou do arquivo `.decepticons/contato-privacidade.txt` (um e-mail) na hora de montar o site: sem ela a página diz o que é verdade (os botões do jogo resolvem acesso, portabilidade,
- * apagamento e oposição sem e-mail nenhum) e que o contato será divulgado ali. **Nada de e-mail inventado numa política.**
+ * O contato do encarregado vem da variável `CYBERMECH_CONTATO_PRIVACIDADE` ou do arquivo `.decepticons/contato-privacidade.txt` (a 1ª linha é o e-mail; a 2ª, opcional, o nome — a LGPD art. 41 §2º pede a identidade, não só o canal) na
+ * hora de montar o site: sem e-mail a página diz o que é verdade (os botões do jogo resolvem acesso, portabilidade, apagamento e oposição sem e-mail nenhum) e que o contato será divulgado ali. **Nada de e-mail ou nome inventado numa política.**
  *
  * Uso: node scripts/privacidade.mjs --out <.tmp/site/privacidade/index.html>
  */
@@ -20,10 +20,13 @@ const { runnerImport } = await import('vite');
 const load = async (p) => (await runnerImport(resolve(p), { configFile: false, logLevel: 'silent' })).module;
 const { POLITICA_VERSAO } = await load('shared/net/auth.ts');
 
-/** O e-mail do encarregado: a variável de ambiente ou, sem ela, a primeira linha de `.decepticons/contato-privacidade.txt` (um e-mail e nada mais; o arquivo só existe quando o dono o cria). */
+/** O e-mail do encarregado: a variável de ambiente ou, sem ela, a 1ª linha de `.decepticons/contato-privacidade.txt` (o arquivo só existe quando o dono o cria). */
 const ARQUIVO_CONTATO = resolve('.decepticons', 'contato-privacidade.txt');
-const CONTATO = (process.env.CYBERMECH_CONTATO_PRIVACIDADE ?? (existsSync(ARQUIVO_CONTATO) ? readFileSync(ARQUIVO_CONTATO, 'utf8').split(/\r?\n/)[0] : '') ?? '').trim();
+const LINHAS_CONTATO = existsSync(ARQUIVO_CONTATO) ? readFileSync(ARQUIVO_CONTATO, 'utf8').split(/\r?\n/) : [];
+const CONTATO = (process.env.CYBERMECH_CONTATO_PRIVACIDADE ?? LINHAS_CONTATO[0] ?? '').trim();
 const CONTATO_VALIDO = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(CONTATO);
+/** O nome do encarregado (LGPD art. 41 §2º): a variável de ambiente ou a 2ª linha do mesmo arquivo. Sem e-mail válido, o nome não aparece sozinho. */
+const ENCARREGADO = (process.env.CYBERMECH_ENCARREGADO_NOME ?? LINHAS_CONTATO[1] ?? '').trim();
 // A versão é a data (`AAAA-MM-DD`), com um sufixo `.n` quando a política muda mais de uma vez no dia.
 const [ano, mes, dia] = POLITICA_VERSAO.slice(0, 10).split('-');
 
@@ -49,7 +52,7 @@ const linhas = (itens) => itens.map((l) => `<tr>${l.map((c) => `<td>${inline(c)}
 const lista = (itens) => `<ul>${itens.map((i) => `<li>${inline(i)}</li>`).join('')}</ul>`;
 
 const contato = CONTATO_VALIDO
-  ? `<p>Para qualquer pedido sobre os seus dados que os botões do jogo não resolvam, escreva para <a href="mailto:${esc(CONTATO)}">${esc(CONTATO)}</a> (canal do encarregado pelo tratamento de dados).</p>`
+  ? `<p>Para qualquer pedido sobre os seus dados que os botões do jogo não resolvam, escreva para ${ENCARREGADO ? `${esc(ENCARREGADO)}, ` : ''}<a href="mailto:${esc(CONTATO)}">${esc(CONTATO)}</a>${ENCARREGADO ? ', o encarregado pelo tratamento de dados (LGPD, art. 41).' : ' (canal do encarregado pelo tratamento de dados).'}</p>`
   : `<p>Acesso, cópia, apagamento e oposição à medição você resolve <b>sozinho, dentro do jogo</b> (Configurações → Conta → Meus dados), sem e-mail nem espera. O canal do encarregado pelo tratamento de dados para os outros pedidos será divulgado nesta página.</p>`;
 
 const body = `

@@ -35,7 +35,7 @@
 | # | Achado | Estado |
 |---|---|---|
 | **A1** | O **servidor de jogo roda no PC de trabalho do Comandante, sob o usuário dele**, junto com o repositório e **as chaves SSH da publicação do site**. Um processo comprometido alcança tudo o que esse usuário alcança. Além do risco, o PC tem 6 GB e já derrubou as conexões (17/10). | **ABERTO (Comandante).** `LANCAMENTO.md` item 8: máquina própria com um usuário sem privilégio, **sem** as chaves de publicação. Até lá, só **beta fechado** (pouca gente, sem divulgar). |
-| **A13** | A **cópia de segurança das contas** (14 dias) fica **no mesmo disco** do banco. Disco quebrado, ransomware ou apagão no PC = contas perdidas, sem volta. | **ABERTO (Comandante).** Copiar `.tmp/servidor/backups/` para outro disco ou nuvem (criptografado), uma vez por dia. |
+| **A13** | A **cópia de segurança das contas** (14 dias) fica **no mesmo disco** do banco. Disco quebrado, ransomware ou apagão no PC = contas perdidas, sem volta. | **Código pronto em 22/10 (§3C), desligado até o Comandante criar `.tmp/servidor/backup-remoto.json` e a pasta remota** (`DEPLOY.md`, "Backup fora do disco"). Até lá, continua ABERTO na prática. |
 
 **Corrigido nesta rodada**
 
@@ -64,9 +64,27 @@
 | # | O quê | Como |
 |---|---|---|
 | **A12** | **HSTS** estava desligado. | **Feito em 19/10 para o site, pelo `.htaccess`** (`max-age` de 180 dias, sem `includeSubDomains` nem `preload`): o site é servido direto pela Hostinger, **sem passar pela Cloudflare**, então o HSTS da Cloudflare não o cobre. O `jogo.` (que passa pela Cloudflare) ainda não manda o cabeçalho; baixo risco. |
-| **A14** | **Sem monitor externo**: o Comandante só sabe que o servidor caiu quando alguém avisa. | Um monitor gratuito (UptimeRobot ou parecido) em `https://jogo.cybermech.online/status` e no site, com aviso por e-mail ou celular. |
+| **A14** | **Sem monitor externo do processo do servidor** (só do túnel): o Comandante só sabia que o servidor caiu quando alguém avisava. | **Resolvido em 22/10 (§3B):** o Watchdog do serafim13 passou a vigiar `jogo.cybermech.online/status` a cada 6 h, por Telegram — reaproveita infraestrutura que já existia, sem conta nova. Granularidade pior que um UptimeRobot dedicado (a cada 5 min); se quiser mais rápido, UptimeRobot continua uma opção, sem custo. |
 | **A17** | O **token do dono** é um só e vale em `/metricas`, `/admin/*` e no mural. | Para trocar: apagar `.tmp/servidor/metricas-token.txt` e reiniciar o servidor gera outro. Trocar se alguém que o conhecia sair. |
 | **A19** | O **`servidor.log` antigo** tem IPs inteiros e 1 e-mail (de antes de 18/10). | Com a tarefa parada, apagar o arquivo (`DEPLOY.md` § 4c). |
+
+## 3B. O Watchdog (22/10, ordem do Comandante): adaptado ao CYBERMECH, não ao template React do Protocolo Serafim Um
+
+O `WATCHDOG.tsx` do `serafim13/protocolo-serafim-um/templates/` pressupõe React (painel `Shift+D`); o CYBERMECH é Vite + TypeScript vanilla + Three.js, e nunca teve esse componente. Em vez de portar um componente que não serve ao stack, o Watchdog do CYBERMECH é a extensão do que já existia e já é visto pelo Comandante: o **Painel do Servidor** (`?comandante=1` → SERVIDOR; `shared/net/admin.ts`, `server/admin.ts`). `GET /admin/avaliar` já devolvia um veredito com `Checagem[]` genérico (tick, CPU, memória, laço de eventos, download por jogador); ganhou três checagens novas, sem nenhuma mudança no cliente (a lista é renderizada de forma genérica):
+
+| Checagem | ok | atenção | falha |
+|---|---|---|---|
+| **Cópia de segurança das contas** (idade da cópia mais recente, pelo `mtime` do arquivo em disco) | ≤ 30 h | 30–54 h | > 54 h, ou nenhuma cópia encontrada |
+| **Analytics (GA4)** (`GoogleAnalytics.estadoConhecido()`, sem esperar o Google) | `ok` | `desligado`/`carregando` | `erro` |
+| **E-mail de "esqueci a senha"** (`Mailer.configurado()`) | configurado | — | não configurado |
+
+**Quantos jogadores online, salas, CPU, memória, tick, rede, tráfego:** já existiam no mesmo painel (`AdminEstado`) e, em versão pública e mínima, em `GET /status` (players, rooms, uptimeS) — não precisaram de nada novo.
+
+**A segunda camada de monitoramento externo (A14) resolvida pelo mesmo princípio — reaproveitar, não criar conta nova:** o Watchdog central do ecossistema Serafim (`serafim13/supabase/functions/_shared/watchdog-sites.ts`, cron a cada 6 h pelo Actions do repositório `serafim13`, alerta por Telegram) já vigiava `https://cybermech.online/` (o site). Em 22/10 ganhou `https://jogo.cybermech.online/status` (`site:CYBERMECH-JOGO`) — o processo do servidor de jogo por trás do túnel, que o Tunnel Health Alert da Cloudflare não cobre (ele só vê o túnel, não o processo). **Commitado em `claude/sanitizacao` (serafim13), ainda não publicado** (esse branch tem outro trabalho dentro, pendente de revisão de quem mantém aquele repositório).
+
+## 3C. A13 (backup fora do disco) resolvido em código — falta o Comandante criar duas coisas
+
+`server/backupOffsite.ts`: depois de cada cópia local bem-sucedida (`backupContas.ts`), se `.tmp/servidor/backup-remoto.json` existir, cifra o arquivo (AES-256-GCM, chave derivada por `scrypt` de uma frase-secreta — nunca a chave SSH) e sobe por `scp`/`ssh` para uma pasta fora de qualquer `public_html` na mesma conta Hostinger que já publica o site (reaproveita a conta, não cria serviço novo). Sem o arquivo de configuração, o recurso **nem existe**: nenhuma mudança de comportamento até o Comandante criar os dois itens abaixo (`DEPLOY.md`, "Backup fora do disco").
 
 ## 4. O que não foi visto
 
@@ -78,3 +96,4 @@ vale **um teste de invasão pago**; para o lançamento pequeno, esta auditoria m
 - Abuso: `node .decepticons/medicoes/abuso-servidor.mjs` (da raiz do projeto; sobe um servidor de teste na porta 2597, dispara os pedidos hostis e o derruba; sai com código 1 se o servidor cair, vazar pilha ou aceitar origem de fora). `FERRAMENTAS.md` § 4.6.
 - Dependências: `npm audit --omit=dev`.
 - Os testes de segurança de acesso: `server/seguranca.test.ts`, `server/lgpd-http.test.ts`, `server/conta-http.test.ts`, `server/origem-http.test.ts`, `server/guard.test.ts`.
+- O Watchdog (§3B/§3C): `server/admin.test.ts` (as três checagens novas), `server/backupContas.test.ts` (idade da cópia), `server/backupOffsite.test.ts` (cifra/decifra, caminho remoto seguro, envio com executor de mentira — nunca chama `scp`/`ssh` de verdade no teste).

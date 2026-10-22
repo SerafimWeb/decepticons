@@ -5,7 +5,7 @@
  * para isso, o dono leva a pasta `backups/` para outro lugar (`.decepticons/DEPLOY.md`, "Contas: onde estão e como restaurar").
  * Módulo independente (G3): só o `Server` o chama. Custo de CPU: uma cópia de arquivo pequeno a cada poucas horas.
  */
-import { mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 export const BACKUPS_PASTA = 'backups';
@@ -44,4 +44,25 @@ export function fazerBackup(banco: CopiavelParaArquivo, pastaDeDados: string, ag
   const apagados = aposentar(readdirSync(pasta), guardar);
   for (const velho of apagados) rmSync(join(pasta, velho), { force: true });
   return { arquivo: destino, apagados };
+}
+
+// ─── Idade da cópia mais recente (para o Watchdog, `server/admin.ts`) ───────────────────────────────────────────────
+
+/** Pura: das modificações dos arquivos de cópia, quantas horas desde a mais recente; `null` sem nenhuma cópia (nunca rodou, ou a pasta só tem lixo). */
+export function idadeDoBackupH(arquivos: readonly { nome: string; mtimeMs: number }[], agora: Date): number | null {
+  const nossos = arquivos.filter((a) => PADRAO.test(a.nome));
+  if (!nossos.length) return null;
+  const maisRecente = Math.max(...nossos.map((a) => a.mtimeMs));
+  return (agora.getTime() - maisRecente) / 3_600_000;
+}
+
+/** Lê a pasta de backups do disco e aplica `idadeDoBackupH`. Pasta ausente (banco em memória, ou o servidor nunca copiou) devolve `null`, nunca lança. */
+export function idadeDoBackupNoDisco(pastaDeDados: string, agora: Date = new Date()): number | null {
+  try {
+    const pasta = join(pastaDeDados, BACKUPS_PASTA);
+    const arquivos = readdirSync(pasta).map((nome) => ({ nome, mtimeMs: statSync(join(pasta, nome)).mtimeMs }));
+    return idadeDoBackupH(arquivos, agora);
+  } catch {
+    return null;
+  }
 }

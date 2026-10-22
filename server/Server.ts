@@ -4,7 +4,7 @@ import { parseLoadoutKey } from '../client/src/hangar/loadout';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { mkdirSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
 import { chaveDeConfigValida, valorDeConfigValido, CONTA_APAGAR_PATH, CONTA_CRIAR_PATH, CONTA_DADOS_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_MEDICAO_PATH, CONTA_NASCIMENTO_PATH, CONTA_PROGRESSO_PATH, idadeDaConta, parseNascimento, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, POLITICA_VERSAO, PROGRESSO_MAX_BYTES, parseCredenciais, parseCriarConta, parseMedicao, parseSenhaDeConfirmacao, SESSAO_HEADER, validarProgresso } from '../shared/net/auth';
@@ -22,7 +22,8 @@ import { mapaRestrito } from './acessoAoMapa';
 import { ArenaRoom, type Peer } from './ArenaRoom';
 import { autorizarPorSessao } from './voz';
 import { Contas } from './contas';
-import { fazerBackup } from './backupContas';
+import { fazerBackup, idadeDoBackupNoDisco } from './backupContas';
+import { configurar as configurarBackupRemoto, enviarBackupOffsite } from './backupOffsite';
 import { Audiencia } from './Audiencia';
 import { clientCountry, clientIp, clientRegion, Guard, GUARD_DEFAULTS, ipParaLog, type GuardConfig } from './guard';
 import { Auditoria, AUDITORIA_PASTA, type Acao } from './auditoria';
@@ -149,7 +150,7 @@ export async function startServer(
     /** O endereço do site que vai no link do e-mail (padrão: `CYBERMECH_SITE_URL` ou https://cybermech.online). */
     siteUrl?: string;
     /** O Google Analytics do `/metricas` (P207). Os testes passam um falso; o padrão lê `ga-chave.json` e `ga-propriedade.txt` na pasta de dados (`analytics.ts`). */
-    analytics?: { obter(): Promise<GaEstado> } | null;
+    analytics?: { obter(): Promise<GaEstado>; estadoConhecido?(): GaEstado['estado'] } | null;
     /** Pedidos de "esqueci a senha" por IP (padrão 5 por hora); os testes alargam. */
     limiteEsqueci?: Partial<typeof LIMITE_LOGIN_DEFAULTS>;
     /** Origens extras (além do jogo no ar e da rede local) que podem abrir o WebSocket e as rotas de conta. Padrão: `CYBERMECH_ORIGENS` (`origem.ts`). */
@@ -326,6 +327,13 @@ export async function startServer(
     try {
       const r = fazerBackup(contas, dirDados, new Date());
       log(`cópia de segurança das contas: ${r.arquivo}${r.apagados.length ? ` (apaguei ${r.apagados.length} antiga${r.apagados.length === 1 ? '' : 's'})` : ''}`);
+      // A13 (AUDITORIA_SEGURANCA.md): cópia fora do disco deste PC, só se o dono criou `backup-remoto.json`; nunca atrasa nem derruba o servidor (best-effort).
+      const remoto = configurarBackupRemoto(dirDados, log);
+      if (remoto) {
+        enviarBackupOffsite(r.arquivo, basename(r.arquivo), remoto)
+          .then(() => log(`cópia de segurança fora do disco: enviada (${remoto.host})`))
+          .catch((err: unknown) => log(`não consegui enviar a cópia fora do disco: ${err instanceof Error ? err.message : String(err)}`));
+      }
     } catch (err) {
       log(`não consegui fazer a cópia de segurança das contas: ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -1132,7 +1140,13 @@ export async function startServer(
       ),
     lerLog: () => lerFimDoLog(dirDados, logMemoria.linhas()),
     jogadores: jogadoresAgora,
-    contexto: () => ({ uptimeS: (Date.now() - startedAt) / 1000, recusasPorTaxa: rejected.flood }),
+    contexto: () => ({
+      uptimeS: (Date.now() - startedAt) / 1000,
+      recusasPorTaxa: rejected.flood,
+      backupIdadeH: dirDados ? idadeDoBackupNoDisco(dirDados) : undefined,
+      analytics: analytics ? analytics.estadoConhecido?.() ?? 'carregando' : undefined,
+      emailConfigurado: mailer ? (mailer.configurado?.() ?? true) : false,
+    }),
     fecharSala,
     testar: () => executarTeste({ host: '127.0.0.1', porta: port, duracaoS: opts.testeDuracaoS, tickMsDaSala: (c) => rooms.get(c)?.tickMs ?? null, fecharSala }),
     // Sem gancho de reinício a rota responde 501 (o Admin olha se o gancho existe): só embrulha quando há.
