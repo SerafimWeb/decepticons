@@ -4,14 +4,15 @@ import { createServer, runnerImport } from 'vite';
 import { apontarJogoPara, gerarWav, guardarSessao, tokenDeConta } from './vozLib.mjs';
 
 /**
- * A IDADE E O CHAT DE VOZ no jogo de verdade (P211, ordem do Comandante em 19/10: "menores de 18 anos NÃO TEM ACESSO ao microfone nem aos áudios dos outros jogadores"): Chrome com microfone FALSO,
- * o jogo online de uma sala com um colega adulto (uma página da bancada, falando um tom) e cinco jogadores:
+ * A IDADE E O CHAT DE VOZ no jogo de verdade (P211, e a fase de testes da P241). P211, 19/10: "menores de 18 anos NÃO TEM ACESSO ao microfone nem aos áudios dos outros jogadores". P241, 21/10: "essa regra de 18 anos tá
+ * muito restritiva… vamos apenas não dar acesso ao microfone… LIBERA VOZ PRA CONVIDADO E CONTA SEM IDADE" (`VOZ_SO_PARA_ADULTO_DECLARADO = false` em `shared/net/auth.ts`). Chrome com microfone FALSO, o jogo online de uma sala com
+ * um colega adulto (uma página da bancada, falando um tom) e cinco jogadores:
  *  1. conta de ADULTO (sessão restaurada): os controles da voz aparecem, o microfone abre e liga ao colega;
- *  2. CONVIDADO: sem controles, a frase "crie uma conta", nenhum pedido de microfone, ninguém ligado;
- *  3. conta de MENOR: sem controles, a frase "menores de 18 anos", nenhum pedido de microfone, ninguém ligado, e o aviso na aba da conta;
- *  4. conta SEM IDADE informa o mês e o ano na aba JOGO: a voz abre na hora, sem recarregar;
- *  5. CADASTRO pela tela (mês e ano obrigatórios): como adulto a voz abre; como menor, não;
- *  6. cliente ADULTERADO (não confere a idade e manda o token de um menor, ou nenhum): quem decide é o SERVIDOR, e ele o deixa de fora (não ouve o adulto, nem é ouvido).
+ *  2. CONVIDADO: a voz abre sozinha, sem conta; o microfone é pedido; liga ao colega;
+ *  3. conta de MENOR: entra na voz SÓ PARA OUVIR (o colega se liga a ela), nenhum pedido de microfone, o indicador diz "SÓ OUVINDO", e a aba da conta explica;
+ *  4. conta SEM IDADE: a voz abre sozinha como a do convidado; informar o mês e o ano na aba JOGO segue possível e não derruba a voz;
+ *  5. CADASTRO pela tela (mês e ano obrigatórios): como adulto a voz abre; como menor, só ouve;
+ *  6. cliente ADULTERADO (token de menor, nenhum, ou torto): o servidor trata cada um pelo que ele é (todos entram) e o limite conhecido fica dito (o áudio vai entre os navegadores).
  *
  *   node .decepticons/medicoes/voz-idade.mjs     # sai com 1 se algo falhar; fotos em arte/idade-*-claude.png; grava medicoes/voz-idade-<data>.json
  *
@@ -100,7 +101,7 @@ const estadoDaTela = (page) =>
     frase: document.getElementById('voz-elegibilidade').hidden ? '' : document.getElementById('voz-elegibilidade').textContent,
     pedidos: window.__pedidos ?? 0,
     indicador: document.querySelector('.voz-estado')?.textContent ?? '',
-    aviso: document.querySelector('.voz-aviso:not([hidden])')?.textContent ?? '',
+    aviso: document.querySelector('#hud .voz-aviso:not([hidden])')?.textContent ?? '', // o aviso do canto da tela (a frase das Configurações também tem a classe voz-aviso)
     rede: document.querySelector('.voz-rede')?.textContent ?? '',
   }));
 const ligadosDoColega = (colega) => colega.evaluate(() => window.__voz.estado().ligados);
@@ -149,68 +150,59 @@ try {
   await adulto.close();
   await ate(async () => (await ligadosDoColega(colega)) === 0, 60_000);
 
-  // ---------------------------------------------------------------- 2. convidado
+  // ---------------------------------------------------------------- 2. convidado (fase de testes, P241: fala e ouve)
   const convidado = await entrar(browser, 'CONVIDADO', null);
-  await dormir(8000);
+  const ligouConv = await ate(async () => (await ligadosDoColega(colega)) >= 1, 300_000);
+  conferir('2. CONVIDADO (fase de testes): a voz abre sozinha, sem conta, e liga ao colega', !!ligouConv);
   await abrirConfiguracoes(convidado, 'graficos');
+  await ate(() => convidado.evaluate(() => !document.getElementById('voz-controles').hidden), 60_000);
   const tConv = await estadoDaTela(convidado);
-  conferir('2. CONVIDADO: sem controles de voz, com a frase de "crie uma conta"', !tConv.controles && tConv.frase.includes('Crie uma conta'), JSON.stringify(tConv));
-  conferir('2. CONVIDADO: o jogo NUNCA pediu o microfone e não há indicador de voz', tConv.pedidos === 0 && tConv.indicador === '', JSON.stringify({ pedidos: tConv.pedidos, indicador: tConv.indicador }));
-  conferir('2. CONVIDADO: ninguém se ligou a ele (o colega segue sem ligações)', (await ligadosDoColega(colega)) === 0);
-  conferir('2. CONVIDADO: o jogo AVISA na tela por que está sem voz (P237: o outro PC do Comandante ficava mudo e sem explicação)', tConv.aviso.includes('ENTRE COM UMA CONTA DE MAIOR DE 18 ANOS'), JSON.stringify(tConv.aviso));
-  const botaoConv = await convidado.evaluate(() => ({ visivel: !document.getElementById('btn-voz-conta').hidden, texto: document.getElementById('btn-voz-conta').textContent }));
-  conferir('2. CONVIDADO: a seção da voz tem o botão [ CRIAR CONTA ] (P226: o Comandante só via uma frase e não achava o formulário)', botaoConv.visivel && botaoConv.texto === '[ CRIAR CONTA ]', JSON.stringify(botaoConv));
-  await convidado.evaluate(() => document.getElementById('btn-voz-conta').click());
-  const levou = await ate(() => convidado.evaluate(() => document.querySelector('.settings-tab.active')?.dataset.tab === 'jogo' && document.getElementById('tab-login-criar')?.classList.contains('active') && !!document.getElementById('login-nasc-mes')), 30_000);
-  conferir('2. CONVIDADO: clicar no botão abre a aba JOGO já no CRIAR CONTA, com o mês e o ano de nascimento', !!levou);
+  conferir('2. CONVIDADO: os controles da voz aparecem, sem frase de bloqueio e sem aviso de "sem voz"', tConv.controles && tConv.frase === '' && tConv.aviso === '', JSON.stringify(tConv));
+  conferir('2. CONVIDADO: o jogo pediu o microfone ao navegador (ele pode falar)', tConv.pedidos >= 1, `${tConv.pedidos} pedido(s)`);
+  conferir('2. CONVIDADO: sem botão de conta (a voz já está liberada)', await convidado.evaluate(() => document.getElementById('btn-voz-conta').hidden));
   await fecharConfiguracoes(convidado);
   await convidado.close();
+  await ate(async () => (await ligadosDoColega(colega)) === 0, 60_000);
 
-  // ---------------------------------------------------------------- 3. conta de menor
+  // ---------------------------------------------------------------- 3. conta de menor (só ouve: sem microfone)
   const menor = await entrar(browser, 'MENOR', tokenMenor);
-  await dormir(8000);
+  const ligouMenor = await ate(async () => (await ligadosDoColega(colega)) >= 1, 300_000);
+  conferir('3. conta de MENOR: entra na voz e o colega se liga a ela (ela ouve)', !!ligouMenor);
+  await dormir(4000);
   await abrirConfiguracoes(menor, 'graficos');
   const tMenor = await estadoDaTela(menor);
-  conferir('3. conta de MENOR: sem controles de voz e com a frase dos menores de 18 anos', !tMenor.controles && tMenor.frase.includes('menores de 18 anos') && tMenor.frase.includes('áudio do jogo segue normal'), JSON.stringify(tMenor));
-  conferir('3. MENOR: o jogo NUNCA pediu o microfone e não há indicador de voz', tMenor.pedidos === 0 && tMenor.indicador === '', JSON.stringify({ pedidos: tMenor.pedidos, indicador: tMenor.indicador }));
-  conferir('3. MENOR: ninguém se ligou a ele', (await ligadosDoColega(colega)) === 0);
-  conferir('3. MENOR: o jogo avisa que a voz é desligada para menores e que só vale o áudio do jogo', tMenor.aviso.includes('MENORES DE 18 ANOS') && tMenor.aviso.includes('SÓ O ÁUDIO DO JOGO'), JSON.stringify(tMenor.aviso));
+  conferir('3. MENOR: sem controles de microfone, e a frase diz que só ouve, sem microfone, e que o áudio do jogo segue normal', !tMenor.controles && tMenor.frase.includes('só ouvem o chat de voz') && tMenor.frase.includes('sem microfone') && tMenor.frase.includes('áudio do jogo segue normal'), JSON.stringify(tMenor));
+  conferir('3. MENOR: o jogo NUNCA pediu o microfone ao navegador', tMenor.pedidos === 0, `${tMenor.pedidos} pedido(s)`);
+  conferir('3. MENOR: o indicador diz "SÓ OUVINDO" e não há aviso de "sem voz" (a voz está ligada)', tMenor.indicador.includes('SÓ OUVINDO') && tMenor.aviso === '', JSON.stringify({ indicador: tMenor.indicador, aviso: tMenor.aviso }));
   conferir('3. MENOR: sem botão (não há o que fazer)', await menor.evaluate(() => document.getElementById('btn-voz-conta').hidden));
-  await page_foto(menor, 'idade-menor-sem-voz-claude.png');
+  await page_foto(menor, 'idade-menor-so-ouve-claude.png');
   await fecharConfiguracoes(menor);
   await abrirConfiguracoes(menor, 'jogo');
   const contaMenor = await menor.evaluate(() => document.getElementById('settings-conta')?.textContent ?? '');
-  conferir('3. MENOR: a aba da conta explica que não há chat de voz', contaMenor.includes('Conta de menor de 18 anos') && contaMenor.includes('O áudio do jogo segue normal'), contaMenor.replace(/\s+/g, ' ').slice(0, 160));
+  conferir('3. MENOR: a aba da conta explica que o chat de voz só ouve', contaMenor.includes('Conta de menor de 18 anos') && contaMenor.includes('só ouve') && contaMenor.includes('O áudio do jogo segue normal'), contaMenor.replace(/\s+/g, ' ').slice(0, 160));
   await fecharConfiguracoes(menor);
   await menor.close();
+  await ate(async () => (await ligadosDoColega(colega)) === 0, 60_000);
 
-  // ---------------------------------------------------------------- 4. conta sem idade informa na aba JOGO
+  // ---------------------------------------------------------------- 4. conta sem idade (fase de testes: fala e ouve; informar a idade segue possível)
   const semIdade = await entrar(browser, 'SEMIDADE', tokenSemIdade);
-  await dormir(8000);
+  const ligouSem = await ate(async () => (await ligadosDoColega(colega)) >= 1, 300_000);
+  conferir('4. conta SEM IDADE (fase de testes): a voz abre sozinha e liga ao colega', !!ligouSem);
   await abrirConfiguracoes(semIdade, 'graficos');
+  await ate(() => semIdade.evaluate(() => !document.getElementById('voz-controles').hidden), 60_000);
   const antes = await estadoDaTela(semIdade);
-  conferir('4. conta SEM IDADE: sem controles e a frase pede o mês e o ano de nascimento', !antes.controles && antes.frase.includes('mês e o ano de nascimento') && antes.pedidos === 0, JSON.stringify(antes));
-  conferir('4. conta SEM IDADE: o jogo avisa na tela para informar a idade', antes.aviso.includes('INFORME SUA IDADE'), JSON.stringify(antes.aviso));
-  const botaoSem = await semIdade.evaluate(() => ({ visivel: !document.getElementById('btn-voz-conta').hidden, texto: document.getElementById('btn-voz-conta').textContent }));
-  conferir('4. conta SEM IDADE: a seção da voz tem o botão [ INFORMAR MINHA IDADE ]', botaoSem.visivel && botaoSem.texto === '[ INFORMAR MINHA IDADE ]', JSON.stringify(botaoSem));
-  await semIdade.evaluate(() => document.getElementById('btn-voz-conta').click());
-  const levouSem = await ate(() => semIdade.evaluate(() => document.querySelector('.settings-tab.active')?.dataset.tab === 'jogo' && !!document.getElementById('btn-login-nascimento')), 30_000);
-  conferir('4. conta SEM IDADE: clicar no botão abre a aba JOGO no pedido do mês e do ano', !!levouSem);
+  conferir('4. conta SEM IDADE: os controles da voz aparecem, o microfone foi pedido e não há aviso de "sem voz"', antes.controles && antes.frase === '' && antes.pedidos >= 1 && antes.aviso === '', JSON.stringify(antes));
   await fecharConfiguracoes(semIdade);
   await abrirConfiguracoes(semIdade, 'jogo');
   const formulario = await ate(() => semIdade.evaluate(() => !!document.getElementById('btn-login-nascimento')), 60_000);
-  conferir('4. a aba JOGO mostra o pedido do mês e do ano com o botão GUARDAR A IDADE desligado', !!formulario && (await semIdade.evaluate(() => document.getElementById('btn-login-nascimento').disabled)));
+  conferir('4. a aba JOGO ainda pede o mês e o ano (é o que separa o menor, que só ouve), com o botão GUARDAR A IDADE desligado', !!formulario && (await semIdade.evaluate(() => document.getElementById('btn-login-nascimento').disabled)));
+  conferir('4. o texto da aba diz que quem tem menos de 18 anos só ouve o chat de voz', (await semIdade.evaluate(() => document.getElementById('settings-conta')?.textContent ?? '')).includes('só ouve o chat de voz'));
   await semIdade.selectOption('#login-nasc-mes', '6');
   await semIdade.selectOption('#login-nasc-ano', '1985');
   conferir('4. escolhidos o mês e o ano o botão liga', !(await semIdade.evaluate(() => document.getElementById('btn-login-nascimento').disabled)));
   await semIdade.evaluate(() => document.getElementById('btn-login-nascimento').click());
-  const abriu = await ate(async () => (await ligadosDoColega(colega)) >= 1, 120_000);
-  conferir('4. guardada a idade a voz abre NA HORA, sem recarregar, e liga ao colega', !!abriu);
-  await fecharConfiguracoes(semIdade);
-  await abrirConfiguracoes(semIdade, 'graficos');
-  const depois = await estadoDaTela(semIdade);
-  conferir('4. os controles da voz apareceram e o microfone foi pedido', depois.controles && depois.frase === '' && depois.pedidos >= 1, JSON.stringify(depois));
-  conferir('4. informada a idade o aviso de "sem voz" SOME da tela (a voz ligou)', depois.aviso === '', JSON.stringify(depois.aviso));
+  await dormir(5000);
+  conferir('4. informada a idade (adulto) a voz continua ligada ao colega', (await ligadosDoColega(colega)) >= 1);
   // a data não muda: o servidor recusa a segunda vez (pela API, o mesmo caminho do botão)
   const segunda = await semIdade.evaluate(async (porta) => {
     const chave = `cybermech.conta.token|http://127.0.0.1:${porta}`;
@@ -262,36 +254,35 @@ try {
   await ate(async () => (await ligadosDoColega(colega)) === 0, 60_000);
 
   const menorNovo = await cadastrar('NOVOMENOR', 'novo-menor@bancada.com', 5, ANO - 12);
-  conferir('5. CADASTRO de um menor: o formulário aceita (a pessoa pode jogar, só não tem voz)', menorNovo.ligadoComData);
+  conferir('5. CADASTRO de um menor: o formulário aceita (a pessoa pode jogar, só não tem microfone)', menorNovo.ligadoComData);
+  const pedidosAntes = await pedidos(menorNovo.page); // quem entrou como convidado já pediu o microfone uma vez (a idade ainda não era conhecida)
   await menorNovo.page.evaluate(() => document.getElementById('btn-login-submit').click());
   const logouMenor = await ate(() => menorNovo.page.evaluate(() => (document.getElementById('settings-conta')?.textContent ?? '').includes('Conta de menor de 18 anos')), 60_000);
-  conferir('5. CADASTRO como menor: a conta nasce e a tela diz que não há voz', !!logouMenor);
-  await dormir(6000);
-  conferir('5. CADASTRO como menor: o jogo não pediu o microfone e ninguém se ligou', (await pedidos(menorNovo.page)) === 0 && (await ligadosDoColega(colega)) === 0);
+  conferir('5. CADASTRO como menor: a conta nasce e a tela diz que a conta de menor de 18 anos só ouve', !!logouMenor);
+  const ouviu = await ate(async () => (await ligadosDoColega(colega)) >= 1, 120_000);
+  const soOuve = await ate(() => menorNovo.page.evaluate(() => (document.querySelector('.voz-estado')?.textContent ?? '').includes('SÓ OUVINDO')), 60_000);
+  conferir('5. CADASTRO como menor: o microfone que o convidado abrira é LARGADO (SÓ OUVINDO), não pede outro, e a voz segue ligada ao colega', !!soOuve && (await pedidos(menorNovo.page)) === pedidosAntes && !!ouviu, `pedidos ${pedidosAntes} -> ${await pedidos(menorNovo.page)}`);
   await menorNovo.page.close();
 
-  // ---------------------------------------------------------------- 6. cliente adulterado: quem decide é o servidor
-  const hackMenor = await browser.newPage();
-  hackMenor.on('pageerror', (e) => erros.add(`hack: ${e.message}`));
-  await hackMenor.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
-  await abrirBancada(hackMenor, 'HACKMENOR', tokenMenor);
-  const hackSemToken = await browser.newPage();
-  hackSemToken.on('pageerror', (e) => erros.add(`hack2: ${e.message}`));
-  await hackSemToken.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
-  await abrirBancada(hackSemToken, 'HACKSEM', undefined);
-  const segundoAdulto = await browser.newPage();
-  segundoAdulto.on('pageerror', (e) => erros.add(`adulto2: ${e.message}`));
-  await segundoAdulto.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
-  await abrirBancada(segundoAdulto, 'CHARLIE', await tokenDeConta(PORTA, 'charlie'));
-  const seLigaram = await ate(async () => (await ligadosDoColega(colega)) >= 1, 120_000);
-  conferir('6. dois adultos na bancada se ligam entre si', !!seLigaram);
-  await dormir(8000);
+  // ---------------------------------------------------------------- 6. cliente adulterado: o servidor trata cada token pelo que ele é
+  const abrirHack = async (rotulo, nome, token) => {
+    const p = await browser.newPage();
+    p.on('pageerror', (e) => erros.add(`${rotulo}: ${e.message}`));
+    await p.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
+    await abrirBancada(p, nome, token);
+    return p;
+  };
+  const hackMenor = await abrirHack('hack', 'HACKMENOR', tokenMenor);
+  const hackSemToken = await abrirHack('hack2', 'HACKSEM', undefined);
+  const hackLixo = await abrirHack('hack3', 'HACKLIXO', 'lixo-lixo-lixo-lixo');
+  const segundoAdulto = await abrirHack('adulto2', 'CHARLIE', await tokenDeConta(PORTA, 'charlie'));
+  const seLigaram = await ate(async () => (await ligadosDoColega(colega)) >= 4, 180_000);
+  conferir('6. na fase de testes todos entram: o colega se liga a CHARLIE, ao token de menor, ao sem token e ao token torto', !!seLigaram, `colega: ${await ligadosDoColega(colega)} ligação(ões)`);
+  await dormir(6000);
   const estados = {};
-  for (const [nome, p] of [['hackMenor', hackMenor], ['hackSemToken', hackSemToken]]) estados[nome] = await p.evaluate(() => window.__voz.estado());
-  conferir('6. cliente que manda o token de um MENOR: o cliente acha que entrou (ativa), mas o servidor o deixa de fora (sem ligações, não ouve ninguém)', estados.hackMenor.ativa && estados.hackMenor.ligados === 0 && estados.hackMenor.ouvindo === 0, JSON.stringify(estados.hackMenor));
-  conferir('6. cliente SEM token: idem', estados.hackSemToken.ativa && estados.hackSemToken.ligados === 0 && estados.hackSemToken.ouvindo === 0, JSON.stringify(estados.hackSemToken));
-  conferir('6. os adultos continuam ligados entre si e não têm ligação com os de fora', (await ligadosDoColega(colega)) === 1, `colega: ${await ligadosDoColega(colega)} ligação(ões)`);
-  conferir('6. os adultos não ouvem os de fora (um só colega ligado a cada adulto)', (await segundoAdulto.evaluate(() => window.__voz.estado().ligados)) === 1);
+  for (const [nome, p] of [['hackMenor', hackMenor], ['hackSemToken', hackSemToken], ['hackLixo', hackLixo], ['adulto2', segundoAdulto]]) estados[nome] = await p.evaluate(() => window.__voz.estado());
+  conferir('6. cada um deles está ligado aos outros quatro (a voz é de todos)', Object.values(estados).every((e) => e.ativa && e.ligados === 4), JSON.stringify(estados));
+  console.log('    limite conhecido: o áudio vai direto entre os navegadores, então um cliente de menor ADULTERADO (esta bancada) consegue falar; só o cliente de verdade nega o microfone ao menor. VOZ_SO_PARA_ADULTO_DECLARADO volta a regra da P211.');
 
   conferir('nenhum erro de página', erros.size === 0, [...erros].slice(0, 3).join(' | '));
 } finally {

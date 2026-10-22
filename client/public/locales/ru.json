@@ -990,5 +990,8 @@
  "CANAIS [{0}] TIME · [{1}] {2} · [{3}] TROCAR": "КАНАЛЫ [{0}] КОМАНДА · [{1}] {2} · [{3}] СМЕНИТЬ",
  "Chat de voz: falar só com o time": "Голосовой чат: говорить только с командой",
  "Chat de voz: falar só com o jogador escolhido": "Голосовой чат: говорить только с выбранным игроком",
- "Chat de voz: trocar o jogador escolhido": "Голосовой чат: сменить выбранного игрока"
+ "Chat de voz: trocar o jogador escolhido": "Голосовой чат: сменить выбранного игрока",
+ "Contas de menores de 18 anos só ouvem o chat de voz: sem microfone. O áudio do jogo segue normal.": "Аккаунты младше 18 лет могут только слушать голосовой чат: без микрофона. Звук игры работает как обычно.",
+ "Conta de menor de 18 anos: o chat de voz só ouve (sem microfone). O áudio do jogo segue normal.": "Аккаунт младше 18 лет: голосовой чат только на прослушивание (без микрофона). Звук игры работает как обычно.",
+ "Informe o mês e o ano de nascimento da sua conta. Quem tem menos de 18 anos só ouve o chat de voz, sem microfone. Só dá para informar uma vez.": "Укажите месяц и год рождения вашего аккаунта. Те, кому нет 18 лет, могут только слушать голосовой чат, без микрофона. Указать можно только один раз."
 }

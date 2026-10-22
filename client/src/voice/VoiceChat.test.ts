@@ -1469,3 +1469,66 @@ describe('VoiceChat: os canais todos / time / jogador escolhido (P237 PR 3)', ()
     });
   });
 });
+
+describe('VoiceChat: a conta de menor só ouve (P241)', () => {
+  beforeEach(() => {
+    FakePC.todas = [];
+  });
+
+  it('entra na voz e se liga aos colegas, mas NUNCA pede o microfone ao navegador', async () => {
+    const t = montar({ token: '' });
+    t.chat.configurar(true, 'sempre', 0.8, '', 1, false);
+    t.chat.entrouNaSala(5);
+    expect(t.de(VOZ.PRONTO).map((b) => lerPronto(b))).toEqual([{ ligado: true, token: '' }]);
+    t.chat.receber(codificarLista([5, 9]));
+    await andar();
+    expect(t.pedidos.n, 'o menor não tem microfone').toBe(0);
+    expect(t.chat.ativa).toBe(true);
+    expect(t.chat.colegas).toBe(1);
+    expect(t.chat.estadoMic).toBe('sem');
+  });
+
+  it('apertar o botão (tela de toque) ou a tecla do chat não pede o microfone', () => {
+    const t = montar({ token: 'x' });
+    t.chat.configurar(true, 'ptt', 0.8, '', 1, false);
+    t.chat.entrouNaSala(5);
+    t.chat.aoBotao(true);
+    t.chat.aoBotao(false);
+    expect(t.pedidos.n).toBe(0);
+  });
+
+  it('a conta virou de menor com o microfone aberto (entrou noutra conta): o microfone é largado na hora e não volta', async () => {
+    const t = montar({ token: 'x' });
+    t.chat.configurar(true, 'sempre', 0.8);
+    t.chat.entrouNaSala(5);
+    const { faixa, fluxo } = fluxoComFaixa();
+    t.resolverMic(fluxo);
+    await andar();
+    expect(t.chat.estadoMic).toBe('ativo');
+    t.chat.configurar(true, 'sempre', 0.8, '', 1, false);
+    expect(t.chat.estadoMic).toBe('sem');
+    expect(faixa.parada, 'a faixa foi parada').toBe(true);
+    expect(t.pedidos.n, 'nenhum pedido novo').toBe(1);
+  });
+
+  it('o diagnóstico diz que só ouve, e a mixagem recusada aparece pelo nome', async () => {
+    const t = montar({ token: '' });
+    t.chat.configurar(true, 'sempre', 0.8, '', 1, false);
+    t.chat.entrouNaSala(5);
+    expect(await t.chat.diagnostico()).toMatchObject({ podeFalar: false, soMixagem: false });
+
+    const u = montar({ token: 'x' });
+    u.chat.configurar(true, 'sempre', 0.8);
+    u.chat.entrouNaSala(5);
+    u.recusarMic(Object.assign(new Error('só há a mixagem do sistema, que grava o som do computador e não a voz'), { name: 'NotFoundError' }));
+    await andar();
+    expect(await u.chat.diagnostico()).toMatchObject({ podeFalar: true, soMixagem: true, estadoMic: 'sem' });
+
+    const v = montar({ token: 'x' });
+    v.chat.configurar(true, 'sempre', 0.8);
+    v.chat.entrouNaSala(5);
+    v.recusarMic(Object.assign(new Error('sem microfone'), { name: 'NotFoundError' }));
+    await andar();
+    expect((await v.chat.diagnostico()).soMixagem, 'um NotFoundError qualquer não é a mixagem').toBe(false);
+  });
+});

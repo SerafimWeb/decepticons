@@ -990,5 +990,8 @@
  "CANAIS [{0}] TIME · [{1}] {2} · [{3}] TROCAR": "频道 [{0}] 队伍 · [{1}] {2} · [{3}] 切换",
  "Chat de voz: falar só com o time": "语音聊天：仅对队伍说话",
  "Chat de voz: falar só com o jogador escolhido": "语音聊天：仅对所选玩家说话",
- "Chat de voz: trocar o jogador escolhido": "语音聊天：切换所选玩家"
+ "Chat de voz: trocar o jogador escolhido": "语音聊天：切换所选玩家",
+ "Contas de menores de 18 anos só ouvem o chat de voz: sem microfone. O áudio do jogo segue normal.": "18岁以下的账号只能收听语音聊天，不能使用麦克风。游戏音频照常。",
+ "Conta de menor de 18 anos: o chat de voz só ouve (sem microfone). O áudio do jogo segue normal.": "18岁以下的账号：语音聊天只能收听（无麦克风）。游戏音频照常。",
+ "Informe o mês e o ano de nascimento da sua conta. Quem tem menos de 18 anos só ouve o chat de voz, sem microfone. Só dá para informar uma vez.": "请填写账号的出生年月。18岁以下的玩家只能收听语音聊天，不能使用麦克风。只能填写一次。"
 }

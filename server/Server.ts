@@ -7,7 +7,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
-import { chaveDeConfigValida, valorDeConfigValido, CONTA_APAGAR_PATH, CONTA_CRIAR_PATH, CONTA_DADOS_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_MEDICAO_PATH, CONTA_NASCIMENTO_PATH, CONTA_PROGRESSO_PATH, ehMaiorDeIdade, idadeDaConta, parseNascimento, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, POLITICA_VERSAO, PROGRESSO_MAX_BYTES, parseCredenciais, parseCriarConta, parseMedicao, parseSenhaDeConfirmacao, SESSAO_HEADER, validarProgresso } from '../shared/net/auth';
+import { chaveDeConfigValida, valorDeConfigValido, CONTA_APAGAR_PATH, CONTA_CRIAR_PATH, CONTA_DADOS_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_MEDICAO_PATH, CONTA_NASCIMENTO_PATH, CONTA_PROGRESSO_PATH, idadeDaConta, parseNascimento, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, POLITICA_VERSAO, PROGRESSO_MAX_BYTES, parseCredenciais, parseCriarConta, parseMedicao, parseSenhaDeConfirmacao, SESSAO_HEADER, validarProgresso } from '../shared/net/auth';
 import { CLOSE_REINICIO, REINICIO_AVISO_S, REINICIO_VOLTA_EM_S, ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
 import { CONTA_ESQUECI_PATH, CONTA_REDEFINIR_PATH, parseEsqueci, parseRedefinir, urlDeRedefinicao, type IdiomaEmail } from '../shared/net/auth';
 import { EMAILS_POR_DIA, MailerDaPasta, TetoDiario, type Mailer } from './email';
@@ -20,6 +20,7 @@ import { encodeAviso, encodeReject, sanitizeName, type RejectReason } from '../s
 import { CREDENCIAL_ESPERA_MS, ehCredencial, lerCredencial } from '../shared/net/credencial';
 import { mapaRestrito } from './acessoAoMapa';
 import { ArenaRoom, type Peer } from './ArenaRoom';
+import { autorizarPorSessao } from './voz';
 import { Contas } from './contas';
 import { fazerBackup } from './backupContas';
 import { Audiencia } from './Audiencia';
@@ -216,11 +217,8 @@ export async function startServer(
     let p = creating.get(code);
     if (!p) {
       p = ArenaRoom.create(code, regras.atual(), mapaDaChave(code)).then((room) => {
-        // A voz é só de conta de maior de idade (P211): o `PRONTO` traz o token da sessão e é aqui que ele vale ou não.
-        room.definirAutorizacaoDeVoz((token) => {
-          const conta = token.length >= 8 && token.length <= 200 ? contas.validarSessao(token) : null;
-          return conta !== null && ehMaiorDeIdade(conta.nascimento);
-        });
+        // Quem entra na voz (P211; fase de testes, P241): o `PRONTO` traz o token da sessão e é aqui que ele vale ou não (`VOZ_SO_PARA_ADULTO_DECLARADO` em `shared/net/auth.ts`).
+        room.definirAutorizacaoDeVoz(autorizarPorSessao((token) => contas.validarSessao(token)));
         // A sala de teste do painel (`TESTE-…`) fica fora dos números de produto.
         if (!ehSalaDeTeste(code)) {
           room.onEntrou = (peer) => {

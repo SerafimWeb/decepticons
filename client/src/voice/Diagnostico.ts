@@ -1,3 +1,4 @@
+import { VOZ_SO_PARA_ADULTO_DECLARADO } from '../../../shared/net/auth';
 import type { ElegibilidadeDaVoz, MotivoSemVoz } from './elegibilidade';
 import type { DiagnosticoDaVoz } from './VoiceChat';
 
@@ -12,6 +13,10 @@ export interface EntradaDoDiagnostico {
   navegador: string;
   /** Está numa sala online agora? */
   online: boolean;
+  /** O código da sala e o mapa (dois PCs só se ouvem na mesma sala e no mesmo mapa), ou `null` fora de uma sala. */
+  sala: string | null;
+  /** A conta, em palavras: `convidado`, `sem idade informada`, `menor de 18 anos (só ouve)` ou `maior de 18 anos`. */
+  conta: string;
   eleg: ElegibilidadeDaVoz;
   motivo: MotivoSemVoz | null;
   voiceOn: boolean;
@@ -33,21 +38,25 @@ export function concluirDiagnostico(e: EntradaDoDiagnostico): string {
   if (e.motivo === 'desligada') return 'A voz está desligada: marque "Conversar por voz" em Configurações > GRÁFICOS E SOM.';
   const v = e.voz;
   if (!v || !v.ativa) return 'A voz ainda não entrou na sala. Espere alguns segundos; se continuar, saia e entre de novo na sala.';
-  if (v.estadoMic === 'negado') return 'O navegador bloqueou o microfone neste site: clique no cadeado ao lado do endereço, permita o microfone e recarregue.';
-  if (v.estadoMic === 'sem') return 'O jogo não conseguiu abrir um microfone: confira o aparelho em Configurações > GRÁFICOS E SOM e use [ TESTAR ].';
+  // Quem só ouve (conta de menor, P241) não tem microfone: as conclusões do microfone não valem para ela.
+  const fala = v.podeFalar;
+  if (fala && v.estadoMic === 'negado') return 'O navegador bloqueou o microfone neste site: clique no cadeado ao lado do endereço, permita o microfone e recarregue.';
+  if (fala && v.soMixagem) return 'O único aparelho de entrada que o navegador achou é a "Mixagem estéreo", que grava o som do computador e não a sua voz (o jogo a recusa para não mandar o som do PC aos outros). Ligue o microfone ou o fone e escolha-o em Configurações > GRÁFICOS E SOM.';
+  if (fala && v.estadoMic === 'sem') return 'O jogo não conseguiu abrir um microfone: confira o aparelho em Configurações > GRÁFICOS E SOM e use [ TESTAR ].';
   // O microfone abre, mas não chega som (o que o Comandante viveu em 20/10): vem antes de "sozinho" e de "rede", porque com o microfone mudo nada mais adianta.
-  if (v.saude === 'sem-entrega') return 'O navegador diz que o microfone parou de entregar som (o fone Bluetooth caiu, o aparelho foi desligado ou outro programa o pegou): confira o fone e o teste de entrada do Windows. O jogo tenta reabrir sozinho.';
-  if (v.saude === 'sem-som') return 'O microfone está aberto mas entrega silêncio total há vários segundos: confira o botão de mudo do próprio fone, se o fone está no modo microfone (no Bluetooth, mãos-livres) e o teste do Windows (Configurações > Sistema > Som > Entrada).';
-  if (e.pilotos.length === 0) return 'Você está sozinho na sala: ninguém para ouvir. Entre com outra pessoa.';
-  if (v.ligacoes.length === 0) return `Há ${e.pilotos.length} na sala, mas nenhum está na voz: a outra pessoa precisa de conta de maior de 18 anos com "Conversar por voz" ligado (convidado e menor não entram).`;
+  if (fala && v.saude === 'sem-entrega') return 'O navegador diz que o microfone parou de entregar som (o fone Bluetooth caiu, o aparelho foi desligado ou outro programa o pegou): confira o fone e o teste de entrada do Windows. O jogo tenta reabrir sozinho.';
+  if (fala && v.saude === 'sem-som') return 'O microfone está aberto mas entrega silêncio total há vários segundos: confira o botão de mudo do próprio fone, se o fone está no modo microfone (no Bluetooth, mãos-livres) e o teste do Windows (Configurações > Sistema > Som > Entrada).';
+  if (e.pilotos.length === 0) return 'Você está sozinho na sala: ninguém para ouvir. Se a outra pessoa já entrou no jogo, vocês estão em salas ou mapas diferentes: compare a linha "sala online" deste relatório nos dois PCs (use o mesmo link, com o mesmo ?sala= e o mesmo mapa).';
+  if (v.ligacoes.length === 0) return `Há ${e.pilotos.length} na sala, mas nenhum está na voz: a outra pessoa precisa estar com "Conversar por voz" ligado em Configurações${VOZ_SO_PARA_ADULTO_DECLARADO ? ' e ter conta de maior de 18 anos' : ''}.`;
   const falhou = v.ligacoes.filter((l) => l.estado === 'falhou');
   if (falhou.length > 0) return 'A rede não deixou a conexão direta com um colega (firewall, roteador ou rede da empresa). O jogo ainda não tem servidor de retransmissão para esses casos.';
   const conectando = v.ligacoes.filter((l) => l.estado === 'conectando');
   if (conectando.length === v.ligacoes.length) return 'Conectando com os colegas: aguarde alguns segundos. Se ficar assim, a rede está bloqueando a conexão direta.';
-  if (v.mudo) return 'O seu microfone está MUDO: aperte a tecla de voz (T) para abrir.';
-  if (!v.transmitindo) return 'O seu microfone está em "segurar para falar": segure a tecla de voz (T) enquanto fala.';
+  if (fala && v.mudo) return 'O seu microfone está MUDO: aperte a tecla de voz (T) para abrir.';
+  if (fala && !v.transmitindo) return 'O seu microfone está em "segurar para falar": segure a tecla de voz (T) enquanto fala.';
   const semEnvio = v.ligacoes.filter((l) => l.estado === 'conectada' && l.enviados === 0);
-  if (semEnvio.length === v.ligacoes.length) return 'Conectado, mas o seu microfone não enviou nenhum áudio: teste o aparelho em Configurações > GRÁFICOS E SOM (pode estar mudo no Windows).';
+  if (fala && semEnvio.length === v.ligacoes.length) return 'Conectado, mas o seu microfone não enviou nenhum áudio: teste o aparelho em Configurações > GRÁFICOS E SOM (pode estar mudo no Windows).';
+  if (!fala) return 'Conta de menor de 18 anos: o chat de voz só ouve, sem microfone. Está ligado com os colegas; se não os ouve, confira o volume da voz e o som do computador.';
   const semRecebe = v.ligacoes.filter((l) => l.estado === 'conectada' && l.recebidos === 0 && l.enviados > 0);
   if (semRecebe.length > 0) return 'O seu áudio sai, mas nada chega de volta: o colega pode estar mudo, sem microfone ou com o som do jogo desligado.';
   return 'Tudo certo por aqui: a voz está ligada e o áudio está indo e vindo. Se mesmo assim não se ouvem, confira o volume da voz e o som do computador de quem escuta.';
@@ -58,7 +67,7 @@ export function formatarDiagnostico(e: EntradaDoDiagnostico): string {
   const L: string[] = [];
   L.push(`DIAGNÓSTICO DA VOZ · CYBERMECH · ${e.agora}`);
   L.push(`navegador: ${e.navegador}`);
-  L.push(`sala online: ${sn(e.online)} · conta: ${e.eleg === 'liberada' ? 'maior de 18 anos' : e.eleg} · "Conversar por voz": ${sn(e.voiceOn)}`);
+  L.push(`sala online: ${e.sala === null ? sn(e.online) : `sim (${e.sala})`} · conta: ${e.conta} · "Conversar por voz": ${sn(e.voiceOn)}`);
   if (!v) {
     L.push('voz: não carregada (a conta não pode usar a voz, ou ela está desligada, ou não há sala online)');
   } else {

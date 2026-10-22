@@ -8,7 +8,7 @@ import { apontarJogoPara, gerarWav, guardarSessao, tokenDeConta } from './vozLib
 /**
  * A NARRAÇÃO NO JOGO DE VERDADE (P230): o jogo offline aberto no Chrome (microfone FALSO: um tom de 440 Hz), a tecla F8, o aparelho escolhido, a regra de idade e o arquivo baixado.
  * A outra bancada (`gravacao-narrada.mjs`) prova a mistura com o `GameRecorder` sozinho; esta prova a COLA no `Game.ts`, que teste unitário não alcança.
- *   1. convidado: F8 NÃO abre o microfone e diz por quê (maior de 18 anos); F9 grava só o jogo ("REC", sem narração)
+ *   1. conta de MENOR: F8 NÃO abre o microfone e diz por quê (menores de 18 anos); F9 grava só o jogo ("REC", sem narração). O CONVIDADO, na fase de testes (P241), narra como o adulto
  *   2. conta de adulto, jogo OFFLINE: F8 grava com a narração ("REC · NARRAÇÃO"); parar baixa o arquivo, e o tom da "voz" está nele (só nele: o arquivo do F9 do convidado não o tem)
  *
  *   node .decepticons/medicoes/gravacao-narrada-jogo.mjs     # sai com 1 se algo falhar; arquivos em .tmp/gravacao-narrada-jogo/
@@ -98,27 +98,41 @@ try {
     }
   };
 
-  // ---------- 1. o convidado ----------
-  console.log('\n--- convidado (sem conta) ---');
-  const conv = await abrirJogo(null);
+  // ---------- 1. a conta de menor (sem microfone) ----------
+  console.log('\n--- conta de menor (sem microfone) ---');
+  const conv = await abrirJogo(await tokenDeConta(2598, 'menorzinho', `${new Date().getFullYear() - 10}-03`));
   await conv.page.keyboard.press('F8');
   const avisoConv = await ate(() => aviso(conv.page), 8000);
-  conferir('convidado: F8 diz que o microfone só vale para maior de 18 anos', !!avisoConv && avisoConv.includes('maior de 18'), String(avisoConv));
-  conferir('convidado: F8 não começou a gravar', (await indicador(conv.page)) === null);
+  conferir('menor: F8 diz que o microfone não está liberado para menores de 18 anos', !!avisoConv && avisoConv.includes('menores de 18'), String(avisoConv));
+  conferir('menor: F8 não começou a gravar', (await indicador(conv.page)) === null);
   await conv.page.keyboard.press('F9');
   const indF9 = await ate(() => indicador(conv.page), 10_000);
-  conferir('convidado: F9 grava só o jogo (REC, sem narração)', !!indF9 && !indF9.includes('NARRAÇÃO'), String(indF9));
+  conferir('menor: F9 grava só o jogo (REC, sem narração)', !!indF9 && !indF9.includes('NARRAÇÃO'), String(indF9));
   await conv.page.waitForTimeout(5000);
   const baixouConv = conv.page.waitForEvent('download', { timeout: 90_000 }).catch(() => null);
   await conv.page.keyboard.press('F9');
   const dConv = await baixouConv;
   let arquivoConv = null;
   if (dConv) {
-    arquivoConv = resolve(TMP, 'f9-convidado.webm');
+    arquivoConv = resolve(TMP, 'f9-menor.webm');
     await dConv.saveAs(arquivoConv);
   }
-  conferir('convidado: F9 parou e o indicador sumiu', (await indicador(conv.page)) === null);
+  conferir('menor: F9 parou e o indicador sumiu', (await indicador(conv.page)) === null);
   await conv.ctx.close();
+
+  // ---------- 1b. o convidado narra (fase de testes, P241) ----------
+  console.log('\n--- convidado (sem conta), fase de testes ---');
+  const conv2 = await abrirJogo(null);
+  let indConv2 = null;
+  for (let i = 0; i < 6 && !indConv2; i++) {
+    await conv2.page.keyboard.press('F8');
+    indConv2 = await ate(() => indicador(conv2.page), 4000);
+    if (!indConv2) await conv2.page.waitForTimeout(2500);
+  }
+  conferir('convidado: F8 grava com a narração (REC · NARRAÇÃO), o microfone abriu sem conta', !!indConv2 && indConv2.includes('NARRAÇÃO'), String(indConv2));
+  await conv2.page.keyboard.press('F8').catch(() => {});
+  await conv2.page.waitForTimeout(1500);
+  await conv2.ctx.close();
 
   // ---------- 2. a conta de adulto, jogo offline ----------
   console.log('\n--- conta de adulto, jogo offline ---');
@@ -146,7 +160,7 @@ try {
   if (arquivoAd && ffmpeg) {
     const voz = nivelNaFaixa(arquivoAd, 440);
     const controle = arquivoConv ? nivelNaFaixa(arquivoConv, 440) : null;
-    console.log(`\nnível em 440 Hz (a voz de teste): narração do adulto ${voz} dB | F9 do convidado ${controle} dB`);
+    console.log(`\nnível em 440 Hz (a voz de teste): narração do adulto ${voz} dB | F9 do menor ${controle} dB`);
     conferir('adulto: a voz (440 Hz) está no arquivo da narração', voz !== null && voz > -50, `${voz} dB`);
     // O jogo tem som próprio perto de 440 Hz e ele varia de uma rodada para outra (-51 e -44 dB medidos), então o F9 não é silêncio aqui; a prova estrita de "sem voz = silêncio" é a de tons puros
     // (`gravacao-narrada.mjs`, -77 dB). Aqui a narração tem de somar bem mais que o jogo sozinho.
@@ -194,7 +208,7 @@ try {
     console.log('(sem arquivo de uma das narrações: a comparação em frequência fica para outra rodada; a prova do gravador está em gravacao-narrada.mjs)');
   }
 
-  const todosOsErros = [...conv.erros, ...ad.erros, ...errosFx];
+  const todosOsErros = [...conv.erros, ...conv2.erros, ...ad.erros, ...errosFx];
   console.log(`\nerros de página: ${todosOsErros.length}`);
   for (const e of todosOsErros) console.log('  ', e);
   conferir('nenhum erro de página', todosOsErros.length === 0);

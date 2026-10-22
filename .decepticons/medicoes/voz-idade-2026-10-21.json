@@ -1,0 +1,175 @@
+{
+  "data": "2026-10-21",
+  "verificacoes": [
+    {
+      "nome": "o colega adulto entrou na voz sozinho e ninguém mais está ligado a ele",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "1. conta de ADULTO: a voz abre e liga ao colega",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "1. os controles da voz aparecem e nenhuma frase de bloqueio",
+      "ok": true,
+      "detalhe": "{\"controles\":true,\"frase\":\"\",\"pedidos\":1,\"indicador\":\"MICROFONE ABERTO: [T] MUDA\",\"aviso\":\"\",\"rede\":\"\"}"
+    },
+    {
+      "nome": "1. ADULTO: sem o botão de conta (a voz já está liberada)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "1. o jogo pediu o microfone ao navegador",
+      "ok": true,
+      "detalhe": "1 pedido(s)"
+    },
+    {
+      "nome": "1. ADULTO na voz: nenhum aviso de \"sem voz\" na tela (a voz está ligada)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "1. ADULTO: o diagnóstico da voz mostra a ligação com BRAVO, a rota e conclui \"Tudo certo\"",
+      "ok": true,
+      "detalhe": "DIAGNÓSTICO DA VOZ · CYBERMECH · 2026-10-22T00:01:57.688Z | navegador: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 | sala online: sim (IDADE · mapa padrão) · conta: maior de 18 anos · \"Conversar por voz\": sim | voz: na sala · eu = #6 · token da conta: sim | microfone: ativo · aparelho: \"Fake Default Audio Input\" · 48000 Hz · eco/ruído/ganho do navegador: sim/sim/sim · modo sempre · mudo não · transmitindo sim | envio: ga"
+    },
+    {
+      "nome": "2. CONVIDADO (fase de testes): a voz abre sozinha, sem conta, e liga ao colega",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "2. CONVIDADO: os controles da voz aparecem, sem frase de bloqueio e sem aviso de \"sem voz\"",
+      "ok": true,
+      "detalhe": "{\"controles\":true,\"frase\":\"\",\"pedidos\":1,\"indicador\":\"MICROFONE ABERTO: [T] MUDA\",\"aviso\":\"\",\"rede\":\"\"}"
+    },
+    {
+      "nome": "2. CONVIDADO: o jogo pediu o microfone ao navegador (ele pode falar)",
+      "ok": true,
+      "detalhe": "1 pedido(s)"
+    },
+    {
+      "nome": "2. CONVIDADO: sem botão de conta (a voz já está liberada)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "3. conta de MENOR: entra na voz e o colega se liga a ela (ela ouve)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "3. MENOR: sem controles de microfone, e a frase diz que só ouve, sem microfone, e que o áudio do jogo segue normal",
+      "ok": true,
+      "detalhe": "{\"controles\":false,\"frase\":\"Contas de menores de 18 anos só ouvem o chat de voz: sem microfone. O áudio do jogo segue normal.\",\"pedidos\":0,\"indicador\":\"SÓ OUVINDO: SEM MICROFONE\",\"aviso\":\"\",\"rede\":\"\"}"
+    },
+    {
+      "nome": "3. MENOR: o jogo NUNCA pediu o microfone ao navegador",
+      "ok": true,
+      "detalhe": "0 pedido(s)"
+    },
+    {
+      "nome": "3. MENOR: o indicador diz \"SÓ OUVINDO\" e não há aviso de \"sem voz\" (a voz está ligada)",
+      "ok": true,
+      "detalhe": "{\"indicador\":\"SÓ OUVINDO: SEM MICROFONE\",\"aviso\":\"\"}"
+    },
+    {
+      "nome": "3. MENOR: sem botão (não há o que fazer)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "3. MENOR: a aba da conta explica que o chat de voz só ouve",
+      "ok": true,
+      "detalhe": "Progresso guardado na conta. // CONTA DE PILOTO 👤 LOGADO COMO menor-2@bancada.com Conta de menor de 18 anos: o chat de voz só ouve (sem microfone). O áudio do "
+    },
+    {
+      "nome": "4. conta SEM IDADE (fase de testes): a voz abre sozinha e liga ao colega",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "4. conta SEM IDADE: os controles da voz aparecem, o microfone foi pedido e não há aviso de \"sem voz\"",
+      "ok": true,
+      "detalhe": "{\"controles\":true,\"frase\":\"\",\"pedidos\":1,\"indicador\":\"MICROFONE ABERTO: [T] MUDA\",\"aviso\":\"\",\"rede\":\"\"}"
+    },
+    {
+      "nome": "4. a aba JOGO ainda pede o mês e o ano (é o que separa o menor, que só ouve), com o botão GUARDAR A IDADE desligado",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "4. o texto da aba diz que quem tem menos de 18 anos só ouve o chat de voz",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "4. escolhidos o mês e o ano o botão liga",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "4. informada a idade (adulto) a voz continua ligada ao colega",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "4. a idade só se informa uma vez: o servidor recusa trocar (409)",
+      "ok": true,
+      "detalhe": "status 409"
+    },
+    {
+      "nome": "5. CADASTRO: sem o mês e o ano o botão CRIAR CONTA fica desligado (mesmo com e-mail, senha e as duas caixas)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "5. CADASTRO: escolhidos o mês e o ano o botão liga",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "5. CADASTRO como adulto: a conta é criada e a sessão abre",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "5. CADASTRO como adulto: a voz abre e liga ao colega",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "5. CADASTRO de um menor: o formulário aceita (a pessoa pode jogar, só não tem microfone)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "5. CADASTRO como menor: a conta nasce e a tela diz que a conta de menor de 18 anos só ouve",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "5. CADASTRO como menor: o microfone que o convidado abrira é LARGADO (SÓ OUVINDO), não pede outro, e a voz segue ligada ao colega",
+      "ok": true,
+      "detalhe": "pedidos 1 -> 1"
+    },
+    {
+      "nome": "6. na fase de testes todos entram: o colega se liga a CHARLIE, ao token de menor, ao sem token e ao token torto",
+      "ok": true,
+      "detalhe": "colega: 4 ligação(ões)"
+    },
+    {
+      "nome": "6. cada um deles está ligado aos outros quatro (a voz é de todos)",
+      "ok": true,
+      "detalhe": "{\"hackMenor\":{\"id\":6,\"ativa\":true,\"mic\":\"ativo\",\"ligados\":4,\"semConexao\":0,\"transmitindo\":true,\"ouvindo\":4,\"falando\":[5,7,8,9]},\"hackSemToken\":{\"id\":7,\"ativa\":true,\"mic\":\"ativo\",\"ligados\":4,\"semConexao\":0,\"transmitindo\":true,\"ouvindo\":4,\"falando\":[5,6,8,9]},\"hackLixo\":{\"id\":8,\"ativa\":true,\"mic\":\"ativo\",\"ligados\":4,\"semConexao\":0,\"transmitindo\":true,\"ouvindo\":4,\"falando\":[6,5,7,9]},\"adulto2\":{\"id\":9,\"ativa\":true,\"mic\":\"ativo\",\"ligados\":4,\"semConexao\":0,\"transmitindo\":true,\"ouvindo\":4,\"falando\":[7,8,6,5]}}"
+    },
+    {
+      "nome": "nenhum erro de página",
+      "ok": true,
+      "detalhe": ""
+    }
+  ]
+}

@@ -171,7 +171,8 @@ import { LadoSelector } from '../ui/LadoSelector';
 import { ContaCliente } from '../net/auth';
 import { progressoLocalDoJogo } from '../net/progressoLocal';
 import { chaveDoToken, SessaoPiloto } from '../net/sessao';
-import { elegibilidadeDaVoz, microfoneDaNarracaoLiberado, motivoSemVoz, type MotivoSemVoz, vozDeveLigar } from '../voice/elegibilidade';
+import type { IdadeDaConta } from '../../../shared/net/auth';
+import { elegibilidadeDaVoz, microfoneLiberado, motivoSemVoz, type MotivoSemVoz, vozDeveLigar } from '../voice/elegibilidade';
 
 /** Nome da arma do gatilho secundário no HUD; null = não há (o braço esquerdo leva um escudo). */
 const HUD_NAME: Partial<Record<WeaponId, string>> = { rockets: 'FOGUETES', barrage: 'CHUVA', seeker: 'TELEGUIADO', swarm: 'ENXAME', cruise: 'CRUZADOR', grenade: 'GRANADAS', laser: 'LASER', chainsaw: 'MOTOSSERRA', harpoon: 'ARPÃO' };
@@ -302,6 +303,8 @@ export class Game {
   private voz: VoiceChat | null = null;
   /** A conta do piloto (P174): a voz precisa dela, só abre para conta de maior de idade (P211). */
   private sessao: SessaoPiloto | null = null;
+  /** A conta já foi restaurada na abertura? Até lá a idade não vale para a voz: um menor que volta com a sessão guardada não pode abrir o microfone nem por um instante (P241). */
+  private sessaoPronta = false;
   private settingsMenu: SettingsMenu | null = null;
   private vozHud: VoiceHud | null = null;
   /** O aviso de por que a voz não está ligada (P237) e o motivo que ele mostra agora. */
@@ -1017,7 +1020,10 @@ export class Game {
       this.aplicarVoz(this.settings.value);
     };
     this.settingsMenu?.setElegibilidadeDaVoz(elegibilidadeDaVoz(false, 'sem-idade'));
-    void sessao.restaurar();
+    void sessao.restaurar().finally(() => {
+      this.sessaoPronta = true;
+      this.aplicarVoz(this.settings.value);
+    });
     const blocoConta = document.getElementById('settings-conta');
     if (blocoConta) void import('../ui/ContaSettings').then((m) => new m.ContaSettings(blocoConta, sessao));
 
@@ -1205,8 +1211,8 @@ export class Game {
   }
 
   private async abrirNarracao(): Promise<void> {
-    if (!microfoneDaNarracaoLiberado(this.sessao?.estado.idade)) {
-      this.recorder.avisar('NARRAÇÃO: o microfone só vale para conta de maior de 18 anos (Configurações > JOGO).');
+    if (!microfoneLiberado(this.idadeParaAVoz())) {
+      this.recorder.avisar('NARRAÇÃO: o microfone não está liberado para contas de menores de 18 anos (Configurações > JOGO).');
       return;
     }
     // O efeito na voz (P231) é um pedaço sob demanda: se ele não baixar, a narração segue com a voz pura em vez de falhar.
@@ -1271,6 +1277,8 @@ export class Game {
       agora: new Date().toISOString(),
       navegador: navigator.userAgent,
       online: !!this.online?.joined,
+      sala: this.online?.joined ? `${this.online.sala} · mapa ${this.online.mapa}` : null,
+      conta: est?.email == null ? 'convidado' : est.idade === 'adulto' ? 'maior de 18 anos' : est.idade === 'menor' ? 'menor de 18 anos (só ouve)' : 'sem idade informada',
       eleg,
       motivo: motivoSemVoz(eleg, this.settings.value.voiceOn, funcionalidadeVisivel('tela:voz')),
       voiceOn: this.settings.value.voiceOn,
@@ -1416,11 +1424,17 @@ export class Game {
    * O chat de voz vale quando o jogador o quer (Configurações), a funcionalidade está liberada (`tela:voz`, P191: nasce restrita; o Comandante a solta no painel, e a segura de novo se precisar)
    * **e a conta é de maior de 18 anos** (P211: menor, conta sem idade e convidado não têm microfone nem a voz dos outros; o servidor confere o token da sessão de novo).
    */
+  /** A faixa de idade que decide a voz e o microfone: `undefined` até a conta ser restaurada (na dúvida, nada abre). */
+  private idadeParaAVoz(): IdadeDaConta | undefined {
+    return this.sessaoPronta ? this.sessao?.estado.idade : undefined;
+  }
+
   private aplicarVoz(s: Readonly<GameSettings>): void {
-    const quer = vozDeveLigar(s.voiceOn, funcionalidadeVisivel('tela:voz'), this.sessao?.estado.idade);
+    const idade = this.idadeParaAVoz();
+    const quer = vozDeveLigar(s.voiceOn, funcionalidadeVisivel('tela:voz'), idade);
     // Só quem quer a voz e está numa sala online baixa o pedaço dela.
     if (quer && !this.voz && this.online && this.vozId !== null) void this.carregarVoz();
-    this.voz?.configurar(quer, s.voiceMode, s.voiceVolume, s.micDevice, s.micGain);
+    this.voz?.configurar(quer, s.voiceMode, s.voiceVolume, s.micDevice, s.micGain, microfoneLiberado(idade));
     this.pintarPilotos(); // o botão do mudo aparece e some com a voz
   }
 

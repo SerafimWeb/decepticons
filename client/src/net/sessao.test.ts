@@ -419,10 +419,11 @@ describe('os direitos do titular na sessão (P192, LGPD art. 18)', () => {
 });
 
 describe('a idade da conta na sessão (P211): decide se o chat de voz abre', () => {
-  it('convidado: sem idade e sem token de voz', () => {
+  it('convidado: sem idade; na fase de testes (P241) entra na voz com token vazio (o servidor o trata como convidado), na regra da P211 fica sem token', () => {
     const { sessao } = montar();
     expect(sessao.estado.idade).toBe('sem-idade');
-    expect(sessao.tokenDaVoz()).toBeNull();
+    expect(sessao.tokenDaVoz()).toBe('');
+    expect(sessao.tokenDaVoz(true)).toBeNull();
   });
 
   it('criar leva o nascimento ao servidor; conta de adulto entrega o token da voz', async () => {
@@ -435,17 +436,19 @@ describe('a idade da conta na sessão (P211): decide se o chat de voz abre', () 
     expect(sessao.tokenDaVoz()).toBe('tk-novo');
   });
 
-  it('conta de menor, e conta sem idade (servidor velho ou cadastro antigo): sem token de voz, o cliente nem tenta', async () => {
+  it('conta de menor, e conta sem idade (servidor velho ou cadastro antigo): na regra da P211 sem token de voz (o cliente nem tenta); na fase de testes (P241) entram na voz com o token da conta, e o servidor vê a idade', async () => {
     const menor = servidorFalso();
     menor.s.idade = 'menor';
     const a = montar(menor);
     await a.sessao.entrar('ana@x.com', 'senhasegura');
     expect(a.sessao.estado.idade).toBe('menor');
-    expect(a.sessao.tokenDaVoz()).toBeNull();
+    expect(a.sessao.tokenDaVoz(true)).toBeNull();
+    expect(a.sessao.tokenDaVoz(), 'o menor ouve: o PRONTO dele leva o token').toBe('tk-entrou');
     const velho = montar(servidorFalso());
     await velho.sessao.entrar('ana@x.com', 'senhasegura');
     expect(velho.sessao.estado.idade).toBe('sem-idade');
-    expect(velho.sessao.tokenDaVoz()).toBeNull();
+    expect(velho.sessao.tokenDaVoz(true)).toBeNull();
+    expect(velho.sessao.tokenDaVoz()).toBe('tk-entrou');
   });
 
   it('restaurar a sessão guardada devolve a faixa de idade', async () => {
@@ -489,7 +492,8 @@ describe('a idade da conta na sessão (P211): decide se o chat de voz abre', () 
     sessao.onIdadeMudou = (e) => avisos.push(`${e.email}|${e.idade}`);
     await sessao.sair();
     expect(sessao.estado.idade).toBe('sem-idade');
-    expect(sessao.tokenDaVoz()).toBeNull();
+    expect(sessao.tokenDaVoz(true)).toBeNull();
+    expect(sessao.tokenDaVoz(), 'saiu da conta: é convidado, token vazio').toBe('');
     expect(avisos).toEqual(['null|sem-idade']);
   });
 

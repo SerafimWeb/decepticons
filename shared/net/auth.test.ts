@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ACEITE_ATUAL, ehMaiorDeIdade, EMAIL_MAX, idadeDaConta, NASCIMENTO_ANOS_MAX, normalizarEmail, parseNascimento, validarNascimento, parseCredenciais, parseCriarConta, parseMedicao, parseSenhaDeConfirmacao, POLITICA_VERSAO, SENHA_MAX, SENHA_MIN, validarEmail, validarSenha } from './auth';
+import { ACEITE_ATUAL, ehMaiorDeIdade, EMAIL_MAX, idadeDaConta, idadePodeFalar, idadePodeOuvir, VOZ_SO_PARA_ADULTO_DECLARADO, NASCIMENTO_ANOS_MAX, normalizarEmail, parseNascimento, validarNascimento, parseCredenciais, parseCriarConta, parseMedicao, parseSenhaDeConfirmacao, POLITICA_VERSAO, SENHA_MAX, SENHA_MIN, validarEmail, validarSenha } from './auth';
 
 describe('validação de e-mail', () => {
   it('aceita e-mail plausível', () => {
@@ -155,5 +155,34 @@ describe('criar conta com nascimento (P211)', () => {
   it('e-mail ruim e aceite ausente ainda vêm antes do nascimento', () => {
     expect(parseCriarConta({ email: 'x', senha: 'senhasegura', aceite: ACEITE_ATUAL, nascimento: 'lixo' })).toEqual({ ok: false, motivo: 'dados' });
     expect(parseCriarConta({ email: 'dan@x.com', senha: 'senhasegura', nascimento: 'lixo' })).toEqual({ ok: false, motivo: 'aceite' });
+  });
+});
+
+describe('a porteira da voz (P211, e a fase de testes da P241)', () => {
+  const faixas = ['adulto', 'menor', 'sem-idade'] as const;
+
+  it('a fase de testes é o padrão (ordem do Comandante em 21/10): voltar à regra da P211 é uma decisão, não um acidente', () => {
+    expect(VOZ_SO_PARA_ADULTO_DECLARADO).toBe(false);
+  });
+
+  it('regra da P211 (soAdulto = true): só o adulto fala e ouve', () => {
+    for (const f of faixas) {
+      expect(idadePodeFalar(f, true), `falar ${f}`).toBe(f === 'adulto');
+      expect(idadePodeOuvir(f, true), `ouvir ${f}`).toBe(f === 'adulto');
+    }
+  });
+
+  it('fase de testes (soAdulto = false): adulto e sem idade (o convidado) falam; o menor NUNCA fala; todos ouvem', () => {
+    expect(idadePodeFalar('adulto', false)).toBe(true);
+    expect(idadePodeFalar('sem-idade', false)).toBe(true);
+    expect(idadePodeFalar('menor', false), 'o menor não tem microfone').toBe(false);
+    for (const f of faixas) expect(idadePodeOuvir(f, false), `ouvir ${f}`).toBe(true);
+  });
+
+  it('sem o parâmetro vale a constante (o que o cliente e o servidor usam)', () => {
+    for (const f of faixas) {
+      expect(idadePodeFalar(f)).toBe(idadePodeFalar(f, VOZ_SO_PARA_ADULTO_DECLARADO));
+      expect(idadePodeOuvir(f)).toBe(idadePodeOuvir(f, VOZ_SO_PARA_ADULTO_DECLARADO));
+    }
   });
 });

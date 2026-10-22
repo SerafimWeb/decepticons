@@ -1,3 +1,4 @@
+import { VOZ_SO_PARA_ADULTO_DECLARADO } from '../../../shared/net/auth';
 import type { ElegibilidadeDaVoz, MotivoSemVoz } from './elegibilidade';
 import { listarAparelhos } from './aparelhos';
 
@@ -22,6 +23,13 @@ export const TEXTO_DA_ELEGIBILIDADE: Record<Exclude<ElegibilidadeDaVoz, 'liberad
   menor: 'O chat de voz não está disponível para contas de menores de 18 anos: sem microfone e sem a voz dos outros jogadores. O áudio do jogo segue normal.',
 };
 
+/** Na fase de testes (P241) o menor entra na voz só para ouvir: sem microfone. */
+export const TEXTO_DO_MENOR_SO_OUVE = 'Contas de menores de 18 anos só ouvem o chat de voz: sem microfone. O áudio do jogo segue normal.';
+
+export function textoDaElegibilidade(e: Exclude<ElegibilidadeDaVoz, 'liberada'>, soAdulto: boolean = VOZ_SO_PARA_ADULTO_DECLARADO): string {
+  return e === 'menor' && !soAdulto ? TEXTO_DO_MENOR_SO_OUVE : TEXTO_DA_ELEGIBILIDADE[e];
+}
+
 /**
  * O botão que leva direto ao que falta (P227: o Comandante abriu a voz, só viu uma frase e não achou o formulário, no fim de outra aba): convidado cria a conta, conta sem idade informa a idade.
  * O menor não tem botão (não há o que fazer) e quem já pode usar a voz também não.
@@ -41,7 +49,7 @@ export function mostrarElegibilidade(e: ElegibilidadeDaVoz, doc: Document = docu
   $('voz-controles').hidden = !liberada;
   const aviso = $('voz-elegibilidade');
   aviso.hidden = liberada;
-  aviso.textContent = liberada ? '' : TEXTO_DA_ELEGIBILIDADE[e];
+  aviso.textContent = liberada ? '' : textoDaElegibilidade(e);
   const botao = $('btn-voz-conta') as HTMLButtonElement;
   const texto = liberada ? undefined : TEXTO_DO_BOTAO_DA_VOZ[e];
   botao.hidden = !texto;

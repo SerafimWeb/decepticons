@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P241 — A voz que não chega: a regra de 18 anos solta e a "Mixagem estéreo" (21/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P241 | 21/10 | "a voz ainda nao aparece no jogo! outro jogador online nao me escuta! porem, quando gravo com f8, a voz aparece na gravacao!! mas quero falar no jogo. Acho que vc ta com restrições, mas ainda NEM TEMOS jogadores, entao o certo é colocar pra funcionar e depois fazemos os ajustes! ; essa regra de 18 anos ta muito restritiva. vamos apenas nao dar acesso ao microfone [aos menores] … eu coloquei outra conta de adulto e nao ouço o voice chat em nenhuma das direções … LIBERA VOZ PRA CONVIDADO E CONTA SEM IDADE! (ou algo parecido e seguro)" | 🟡 | **Feito:** a porteira num lugar só (`VOZ_SO_PARA_ADULTO_DECLARADO = false`, `shared/net/auth.ts`): convidado e conta sem idade falam e ouvem; o **menor só ouve** (sem microfone); a política pública mudou (`2026-10-21.1`). **O relatório dele mostrou a causa do "nenhum dos dois ouve":** o aparelho aberto era a **"Mixagem estéreo"** (grava o som do PC, nível 0,000) e a sala tinha 0 pessoas (provável sala ou mapa diferentes): o jogo recusa a mixagem e acha o microfone de verdade, e o diagnóstico mostra a sala e o mapa. `VOICE_CHAT.md` §5d e §5i. **Falta:** o ouvido dele entre dois PCs na mesma sala e mapa (R13); decidir a regra de idade antes de abrir ao público (`LANCAMENTO.md`). | Dois PCs na **mesma sala e no mesmo mapa**, qualquer conta ou convidado: a voz abre sozinha. Configurações > CHAT DE VOZ > [ VER E COPIAR ] mostra a sala, a conta e a conclusão. |
+
 ## P240 — A lista do Dan é interna, e o site só mostra o superficial (21/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

@@ -6,9 +6,10 @@ import { apontarJogoPara, gerarWav, guardarSessao, tokenDeConta } from './vozLib
 /**
  * O JOGO DIZ POR QUE A VOZ NÃO FUNCIONA (P237, ordem do Comandante em 20/10: com dois PCs lado a lado o microfone funcionava no teste e a voz não chegou ao outro, e nada na tela dizia por quê).
  * Chrome com microfone FALSO, o jogo de verdade online numa sala com um colega (uma página da bancada, falando um tom), em três cenários:
- *  A. CONVIDADO numa sala com um adulto na voz: aviso no canto da tela com o motivo; sem indicador de voz; sem pedir o microfone;
+ *  A. jogador com a voz DESLIGADA nas configurações, numa sala com um adulto na voz: aviso no canto da tela com o motivo; sem indicador de voz; sem pedir o microfone (na fase de testes, P241, o convidado
+ *     tem voz como todos; o motivo que sobra para o aviso é a voz desligada);
  *  B. ADULTO + colega adulto: ligados; o diagnóstico mostra a ligação, a rota de rede e conclui "Tudo certo";
- *  C. ADULTO + colega CONVIDADO (o caso do Comandante): o HUD diz "n na sala sem voz" e o diagnóstico conclui que a outra pessoa precisa de conta de maior de 18 anos.
+ *  C. ADULTO + outro jogador com a voz desligada (o caso do Comandante, que antes era o convidado): o HUD diz "n na sala sem voz" e o diagnóstico conclui que a outra pessoa precisa ligar "Conversar por voz".
  *  B (P237 PR 3): os canais no jogo real: o HUD lembra as teclas, segurar U diz "FALANDO SÓ PARA BRAVO", segurar Y numa sala sem times diz que ninguém ouve, e a aba CONTROLES tem as três teclas novas.
  * É a versão focada da `voz-idade.mjs` (que prova o portão de idade inteiro): cabe na folga de memória da máquina compartilhada.
  *
@@ -61,7 +62,7 @@ const CONTA_PEDIDOS = () => {
   };
 };
 
-/** O colega da bancada na mesma sala; `token` indefinido = convidado (sem voz). */
+/** O colega da bancada na mesma sala; `token` indefinido = convidado (na fase de testes, P241, ele entra na voz). */
 async function colegaDaBancada(browser, nome, token) {
   const pagina = await browser.newPage();
   pagina.on('pageerror', (e) => erros.add(`${nome}: ${e.message}`));
@@ -72,11 +73,13 @@ async function colegaDaBancada(browser, nome, token) {
   return pagina;
 }
 /** Abre o jogo como um jogador (com a sessão guardada, ou convidado), entra na partida e devolve a página. */
-async function entrar(browser, rotulo, token) {
+async function entrar(browser, rotulo, token, ajustes = null) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   page.on('pageerror', (e) => erros.add(`${rotulo}: ${e.message}`));
   await page.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
   await page.addInitScript(CONTA_PEDIDOS);
+  // As configurações salvas do jogador: a mesma chave que o jogo lê (`Settings`).
+  if (ajustes) await page.addInitScript(([k, v]) => localStorage.setItem(k, v), ['cybermech.settings.v1', JSON.stringify(ajustes)]);
   if (token) await guardarSessao(page, PORTA, token);
   await page.goto(`${base}?sala=${SALA}&nome=${rotulo}&servidor=ws://127.0.0.1:${PORTA}&comandante=1`, { timeout: 300_000 });
   await page.waitForFunction(() => document.getElementById('cta')?.textContent?.includes('jogar'), null, { timeout: 300_000, polling: 500 }).catch(() => {});
@@ -88,7 +91,7 @@ async function entrar(browser, rotulo, token) {
 }
 const tela = (page) =>
   page.evaluate(() => ({
-    aviso: document.querySelector('.voz-aviso:not([hidden])')?.textContent ?? '',
+    aviso: document.querySelector('#hud .voz-aviso:not([hidden])')?.textContent ?? '', // o aviso do canto da tela
     estado: document.querySelector('.voz-hud:not(.voz-aviso):not([hidden]) .voz-estado')?.textContent ?? '',
     rede: document.querySelector('.voz-rede')?.textContent ?? '',
     pedidos: window.__pedidos ?? 0,
@@ -122,15 +125,15 @@ try {
   if (!browser) throw new Error('nenhum navegador');
   const tokenAdulto = await tokenDeConta(PORTA, 'adulto', '1990-01');
 
-  // ---------------- A. convidado numa sala com um adulto na voz
+  // ---------------- A. jogador com a voz desligada numa sala com um adulto na voz
   let colega = await colegaDaBancada(browser, 'BRAVO', await tokenDeConta(PORTA, 'bravo'));
-  const convidado = await entrar(browser, 'CONVIDADO', null);
-  const avisou = await ate(async () => (await tela(convidado)).aviso.includes('ENTRE COM UMA CONTA DE MAIOR DE 18 ANOS'), 120_000);
-  const tA = await tela(convidado);
-  conferir('A. CONVIDADO: o jogo avisa na tela por que está sem voz (o que faltava ao outro PC do Comandante)', !!avisou, JSON.stringify(tA.aviso));
-  conferir('A. CONVIDADO: sem indicador de voz e o jogo nunca pediu o microfone', tA.estado === '' && tA.pedidos === 0, JSON.stringify({ estado: tA.estado, pedidos: tA.pedidos }));
-  await convidado.screenshot({ path: resolve(ARTE, 'voz-aviso-claude.png') });
-  await convidado.close();
+  const mudo = await entrar(browser, 'SEMVOZ', null, { voiceOn: false });
+  const avisou = await ate(async () => (await tela(mudo)).aviso.includes('VOZ DESLIGADA'), 120_000);
+  const tA = await tela(mudo);
+  conferir('A. VOZ DESLIGADA: o jogo avisa na tela por que está sem voz (o que faltava ao outro PC do Comandante)', !!avisou, JSON.stringify(tA.aviso));
+  conferir('A. VOZ DESLIGADA: sem indicador de voz e o jogo nunca pediu o microfone', tA.estado === '' && tA.pedidos === 0, JSON.stringify({ estado: tA.estado, pedidos: tA.pedidos }));
+  await mudo.screenshot({ path: resolve(ARTE, 'voz-aviso-claude.png') });
+  await mudo.close();
 
   // ---------------- B. adulto + colega adulto: ligados, e o diagnóstico conclui "Tudo certo"
   const adulto = await entrar(browser, 'ADULTO', tokenAdulto);
@@ -171,19 +174,20 @@ try {
   const copiou = await adulto.evaluate(() => document.getElementById('btn-voz-diag').textContent);
   conferir('B. o botão fica com o rótulo de copiado ou volta ao normal (nunca quebra)', typeof copiou === 'string' && copiou.length > 0, copiou);
 
-  // ---------------- C. o caso do Comandante: o outro PC é convidado
+  // ---------------- C. o caso do Comandante: o outro PC está sem voz (a voz desligada nas configurações)
   await colega.close();
-  colega = await colegaDaBancada(browser, 'CHARLIE', undefined);
+  const charlie = await entrar(browser, 'CHARLIE', null, { voiceOn: false });
   const viu = await ate(async () => (await tela(adulto)).rede.includes('NA SALA SEM VOZ'), 120_000);
   const tC = await tela(adulto);
   conferir('C. o HUD do adulto diz quantos da sala estão fora da voz (em vez de mandar testar um microfone que estava bom)', !!viu && tC.rede.includes('1 NA SALA SEM VOZ'), JSON.stringify(tC.rede));
   const ruim = await relatorio(adulto, (txt) => txt.includes('nenhum está na voz'));
-  conferir('C. o diagnóstico conclui que a outra pessoa precisa de conta de maior de 18 anos com a voz ligada', !!ruim && ruim.includes('conta de maior de 18 anos') && ruim.includes('FORA da voz: CHARLIE'), (ruim ?? (await adulto.evaluate(() => document.getElementById('voz-diag').textContent))).replace(/\n/g, ' | ').slice(0, 420));
+  conferir('C. o diagnóstico conclui que a outra pessoa precisa estar com "Conversar por voz" ligado', !!ruim && ruim.includes('"Conversar por voz" ligado') && ruim.includes('FORA da voz: CHARLIE'), (ruim ?? (await adulto.evaluate(() => document.getElementById('voz-diag').textContent))).replace(/\n/g, ' | ').slice(0, 420));
   if (ruim) console.log(ruim.split('\n').map((l) => `    ${l}`).join('\n'));
   await adulto.evaluate(() => document.getElementById('voz-diag').scrollIntoView({ block: 'center' }));
   await adulto.waitForTimeout(300);
   await adulto.screenshot({ path: resolve(ARTE, 'voz-diagnostico-claude.png') });
 
+  await charlie.close();
   conferir('nenhum erro de página', erros.size === 0, [...erros].slice(0, 3).join(' | '));
 } finally {
   await browser?.close().catch(() => {});

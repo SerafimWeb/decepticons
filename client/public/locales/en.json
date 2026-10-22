@@ -990,5 +990,8 @@
  "CANAIS [{0}] TIME · [{1}] {2} · [{3}] TROCAR": "CHANNELS [{0}] TEAM · [{1}] {2} · [{3}] SWITCH",
  "Chat de voz: falar só com o time": "Voice chat: talk to the team only",
  "Chat de voz: falar só com o jogador escolhido": "Voice chat: talk to the chosen player only",
- "Chat de voz: trocar o jogador escolhido": "Voice chat: switch the chosen player"
+ "Chat de voz: trocar o jogador escolhido": "Voice chat: switch the chosen player",
+ "Contas de menores de 18 anos só ouvem o chat de voz: sem microfone. O áudio do jogo segue normal.": "Accounts under 18 can only listen to voice chat: no microphone. Game audio works as usual.",
+ "Conta de menor de 18 anos: o chat de voz só ouve (sem microfone). O áudio do jogo segue normal.": "Account under 18: voice chat is listen-only (no microphone). Game audio works as usual.",
+ "Informe o mês e o ano de nascimento da sua conta. Quem tem menos de 18 anos só ouve o chat de voz, sem microfone. Só dá para informar uma vez.": "Enter your account's birth month and year. People under 18 can only listen to voice chat, with no microphone. You can only enter it once."
 }

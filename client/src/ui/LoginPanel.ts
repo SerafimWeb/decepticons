@@ -1,4 +1,4 @@
-import { type IdadeDaConta, validarEmail, validarNascimento, validarSenha } from '../../../shared/net/auth';
+import { type IdadeDaConta, validarEmail, validarNascimento, validarSenha, VOZ_SO_PARA_ADULTO_DECLARADO } from '../../../shared/net/auth';
 
 /**
  * LoginPanel — Interface de Autenticação (P33)
@@ -610,10 +610,10 @@ export class LoginPanel {
   /** Logado: `sem-idade` pede o mês e o ano (uma vez); `menor` explica que não há voz; `adulto` não mostra nada. */
   private _blocoDaIdade(): string {
     const { idade, carregando } = this.estado;
-    if (idade === 'menor') return '<p class="login-hint login-idade">Conta de menor de 18 anos: sem chat de voz (nem o microfone, nem a voz dos outros jogadores). O áudio do jogo segue normal.</p>';
+    if (idade === 'menor') return VOZ_SO_PARA_ADULTO_DECLARADO ? '<p class="login-hint login-idade">Conta de menor de 18 anos: sem chat de voz (nem o microfone, nem a voz dos outros jogadores). O áudio do jogo segue normal.</p>' : '<p class="login-hint login-idade">Conta de menor de 18 anos: o chat de voz só ouve (sem microfone). O áudio do jogo segue normal.</p>';
     if (idade !== 'sem-idade') return '';
     return `<div class="login-header-tag">// IDADE</div>
-        <p class="login-hint">Informe o mês e o ano de nascimento para liberar o chat de voz. Quem tem menos de 18 anos joga sem ele. Só dá para informar uma vez.</p>
+        <p class="login-hint">${VOZ_SO_PARA_ADULTO_DECLARADO ? 'Informe o mês e o ano de nascimento para liberar o chat de voz. Quem tem menos de 18 anos joga sem ele.' : 'Informe o mês e o ano de nascimento da sua conta. Quem tem menos de 18 anos só ouve o chat de voz, sem microfone.'} Só dá para informar uma vez.</p>
         <div class="login-field">
           ${this._camposDeNascimento(carregando)}
         </div>

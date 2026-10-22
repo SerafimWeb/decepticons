@@ -83,6 +83,9 @@ export interface DiagnosticoDaVoz {
   ligacoes: DiagnosticoDeLigacao[];
   /** O ajuste de ganho do jogador (o `ganho` acima é o controle automático do navegador), se o envio passa pelo grafo de Web Audio (`false` = a faixa crua), a saúde do microfone, o nível que sai (RMS, 0 a 1), se o navegador diz a faixa parada, e quantas vezes o jogo reabriu o microfone sozinho. */
   ajusteDeGanho: number;
+  /** Esta conta pode falar? (`false` = só ouve) e se o único aparelho de entrada era a "Mixagem estéreo". */
+  podeFalar: boolean;
+  soMixagem: boolean;
   viaWebAudio: boolean;
   saude: SaudeDoMic;
   nivel: number;
@@ -132,6 +135,10 @@ export class VoiceChat {
   private naLista: number[] = [];
   /** O ajuste de ganho do jogador (1 = sem mexer) e o grafo de envio que o aplica (`null` = faixa crua). */
   private ganho = 1;
+  /** Esta conta pode abrir o microfone? `false` (menor declarado, P241) = entra na voz só para ouvir: o jogo nunca pede o microfone ao navegador. */
+  private podeFalar = true;
+  /** O único aparelho de entrada é a "Mixagem estéreo" do sistema (grava o som do computador, não a voz): o jogo o recusou (`abrirMicrofone`). */
+  private soMixagem = false;
   private envio: EnvioDeVoz | null = null;
   /** O vigia da saúde, o último nível lido e se o navegador disse que a faixa parou de receber dado (`mute`). */
   private readonly vigia = new VigiaDoMic();
@@ -163,11 +170,13 @@ export class VoiceChat {
   // ---------- o que o jogo diz ----------
 
   /** As configurações do jogador: voz ligada, modo do microfone, volume da voz dos outros, o aparelho do microfone (vazio = o padrão) e o ganho do microfone (1 = sem mexer, até 4). */
-  configurar(ligada: boolean, modo: ModoMic, volume: number, aparelho = '', ganho = 1): void {
+  configurar(ligada: boolean, modo: ModoMic, volume: number, aparelho = '', ganho = 1, podeFalar = true): void {
     this.mic.setModo(modo);
     this.spatial.setVolume(volume);
     this.ganho = ganho;
     this.envio?.setGanho(ganho);
+    this.podeFalar = podeFalar;
+    if (!podeFalar && (this.fluxo || this.estado === 'pedindo')) this.soltarMic(); // a conta virou de menor no meio da voz: o microfone é largado
     const trocou = aparelho !== this.aparelho;
     this.aparelho = aparelho;
     if (ligada !== this.ligada) {
@@ -440,6 +449,8 @@ export class VoiceChat {
       naLista: [...this.naLista],
       ligacoes,
       ajusteDeGanho: this.ganho,
+      podeFalar: this.podeFalar,
+      soMixagem: this.soMixagem,
       viaWebAudio: this.envio !== null,
       saude: this.vigia.estado,
       nivel: this.nivel,
@@ -479,7 +490,7 @@ export class VoiceChat {
   }
 
   private async abrirMic(): Promise<void> {
-    if (this.fluxo || this.estado === 'pedindo') return;
+    if (!this.podeFalar || this.fluxo || this.estado === 'pedindo') return;
     this.estado = 'pedindo';
     const geracao = this.geracaoMic;
     try {
@@ -496,6 +507,7 @@ export class VoiceChat {
       }
       this.fluxo = fluxo;
       this.estado = 'ativo';
+      this.soMixagem = false;
       this.tentativasDeReabrir = 0;
       this.faixaMuda = faixa.muted;
       // O navegador avisa quando o sistema para de entregar som ao microfone (o fone Bluetooth caiu, o aparelho foi desligado): o HUD diz, e voltando a entregar o aviso some.
@@ -517,6 +529,7 @@ export class VoiceChat {
     } catch (e) {
       if (geracao !== this.geracaoMic) return;
       const nome = (e as { name?: string } | null)?.name;
+      this.soMixagem = nome === 'NotFoundError' && /mixagem/i.test((e as { message?: string } | null)?.message ?? '');
       this.estado = nome === 'NotAllowedError' || nome === 'SecurityError' ? 'negado' : 'sem';
       if (this.estado === 'sem') this.agendarReabertura();
     }
