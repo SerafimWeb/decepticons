@@ -17,11 +17,15 @@ export const EVENT = {
   SPAWN: 7,
   /** Rodada nova no servidor: barricadas voltam, destroços somem. Sem payload. */
   ARENA_RESET: 8,
+  /** Um figurante da multidão do 8 DE JANEIRO (P243) morreu pela mão do jogador: nunca a posição dela (G11), só o índice (`amount`, até 1.500: `Multidao.total`). O cliente aplica no espelho (`Multidao.aplicarMorte`). */
+  FIGURANTE_MORREU: 9,
+  /** Um figurante fugiu por causa do jogador (tiro ou susto; a fuga por ter cumprido o tempo na fachada é determinística e não gera evento). Mesmo formato do `FIGURANTE_MORREU`. */
+  FIGURANTE_FUGIU: 10,
 } as const;
 export type EventKind = (typeof EVENT)[keyof typeof EVENT];
 
 /** Bytes de cada tipo de evento, com o byte do tipo. */
-export const EVENT_BYTES: Record<EventKind, number> = { 1: 6, 2: 3, 3: 3, 4: 8, 5: 3, 6: 7, 7: 2, 8: 1 };
+export const EVENT_BYTES: Record<EventKind, number> = { 1: 6, 2: 3, 3: 3, 4: 8, 5: 3, 6: 7, 7: 2, 8: 1, 9: 3, 10: 3 };
 
 /** Um evento num objeto reutilizado. Os campos que valem dependem do tipo (ver cada um). */
 export interface NetEvent {
@@ -32,7 +36,7 @@ export interface NetEvent {
   other: number;
   /** HIT e PART_LOST: posição em `NET_PARTS`. SHOT: posição em `NET_WEAPONS`. */
   index: number;
-  /** HIT: dano (inteiro, até 65535). EXPLOSION: raio (m, passo de 0,1). PROP_BROKEN: id da barricada. */
+  /** HIT: dano (inteiro, até 65535). EXPLOSION: raio (m, passo de 0,1). PROP_BROKEN: id da barricada. FIGURANTE_MORREU/FIGURANTE_FUGIU: índice do figurante na `Multidao` (até 1.500). */
   amount: number;
   /** EXPLOSION: onde (m). */
   x: number;
@@ -73,6 +77,10 @@ export function writeEvent(w: Writer, e: NetEvent): void {
       w.u8(e.unit);
       break;
     case EVENT.ARENA_RESET:
+      break;
+    case EVENT.FIGURANTE_MORREU:
+    case EVENT.FIGURANTE_FUGIU:
+      w.u16(e.amount);
       break;
   }
 }
@@ -122,6 +130,10 @@ export function readEvent(r: Reader, out: NetEvent, parts: number): void {
       out.unit = r.u8();
       break;
     case EVENT.ARENA_RESET:
+      break;
+    case EVENT.FIGURANTE_MORREU:
+    case EVENT.FIGURANTE_FUGIU:
+      out.amount = r.u16();
       break;
     default:
       r.bad = true;

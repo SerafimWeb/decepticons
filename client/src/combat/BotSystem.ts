@@ -528,6 +528,12 @@ export class BotSystem {
     return brain instanceof TechnicianController ? brain : undefined;
   }
 
+  /** Cérebro de um faxineiro (P243: a sala online precisa saber que não é andróide de combate, pro roster desenhar a ferramenta certa); undefined para os outros. */
+  faxineiroOf(mech: MechBase): FaxineiroController | undefined {
+    const brain = this.bots.find((b) => b.mech === mech)?.brain;
+    return brain instanceof FaxineiroController ? brain : undefined;
+  }
+
   /** Quantos de combate (`BotController`: Mechs e androides rebeldes, nunca técnico nem faxineiro) estão vivos agora — o placar da missão do 8 de Janeiro (`rebeldesVivos`) conta só estes; o faxineiro é sempre ativo, de fora da conta. */
   combatAliveCount(): number {
     let n = 0;

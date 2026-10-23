@@ -346,6 +346,13 @@ export class Match {
   onWaveProgress?: (wave: number, killed: number, total: number, elapsedS: number) => void;
   onWaveClear?: (wave: number, elapsedS: number) => void;
   onMissionEnd?: (survived: boolean, waveReached: number, stats: MissionStats) => void;
+  /**
+   * A autoridade (o servidor, e o jogo offline) decidiu: o figurante `i` da multidão do 8 DE JANEIRO morreu, ou fugiu pela mão do jogador (tiro ou susto — a fuga por ter cumprido o tempo
+   * na fachada é determinística e não dispara isto). O servidor (`ArenaRoom`) manda o evento (G11: nunca a posição, só o índice); o espelho de cada cliente aplica em `multidao.aplicarMorte`/`aplicarFuga`.
+   * Nunca dispara no espelho (`multidao.autoridade === false`), só em quem decide de verdade.
+   */
+  onFiguranteMorreu?: (i: number) => void;
+  onFiguranteFugiu?: (i: number) => void;
   /** Eventos primitivos do CTF; HUD e render assinam sem entrar na simulação. */
   onCtfFlag?: (event: 'pickup' | 'drop' | 'return', owner: CtfTeam, actor?: CtfTeam) => void;
   onCtfCapture?: (team: CtfTeam, blue: number, red: number) => void;
@@ -398,7 +405,8 @@ export class Match {
     if (janeiro && survival) {
       const J = exigirMissaoJaneiro();
       this.janeiroPedaco = J;
-      const multidao = new J.Multidao(J.configDaMissaoJaneiro());
+      // A autoridade (o servidor e o jogo offline) decide morte e fuga; o cliente online é o espelho (P243, mesma regra do `damage` — quem tira vida é o servidor).
+      const multidao = new J.Multidao({ ...J.configDaMissaoJaneiro(), autoridade: o.damage !== false });
       this.multidao = multidao;
       this.rebeldesAgendados = [...multidao.androides].sort((a, b) => a.tick - b.tick);
       this.fugaPeloJogador = new Uint8Array(multidao.total);
@@ -408,9 +416,13 @@ export class Match {
       multidao.aoChegar = (_i, predio) => {
         this.missaoJaneiro?.aoChegar(_i, predio);
       };
-      // Expulso é quem sai do mapa fugindo do jogador (tiro ou susto); quem foi embora por conta própria depois de cumprir o tempo na fachada não conta.
+      multidao.aoMorrer = (i) => this.onFiguranteMorreu?.(i);
+      // Expulso é quem sai do mapa fugindo do jogador (tiro ou susto); quem foi embora por conta própria depois de cumprir o tempo na fachada não conta nem vira evento de rede (determinístico, o espelho já chega lá sozinho).
       multidao.aoFugir = (i, causa) => {
-        if (causa === 'tiro' || causa === 'susto') this.fugaPeloJogador[i] = 1;
+        if (causa === 'tiro' || causa === 'susto') {
+          this.fugaPeloJogador[i] = 1;
+          this.onFiguranteFugiu?.(i);
+        }
       };
       multidao.aoSair = (i) => {
         if (this.fugaPeloJogador[i] === 1) this.missaoJaneiro?.registrarExpulso();

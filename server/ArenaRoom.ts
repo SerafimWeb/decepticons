@@ -27,6 +27,7 @@ import {
   decodeJoin,
   decodePing,
   encodeEvents,
+  encodeJaneiroMultidao,
   encodePong,
   encodeReject,
   encodeRoster,
@@ -45,7 +46,7 @@ import { VOZ } from '../shared/net/voz';
 import { NetPilot } from './NetPilot';
 import { RelayDeVoz } from './voz';
 import { TEXTO } from '../shared/net/texto';
-import { MAPA_PADRAO, type MapaOnline } from '../shared/net/mapa';
+import { codigoDaChave, MAPA_PADRAO, MODO_PADRAO, type MapaOnline, type SalaModo } from '../shared/net/mapa';
 import { carregarMapaSeFor } from '../client/src/environment/mapasSobDemanda';
 import { RelayDeTexto } from './texto';
 
@@ -95,7 +96,8 @@ export class ArenaRoom {
   private readonly match: Match;
   private readonly units: Unit[] = [];
   private readonly humans = new Map<Peer, Human>();
-  private readonly w = new Writer(4096);
+  // 8192: o estado compacto da multidão do 8 de Janeiro (P243, só quem entra no meio da missão recebe) pode passar de 6 KB no pior caso (1.500 figurantes, quase todos fugidos pela mão do jogador).
+  private readonly w = new Writer(8192);
   private readonly snapshot = newSnapshot();
   private readonly packet = newInputPacket();
   /** Eventos juntados entre dois estados (tiros e abates), mandados logo depois do estado. */
@@ -114,10 +116,10 @@ export class ArenaRoom {
   private disposed = false;
 
   /** O servidor sempre passa as regras do dono; quem chama sem elas (os testes e as bancadas) fica com a sala antiga, sem limite de atacantes. */
-  static async create(code: string, regras: RegrasOnline = REGRAS_SEM_LIMITE, mapa: MapaOnline = MAPA_PADRAO): Promise<ArenaRoom> {
+  static async create(code: string, regras: RegrasOnline = REGRAS_SEM_LIMITE, mapa: MapaOnline = MAPA_PADRAO, modo: SalaModo = MODO_PADRAO): Promise<ArenaRoom> {
     // Um mapa grande (a Terras Raras) é de carga sob demanda também no servidor: o código dele baixa antes de a partida ser montada (P218).
     await carregarMapaSeFor(mapa);
-    return new ArenaRoom(code, await PhysicsWorld.create(), regras, mapa);
+    return new ArenaRoom(code, await PhysicsWorld.create(), regras, mapa, modo);
   }
 
   /** As regras dos bots desta sala (P199): quantos Mechs a sala usa; a dificuldade e a pressão vão direto no `BotSystem`. */
@@ -128,12 +130,24 @@ export class ArenaRoom {
     private readonly physics: PhysicsWorld,
     regras: RegrasOnline,
     readonly mapa: MapaOnline,
+    modo: SalaModo = MODO_PADRAO,
   ) {
     this.regras = regras;
     // allies: false — o roster de rede ainda não sabe descrever um aliado pros outros jogadores
     // (AUSENTE no multiplayer, ver Match.ts e STATUS_REAL.md); a Arena offline já tem aliado.
     // O pool de Mechs é sempre o cheio (3): quantos entram em campo é a regra (`aplicarRegras`); os andróides são os da regra e valem a partir desta sala.
-    this.match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, map: mapa, foes: { ...DEFAULT_SETTINGS, enemyMechs: 3, enemyAndroids: regras.androides }, debris: false, allies: false });
+    // A Sobrevivência online (P243) começa só na Praça: o pool de ondas de outros mapas (Cidade Neon, Cabos) ainda não tem a configuração de bots própria aqui — pedir `modo=survival` neles cai no Deathmatch de sempre.
+    const sobrevivenciaJaneiro = mapa === 'janeiro' && modo === 'survival';
+    this.match = new Match({
+      physics,
+      scene: new THREE.Scene(),
+      particles: NO_FX,
+      map: mapa,
+      foes: { ...DEFAULT_SETTINGS, enemyMechs: 3, enemyAndroids: regras.androides },
+      debris: false,
+      allies: false,
+      ...(sobrevivenciaJaneiro ? { mode: 'survival' as const } : {}),
+    });
     this.aplicarRegras(regras);
     // Eventos para os clientes desenharem o que o servidor decidiu: cada tiro (o cliente faz o projétil visual)
     // e cada abate (lista de abates).
@@ -150,9 +164,12 @@ export class ArenaRoom {
     this.match.onMechKilled = (dead, _at, killer) => this.kill(dead, killer);
     this.match.onPropBroken = (id) => this.propBroken(id);
     this.match.onRoundStart = () => this.arenaReset();
+    // A multidão do 8 de Janeiro (P243): a autoridade decidiu morte ou fuga, os clientes aplicam no espelho deles (nunca a posição, G11).
+    this.match.onFiguranteMorreu = (i) => this.figurante(EVENT.FIGURANTE_MORREU, i);
+    this.match.onFiguranteFugiu = (i) => this.figurante(EVENT.FIGURANTE_FUGIU, i);
     const mechBuild = loadoutKey(factorySpec('vector09'));
     for (const mech of this.match.bots.mechs) {
-      const kind: UnitKind = mech instanceof Vector09 ? 'mech' : this.match.bots.technicianOf(mech) ? 'technician' : 'android';
+      const kind: UnitKind = mech instanceof Vector09 ? 'mech' : this.match.bots.technicianOf(mech) ? 'technician' : this.match.bots.faxineiroOf(mech) ? 'faxineiro' : 'android';
       this.units.push({ id: this.freeId(), mech, kind, name: this.match.bots.nameOf(mech), build: kind === 'mech' ? mechBuild : `bot.${kind}` });
     }
   }
@@ -325,7 +342,13 @@ export class ArenaRoom {
     const human: Human = { id: this.freeId(), mech, kind: 'human', name: m.name, build: loadoutKey(spec), peer, pilot, bank: new BankAccount() };
     this.units.push(human);
     this.humans.set(peer, human);
-    peer.send(encodeWelcome(this.w, { protocol: PROTOCOL_VERSION, id: human.id, tick: this.tick, simHz: SIM_HZ, snapshotHz: SNAPSHOT_HZ, room: this.code }));
+    // `this.code` é a chave interna (`ARENA@praia`, `ARENA@janeiro:survival`): tem `@`, minúsculas e pode passar de 12 bytes — ROOM_RE recusaria a mensagem. O jogador digita só o código.
+    peer.send(encodeWelcome(this.w, { protocol: PROTOCOL_VERSION, id: human.id, tick: this.tick, simHz: SIM_HZ, snapshotHz: SNAPSHOT_HZ, room: codigoDaChave(this.code) }));
+    // Quem entra no meio da missão do 8 de Janeiro (P243) recebe o passado da multidão de uma vez: quem já morreu e quem fugiu pela mão do jogador. Sem isto, o recém-chegado veria todo mundo de pé até o próximo evento.
+    if (this.match.multidao) {
+      const estado = this.match.multidao.exportarEstado();
+      peer.send(encodeJaneiroMultidao(this.w, { total: this.match.multidao.total, mortos: estado.mortos, fugas: Array.from(estado.fugas) }));
+    }
     this.broadcastRoster();
     this.onEntrou?.(peer);
   }
@@ -386,6 +409,15 @@ export class ArenaRoom {
     e.kind = EVENT.KILL;
     e.unit = this.idOf(dead);
     e.other = killer ? this.idOf(killer) : NO_UNIT;
+  }
+
+  /** A multidão do 8 de Janeiro (P243): um figurante morreu ou fugiu pela mão do jogador — nunca a posição dele (G11), só o índice, pro espelho de cada cliente aplicar (`Multidao.aplicarMorte`/`aplicarFuga`). */
+  private figurante(kind: typeof EVENT.FIGURANTE_MORREU | typeof EVENT.FIGURANTE_FUGIU, i: number): void {
+    const b = this.events;
+    if (b.count >= MAX_EVENTS) return;
+    const e = b.list[b.count++]!;
+    e.kind = kind;
+    e.amount = i;
   }
 
   /**

@@ -26,7 +26,10 @@
 // 20 (17/10): o arpão magnético (`harpoon`, P77) entra em `NET_WEAPONS` (o disparo é um evento de tiro por ombro; o puxão é só do servidor e chega pelo estado dos robôs); um cliente da versão 19 recusaria o tiro como evento ruim.
 // 21 (19/10): a conexão leva o mapa da sala (`&mapa=`, P218 etapa O1, `shared/net/mapa.ts`); um servidor da versão 20 ignoraria o pedido e poria o jogador na Cidade Neon enquanto o cliente monta outro chão.
 // 22 (22/10): o lançador de gás (`gas`, P243) entra em `NET_WEAPONS` (a nuvem é um evento de tiro, igual ao canhão sônico); um cliente da versão 21 recusaria o tiro como evento ruim.
-export const PROTOCOL_VERSION = 22;
+// 23 (23/10): a sala online aceita o modo Sobrevivência (`&modo=survival`, P243): o 8 de Janeiro em coop. Dois eventos novos (figurante morreu/fugiu da multidão, nunca a posição dela: G11) e a unidade `faxineiro`
+// entram no catálogo (`UNIT_KINDS`); um cliente da versão 22 recusaria o evento como ruim e desenharia o faxineiro como andróide de combate. Mensagem nova `JANEIRO_MULTIDAO`: quem entra no meio da missão recebe o
+// estado compacto da multidão (mortos e fugas); um servidor da versão 22 não a manda, e o jogador vê quem já morreu ou fugiu ainda de pé até o próximo evento dele.
+export const PROTOCOL_VERSION = 23;
 
 /** Tick fixo da simulação, igual no cliente e no servidor (G1). */
 export const SIM_HZ = 60;

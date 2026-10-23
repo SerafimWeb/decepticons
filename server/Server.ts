@@ -40,7 +40,7 @@ import { Admin, Amostrador, LimiteDeFalhas, lerFimDoLog, LogEmMemoria, montarEst
 import { ehSalaDeTeste, executarTeste } from './autoteste';
 import { ADMIN_PREFIXO } from '../shared/net/admin';
 import { ehMensagemDeVoz, VOZ_SDP_MAX } from '../shared/net/voz';
-import { chaveDaSala, mapaDaChave, mapaDoLink, type MapaOnline } from '../shared/net/mapa';
+import { chaveDaSala, mapaDaChave, mapaDoLink, modoDaChave, modoDoLink, type MapaOnline, type SalaModo } from '../shared/net/mapa';
 
 /** Maior mensagem de jogo aceita de um cliente (a maior é o JOIN, ~90 bytes). Acima disso, a conexão cai (G7). */
 const MAX_MESSAGE = 1024;
@@ -121,6 +121,11 @@ export function roomCode(url: string | undefined): string | null {
 /** O mapa pedido na conexão (`/?sala=ARENA&mapa=praia`, P218): ausente é a Cidade Neon; um valor que não é mapa do jogo vira `null` (a conexão é recusada). */
 export function roomMapa(url: string | undefined): MapaOnline | null {
   return mapaDoLink(new URL(url ?? '/', 'http://x').searchParams.get('mapa'));
+}
+
+/** O modo pedido na conexão (`/?sala=ARENA&mapa=janeiro&modo=survival`, P243): ausente ou desconhecido é Deathmatch — nunca recusa a conexão por causa dele. */
+export function roomModo(url: string | undefined): SalaModo {
+  return modoDoLink(new URL(url ?? '/', 'http://x').searchParams.get('modo'));
 }
 
 /**
@@ -204,12 +209,12 @@ export async function startServer(
   /** Conexões em cada sala (contando quem ainda não mandou o JOIN): é o que decide se a sala está cheia. */
   const occupancy = new Map<string, number>();
   /** Sala pedida cheia: a próxima (ARENA, ARENA-2, ARENA-3...). Quem clica em "Jogar online" nunca fica de fora. */
-  const pickRoom = (code: string, mapa: MapaOnline): string => {
+  const pickRoom = (code: string, mapa: MapaOnline, modo: SalaModo): string => {
     const base = code.replace(/-\d+$/, '');
     let n = code === base ? 1 : Number(code.slice(base.length + 1));
     let c = code;
-    while ((occupancy.get(chaveDaSala(c, mapa)) ?? 0) >= ROOM_SIZE && n < 99) c = `${base}-${++n}`.slice(0, ROOM_MAX);
-    return chaveDaSala(c, mapa);
+    while ((occupancy.get(chaveDaSala(c, mapa, modo)) ?? 0) >= ROOM_SIZE && n < 99) c = `${base}-${++n}`.slice(0, ROOM_MAX);
+    return chaveDaSala(c, mapa, modo);
   };
 
   const roomFor = (code: string): Promise<ArenaRoom> => {
@@ -217,7 +222,7 @@ export async function startServer(
     if (open) return Promise.resolve(open);
     let p = creating.get(code);
     if (!p) {
-      p = ArenaRoom.create(code, regras.atual(), mapaDaChave(code)).then((room) => {
+      p = ArenaRoom.create(code, regras.atual(), mapaDaChave(code), modoDaChave(code)).then((room) => {
         // Quem entra na voz (P211; fase de testes, P241): o `PRONTO` traz o token da sessão e é aqui que ele vale ou não (`VOZ_SO_PARA_ADULTO_DECLARADO` em `shared/net/auth.ts`).
         room.definirAutorizacaoDeVoz(autorizarPorSessao((token) => contas.validarSessao(token)));
         // A sala de teste do painel (`TESTE-…`) fica fora dos números de produto.
@@ -959,6 +964,7 @@ export async function startServer(
       ws.close(1008, 'mapa');
       return;
     }
+    const modoPedido = roomModo(req.url);
     const admit = guard.admit(ip);
     if (admit !== 'ok') {
       if (admit === 'total') rejected.total++;
@@ -970,7 +976,7 @@ export async function startServer(
       return;
     }
     if (!ehSalaDeTeste(asked)) contar('conexao_online', pais);
-    const code = pickRoom(asked, mapaPedido);
+    const code = pickRoom(asked, mapaPedido, modoPedido);
     occupancy.set(code, (occupancy.get(code) ?? 0) + 1);
     let doCodigo = sockets.get(code);
     if (!doCodigo) sockets.set(code, (doCodigo = new Set()));

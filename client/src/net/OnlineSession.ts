@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { CLOSE_REINICIO, INPUTS_PER_PACKET, NO_UNIT, SIM_HZ } from '../../../shared/net/constants';
 import { EVENT, type NetEvent } from '../../../shared/net/events';
 import { newNetInput } from '../../../shared/net/input';
-import { newSnapshot, type EventBatch, type RosterEntry, type Snapshot } from '../../../shared/net/messages';
+import { newSnapshot, type EventBatch, type JaneiroMultidaoMsg, type RosterEntry, type Snapshot } from '../../../shared/net/messages';
 import type { UnitState } from '../../../shared/net/state';
 import { applySpread, spreadAt, type Spread } from '../combat/spread';
 import { MOUNTS, type MountId } from '../combat/mounts';
@@ -248,6 +248,7 @@ export class OnlineSession implements Pilot {
       roster: (entries) => cliente === this.client && this.onRoster(entries),
       snapshot: (s) => cliente === this.client && this.onSnapshot(s),
       events: (b) => cliente === this.client && this.onEvents(b),
+      janeiroMultidao: (m) => cliente === this.client && this.onJaneiroMultidao(m),
       pong: (ms) => {
         if (cliente !== this.client) return;
         this.rttMs = ms;
@@ -582,8 +583,18 @@ export class OnlineSession implements Pilot {
         this.o.match.debris.clear();
         this.scores.clear();
         this.o.onScore?.(0, 0);
+      } else if (e.kind === EVENT.FIGURANTE_MORREU) {
+        // O tick tem que ser o de verdade (`caminho(i, t)` dentro do `Multidao` confere se bate com o cronograma do figurante): o tick do lote (`b.tick`, o mesmo do servidor), nunca o relógio local do cliente (ele atrasa).
+        this.o.match.multidao?.aplicarMorte(e.amount, b.tick);
+      } else if (e.kind === EVENT.FIGURANTE_FUGIU) {
+        this.o.match.multidao?.aplicarFuga(e.amount, b.tick);
       }
     }
+  }
+
+  /** Quem entrou no meio da missão do 8 DE JANEIRO (P243) recebe o passado da multidão de uma vez: refaz no espelho sem repetir os avisos (`Multidao.aplicarEstado`). */
+  private onJaneiroMultidao(m: JaneiroMultidaoMsg): void {
+    this.o.match.multidao?.aplicarEstado({ mortos: m.mortos, fugas: Int32Array.from(m.fugas) });
   }
 
   /** KILL vindo do servidor: um a mais para quem derrubou (se foi outro), um a mais para quem caiu. */

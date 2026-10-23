@@ -26,6 +26,7 @@ export function criarRemoto(e: RosterEntry, rigDe: (chassi: ChassisId) => MechRi
   if (e.kind === 'mech') return pronto(new Vector09({ paint: PALETTE.enemyPaint, visor: PALETTE.signal }));
   if (e.kind === 'android') return pronto(new Android());
   if (e.kind === 'technician') return pronto(new Android({ visor: PALETTE.fluo, tool: 'repair' }));
+  if (e.kind === 'faxineiro') return pronto(new Android({ visor: PALETTE.green, tool: 'repair' }));
   const spec = parseLoadoutKey(e.build);
   if (spec?.chassis === 'android') return pronto(new Android({ stats: PILOT_ANDROID_STATS, paint: PALETTE.playerPaint, visor: PALETTE.cyan, tool: 'pilot' }));
   const check = spec ? validateLoadout(spec) : null;

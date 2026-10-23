@@ -31,6 +31,8 @@ export const MSG = {
   MURAL: 17,
   /** O servidor avisa quem está na sala (hoje: que vai reiniciar). Cliente antigo ignora o tipo que não conhece: sem mudar o protocolo. */
   AVISO: 18,
+  /** O estado compacto da multidão do 8 DE JANEIRO (P243): quem entra no meio da missão recebe quem já morreu e quem fugiu, para o espelho (`Multidao.aplicarEstado`) refazer o passado sem repetir os avisos. Só nesse mapa e modo. */
+  JANEIRO_MULTIDAO: 19,
 } as const;
 
 /** Tipo da mensagem (primeiro byte); 0 se vazia. */
@@ -151,7 +153,8 @@ export function decodeWelcome(bytes: Uint8Array): WelcomeMsg | null {
   return r.clean && ROOM_RE.test(m.room) ? m : null;
 }
 
-export const UNIT_KINDS = ['human', 'mech', 'android', 'technician'] as const;
+/** `faxineiro` no fim da lista (P243): os índices antigos não mudam (a versão do protocolo já barra um cliente velho antes do roster). */
+export const UNIT_KINDS = ['human', 'mech', 'android', 'technician', 'faxineiro'] as const;
 export type UnitKind = (typeof UNIT_KINDS)[number];
 
 /** Quem está na sala: vai na entrada e quando alguém entra ou sai (não a cada tick). */
@@ -308,4 +311,42 @@ export function decodeAviso(bytes: Uint8Array): AvisoMsg | null {
   const tipo = AVISO_TIPOS[r.u8()];
   const m = { segundos: r.u16(), voltaEmS: r.u16() };
   return r.clean && tipo ? { tipo, ...m } : null;
+}
+
+// ---------- a multidão do 8 DE JANEIRO (P243): quem entra no meio recebe o passado ----------
+
+/** Acima da cota da missão (`MissaoJaneiro.COTA_DA_MISSAO`, 1.500); além disto a mensagem é recusada. */
+const MAX_FIGURANTES = 2000;
+
+/** O estado compacto que `Multidao.exportarEstado()` devolve, em bytes crus (sem depender do tipo do cliente: `shared/net/` não importa o `sim/`). */
+export interface JaneiroMultidaoMsg {
+  /** `Multidao.total`: quantos figurantes o bitmask de `mortos` cobre. */
+  total: number;
+  /** Um bit por figurante (1 = morto), do índice 0 ao `total - 1`, em bytes (`Multidao.exportarEstado().mortos`). */
+  mortos: Uint8Array;
+  /** Pares (índice do figurante, tick da fuga) de quem fugiu pela mão do jogador (`Multidao.exportarEstado().fugas`, já em pares). */
+  fugas: readonly number[];
+}
+
+export function encodeJaneiroMultidao(w: Writer, m: JaneiroMultidaoMsg): Uint8Array {
+  w.reset().u8(MSG.JANEIRO_MULTIDAO).u16(m.total);
+  const bytes = (m.total + 7) >> 3;
+  for (let i = 0; i < bytes; i++) w.u8(m.mortos[i] ?? 0);
+  w.u16(m.fugas.length / 2);
+  for (let i = 0; i + 1 < m.fugas.length; i += 2) w.u16(m.fugas[i]!).u16(m.fugas[i + 1]!);
+  return w.done();
+}
+
+export function decodeJaneiroMultidao(bytes: Uint8Array): JaneiroMultidaoMsg | null {
+  const r = reader.set(bytes);
+  if (r.u8() !== MSG.JANEIRO_MULTIDAO) return null;
+  const total = r.u16();
+  if (total > MAX_FIGURANTES) return null;
+  const mortos = new Uint8Array((total + 7) >> 3);
+  for (let i = 0; i < mortos.length; i++) mortos[i] = r.u8();
+  const pares = r.u16();
+  if (pares > MAX_FIGURANTES) return null;
+  const fugas: number[] = [];
+  for (let i = 0; i < pares; i++) fugas.push(r.u16(), r.u16());
+  return r.clean ? { total, mortos, fugas } : null;
 }
