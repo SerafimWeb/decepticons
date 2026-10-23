@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P244 — O vocabulário da voz de comando, estilo "Grande Irmão" (23/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P244 | 23/10 | "para o jogo cybermech, teremos chat por voz, quero que me ajude a construir um vocabulario pra eu usar, que seja tecnico, de liderança, sem ser estritamente militar, mas sendo hacker, moderno, robusto, coerente, engajador, vanguardista. usarei um efeito na voz estilo 'big brother' […] Senti falta do termo DEPLOY, FORMATA, DELETADO, algo assim.... bem cru... bem realista." (pedido feito antes a um chat do Gemini, que chegou a cogitar sincronizar via Google Drive; trazido para cá para integrar direto no repositório) | ✅ | **O efeito de voz "Big Brother" já existia** (o **Grande Irmão**, P231, `voice/EfeitosDeVoz.ts`, narração F8). Criado `VOCABULARIO_COMANDO.md`: a persona (cadência, despersonalização, terceira pessoa), o glossário técnico/cru (DEPLOY, FORMATA, DELETADO, PATCH, OVERWRITE, CORROMPIDO, HARD RESET, DROP, e os termos de posicionamento/pressão) e callouts prontos por situação. **É referência para a voz do Comandante, não um sistema automático** — nenhum código lê o arquivo; automatizar por evento (killfeed, abate) é funcionalidade nova, descrita no documento como próximo passo possível, não implementada aqui | `.decepticons/VOCABULARIO_COMANDO.md`; link em `VOICE_CHAT.md` § 5e |
+
 ## P241 — A voz que não chega: a regra de 18 anos solta e a "Mixagem estéreo" (21/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

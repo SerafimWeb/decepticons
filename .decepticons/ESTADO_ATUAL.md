@@ -16,7 +16,13 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-## EM BRANCH — NÃO ESTÁ NO AR: A BANDEIRA, O QUARTO TIPO DE FIGURANTE (Claude, 23/10, branch `claude/invasor-generico`, P243)
+## O VOCABULÁRIO DA VOZ DE COMANDO "GRANDE IRMÃO" — Claude, 23/10 (branch `claude/vocabulario-de-comando`, P244)
+
+**O Comandante** trouxe de outro chat (Gemini) um pedido de vocabulário técnico/hacker para narrar com o efeito de voz "estilo Big Brother", incluindo os termos crus que queria (DEPLOY, FORMATA, DELETADO, PATCH, OVERWRITE, CORROMPIDO, HARD RESET, DROP). **Achado:** o efeito já existe — é o **Grande Irmão** (P231, `voice/EfeitosDeVoz.ts`, narração F8); não precisava de nada novo em áudio. **Feito:** `.decepticons/VOCABULARIO_COMANDO.md` (a persona, o glossário, callouts prontos) com link em `VOICE_CHAT.md` § 5e. **Decisão:** é documentação para a voz humana do Comandante, não um sistema automático — automatizar por evento de jogo (killfeed, abate) ficaria para uma ordem nova, já descrita no documento como possível próximo passo.
+**Sem código tocado; sem teste novo** (conteúdo, risco baixo, P220a).
+**Próxima sessão começa com:** o que o Comandante achar do vocabulário (ajustar termos) ou, se ele pedir, desenhar a automação por evento.
+
+## MERGEADO NA MAIN: A BANDEIRA, O QUARTO TIPO DE FIGURANTE (Claude, 23/10, PR #444, P243)
 
 **O Comandante insistiu** depois da recusa de 22/10: "faz um humanoide... tipo o viking do capitólio... cabeça de gado, com camisa do brasil, e mochila ifood". **Recusado de novo** (`HISTORICO_DE_DECISOES.md` [2026-10-23]): o traje do Capitólio identifica uma pessoa real específica tão bem quanto o nome dela; a mochila iFood é marca registrada sem autorização; a cabeça de gado já era a caricatura recusada antes. **Achado relevante ao mexer no código:** `fichas/cenario-8-de-janeiro.md`, de uma sessão anterior, já registrava que CARECA e PERUCA foram desenhados para lembrar duas figuras públicas reais **pelo tipo físico, nunca por nome ou marca** — confirma que a régua que sigo já é prática desta casa, não invenção minha agora.
 **Entregue em vez disso: a BANDEIRA**, 4º tipo de figurante (`TIPOS` 3→4, `Multidao.ts` + `MultidaoDesenho.ts`): mesmo comportamento do GADO (marcha, depreda, suja, foge), corpo e camisa genéricos iguais aos outros três, ergue um mastro com um pano liso **na cor da própria camisa** (nenhum símbolo, marca ou time). Mistura recalibrada para ~60/12/8/20%. Achei e corrigi, no caminho, 5 arrays de tamanho fixo 3 que dariam `undefined`/`NaN` silencioso para o 4º tipo (`capacidade`, `nLivres`, `marca`, `emUso` em `MultidaoDesenho.ts`, e o `por = [0,0,0]` de dois testes) — nenhum é bug novo meu, mas são o tipo de coisa que só aparece testando de verdade.
