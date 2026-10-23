@@ -180,6 +180,16 @@ editado quadro a quadro**: corrigir é roteiro → exportar de novo.
 
 ---
 
+## 3.5 Cutscene-piloto do 8 DE JANEIRO (`npm run cutscene`, P244)
+
+**O que é:** prova de conceito de câmera cinematográfica por trajetória (não é o `/mesa`: aquele monta vídeo promocional 2D; isto é uma câmera que voa pelo jogo de verdade, no mapa real). `npm run build && npm run cutscene` serve o `dist/`, abre `?mapa=janeiro&modo=survival&comandante=1&cutscene=janeiro-abertura&depurar` numa GPU real (Chrome/Edge, como as `medicoes/*.mjs`), grava ~24 s com o Playwright e converte para `.mp4` com o `ffmpeg` do projeto (`scripts/sonsRodar.mjs`, o mesmo do Estúdio).
+
+**Onde fica:** o vídeo em `.tmp/video/cutscenes/janeiro-abertura.mp4` (G15, temporário — gere de novo quando quiser, não é commitado); um quadro de prova sempre vai para `.decepticons/arte/cutscene-janeiro-piloto.png`. Sem `ffmpeg` instalado, fica só o `.webm` bruto (todo navegador moderno abre).
+
+**O módulo (sob demanda, não pesa no pacote de partida):** `client/src/camera/CameraPath.ts` (trajetória por quadros-chave, pura, testada) + `CutsceneDirector.ts` (assume a câmera como o `KillCam`) + `client/src/debug/CutsceneJaneiro.ts` (o roteiro: hoje só a abertura do 8 de Janeiro, legenda = a mesma frase 🟢 já revisada da missão). Ver `STATUS_REAL.md` P244 para os limites (sem evitar colisão com geometria, sem som).
+
+---
+
 ## 4. Medir travadas com GPU real
 
 **Quando:** o dono diz que o jogo "está lento" ou "travando", ou antes de entregar efeito visual novo. **O CI e o SwiftShader não servem:** renderizam por software, a ~1 fps, e não mostram o custo de compilar shader (na Iris Xe, ~1,5 s por programa).

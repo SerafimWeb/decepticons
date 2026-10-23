@@ -1,5 +1,9 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## [2026-10-23] Cutscene-piloto como prova de conceito pequena, não um sistema geral de cutscenes (P244)
+
+O Comandante pediu cutscenes em vídeo, cinematográficas, com VFX, contando o LORE por missão — além de uma auditoria e2e que já tinha sido feita por outra sessão nas últimas 24h (P239/P242). **Decisão:** não construir um sistema geral de cutscenes nem VFX novo agora (isso colide com o escopo congelado do lançamento, `LANCAMENTO.md` §0, e é esforço de semanas, não um PR). Em vez disso: um módulo pequeno e reaproveitável (`CameraPath` + `CutsceneDirector`, no padrão do `KillCam`: assume a câmera, não mexe na simulação) e **uma** cutscene-piloto para o 8 de Janeiro, com a legenda sendo a mesma frase 🟢 já revisada da missão (nenhum texto novo, nenhuma revisão jurídica adicional necessária). Sem narração por voz (custaria ElevenLabs sem autorização de gasto) nem VFX novo — só a câmera e o render que já existem. Se o Comandante gostar do resultado, o próximo passo é dele decidir: estender a outras missões, aprovar narração paga, ou parar por aqui.
+
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.

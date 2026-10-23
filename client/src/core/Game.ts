@@ -49,6 +49,8 @@ import type { WalkerDemo } from '../debug/WalkerDemo';
 import { walkerFromSearch } from '../debug/walkerLink';
 import { multidaoFromSearch } from '../debug/multidaoLink';
 import type { MultidaoDemo } from '../debug/MultidaoDemo';
+import { cutsceneFromSearch } from '../debug/cutsceneLink';
+import type { CutsceneJaneiro } from '../debug/CutsceneJaneiro';
 import { carregarChefeSeFor, carregarHudDaMissao, carregarMapaSeFor, chefeCarregado, exigirChefe, exigirHudDaMissao, exigirMapa, type HudDaMissao, type ObjetivosCarregados } from '../environment/mapasSobDemanda';
 import type { EstadoDosObjetivos } from '../environment/AmazoniaObjetivos';
 import { AMAZONIA_GERADORES } from '../environment/AmazoniaLayout';
@@ -415,6 +417,11 @@ export class Game {
   private readonly multidaoQuer = multidaoFromSearch(location.search);
   private multidaoDemo: MultidaoDemo | null = null;
   private multidaoCarregando = false;
+  /** A cutscene-piloto do 8 DE JANEIRO (`?cutscene=janeiro-abertura`, P244): câmera por trajetória, sem controle do jogador, para gravar em vídeo (`scripts/cutscene.mjs`). Carregada sob demanda. */
+  private readonly cutsceneQuer = cutsceneFromSearch(location.search);
+  private cutscene: CutsceneJaneiro | null = null;
+  private cutsceneCarregando = false;
+  private cutsceneHudEscondido = false;
   /** A demonstração é carregada sob demanda (`import()`): o código do Draga não pesa no download de quem joga sem o link (`scripts/orcamentoDeJs.mjs`). */
   private walkerDemo: WalkerDemo | null = null;
   private walkerCarregando = false;
@@ -1116,6 +1123,16 @@ export class Game {
       void import('../environment/JaneiroJogo').then(({ criarJaneiroJogo }) => {
         this.janeiroJogo = criarJaneiroJogo(this.scene, this.match, document.getElementById('hud')!, (texto) => this.hud.setMissionLinha(texto));
       });
+      // A cutscene-piloto (P244): só com `?cutscene=janeiro-abertura`; nunca pesa em quem joga sem o link (G3/G5).
+      if (this.cutsceneQuer === 'janeiro-abertura' && !this.cutscene && !this.cutsceneCarregando) {
+        this.cutsceneCarregando = true;
+        void import('../debug/CutsceneJaneiro').then(({ CutsceneJaneiro }) => {
+          this.cutscene = new CutsceneJaneiro(this.camera);
+          this.hud.toggleVisibility();
+          this.cutsceneHudEscondido = true;
+          this.cutscene.start();
+        });
+      }
     }
     const paredeSobDemanda = sobDemanda(async () => {
       parede = new (await import('../ui/CameraWall')).CameraWall({
@@ -2195,19 +2212,31 @@ export class Game {
       this.voz.atualizar(p.x, p.y, p.z, this.rig.look.yaw, this.posDoRemoto);
       this.vozHud?.atualizar(now);
     }
-    if (this.mech.alive && this.killCam.overridesRig) this.killCam.release();
-    if (this.spectatorCam.overridesRig) {
-      this.spectatorCam.update(dt);
-      this.spectatorHud.setVisible(true);
-      this.spectatorHud.setLabel(this.spectatorCam.currentTargetLabel);
-      this.btnCftv?.classList.add('active');
+    if (this.cutscene?.overridesRig) {
+      this.cutscene.update(dt);
     } else {
-      if (this.spectatorCam.active) this.spectatorCam.update(dt);
-      this.spectatorHud.setVisible(false);
-      this.btnCftv?.classList.remove('active');
-      if (!this.killCam.overridesRig) this.rig.update(dt);
+      if (this.cutscene) {
+        if (this.cutsceneHudEscondido) {
+          this.hud.toggleVisibility();
+          this.cutsceneHudEscondido = false;
+        }
+        this.cutscene.dispose();
+        this.cutscene = null;
+      }
+      if (this.mech.alive && this.killCam.overridesRig) this.killCam.release();
+      if (this.spectatorCam.overridesRig) {
+        this.spectatorCam.update(dt);
+        this.spectatorHud.setVisible(true);
+        this.spectatorHud.setLabel(this.spectatorCam.currentTargetLabel);
+        this.btnCftv?.classList.add('active');
+      } else {
+        if (this.spectatorCam.active) this.spectatorCam.update(dt);
+        this.spectatorHud.setVisible(false);
+        this.btnCftv?.classList.remove('active');
+        if (!this.killCam.overridesRig) this.rig.update(dt);
+      }
+      this.killCam.update(dt);
     }
-    this.killCam.update(dt);
     if (this.hangarView) {
       const hs = this.hangarScene!;
       hs.update(dt);
