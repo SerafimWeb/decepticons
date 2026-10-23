@@ -26,14 +26,23 @@ export const NUNCA = 1e9;
 /** Quanto tempo o corpo caído continua na Praça, tombado, antes de sumir (ticks): o desenho lê o mesmo número. */
 export const TICKS_DO_TOMBO = 40;
 
-/** Os quatro tipos de figurante que andam em vetor (o androide rebelde é entidade, `androides`). */
+/** Os tipos de figurante que andam em vetor (o androide rebelde é entidade, `androides`). */
 export const GADO = 0;
 export const CARECA = 1;
 export const PERUCA = 2;
 /** O invasor genérico (P243, ordem do Comandante): sem máscara nenhuma, só a camisa verde e amarela e, ligado, uma bandeira — nenhuma pessoa, marca ou símbolo de verdade, só a cor. */
 export const BANDEIRA = 3;
-export type TipoDeFigurante = typeof GADO | typeof CARECA | typeof PERUCA | typeof BANDEIRA;
-export const TIPOS = 4;
+/** O chapéu estrelado e a barba branca (P245/P246, modelo do Comandante, jurídico avisado): símbolo político de domínio público, não uma pessoa — já aceito desde o P243 ("Tio Sam"). */
+export const TIO_SAM = 4;
+/** O focinho e as orelhas (P246, modelos do Comandante): tipo genérico, confirmado sem referência a pessoa real. */
+export const PORCO = 5;
+/** A cabeça vira um pneu (P246, modelos do Comandante): tipo genérico e fictício, confirmado sem referência a pessoa real. */
+export const PNEU = 6;
+/** O invasor com chifres (P246): a ideia original (o traje do invasor do Capitólio americano) foi recusada por identificar uma pessoa real; esta versão, a pedido do Comandante, troca a
+ * pintura facial e as cores por verde-e-amarelo (a camisa comum) e chifres ROSA enormes — deixa de identificar ninguém, vira um tipo fantasioso como os outros. */
+export const BARBARO = 7;
+export type TipoDeFigurante = typeof GADO | typeof CARECA | typeof PERUCA | typeof BANDEIRA | typeof TIO_SAM | typeof PORCO | typeof PNEU | typeof BARBARO;
+export const TIPOS = 8;
 
 export type TipoDeFonte = 'onibus' | 'bueiro' | 'lixeira';
 
@@ -70,29 +79,29 @@ export interface ConfigDaMultidao {
   tempoNaFachadaTicks?: number;
   /** A parte da cota que vem de cada tipo de fonte (soma 1; o que não tem fonte no mapa passa para as outras). */
   partes?: Readonly<Record<TipoDeFonte, number>>;
-  /** A mistura dos tipos de figurante (a parte dos androides rebeldes é `pAndroide`): `[GADO, CARECA, PERUCA, BANDEIRA]` normalizada. */
-  mistura?: readonly [number, number, number, number];
+  /** A mistura dos tipos de figurante (a parte dos androides rebeldes é `pAndroide`): `[GADO, CARECA, PERUCA, BANDEIRA, TIO_SAM, PORCO, PNEU]` normalizada; um tipo sem entrada vale 0. */
+  mistura?: readonly number[];
   /** A fração da cota que são androides rebeldes (a missão os cria). */
   pAndroide?: number;
   /** O servidor e o jogo offline decidem a morte e a fuga; o cliente online só espelha. */
   autoridade?: boolean;
   /** A vida de cada tipo, na mesma escala do dano das armas. */
-  vida?: readonly [number, number, number, number];
+  vida?: readonly number[];
 }
 
 export const PADRAO = {
   tempoNaFachadaTicks: 240,
   partes: { onibus: 0.45, bueiro: 0.35, lixeira: 0.2 } as Readonly<Record<TipoDeFonte, number>>,
-  mistura: [0.6, 0.12, 0.08, 0.2] as readonly [number, number, number, number],
+  mistura: [0.38, 0.09, 0.06, 0.14, 0.08, 0.07, 0.07, 0.11] as readonly number[],
   pAndroide: 0.05,
-  vida: [12, 24, 12, 12] as readonly [number, number, number, number],
+  vida: [12, 24, 12, 12, 18, 20, 16, 22] as readonly number[],
 } as const;
 
 /** Metros por segundo de cada tipo andando (o careca é o mais lento, a peruca o mais rápida) e a correria da fuga (× esta razão). */
-export const VELOCIDADE: readonly [number, number, number, number] = [1.6, 1.1, 2.2, 1.5];
+export const VELOCIDADE: readonly number[] = [1.6, 1.1, 2.2, 1.5, 1.3, 1.0, 1.4, 1.6];
 export const RAZAO_DA_FUGA = 2.2;
 /** A altura e o raio do corpo (o acerto). */
-export const ALTURA: readonly [number, number, number, number] = [1.75, 1.7, 1.8, 1.75];
+export const ALTURA: readonly number[] = [1.75, 1.7, 1.8, 1.75, 1.78, 1.65, 1.6, 1.82];
 export const RAIO_DO_CORPO = 0.45;
 /** O balanço do andar (m); o período (90 a 130 ticks) sai da semente. A velocidade lateral máxima (8 × amplitude ÷ período) fica abaixo de 1 m/s: um gingado, não um tremor. */
 const BALANCO = 0.18;
@@ -185,7 +194,7 @@ export class Multidao {
   private tickAtual = -1;
 
   private readonly tempoNaFachada: number;
-  private readonly vidaPorTipo: readonly [number, number, number, number];
+  private readonly vidaPorTipo: readonly number[];
   private readonly saidas: readonly PontoDeSaida[];
   private eliminadosN = 0;
   private expulsosN = 0;
@@ -214,7 +223,10 @@ export class Multidao {
     this.autoridade = cfg.autoridade ?? true;
     const rng = mulberry32(cfg.semente);
     const mistura = cfg.mistura ?? PADRAO.mistura;
-    const soma = mistura[0] + mistura[1] + mistura[2] + mistura[3];
+    // Soma por todos os TIPOS, não os 4 de antes: um `mistura` mais curto (testes que isolam um tipo) vale 0 nos que faltam, nunca `NaN` (achado do P243/P246: um índice fora do tamanho
+    // fixo tornava a conta silenciosa, não um erro).
+    let soma = 0;
+    for (let k = 0; k < TIPOS; k++) soma += mistura[k] ?? 0;
     const pAndroide = cfg.pAndroide ?? PADRAO.pAndroide;
 
     // 1. as levas: quanto cada tipo de fonte despeja, e quando
@@ -258,11 +270,12 @@ export class Multidao {
           continue;
         }
         const sorteio = rng() * soma;
-        const tipo =
-          sorteio < mistura[0] ? GADO
-          : sorteio < mistura[0] + mistura[1] ? CARECA
-          : sorteio < mistura[0] + mistura[1] + mistura[2] ? PERUCA
-          : BANDEIRA;
+        let tipo = TIPOS - 1; // sobra para o último tipo se a faixa não bateu antes (a mesma regra do chão, só sem repetir a conta a cada tipo novo)
+        let acumulado = 0;
+        for (let kt = 0; kt < TIPOS - 1; kt++) {
+          acumulado += mistura[kt] ?? 0;
+          if (sorteio < acumulado) { tipo = kt; break; }
+        }
         const alvo = Math.floor(rng() * cfg.predios.length);
         const p = cfg.predios[alvo]!;
         lista.push({

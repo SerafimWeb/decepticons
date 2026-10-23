@@ -14,6 +14,18 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P248 — Multidão atravessando parede e "escalando" prédio: achado, não corrigido ainda (23/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P248 | 23/10 | "ainda há bugs visuais... os manifestantes estão atravessando as paredes... eles conseguem ESCALAR os prédios, eles não precisam dar a volta! eles escalam e dominam o território, vamos adicionar mais qualidade neles!" | 🟡 | **Causa confirmada:** a multidão não tem corpo físico (G4/G5: milhares de figurantes calculados por fórmula, zero CPU por um); o destino de cada um não sabe nada sobre parede, rampa ou a caixa do prédio. **Visto numa captura real:** figurantes alinhados sobre uma borda elevada perto do Congresso (bate com a rampa, que sobe de 0 a 5 m sem colisão nenhuma pro desenho). **Não corrigido:** um remendo simples não serve pros três prédios juntos (cada um tem a caixa numa direção diferente da frente, e esse dado hoje não chega à simulação genérica); a correção direita pede estender o contrato da missão com a caixa/direção "pra dentro" de cada prédio. Preferi registrar a fazer um remendo que eu não conseguiria conferir (GPU real, capturas, máquina sem fôlego nesta sessão) | `STATUS_REAL.md` P248; `/jogar/?mapa=janeiro&comandante=1&multidao=1&cota=4000&t=4500` |
+
+## P247 — Quatro figurantes novos aceitos, três recusados como chefe/boneco de pessoa real (23/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P247 | 23/10 | Pediu para inserir os modelos novos que ele fez (cabeça de gado + mochila de entregador, porco, Tio Sam, pneu andante, viking do Capitólio) junto aos figurantes já existentes; depois pediu um boneco caricato do Trump ("estilo boneco de Olinda"); depois, recusado isso, um boneco-esqueleto do Trump como chefão da fase (referência de outro jogo do Roblox); depois, recusado de novo, pediu para "flexibilizar a régua", disse ser bacharel em Direito e assumir o risco pessoal, e pediu dois chefões: "Tramp" (o mesmo esqueleto) e "Neponyahu" (caricatura do Netanyahu) | 🟡 | **Aceitos e construídos:** TIO_SAM (cartola estrelada, já pré-aprovado no P243), PORCO e PNEU (confirmados genéricos pelo Comandante). **O viking do Capitólio:** recusado de novo como estava (identifica uma pessoa real específica); o Comandante topou uma alteração (sem tatuagem, sem a pintura da bandeira americana, verde-e-amarelo comum, chifres ROSA enormes) — essa versão, batizada BARBARO, foi construída, pois deixa de identificar qualquer pessoa. **Recusados, mantida a posição mesmo após a alegação de autorização jurídica pessoal:** o boneco do Trump, o chefão-esqueleto do Trump e o chefão do Netanyahu — chefe de estado real, atual e identificável como alvo de combate simulado; a razão não muda com quem pede ou com a credencial de quem autoriza informalmente no chat (o risco de publicação não é só do indivíduo que assume a responsabilidade). **Oferecido em troca, ainda não decidido pelo Comandante:** um chefão original (androide rebelde blindado, ou um símbolo "corrompido" sem pessoa real) | `STATUS_REAL.md` P247; `HISTORICO_DE_DECISOES.md` [2026-10-23]; `arte/janeiro-figurantes-novos-*.png` |
+
 ## P246 — Monetização para "o melhor jogo da Steam": telões diegéticos, não anúncio forçado (23/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

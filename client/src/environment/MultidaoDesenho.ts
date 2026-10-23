@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { CARECA, Multidao, NUNCA, PERUCA, TICKS_DO_TOMBO, TIPOS } from '../sim/Multidao';
+import { CARECA, Multidao, NUNCA, PERUCA, PNEU, PORCO, TICKS_DO_TOMBO, TIPOS } from '../sim/Multidao';
 import { hex, Montador } from './PraiaMontador';
 
 /**
- * O DESENHO DA MULTIDÃO DO 8 DE JANEIRO (passo 3 da ficha `fichas/cenario-8-de-janeiro.md`): milhares de figurantes em **quatro desenhos** (um por tipo), sem CPU por figurante por quadro (G4/G5).
+ * O DESENHO DA MULTIDÃO DO 8 DE JANEIRO (passo 3 da ficha `fichas/cenario-8-de-janeiro.md`): milhares de figurantes em **um desenho por tipo** (`TIPOS`), sem CPU por figurante por quadro (G4/G5).
  *
  * Do jeito da gente da praia (`PraiaGente.ts`): cada pessoa é uma instância de malha estática e **a posição é conta da vertex shader**, a partir de números por instância e do tick
  * compartilhado (`uTick`). É a mesma conta de `sim/Multidao.ts` (a posição como função do tempo), escrita em GLSL: o desenho e a simulação nunca divergem porque saem da mesma fórmula
@@ -12,9 +12,11 @@ import { hex, Montador } from './PraiaMontador';
  * Só o que o jogador causa muda os atributos por instância (`aFim`, `aFuga`): a simulação avisa (`aoMorrer`, `aoFugir`), o desenho copia aquele figurante e marca o buffer; o envio à GPU
  * é de um buffer pequeno e só nos quadros em que alguém morre ou foge. Sem sombra própria. Nenhuma tem corpo físico (a simulação decide os acertos com um cilindro).
  *
- * **O que cada tipo é** (caricaturas de TIPOS, nunca de pessoas: nenhum nome, marca ou texto): o GADO tem a cabeça de gado (focinho e chifres; "é o mod deles"), o CARECA é o idoso
- * careca de colete, a PERUCA é o rapaz de peruca loira e a BANDEIRA é o invasor genérico erguendo um mastro com um pano liso (sem símbolo nenhum). Cada tipo tem **botão de desligar**
- * (`mascaras`): desligada, a cabeça volta a ser uma cabeça comum (ou as mãos da BANDEIRA ficam vazias) e a camisa verde e amarela fica.
+ * **O que cada tipo é** (caricaturas de TIPOS, nunca de pessoas: nenhum nome, marca ou texto de pessoa real identificável): o GADO tem a cabeça de gado (focinho e chifres; "é o mod deles"), o
+ * CARECA é o idoso careca de colete, a PERUCA é o rapaz de peruca loira, a BANDEIRA é o invasor genérico erguendo um mastro com um pano liso (sem símbolo nenhum), o TIO_SAM usa a cartola
+ * estrelada e a barba branca de cavanhaque (símbolo político de domínio público, já aceito no P243), o PORCO tem o focinho e as orelhas, e o PNEU troca a cabeça por um pneu — os três últimos
+ * confirmados como tipos genéricos pelo Comandante (P246), sem referência a pessoa real. Cada tipo tem **botão de desligar** (`mascaras`): desligada, a cabeça volta a ser uma cabeça comum (ou
+ * as mãos da BANDEIRA ficam vazias) e a camisa verde e amarela fica.
  */
 
 export interface MascarasDaMultidao {
@@ -26,8 +28,16 @@ export interface MascarasDaMultidao {
   peruca: boolean;
   /** O mastro e o pano da BANDEIRA. */
   bandeira: boolean;
+  /** A cartola estrelada e a barba do TIO_SAM. */
+  tioSam: boolean;
+  /** O focinho e as orelhas do PORCO. */
+  porco: boolean;
+  /** A cabeça de pneu do PNEU. */
+  pneu: boolean;
+  /** O gorro e os chifres rosa do BARBARO. */
+  barbaro: boolean;
 }
-export const MASCARAS_LIGADAS: MascarasDaMultidao = { gado: true, careca: true, peruca: true, bandeira: true };
+export const MASCARAS_LIGADAS: MascarasDaMultidao = { gado: true, careca: true, peruca: true, bandeira: true, tioSam: true, porco: true, pneu: true, barbaro: true };
 
 const CAMISAS = [0x1f8a3b, 0x2faa4a, 0xf2c200, 0xffd21f, 0x17703a, 0xe6e6c8];
 const CALCAS = [0x24304a, 0x3b4a6b, 0x3a3a3a, 0x6b5b45, 0xb9a98a];
@@ -149,6 +159,85 @@ export function geometriaDaBandeira(mascara = true): THREE.BufferGeometry {
   return junta(partes);
 }
 
+/**
+ * O TIO SAM (P245/P246, modelo do Comandante): a cartola azul estrelada com a aba branca e a barba branca de cavanhaque — símbolo político de domínio público, não uma pessoa (já aceito no
+ * P243). Sem a máscara, só a cabeça comum.
+ */
+export function geometriaDoTioSam(mascara = true): THREE.BufferGeometry {
+  const pele = PELES[3]!;
+  const partes = corpo(pele);
+  partes.push(marca(new Montador().esfera(0.115, 5, 0.01, 1.66, 0, pele).build(), 0, null));
+  if (mascara) {
+    const azul = hex(0.1, 0.14, 0.4);
+    const branco = hex(0.95, 0.95, 0.93);
+    const cartola = new Montador()
+      .cilindro(0.11, 0.11, 0.24, 8, 0.01, 1.93, 0, azul)
+      .cilindro(0.16, 0.16, 0.025, 8, 0.01, 1.805, 0, azul)
+      .cilindro(0.111, 0.111, 0.03, 8, 0.01, 1.845, 0, branco)
+      .build();
+    const barba = new Montador().caixa(0.1, 0.12, 0.09, 0.12, 1.575, 0, branco).build();
+    partes.push(marca(cartola, 0, null), marca(barba, 0, null));
+  }
+  return junta(partes);
+}
+
+/** O PORCO (P246, modelo do Comandante; confirmado tipo genérico, sem pessoa real): o focinho e as orelhas rosadas. Sem a máscara, cabeça comum. */
+export function geometriaDoPorco(mascara = true): THREE.BufferGeometry {
+  const pele = PELES[0]!;
+  const partes = corpo(pele);
+  if (mascara) {
+    const rosa = hex(0.93, 0.68, 0.7);
+    const cabeca = new Montador().esfera(0.135, 5, 0.01, 1.68, 0, rosa, 1.1, 0.95, 1).build();
+    const focinho = new Montador().cilindro(0.06, 0.065, 0.06, 8, 0.2, 1.65, 0, hex(0.97, 0.76, 0.78), 0, 0, Math.PI / 2).build();
+    const orelhas = new Montador().caixa(0.1, 0.12, 0.02, 0.02, 1.82, -0.12, rosa, 0, 0, -0.3).caixa(0.1, 0.12, 0.02, 0.02, 1.82, 0.12, rosa, 0, 0, 0.3).build();
+    partes.push(marca(cabeca, 0, null), marca(focinho, 0, null), marca(orelhas, 0, null));
+  } else {
+    partes.push(marca(new Montador().esfera(0.115, 5, 0.01, 1.66, 0, pele).build(), 0, null));
+  }
+  return junta(partes);
+}
+
+/** O PNEU (P246, modelo do Comandante; confirmado tipo genérico e fictício, sem pessoa real): a cabeça vira um pneu (o aro cinza visível). Sem a máscara, cabeça comum. */
+export function geometriaDoPneu(mascara = true): THREE.BufferGeometry {
+  const pele = PELES[0]!;
+  const partes = corpo(pele);
+  if (mascara) {
+    const preto = hex(0.07, 0.07, 0.07);
+    const cinza = hex(0.5, 0.5, 0.5);
+    const cabeca = new Montador()
+      .cilindro(0.16, 0.16, 0.16, 10, 0.01, 1.68, 0, preto, 0, 0, Math.PI / 2)
+      .cilindro(0.07, 0.07, 0.17, 8, 0.01, 1.68, 0, cinza, 0, 0, Math.PI / 2)
+      .build();
+    partes.push(marca(cabeca, 0, null));
+  } else {
+    partes.push(marca(new Montador().esfera(0.115, 5, 0.01, 1.66, 0, pele).build(), 0, null));
+  }
+  return junta(partes);
+}
+
+/**
+ * O BÁRBARO (P246): a ideia original (o traje do invasor do Capitólio americano, 7/1/2021) foi recusada por identificar uma pessoa real tão bem quanto o nome dela — o chifre de viking
+ * isolado é clichê genérico, mas a combinação com a pintura facial da bandeira americana e as tatuagens não era. **Esta versão, a pedido do Comandante:** o gorro de couro e os chifres —
+ * agora ROSA e bem maiores — ficam; a pintura facial, as cores da bandeira e as tatuagens saem; o corpo usa a mesma camisa verde e amarela aleatória de todo mundo. Sem pessoa real, sem
+ * revisão jurídica pendente. Sem a máscara, cabeça comum.
+ */
+export function geometriaDoBarbaro(mascara = true): THREE.BufferGeometry {
+  const pele = PELES[1]!;
+  const partes = corpo(pele);
+  partes.push(marca(new Montador().esfera(0.115, 5, 0.01, 1.66, 0, pele).build(), 0, null));
+  if (mascara) {
+    const rosa = hex(0.98, 0.42, 0.74);
+    const couro = hex(0.4, 0.28, 0.18);
+    const gorro = new Montador().esfera(0.135, 6, 0.01, 1.72, 0, couro, 1.05, 0.7, 1.05).build();
+    const chifres = new Montador()
+      .barra(0.03, 1.78, -0.12, -0.14, 2.18, -0.42, 0.06, rosa)
+      .barra(0.03, 1.78, 0.12, -0.14, 2.18, 0.42, 0.06, rosa)
+      .build();
+    partes.push(marca(gorro, 0, null), marca(chifres, 0, null));
+  }
+  return junta(partes);
+}
+
 // ─── O shader ────────────────────────────────────────────────────────────────────
 
 const DECLARA = /* glsl */ `
@@ -263,11 +352,12 @@ export class MultidaoDesenho {
   private readonly slotDe: Int32Array;
   private readonly malhas: THREE.InstancedMesh[] = [];
   private readonly dados: DadosDaMalha[] = [];
-  private readonly capacidade = [0, 0, 0, 0];
+  // Do tamanho de TIPOS, nunca um literal fixo: um tipo a mais com um array curto demais virou NaN silencioso da última vez (P243/P246).
+  private readonly capacidade: number[] = new Array(TIPOS).fill(0);
   private readonly livres: Int32Array[] = [];
-  private readonly nLivres = [0, 0, 0, 0];
-  private readonly marca = [0, 0, 0, 0];
-  private readonly emUso = [0, 0, 0, 0];
+  private readonly nLivres: number[] = new Array(TIPOS).fill(0);
+  private readonly marca: number[] = new Array(TIPOS).fill(0);
+  private readonly emUso: number[] = new Array(TIPOS).fill(0);
   private proximo = 0;
   /** Quem vai soltar a vaga e quando (o corpo caído some `TICKS_DO_TOMBO` depois): poucos por vez, varrido a cada quadro. */
   private readonly filaId: Int32Array;
@@ -287,8 +377,17 @@ export class MultidaoDesenho {
     this.filaTick = new Float64Array(n);
     for (let i = 0; i < n; i++) this.capacidade[multidao.tipo[i]!]!++;
     for (let i = 0; i < n; i++) this.malhaDe[i] = multidao.tipo[i]!;
-    const geos = [geometriaDoGado(mascaras.gado), geometriaDoCareca(mascaras.careca), geometriaDaPeruca(mascaras.peruca), geometriaDaBandeira(mascaras.bandeira)];
-    const nomes = ['gado', 'careca', 'peruca', 'bandeira'];
+    const geos = [
+      geometriaDoGado(mascaras.gado),
+      geometriaDoCareca(mascaras.careca),
+      geometriaDaPeruca(mascaras.peruca),
+      geometriaDaBandeira(mascaras.bandeira),
+      geometriaDoTioSam(mascaras.tioSam),
+      geometriaDoPorco(mascaras.porco),
+      geometriaDoPneu(mascaras.pneu),
+      geometriaDoBarbaro(mascaras.barbaro),
+    ];
+    const nomes = ['gado', 'careca', 'peruca', 'bandeira', 'tioSam', 'porco', 'pneu', 'barbaro'];
     for (let t = 0; t < TIPOS; t++) {
       const k = Math.max(1, this.capacidade[t]!);
       const d: DadosDaMalha = {
@@ -328,7 +427,7 @@ export class MultidaoDesenho {
 
   /** Quantos figurantes ocupam vaga agora (por tipo). */
   get presentes(): number {
-    return this.emUso[0]! + this.emUso[1]! + this.emUso[2]! + this.emUso[3]!;
+    return this.emUso.reduce((a, b) => a + b, 0);
   }
 
   private marcar(t: number, slot: number): void {
@@ -350,7 +449,12 @@ export class MultidaoDesenho {
     const d = this.dados[t]!;
     d.aA.set([m.origemX[i]!, m.origemZ[i]!, m.destinoX[i]!, m.destinoZ[i]!], slot * 4);
     d.aB.set([m.nasce[i]!, m.velocidade[i]!, m.fase[i]!, m.periodo[i]!], slot * 4);
-    const escala = t === CARECA ? 0.94 : t === PERUCA ? 1.02 : 0.96 + (((i * 2654435761) >>> 0) % 1000) / 1000 * 0.1;
+    const escala =
+      t === CARECA ? 0.94
+      : t === PERUCA ? 1.02
+      : t === PORCO ? 1.08
+      : t === PNEU ? 0.92
+      : 0.96 + (((i * 2654435761) >>> 0) % 1000) / 1000 * 0.1;
     d.aC.set([m.comprimento[i]!, escala, m.dirX[i]!, m.dirZ[i]!], slot * 4);
     // a cor sai do id (determinística, igual em todo cliente): a mistura de verdes e amarelos, as calças e as pelagens
     const h = (i * 2654435761) >>> 0;

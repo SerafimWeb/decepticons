@@ -16,11 +16,19 @@
 
 | Tipo | Parte da massa | Comportamento |
 |---|---|---|
-| **GADO** (pessoa com cabeça de gado, verde e amarelo) | ~60% | marcha até um prédio, **depreda** (desgasta a integridade) e **suja** as mesas; **foge** se levar tiro por perto ou se o jogador chega a poucos metros |
-| **CARECA** (idoso careca, de colete, verde e amarelo) | ~12% | mais lento e aguenta 2 acertos; **foge** |
-| **PERUCA** (rapaz de peruca loira, verde e amarelo) | ~8% | mais rápido; **foge** mais cedo (filma de longe e sai correndo) |
-| **BANDEIRA** (invasor genérico erguendo um mastro, verde e amarelo; P243, 22/10) | ~20% | o mesmo comportamento do GADO (marcha, depreda, suja, foge); sem máscara de pessoa ou grupo nenhum — só a cor, igual às outras camisas |
+| **GADO** (pessoa com cabeça de gado, verde e amarelo) | ~38% | marcha até um prédio, **depreda** (desgasta a integridade) e **suja** as mesas; **foge** se levar tiro por perto ou se o jogador chega a poucos metros |
+| **CARECA** (idoso careca, de colete, verde e amarelo) | ~9% | mais lento e aguenta 2 acertos; **foge** |
+| **PERUCA** (rapaz de peruca loira, verde e amarelo) | ~6% | mais rápido; **foge** mais cedo (filma de longe e sai correndo) |
+| **BANDEIRA** (invasor genérico erguendo um mastro, verde e amarelo; P243, 22/10) | ~14% | o mesmo comportamento do GADO (marcha, depreda, suja, foge); sem máscara de pessoa ou grupo nenhum — só a cor, igual às outras camisas |
+| **TIO SAM** (cartola azul estrelada e barba branca; P247, 23/10) | ~8% | o mesmo comportamento do GADO; símbolo político de domínio público, já aceito desde o P243 — não é uma pessoa |
+| **PORCO** (focinho e orelhas rosadas; P247, 23/10) | ~7% | o mesmo comportamento do GADO; tipo genérico, confirmado pelo Comandante sem referência a pessoa real |
+| **PNEU** (a cabeça vira um pneu; P247, 23/10) | ~7% | o mesmo comportamento do GADO; tipo genérico e fictício, confirmado pelo Comandante sem referência a pessoa real |
+| **BARBARO** (chifres rosa enormes sobre gorro, verde e amarelo; P247, 23/10) | ~11% | o mesmo comportamento do GADO; versão alterada e genérica do traje do viking do Capitólio recusado (sem tatuagem, sem a pintura da bandeira americana) |
 | **ANDROIDE REBELDE** (misturado à multidão) | ~5% (no máximo 6 vivos de uma vez) | **é o único que luta**: ataca o jogador e os aliados (os `Android` e o `BotController` de hoje, com a vida, o tiro e a rede que eles já têm) |
+
+**Recusado em 22/10 e de novo em 23/10 (P243, P247):** um figurante com o traje completo do invasor do Capitólio americano de 7/1/2021 (chifres de pele, pintura facial nas cores da bandeira dos EUA, tatuagens, lança com bandeira) — a combinação específica identifica uma pessoa real, viva e condenada, tão bem quanto o nome dela, o que é diferente de "lembrar um tipo físico" (como o CARECA e a PERUCA já fazem). **O Comandante topou alterar** (sem tatuagem, sem a pintura da bandeira americana, verde-e-amarelo comum, chifres **rosa** enormes em vez dos naturais): **construído como BARBARO** — deixa de identificar qualquer pessoa real, sem revisão jurídica pendente.
+
+**Recusados em 23/10 (P247), mantida a posição mesmo após o Comandante alegar formação em Direito e assumir o risco pessoal:** um boneco caricato do Trump, um chefão-esqueleto do Trump e um chefão do Netanyahu ("Tramp" e "Neponyahu") — chefe de estado real, atual e identificável como alvo de combate simulado, sem nenhuma ligação com o evento real que a fase retrata. A razão é a mesma do traje do viking: identificar uma pessoa real específica, não um tipo. Detalhe em `HISTORICO_DE_DECISOES.md` [2026-10-23]. Proposta em aberto: um chefão original (androide blindado, ou um símbolo "corrompido" sem pessoa real).
 
 **De onde vêm (as fontes, posições fixas do mapa):** **ônibus** (chegam pelo Eixo e descarregam um grupo grande de uma vez), **tampas de esgoto** (os bueiros abrem e soltam figurantes por alguns segundos) e **lixeiras** (soltam poucos de cada vez, ao longo da fase). As fontes são **dado do mapa** e o ritmo de cada uma sai do cronograma da fase (semente e tick, G1/G2): não é sorteio ao vivo. O jogador pode **fechar** uma tampa de bueiro ficando sobre ela por alguns segundos? *(pergunta aberta 3)*.
 
