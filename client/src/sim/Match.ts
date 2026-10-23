@@ -482,6 +482,9 @@ export class Match {
             androidSpawns: amazonia ? defesa?.guarda.androids ?? [] : janeiro ? this.janeiroPedaco!.PONTOS_DOS_REBELDES : ctf ? [] : praia ? PRAIA_INIMIGOS.slice(SURVIVAL_MAX_MECHS, SURVIVAL_MAX_MECHS + SURVIVAL_MAX_ANDROIDS) : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
             manifestanteSpawns: praia && !ctf ? PRAIA_MANIFESTANTES.slice(0, SURVIVAL_MAX_MANIFESTANTES) : [],
             technicianSpawns: [],
+            faxineiroSpawns: janeiro ? this.janeiroPedaco!.PONTOS_DOS_FAXINEIROS : [],
+            mesasDosPredios: janeiro ? this.janeiroPedaco!.MESAS_DOS_PREDIOS : undefined,
+            missaoJaneiro: janeiro ? this.missaoJaneiro ?? undefined : undefined,
             personas: o.foes.enemyPersonas,
             names: { mechs: o.foes.names.mechs, androids: o.foes.names.androids, technicians: o.foes.names.technicians },
           }),
@@ -1467,8 +1470,8 @@ export class Match {
       if (!this.bots.entrarAndroide(a.x, a.z)) break;
       this.rebeldesEntraram++;
     }
-    let vivos = 0;
-    for (const m of this.bots.mechs) if (m.alive) vivos++;
+    // Só os de combate (androides rebeldes): o faxineiro (P243) é sempre ativo, de fora da conta da Praça.
+    const vivos = this.bots.combatAliveCount();
     this.rebeldesVivosN = vivos;
     const s = this.situacaoDaPraca;
     s.naFachada = multidao.contarNaFachada(t);

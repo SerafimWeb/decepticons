@@ -6,8 +6,9 @@ import type { ConfigDaMultidao } from './Multidao';
  * prédios da Praça dos Três Poderes de uma multidão que chega pelas fontes do mapa (`sim/Multidao.ts`):
  *
  *  - **A integridade** de cada prédio (`INTEGRIDADE_MAX`) cai com quem está na fachada e com cada mesa suja do saguão. **Um prédio a zero perde a missão.**
- *  - **A sujeira:** parte de quem chega à fachada entra e suja uma mesa do saguão (o Mech não passa pela porta, `LARGURA_DA_PORTA`). Os faxineiros (androides aliados) limpam uma mesa em
- *    `TEMPO_DE_LIMPEZA_S`; aqui a faxina é **abstrata** (N faxineiros por prédio limpam a N/3 s por mesa, sem andar): ela vira agente de verdade no passo seguinte da ficha.
+ *  - **A sujeira:** parte de quem chega à fachada entra e suja uma mesa do saguão (o Mech não passa pela porta, `LARGURA_DA_PORTA`). Os **faxineiros são agentes de verdade** (P243,
+ *    `combat/FaxineiroController.ts`): andróides aliados que andam até a mesa suja do prédio deles, ficam parados limpando por `TEMPO_DE_LIMPEZA_S` e voltam ao posto. Esta classe só
+ *    guarda o estado (suja, reservada por quem já vai nela, limpa) e decide **qual** mesa cada um pega (`reservarMesa`); quem anda e quando termina é o cérebro de cada um.
  *  - **Vence** quem mantém os três prédios de pé até a cota acabar e a Praça esvaziar. **Perde** se um prédio cai, ou se o tempo passa da última chegada (`GRACA_TICKS`) com gente na Praça.
  *  - **A nota** não é só o número de abates: `naoLetal` é a parte dos que foram **expulsos** (fugiram do tiro ou do susto) entre os que a missão tirou da Praça. O jogo mostra que a força é a última saída.
  *
@@ -31,9 +32,8 @@ export const DESGASTE_DA_FACHADA_S = 1.4;
 export const DESGASTE_DA_MESA_S = 1.0;
 /** De cada 100 que chegam à fachada, quantos entram e sujam uma mesa. */
 export const PERCENTUAL_DE_SUJEIRA = 18;
-/** Os faxineiros de cada prédio e quanto leva a limpar uma mesa (um faxineiro). */
+/** Quantos faxineiros cada prédio tem (um por porta do saguão: `PONTOS_DOS_FAXINEIROS`). O tempo de limpeza é do agente (`combat/FaxineiroController.ts`), não desta regra. */
 export const FAXINEIROS_POR_PREDIO = 2;
-export const TEMPO_DE_LIMPEZA_S = 3;
 
 /** O susto por perto: quem está a menos disto de um jogador vivo foge (m). */
 export const RAIO_DO_SUSTO = 6;
@@ -51,6 +51,25 @@ export const PONTOS_DOS_REBELDES: readonly (readonly [number, number])[] = Array
 
 /** Quantas mesas tem o saguão de cada prédio (a ordem é a de `PracaLayout`). */
 export const MESAS_POR_PREDIO: readonly number[] = PRACA_PREDIOS.map((p) => p.saguao.mesas.length);
+/** As mesas de cada prédio (x, z): onde o faxineiro anda para limpar (`combat/FaxineiroController.ts`). */
+export const MESAS_DOS_PREDIOS: readonly (readonly { x: number; z: number }[])[] = PRACA_PREDIOS.map((p) => p.saguao.mesas);
+
+/** Quanto o faxineiro nasce para dentro do saguão, além da linha da porta (m): a porta fica no meio da parede (1 m de espessura, `environment/PracaLayout.ts`) e o piso só começa do lado de dentro — nascer na própria linha cai fora do mapa, sem chão sob o pé. */
+const DENTRO_DA_PORTA_M = 1.2;
+
+/** Onde cada faxineiro nasce e para onde volta sem mesa para limpar: uma porta de cada prédio (`FAXINEIROS_POR_PREDIO` por prédio), puxada para dentro do saguão (`DENTRO_DA_PORTA_M`), reto, na perpendicular da parede mais perto — nunca na diagonal rumo ao centro, que empurraria a porta estreita (1,9 m) para cima do batente ao lado. */
+export const PONTOS_DOS_FAXINEIROS: readonly { predio: number; x: number; z: number }[] = PRACA_PREDIOS.flatMap((p, predio) => {
+  const { x0, z0, x1, z1 } = p.saguao.caixa;
+  return p.saguao.portas.slice(0, FAXINEIROS_POR_PREDIO).map((porta) => {
+    const normal = [
+      { d: Math.abs(porta.x - x0), dx: 1, dz: 0 },
+      { d: Math.abs(porta.x - x1), dx: -1, dz: 0 },
+      { d: Math.abs(porta.z - z0), dx: 0, dz: 1 },
+      { d: Math.abs(porta.z - z1), dx: 0, dz: -1 },
+    ].sort((a, b) => a.d - b.d)[0]!;
+    return { predio, x: porta.x + normal.dx * DENTRO_DA_PORTA_M, z: porta.z + normal.dz * DENTRO_DA_PORTA_M };
+  });
+});
 
 /** A multidão da missão: as fontes e as saídas do mapa, a frente de cada prédio como alvo, a cota e a duração da missão. */
 export function configDaMissaoJaneiro(): ConfigDaMultidao {
@@ -108,8 +127,8 @@ export class MissaoJaneiro {
   /** Por prédio, as mesas sujas (1) e limpas (0): a ordem é a de `PracaLayout`. */
   private readonly suja: Uint8Array[];
   private readonly nSujas: number[];
-  /** Por prédio, o trabalho de limpeza acumulado (em segundos de um faxineiro). */
-  private readonly faxina: number[];
+  /** Por prédio, a mesa suja que já tem um faxineiro indo nela (1) ou livre (0): evita dois agentes na mesma mesa. */
+  private readonly reservada: Uint8Array[];
 
   /** `mesasPorPredio`: quantas mesas tem o saguão de cada prédio (o tamanho dá o número de prédios). */
   constructor(
@@ -119,7 +138,7 @@ export class MissaoJaneiro {
     this.integridade = mesasPorPredio.map(() => INTEGRIDADE_MAX);
     this.suja = mesasPorPredio.map((n) => new Uint8Array(n));
     this.nSujas = mesasPorPredio.map(() => 0);
-    this.faxina = mesasPorPredio.map(() => 0);
+    this.reservada = mesasPorPredio.map((n) => new Uint8Array(n));
   }
 
   get terminou(): boolean {
@@ -137,6 +156,32 @@ export class MissaoJaneiro {
 
   mesasSujas(p: number): number {
     return this.nSujas[p] ?? 0;
+  }
+
+  /** Reserva a primeira mesa suja e livre do prédio `p` para um faxineiro (`FaxineiroController`, que vai andar até ela); -1 sem nenhuma livre (todas limpas, ou já reservadas por outro). */
+  reservarMesa(p: number): number {
+    const mesas = this.suja[p];
+    const reservada = this.reservada[p];
+    if (!mesas || !reservada) return -1;
+    for (let m = 0; m < mesas.length; m++) if (mesas[m] === 1 && reservada[m] === 0) { reservada[m] = 1; return m; }
+    return -1;
+  }
+
+  /** O faxineiro desistiu da mesa `m` sem limpar (hoje só o `reset`; mantém a conta certa se um dia ele for interrompido). */
+  liberarMesa(p: number, m: number): void {
+    const reservada = this.reservada[p];
+    if (reservada) reservada[m] = 0;
+  }
+
+  /** O faxineiro terminou de limpar a mesa `m` do prédio `p`. */
+  limparMesa(p: number, m: number): void {
+    const mesas = this.suja[p];
+    if (!mesas || mesas[m] !== 1) return;
+    mesas[m] = 0;
+    const reservada = this.reservada[p];
+    if (reservada) reservada[m] = 0;
+    this.nSujas[p]!--;
+    this.mesasLimpas++;
   }
 
   /** Um figurante chegou à fachada do prédio `p`: parte deles entra e suja uma mesa limpa (a primeira escolhida pelo número do figurante). Devolve a mesa suja, ou -1. */
@@ -179,8 +224,8 @@ export class MissaoJaneiro {
   }
 
   /**
-   * Um tick (`tick` é o da multidão, o mesmo no servidor e no cliente). Primeiro os prédios apanham e a faxina anda; depois se vê o fim. **Se um prédio cai no mesmo tick em que a Praça
-   * esvazia, vale a derrota**: a missão é mantê-los de pé.
+   * Um tick (`tick` é o da multidão, o mesmo no servidor e no cliente). Primeiro os prédios apanham com quem está na fachada e com cada mesa ainda suja (os faxineiros, agentes de
+   * verdade, limpam por fora — `reservarMesa`/`limparMesa`); depois se vê o fim. **Se um prédio cai no mesmo tick em que a Praça esvazia, vale a derrota**: a missão é mantê-los de pé.
    */
   fixedUpdate(dt: number, tick: number, praca: SituacaoDaPraca): void {
     if (this.terminou) return;
@@ -188,31 +233,12 @@ export class MissaoJaneiro {
     this.eliminados = praca.eliminados;
     this.rebeldes = praca.rebeldesEliminados;
     for (let p = 0; p < this.integridade.length; p++) {
-      const sujas = this.nSujas[p]!;
-      if (sujas > 0) {
-        // Os faxineiros trabalham juntos: N deles limpam uma mesa em TEMPO/N segundos. Sobra de trabalho passa para a mesa seguinte.
-        this.faxina[p]! += dt * Math.min(FAXINEIROS_POR_PREDIO, sujas);
-        if (this.faxina[p]! >= TEMPO_DE_LIMPEZA_S) {
-          this.faxina[p]! -= TEMPO_DE_LIMPEZA_S;
-          this.limparUma(p);
-        }
-      } else this.faxina[p] = 0;
       const desgaste = (praca.naFachada[p] ?? 0) * DESGASTE_DA_FACHADA_S + this.nSujas[p]! * DESGASTE_DA_MESA_S;
       if (desgaste > 0) this.integridade[p] = Math.max(0, this.integridade[p]! - desgaste * dt);
     }
     if (this.integridade.some((v) => v <= 0)) this.terminar('derrota', 'predio');
     else if (praca.faltamChegar === 0 && praca.presentes === 0) this.terminar('vitoria', null);
     else if (tick > DURACAO_DA_MISSAO_TICKS + GRACA_TICKS && praca.presentes > 0) this.terminar('derrota', 'tempo');
-  }
-
-  /** Limpa a primeira mesa suja do prédio `p`. */
-  private limparUma(p: number): void {
-    const mesas = this.suja[p]!;
-    const m = mesas.indexOf(1);
-    if (m < 0) return;
-    mesas[m] = 0;
-    this.nSujas[p]!--;
-    this.mesasLimpas++;
   }
 
   private terminar(fase: 'vitoria' | 'derrota', causa: CausaDaDerrotaJaneiro | null): void {
@@ -233,6 +259,6 @@ export class MissaoJaneiro {
     this.integridade.fill(INTEGRIDADE_MAX);
     for (const m of this.suja) m.fill(0);
     this.nSujas.fill(0);
-    this.faxina.fill(0);
+    for (const r of this.reservada) r.fill(0);
   }
 }

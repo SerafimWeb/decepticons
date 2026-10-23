@@ -16,6 +16,12 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## EM BRANCH — NÃO ESTÁ NO AR: OS FAXINEIROS DO 8 DE JANEIRO VIRAM AGENTES DE VERDADE — Claude, 23/10 (branch `claude/faxineiros-agentes`, P243)
+
+**O Comandante confirmou** o item que estava em fila desde 22/10 ("ok, prossiga"). **Feito:** a faxina deixou de ser uma conta abstrata e virou um andróide de verdade (`combat/FaxineiroController.ts`, mesmo contrato do `TechnicianController`, G3): anda até a mesa suja do saguão do seu prédio, limpa parado por 3 s e volta ao posto; `MissaoJaneiro` ganhou `reservarMesa`/`liberarMesa`/`limparMesa` (decide qual mesa; quem anda e quando termina é o agente). Sem perseguição nem fuga (saguão fechado, porta de 1,9 m) e sem pathfinding (saguão sem obstáculo). **Dois bugs achados e corrigidos no caminho (`HISTORICO_DE_DECISOES.md` [2026-10-23]):** o nascimento na linha da porta caía fora do mapa (sem piso ali); e `BotSystem.setRoster` desativava todo cérebro que não fosse `BotController`, matando o faxineiro junto com o corte do pool de onda (agora ele fica de fora dessa conta, sempre ativo). Um teste de integração novo prova o agente andando e limpando dentro do `Match` inteiro (`Match.janeiro.test.ts`).
+**Provas:** `npm run check` verde (typecheck, as 3984 unidades, build, smoke, `mech:bocas`, site).
+**Próxima sessão começa com:** abrir o PR e mesclar — com isso, a fase do 8 de Janeiro tem a faxina de ponta a ponta; o que falta para jogar a fase completa é a revisão humana/jurídica dos fatos e o playtest do Comandante (`LANCAMENTO.md` §0).
+
 ## MONETIZAÇÃO: TELÕES DIEGÉTICOS NA CIDADE NEON, SÓ COMO IDEIA REGISTRADA — Claude, 23/10 (branch `claude/monetizacao-telao`, P246)
 
 **O Comandante** trouxe de outra conversa a pergunta de como monetizar mirando "o melhor jogo da Steam" sem anúncio forçado, e um post sobre o "Block Blast" (algoritmo que mata o jogador de propósito para forçar anúncio/reviver). **Feito: só documentação**, nenhum código. `GAME_DESIGN.md` § HORIZONTE ganhou a ideia dos telões/letreiros na Cidade Neon (vídeo em loop, começando com vídeo do próprio jogo, trocável por marca real depois sem recompilar; técnico: textura de superfície, fora do tick e da rede, sob demanda como a Praia) e § NÃO É PAY-TO-WIN ganhou a recusa explícita do modelo "Block Blast". **Decidido (23/10, mesmo dia):** prioridade é qualidade do jogo primeiro, **depois os telões** — mostrando vídeo de armas, robôs, times e missões (divulgação interna, sem depender de anunciante externo para valer a pena). **Steam: confirmado como destino, não como prioridade agora**; respondido que é empacotamento (wrapper desktop + Steamworks), não reescrita — a simulação, a rede e o conteúdo não mudam.
@@ -34,13 +40,11 @@
 **Falta (R13):** a câmera não evita atravessar geometria (roteiro desenhado à mão); sem som/narração (custaria ElevenLabs — decisão do Comandante — ou ele grava no Estúdio); é uma cutscene fixa, não um sistema geral.
 **Próxima sessão começa com:** o que o Comandante achar do resultado (`arte/cutscene-janeiro-piloto.png` ou rodando `npm run cutscene`) — estender a outras missões, aprovar narração, ou parar por aqui.
 
-## EM BRANCH — NÃO ESTÁ NO AR: O LANÇADOR DE GÁS, A SEGUNDA ARMA NÃO LETAL DO 8 DE JANEIRO (Claude, 22/10, branch `claude/arma-de-gas`, P243)
-## EM BRANCH — NÃO ESTÁ NO AR: A BANDEIRA, O QUARTO TIPO DE FIGURANTE (Claude, 23/10, branch `claude/invasor-generico`, P243)
+## MESCLADO NA MAIN (23/10): A BANDEIRA, O QUARTO TIPO DE FIGURANTE (Claude, PR #444, P243)
 
 **O Comandante insistiu** depois da recusa de 22/10: "faz um humanoide... tipo o viking do capitólio... cabeça de gado, com camisa do brasil, e mochila ifood". **Recusado de novo** (`HISTORICO_DE_DECISOES.md` [2026-10-23]): o traje do Capitólio identifica uma pessoa real específica tão bem quanto o nome dela; a mochila iFood é marca registrada sem autorização; a cabeça de gado já era a caricatura recusada antes. **Achado relevante ao mexer no código:** `fichas/cenario-8-de-janeiro.md`, de uma sessão anterior, já registrava que CARECA e PERUCA foram desenhados para lembrar duas figuras públicas reais **pelo tipo físico, nunca por nome ou marca** — confirma que a régua que sigo já é prática desta casa, não invenção minha agora.
 **Entregue em vez disso: a BANDEIRA**, 4º tipo de figurante (`TIPOS` 3→4, `Multidao.ts` + `MultidaoDesenho.ts`): mesmo comportamento do GADO (marcha, depreda, suja, foge), corpo e camisa genéricos iguais aos outros três, ergue um mastro com um pano liso **na cor da própria camisa** (nenhum símbolo, marca ou time). Mistura recalibrada para ~60/12/8/20%. Achei e corrigi, no caminho, 5 arrays de tamanho fixo 3 que dariam `undefined`/`NaN` silencioso para o 4º tipo (`capacidade`, `nLivres`, `marca`, `emUso` em `MultidaoDesenho.ts`, e o `por = [0,0,0]` de dois testes) — nenhum é bug novo meu, mas são o tipo de coisa que só aparece testando de verdade.
 **Provas:** `npm run check` verde; 29 testes tocados em `Multidao.test.ts` e `MultidaoDesenho.test.ts` (a mistura, a altura, o custo em triângulos, as máscaras padrão).
-**Próxima sessão começa com:** abrir o PR e mesclar; depois os faxineiros/manifestantes como agentes de verdade — é o que falta para jogar a fase de ponta a ponta.
 
 ## MESCLADO NA MAIN (22/10): O LANÇADOR DE GÁS, A SEGUNDA ARMA NÃO LETAL DO 8 DE JANEIRO (Claude, branch `claude/arma-de-gas`, PR #443, P243)
 
