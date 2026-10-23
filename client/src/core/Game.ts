@@ -10,6 +10,7 @@ import { PlayTelemetry } from './PlayTelemetry';
 import { mapaLiberado } from './Lancamento';
 import type { Audiencia } from './Audiencia';
 import type { JaneiroJogo } from '../environment/JaneiroJogo';
+import type { ChefePneuDesenho } from '../environment/ChefePneuDesenho';
 import { PRACA_PREDIOS } from '../environment/PracaLayout';
 import { BankAccount } from '../bank/BankAccount';
 import { addBankSign } from '../environment/BankSign';
@@ -103,6 +104,7 @@ import { DebugPanel } from '../debug/DebugPanel';
 import { TouchControls } from '../ui/TouchControls';
 import { loadTouchLayout, saveTouchLayout } from '../ui/touchLayout';
 import { AudioSystem } from '../audio/AudioSystem';
+import type { TrilhaDaJaneiro } from '../audio/TrilhaDaJaneiro';
 import { BrandSplash } from '../brand/BrandSplash';
 import { Hangar } from '../hangar/Hangar';
 import { parseLoadoutKey, type LoadoutSpec } from '../hangar/loadout';
@@ -288,6 +290,10 @@ export class Game {
   private praiaHud: HudDaMissao | null = null;
   /** A missão do 8 DE JANEIRO na tela (P217): a multidão desenhada, as mesas sujas e o painel dos três prédios; pedaço sob demanda, só existe nessa missão. */
   private janeiroJogo: JaneiroJogo | null = null;
+  /** O chefão pneu na tela (P248): o pneu gigante e a barra de vida; pedaço sob demanda, só existe na missão do 8 DE JANEIRO. */
+  private chefePneuDesenho: ChefePneuDesenho | null = null;
+  /** A trilha do 8 DE JANEIRO (berrante e trompete, P248): toca em laço enquanto a missão estiver de pé. */
+  private trilhaDaJaneiro: TrilhaDaJaneiro | null = null;
   /** O quadro que o HUD da praia lê, reaproveitado a cada frame (G4). */
   private praiaQuadro: QuadroDaPraia | null = null;
   private readonly remotos: MechBase[] = [];
@@ -1129,6 +1135,19 @@ export class Game {
     if (this.match.missaoJaneiro) {
       void import('../environment/JaneiroJogo').then(({ criarJaneiroJogo }) => {
         this.janeiroJogo = criarJaneiroJogo(this.scene, this.match, document.getElementById('hud')!, (texto) => this.hud.setMissionLinha(texto));
+      });
+      // O chefão pneu (P248): rola da Esplanada até a Praça; o desenho é um objeto só (não instanciado), carregado sob demanda junto com o resto da missão.
+      if (this.match.chefePneu) {
+        const chefe = this.match.chefePneu;
+        void import('../environment/ChefePneuDesenho').then(({ ChefePneuDesenho }) => {
+          this.chefePneuDesenho = new ChefePneuDesenho(chefe);
+          this.scene.add(this.chefePneuDesenho.grupo);
+        });
+      }
+      // A trilha da missão (berrante e trompete, P248): toca em laço, baixinho, sob demanda.
+      void import('../audio/TrilhaDaJaneiro').then(({ TrilhaDaJaneiro }) => {
+        this.trilhaDaJaneiro = new TrilhaDaJaneiro(this.audio);
+        this.trilhaDaJaneiro.tocar(`${import.meta.env.BASE_URL}audio/janeiro/berrante.mp3`);
       });
       // A cutscene-piloto (P245): só com `?cutscene=janeiro-abertura`; nunca pesa em quem joga sem o link (G3/G5).
       if (this.cutsceneQuer === 'janeiro-abertura' && !this.cutscene && !this.cutsceneCarregando) {
@@ -2164,6 +2183,7 @@ export class Game {
       this.multidaoDemo?.desenhar(alpha);
     }
     this.janeiroJogo?.desenhar(alpha);
+    this.chefePneuDesenho?.atualizar();
     this.mech.render(dt, alpha);
     this.bots.render(dt, alpha);
     this.match.allies?.render(dt, alpha);

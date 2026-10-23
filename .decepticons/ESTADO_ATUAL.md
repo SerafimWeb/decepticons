@@ -16,10 +16,15 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-## EM BRANCH — NÃO ESTÁ NO AR: A MULTIDÃO ATRAVESSA PAREDE E "ESCALA" PRÉDIO — ACHADO, NÃO CORRIGIDO — Claude, 23/10 (branch `claude/janeiro-colisao-multidao`, P248)
+## EM BRANCH — NÃO ESTÁ NO AR: O CHEFÃO PNEU GIGANTE E A TRILHA DO BERRANTE — Claude, 23/10 (branch `claude/pos-sessao-23-10`, P249)
 
-**O Comandante** relatou manifestantes atravessando paredes e parecendo escalar os prédios, pedindo mais qualidade no movimento deles. **Investiguei e confirmei a causa** (`sim/Multidao.ts`: a multidão não tem corpo físico nenhum, por desenho — G4/G5; o destino de cada figurante não sabe nada sobre parede ou rampa) e **vi numa captura real** (GPU de verdade) gente alinhada sobre uma borda elevada perto do Congresso, batendo com a rampa sem colisão. **Não corrigi:** a caixa de cada prédio fica numa direção diferente em relação à frente (não dá pra resolver com um limite só), e esse dado hoje não chega à simulação genérica — precisa estender o contrato da missão. Preferi registrar a tentar um remendo que eu não conseguiria conferir direito nesta sessão (máquina sem fôlego para mais capturas). Detalhe em `STATUS_REAL.md`/`ORDENS_DO_COMANDO.md` P248.
-**Próxima sessão começa com:** desenhar como passar a caixa/direção de cada prédio pra `Multidao.ts` e travar o destino fora dela; depois os faxineiros também precisam da mesma trava, se "sujar a mesa" algum dia desenhar o figurante entrando de verdade.
+**O Comandante**, depois de ter o chefão com cara/cabelo do Trump recusado três vezes, propôs: "o chefão pode ser o pneu gigante então! ele sai rolando! é um mecanismo diferente dos robôs humanoides!" — e pediu a trilha sonora (berrante + trompete) que ele trouxe para a fase. **Feito:** `sim/ChefePneu.ts` (pura, G1/G2/G14, 13 testes) — um pneu de 3000 de vida rola em linha reta da Esplanada à Praça, acertado por tiro/explosão/investida igual à multidão (mesmo teste de raio-contra-cilindro); `environment/ChefePneuDesenho.ts` (um objeto só, gira sem derrapar — ângulo = distância ÷ raio —, barra de vida no HUD, sem colidir com a legenda de abertura); `audio/TrilhaDaJaneiro.ts` toca o berrante em laço baixinho (o autor liberou o uso; removi a tag de metadado "Bolsonaro" do arquivo original antes de versionar). **De propósito, primeira versão (R13):** não persegue nem ataca o jogador, sem ligação com o fim da missão.
+**Provas:** typecheck limpo, 81 testes tocados/novos, capturas reais em `arte/janeiro-chefe-pneu-*.png`; falta rodar o `npm run check` completo antes do PR.
+**Próxima sessão começa com:** abrir o PR; depois, se o Comandante gostar do resultado, dar ataque/perseguição ao chefão, ou seguir para o bug de colisão da multidão (P248) que ainda está aberto.
+
+## MESCLADO NA MAIN (23/10): A MULTIDÃO ATRAVESSA PAREDE E "ESCALA" PRÉDIO — ACHADO, NÃO CORRIGIDO (Claude, PR #452, P248)
+
+Investigado e documentado (não corrigido: precisa estender o contrato entre o mapa e a simulação da multidão). Detalhe em `STATUS_REAL.md`/`ORDENS_DO_COMANDO.md` P248.
 
 ## MESCLADO NA MAIN (23/10): QUATRO FIGURANTES NOVOS, TRÊS RECUSADOS COMO CHEFE DE ESTADO REAL (Claude, PR #451, P247)
 
