@@ -21,6 +21,7 @@
     "arquivar": "node scripts/arquivar-docs.mjs",
     "ci:consumo": "node scripts/ciConsumo.mjs",
     "mesa": "node scripts/mesa.mjs",
+    "cutscene": "node scripts/cutscene.mjs",
     "gh": "node scripts/gh.mjs",
     "painel": "node scripts/painel.mjs",
     "site": "node scripts/site.mjs",

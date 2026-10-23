@@ -53,7 +53,9 @@ export function idadeDoBackupH(arquivos: readonly { nome: string; mtimeMs: numbe
   const nossos = arquivos.filter((a) => PADRAO.test(a.nome));
   if (!nossos.length) return null;
   const maisRecente = Math.max(...nossos.map((a) => a.mtimeMs));
-  return (agora.getTime() - maisRecente) / 3_600_000;
+  // Nunca negativo: o disco pode arredondar o mtime alguns milissegundos à frente do relógio que chamou aqui
+  // logo depois de escrever o arquivo (achado em 23/10: flakey sob carga, nunca por um backup "do futuro" de verdade).
+  return Math.max(0, (agora.getTime() - maisRecente) / 3_600_000);
 }
 
 /** Lê a pasta de backups do disco e aplica `idadeDoBackupH`. Pasta ausente (banco em memória, ou o servidor nunca copiou) devolve `null`, nunca lança. */
