@@ -16,6 +16,12 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## MONETIZAÇÃO: TELÕES DIEGÉTICOS NA CIDADE NEON, SÓ COMO IDEIA REGISTRADA — Claude, 23/10 (branch `claude/monetizacao-telao`, P246)
+
+**O Comandante** trouxe de outra conversa a pergunta de como monetizar mirando "o melhor jogo da Steam" sem anúncio forçado, e um post sobre o "Block Blast" (algoritmo que mata o jogador de propósito para forçar anúncio/reviver). **Feito: só documentação**, nenhum código. `GAME_DESIGN.md` § HORIZONTE ganhou a ideia dos telões/letreiros na Cidade Neon (vídeo em loop, começando com vídeo do próprio jogo, trocável por marca real depois sem recompilar; técnico: textura de superfície, fora do tick e da rede, sob demanda como a Praia) e § NÃO É PAY-TO-WIN ganhou a recusa explícita do modelo "Block Blast". **Decidido (23/10, mesmo dia):** prioridade é qualidade do jogo primeiro, **depois os telões** — mostrando vídeo de armas, robôs, times e missões (divulgação interna, sem depender de anunciante externo para valer a pena). **Steam: confirmado como destino, não como prioridade agora**; respondido que é empacotamento (wrapper desktop + Steamworks), não reescrita — a simulação, a rede e o conteúdo não mudam.
+**Sem código tocado; sem teste novo** (conteúdo, risco baixo, P220a).
+**Próxima sessão começa com:** o que estiver em aberto na qualidade/calibragem das missões; depois, planejar os telões diegéticos da Cidade Neon (vídeo por painel, sob demanda, LOD de mídia).
+
 ## O VOCABULÁRIO DA VOZ DE COMANDO "GRANDE IRMÃO" — Claude, 23/10 (branch `claude/vocabulario-de-comando`, P244)
 
 **O Comandante** trouxe de outro chat (Gemini) um pedido de vocabulário técnico/hacker para narrar com o efeito de voz "estilo Big Brother", incluindo os termos crus que queria (DEPLOY, FORMATA, DELETADO, PATCH, OVERWRITE, CORROMPIDO, HARD RESET, DROP). **Achado:** o efeito já existe — é o **Grande Irmão** (P231, `voice/EfeitosDeVoz.ts`, narração F8); não precisava de nada novo em áudio. **Feito:** `.decepticons/VOCABULARIO_COMANDO.md` (a persona, o glossário, callouts prontos) com link em `VOICE_CHAT.md` § 5e. **Decisão:** é documentação para a voz humana do Comandante, não um sistema automático — automatizar por evento de jogo (killfeed, abate) ficaria para uma ordem nova, já descrita no documento como possível próximo passo.

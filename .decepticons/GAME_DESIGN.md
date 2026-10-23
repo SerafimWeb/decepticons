@@ -85,6 +85,9 @@ com Mechs; a camada de inteligência fala a língua de CTI (incidente, TTPs, IOC
 - **Drones voadores pequenos:** unidades de reconhecimento menores que os andróides; escala e regras ainda serão definidas.
 - **Transporte de unidades:** veículos e plataformas para levar Mechs, andróides e tropas pelo cenário.
 - **Missões de sobrevivência em fases:** operações contra andróides humanoides, humanos e Mechs, inspiradas no ritmo de sobrevivência de *Project Zomboid*. Persistência, objetivos e formato ainda serão definidos.
+- **Telões diegéticos na Cidade Neon (P246, 23/10):** painéis e letreiros nos prédios como os que já existem na estética Tron do mapa (`REFERENCIA_VISUAL.md`), tocando vídeo em loop — o que a indústria chama de *intrinsic in-game advertising*. Não é tela de carregamento nem interrompe a partida (seria vetado pelo princípio acima). **Caminho sem custo comercial:** primeiro só com vídeos do próprio jogo (trailer de mapa futuro, arma nova, torneio da comunidade) — zero negociação com rede de anúncio, zero dado de jogador coletado; **depois**, se fizer sentido, troca-se a URL do vídeo no mesmo painel por uma marca real via CDN, sem recompilar o jogo. **Custo técnico a respeitar:** vídeo é textura de superfície comum (não entra no tick de 60 Hz nem no orçamento de 8 KB/s de rede, G11); só baixa perto da câmera (LOD de mídia, G12: hardware integrado não decodifica 5 vídeos de uma vez) e entra como pedaço sob demanda do mapa (como a Praia, nunca no pacote de partida de quem não está na Cidade Neon).
+
+**Em aberto, não registrado como decisão:** o Comandante mencionou mirar "o melhor jogo da Steam". Hoje o jogo é desenhado para **zero instalação, no navegador, portal primeiro** (`IDENTITY.md` § 5, `PRODUÇÃO: TUDO EM CÓDIGO`); Steam pede um executável (um wrapper do build atual é viável — não exige reescrever em Unity), mas é uma decisão de distribuição que ninguém tomou ainda, separada da ideia dos telões.
 
 As ideias são detalhadas em `METAGAME.md` § 10 e permanecem sem prioridade aprovada até decisão do dono.
 
@@ -109,6 +112,11 @@ O jogo é feito para ser **muito bom e todo mundo querer jogar**, não para vend
 - Se um dia houver dinheiro envolvido, é só estética (pintura, neon, decalques, efeitos) ou apoio ao projeto, nunca atributo de combate.
 - Anúncio (se houver) nunca interrompe a partida: só entre rodadas.
 - Qualquer proposta de feature que quebre isto é recusada, não importa quanto renda.
+- **Recusado por princípio (P246, 23/10):** qualquer mecanismo que ajuste a dificuldade pela propensão do jogador a assistir
+  anúncio (o modelo "Block Blast": um modelo prevendo quem vai pagar/assistir, e o jogo matando o jogador de propósito para
+  forçar isso) ou que condicione reviver/continuar a assistir publicidade. Quebra "nada que se compra ganha partida" (o
+  jogador não escolhe nada: é o algoritmo que decide matá-lo) e destruiria a reputação do jogo na Steam, onde esse tipo de
+  prática é motivo de review bombing.
 
 ---
 
