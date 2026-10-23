@@ -25,11 +25,15 @@ const CSS = `
 #cutscene-janeiro .cj-legenda { position: absolute; left: 50%; bottom: 14vh; transform: translateX(-50%); width: min(680px, 86vw); text-align: center;
   font-size: 14px; line-height: 1.6; letter-spacing: 1.3px; text-transform: uppercase; color: var(--ink, #eef2e8); text-shadow: 0 1px 3px #000; opacity: 0; transition: opacity 1.4s ease; }
 #cutscene-janeiro .cj-legenda.cj-visivel { opacity: 1; }
+#cutscene-janeiro .cj-pular { position: absolute; right: 18px; bottom: 18px; font-size: 11px; letter-spacing: 1.5px; color: var(--muted, #7f9c86); text-shadow: 0 1px 2px #000; opacity: 0; transition: opacity 1s ease 1s; }
+#cutscene-janeiro.cj-ativa .cj-pular { opacity: 0.85; }
 `;
 
 /** Quando a legenda aparece e some (s), dentro da duração total da trajetória. */
 const LEGENDA_DE_S = 2;
 const LEGENDA_ATE_S = -3; // negativo: segundos antes do fim
+/** O mesmo clique que ligou a cutscene (ex.: o "clique para jogar" da missão) não pode pulá-la de propósito. */
+const PULAR_APOS_MS = 600;
 
 /** A trajetória da câmera: da Esplanada (de onde a multidão vem) ao Congresso e à Praça entre os três poderes.
  *  Coordenadas no mesmo sistema de `PracaLayout.ts` (x leste, z sul, y para cima); ajustável sem mexer no mapa. */
@@ -49,6 +53,8 @@ export class CutsceneJaneiro {
   private readonly root: HTMLDivElement;
   private readonly legenda: HTMLDivElement;
   private readonly estilo: HTMLStyleElement;
+  private readonly aoPular: (e: Event) => void;
+  private ligadaEm = 0;
   private elapsed = 0;
 
   constructor(camera: THREE.PerspectiveCamera) {
@@ -67,8 +73,18 @@ export class CutsceneJaneiro {
     this.legenda = document.createElement('div');
     this.legenda.className = 'cj-legenda';
     this.legenda.textContent = ABERTURA_DA_MISSAO;
-    this.root.append(topo, fundo, this.legenda);
+    const pular = document.createElement('div');
+    pular.className = 'cj-pular';
+    pular.textContent = '[ clique ou ESC para pular ]';
+    this.root.append(topo, fundo, this.legenda, pular);
     document.body.appendChild(this.root);
+
+    // O mesmo clique que abriu a missão não pode pular a cutscene (PULAR_APOS_MS); captura antes do jogo tratar o clique (mira, tiro).
+    this.aoPular = (): void => {
+      if (this.diretor.overridesRig && performance.now() - this.ligadaEm > PULAR_APOS_MS) this.diretor.pular();
+    };
+    window.addEventListener('pointerdown', this.aoPular, true);
+    window.addEventListener('keydown', this.aoPular, true);
   }
 
   get overridesRig(): boolean {
@@ -86,6 +102,7 @@ export class CutsceneJaneiro {
 
   start(): void {
     this.elapsed = 0;
+    this.ligadaEm = performance.now();
     this.diretor.start();
     this.root.classList.add('cj-ativa');
     // Sinal simples para `scripts/cutscene.mjs` (Playwright) saber quando parar de gravar, sem depender de timing de frame.
@@ -106,6 +123,8 @@ export class CutsceneJaneiro {
   }
 
   dispose(): void {
+    window.removeEventListener('pointerdown', this.aoPular, true);
+    window.removeEventListener('keydown', this.aoPular, true);
     this.root.remove();
     this.estilo.remove();
   }

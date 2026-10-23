@@ -4,7 +4,10 @@
  * e a cutscene em si (`CutsceneJaneiro.ts`, a `CameraPath`) é **carregada sob demanda**, então não pesa no download de
  * quem joga sem o link.
  *
- * `?cutscene=janeiro-abertura&mapa=janeiro&comandante=1` — hoje só existe essa; `cutsceneLink.ts` cresce quando houver outra.
+ * **Tocar sozinha ao abrir a missão (pedido do Comandante, P246) ficou para depois:** achei um bug de ciclo de vida
+ * (o `Game` parece recriar a instância ou zerar o campo `cutscene` pouco depois de tocar `start()`, ainda não
+ * investigado até o fim) e preferi não publicar o automático pela metade. `?cutscene=janeiro-abertura` continua
+ * funcionando (provado de ponta a ponta, com vídeo gravado).
  */
 export type CutsceneId = 'janeiro-abertura';
 

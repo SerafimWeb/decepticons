@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BANDEIRA, CARECA, GADO, Multidao, PASSO_DO_SUSTO, PERUCA, RAZAO_DA_FUGA, senoParabolico, VELOCIDADE, type CausaDaFuga, type ConfigDaMultidao } from './Multidao';
+import { BANDEIRA, BARBARO, CARECA, GADO, Multidao, PASSO_DO_SUSTO, PERUCA, PNEU, PORCO, RAZAO_DA_FUGA, senoParabolico, TIO_SAM, VELOCIDADE, type CausaDaFuga, type ConfigDaMultidao } from './Multidao';
 
 /** Uma Praça de mentira, só para a regra: dois ônibus e quatro bueiros no oeste, três lixeiras, três prédios no leste, duas saídas. */
 const PRACA: ConfigDaMultidao = {
@@ -42,20 +42,24 @@ describe('o cronograma: a mesma semente é a mesma multidão (G2)', () => {
     expect(a.total + a.androides.length).toBe(PRACA.cota);
   });
 
-  it('os ids seguem o nascimento; ninguém nasce antes da primeira chegada (5 s) nem depois do fim do despejo; as três fontes entram e a mistura tem cerca de 60 / 12 / 8 / 20 por cento', () => {
+  it('os ids seguem o nascimento; ninguém nasce antes da primeira chegada (5 s) nem depois do fim do despejo; as três fontes entram e a mistura tem cerca de 38 / 9 / 6 / 14 / 8 / 7 / 7 / 11 por cento', () => {
     const m = new Multidao({ ...PRACA, cota: 3000 });
     for (let i = 1; i < m.total; i++) expect(m.nasce[i]!).toBeGreaterThanOrEqual(m.nasce[i - 1]!);
     expect(m.nasce[0]!).toBeGreaterThanOrEqual(300);
     expect(m.nasce[m.total - 1]!).toBeLessThan(18_000);
-    const por = [0, 0, 0, 0];
+    const por: number[] = [0, 0, 0, 0, 0, 0, 0, 0];
     for (let i = 0; i < m.total; i++) por[m.tipo[i]!]!++;
     const parte = (n: number) => n / m.total;
-    expect(parte(por[GADO]!)).toBeGreaterThan(0.55);
-    expect(parte(por[GADO]!)).toBeLessThan(0.65);
-    expect(parte(por[CARECA]!)).toBeGreaterThan(0.08);
-    expect(parte(por[PERUCA]!)).toBeGreaterThan(0.05);
-    expect(parte(por[BANDEIRA]!)).toBeGreaterThan(0.15);
-    expect(parte(por[BANDEIRA]!)).toBeLessThan(0.25);
+    expect(parte(por[GADO]!)).toBeGreaterThan(0.33);
+    expect(parte(por[GADO]!)).toBeLessThan(0.43);
+    expect(parte(por[CARECA]!)).toBeGreaterThan(0.05);
+    expect(parte(por[PERUCA]!)).toBeGreaterThan(0.03);
+    expect(parte(por[BANDEIRA]!)).toBeGreaterThan(0.09);
+    expect(parte(por[BANDEIRA]!)).toBeLessThan(0.19);
+    expect(parte(por[TIO_SAM]!)).toBeGreaterThan(0.04);
+    expect(parte(por[PORCO]!)).toBeGreaterThan(0.03);
+    expect(parte(por[PNEU]!)).toBeGreaterThan(0.03);
+    expect(parte(por[BARBARO]!)).toBeGreaterThan(0.07);
     // cada figurante nasce junto de uma fonte, e as três famílias de fonte despejam
     const usadas = new Set<string>();
     for (let i = 0; i < m.total; i++) {

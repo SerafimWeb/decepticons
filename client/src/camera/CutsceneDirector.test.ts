@@ -42,4 +42,31 @@ describe('CutsceneDirector (render isolado)', () => {
     director.update(10);
     expect(director.progress).toBe(1);
   });
+
+  it('pular() vai direto para o último quadro-chave e libera a câmera, mesmo no meio da trajetória', () => {
+    const camera = new THREE.PerspectiveCamera();
+    const director = new CutsceneDirector(camera, path(10));
+    director.start();
+    director.update(1); // bem no meio, longe do fim
+    expect(director.done).toBe(false);
+
+    director.pular();
+
+    expect(director.done).toBe(true);
+    expect(director.overridesRig).toBe(false);
+    expect(director.progress).toBe(1);
+    expect(camera.position.x).toBeCloseTo(10, 5);
+  });
+
+  it('pular() antes de start() ou depois de done() não faz nada', () => {
+    const director = new CutsceneDirector(new THREE.PerspectiveCamera(), path(1));
+    director.pular(); // antes de start(): idle, sem efeito
+    expect(director.active).toBe(false);
+
+    director.start();
+    director.update(10); // termina sozinho
+    expect(director.done).toBe(true);
+    director.pular(); // depois de done(): sem efeito (não "reabre" a cutscene)
+    expect(director.done).toBe(true);
+  });
 });
