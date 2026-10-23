@@ -251,6 +251,33 @@ describe('o tiro, a explosão e o susto (a autoridade)', () => {
     m.posicao(i, t + 120, p);
     expect(Math.hypot(p.x - x1, p.z - z1)).toBeCloseTo(m.velocidade[i]! * RAZAO_DA_FUGA, 1);
   });
+
+  it('a onda em cone (P242, canhão sônico): quem está no ângulo e no alcance foge sem perder vida; fora do cone ou longe demais, ninguém', () => {
+    const m = new Multidao(SO_UMA);
+    const fugas: Array<[number, CausaDaFuga]> = [];
+    m.aoFugir = (i, causa) => fugas.push([i, causa]);
+    const t = Math.ceil((m.nasce[0]! + 40) / PASSO_DO_SUSTO) * PASSO_DO_SUSTO;
+    m.avancar(t);
+    const i = algumPresente(m, t);
+    m.posicao(i, t, p);
+    // a boca aponta para +x, a 10 m de distância do figurante (dentro do alcance de 22 m, dentro do meio ângulo de 0,45 rad do sonic.ts)
+    expect(m.assustarEmCone(p.x - 10, p.z, 1, 0, 0.45, 22, t)).toBeGreaterThanOrEqual(1);
+    expect(m.fugiuNoTick(i)).toBe(t);
+    expect(fugas).toContainEqual([i, 'susto']); // empurra (a mesma causa do susto por perto), não é um tiro que fere
+    expect(m.estaMorto(i)).toBe(false);
+  });
+
+  it('a onda em cone erra quem está fora do ângulo ou do alcance, e respeita o mesmo passo do susto por perto', () => {
+    const m = new Multidao(SO_UMA);
+    const t = Math.ceil((m.nasce[0]! + 40) / PASSO_DO_SUSTO) * PASSO_DO_SUSTO;
+    m.avancar(t);
+    const i = algumPresente(m, t);
+    m.posicao(i, t, p);
+    expect(m.assustarEmCone(p.x - 10, p.z, -1, 0, 0.45, 22, t)).toBe(0); // boca apontando para o lado errado
+    expect(m.assustarEmCone(p.x - 10, p.z, 1, 0, 0.45, 5, t)).toBe(0); // alcance curto demais
+    expect(m.assustarEmCone(p.x - 10, p.z, 1, 0, 0.45, 22, t + 1)).toBe(0); // fora do passo do susto
+    expect(m.fugiuNoTick(i)).not.toBe(t);
+  });
 });
 
 describe('o espelho do cliente online: só os eventos do servidor, o resto sai do tempo', () => {

@@ -781,13 +781,16 @@ export class Match {
    * Uma onda sônica (`Armament` a pede a cada aperto do botão 2, uma por boca dos ombros): um cone **de uma vez só** (alcance e meio ângulo da arma, com a folga do raio do
    * corpo), à vista, em **todos** os inimigos vivos. Cada alvo leva o dano da distância e as defesas pelo caminho do projétil (`combat.onProjectileHit`, natureza `sonico`) e é
    * **empurrado** para longe da boca (`MechBase.push`), com o empurrão caindo com a distância como o dano. Quem a solta nunca se empurra; aliado nunca é pego. O cliente online (dano
-   * desligado) só desenha. Regra da partida (G14): o mesmo código offline e no servidor; sem alocação (G4).
+   * desligado) só desenha. **A multidão do 8 DE JANEIRO (P242) também está no cone**: foge, sem perder vida — a arma de dispersão não letal da missão (ao contrário do tiro e da
+   * explosão, que ferem). Fora do `damageEnabled` por ser o mesmo tratamento do `explode()` (a multidão não é "dano" no sentido do Mech online). Regra da partida (G14): o mesmo
+   * código offline e no servidor; sem alocação (G4).
    */
   waveCone(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats): void {
     const wave = w.wave;
     if (!wave) return;
     this.onWave?.(origin, dir, attacker.collider, w);
     this.drawWave(origin, dir, w);
+    if (this.multidao && this.multidao.presentes > 0) this.multidao.assustarEmCone(origin.x, origin.z, dir.x, dir.z, wave.halfAngle, w.maxRange, this.tickJaneiro);
     if (!this.combat.damageEnabled) return;
     for (const group of this.foesOf(attacker)) for (const m of group) this.waveAt(attacker, origin, dir, w, m);
   }

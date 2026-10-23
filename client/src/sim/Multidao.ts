@@ -572,6 +572,35 @@ export class Multidao {
     return n;
   }
 
+  /**
+   * A onda sônica (e qualquer outra arma de dispersão por cone, P242: "a arma de som já existe, o canhão sônico"): quem está dentro do alcance e do meio ângulo da direção
+   * foge, **sem perder vida** — ao contrário de `atirar`, isto nunca mata, é o ponto da arma (`combat/weapons.ts`, "sonic": "o ponto dela é tirar o inimigo do lugar"). Entra na
+   * mesma régua do susto por perto (`PASSO_DO_SUSTO`). Devolve quantos fugiram.
+   */
+  assustarEmCone(ox: number, oz: number, dx: number, dz: number, meioAngulo: number, alcance: number, t: number): number {
+    if (!this.autoridade || t % PASSO_DO_SUSTO !== 0) return 0;
+    const h = Math.sqrt(dx * dx + dz * dz);
+    if (h < 1e-9) return 0;
+    const ux = dx / h;
+    const uz = dz / h;
+    const cosMin = Math.cos(meioAngulo);
+    const alcance2 = alcance * alcance;
+    this.calcularPosicoes(t);
+    let n = 0;
+    for (let i = 0; i < this.total; i++) {
+      if (this.presente[i] === 0 || this.fugiu[i] === 1) continue;
+      const cx = this.posX[i]! - ox;
+      const cz = this.posZ[i]! - oz;
+      const d2 = cx * cx + cz * cz;
+      if (d2 > alcance2 || d2 < 1e-9) continue;
+      const d = Math.sqrt(d2);
+      if ((cx * ux + cz * uz) / d < cosMin) continue;
+      this.fugir(i, t, 'susto');
+      n++;
+    }
+    return n;
+  }
+
   // ======================= o espelho: o que o servidor mandou =======================
 
   /** O servidor disse: `i` morreu no tick `t`. */
