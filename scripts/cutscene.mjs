@@ -13,7 +13,7 @@
 import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { spawnSync } from 'node:child_process';
-import { extname, join, resolve } from 'node:path';
+import { extname, join, resolve, sep } from 'node:path';
 import { chromium } from 'playwright-core';
 import { acharFfmpeg } from './sonsRodar.mjs';
 
@@ -27,7 +27,13 @@ const server = createServer((req, res) => {
   let p = decodeURIComponent((req.url ?? '/').split('?')[0]);
   if (p.startsWith(BASE)) p = p.slice(BASE.length);
   if (p.endsWith('/') || p === '') p += 'index.html';
-  const file = join(RAIZ, p);
+  // Só serve o que fica dentro de dist/: sem isto, "../../../" no link escaparia da pasta (achado da revisão de segurança).
+  const file = resolve(RAIZ, '.' + p);
+  if (file !== RAIZ && !file.startsWith(RAIZ + sep)) {
+    res.writeHead(403);
+    res.end('403');
+    return;
+  }
   if (!existsSync(file) || !statSync(file).isFile()) {
     res.writeHead(404);
     res.end('404');
@@ -36,7 +42,8 @@ const server = createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': MIME[extname(file)] ?? 'application/octet-stream' });
   res.end(readFileSync(file));
 });
-await new Promise((r) => server.listen(0, r));
+// Loopback só: este servidor nasce e morre dentro do script, nunca precisa ser alcançável pela rede.
+await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const porta = server.address().port;
 
 let browser = null;
@@ -70,7 +77,7 @@ const erros = [];
 page.on('pageerror', (e) => erros.push(e.message));
 page.on('console', (m) => m.type() === 'error' && erros.push(m.text()));
 
-await page.goto(`http://localhost:${porta}${BASE}/?mapa=janeiro&modo=survival&comandante=1&cutscene=janeiro-abertura&depurar`);
+await page.goto(`http://127.0.0.1:${porta}${BASE}/?mapa=janeiro&modo=survival&comandante=1&cutscene=janeiro-abertura&depurar`);
 await page.waitForFunction(() => !!window.__game, null, { timeout: 120_000 });
 for (let i = 0; i < 8; i++) {
   await page.click('#cta').catch(() => {});
