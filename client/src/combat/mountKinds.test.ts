@@ -80,8 +80,8 @@ describe('as listas de cada chassi obedecem ao contrato (ARM_SLOTS conferido con
     expect(entradas.filter((e) => e.id === 'sonic').every((e) => e.ranhura === 'shoulders')).toBe(true);
   });
 
-  it('o Marauder, o único com ombros, oferece nos ombros tudo o que cabe em ombro e já tem uma arma do tipo (foguetes, chuva, sônico, guiado, os mísseis novos, a granada e o arpão)', () => {
-    expect(ARM_SLOTS.marauder.shoulders).toEqual(['rockets', 'barrage', 'sonic', 'seeker', 'swarm', 'cruise', 'grenade', 'harpoon']);
+  it('o Marauder, o único com ombros, oferece nos ombros tudo o que cabe em ombro e já tem uma arma do tipo (foguetes, chuva, sônico, gás, guiado, os mísseis novos, a granada e o arpão)', () => {
+    expect(ARM_SLOTS.marauder.shoulders).toEqual(['rockets', 'barrage', 'sonic', 'gas', 'seeker', 'swarm', 'cruise', 'grenade', 'harpoon']);
     for (const id of WEAPON_IDS.filter((x) => fitsMount(x, 'shoulder'))) expect(ARM_SLOTS.marauder.shoulders, id).toContain(id);
   });
 });

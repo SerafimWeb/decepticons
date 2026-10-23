@@ -19,6 +19,7 @@ export const NATUREZA_ROTULO: Readonly<Record<DamageType, string>> = {
   corte: 'corte',
   eletrico: 'elétrico',
   criogenico: 'criogênico',
+  toxico: 'tóxico',
 };
 
 /** O que o acerto faz com o alvo, no feminino/masculino que a frase pede ("deixa o alvo queimando"). */

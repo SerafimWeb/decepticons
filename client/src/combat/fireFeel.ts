@@ -29,6 +29,7 @@ export const FIRE_KICK: Readonly<Record<WeaponId, number>> = {
   cannon: 0.46, // um tiro a cada 2,6 s: o maior solavanco do arsenal (o MK III chega a 0,6, o teto da câmera)
   siege: 0.45, // o canhão do titã: 150 de dano, um tiro a cada 3,2 s — o maior obus depois do canhão dos Mechs
   sonic: 0.22, // um baque por aperto, a cada 1,2 s: pesa como a escopeta; as duas bocas dos ombros somam
+  gas: 0.16, // o "puf" do lançador, a cada 1,5 s: mais macio que o baque sônico, perto do lança-granadas
   autocannon: 0.035, // 5 tiros/s: uma pancada curta por tiro, que soma numa trepidação firme
   rotary: 0.014, // 20 tiros/s somam: o zumbido da rajada, sem solavanco por bala
   chainsaw: 0, // corpo a corpo: a serra tem som e fagulha, e tremer a câmera o tempo todo cansaria

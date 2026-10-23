@@ -49,10 +49,9 @@ describe('arpão magnético: o que é', () => {
     }
   });
 
-  it('o protocolo conhece o arpão (no fim da lista, para os índices antigos não mudarem)', () => {
+  it('o protocolo conhece o arpão (índice 19, fixo: arma nova entra depois dele, nunca no meio)', () => {
     const i = NET_WEAPONS.indexOf('harpoon');
-    expect(i).toBeGreaterThan(0);
-    expect(i).toBe(NET_WEAPONS.length - 1);
+    expect(i).toBe(19);
     expect(weaponFromNet(i)).toBe('harpoon');
   });
 });

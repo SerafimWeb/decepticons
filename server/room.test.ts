@@ -763,7 +763,7 @@ describe('Armas de aço online: o tiro de cada uma vira evento de tiro e o dano 
   it('o catálogo de tiros da rede só se acrescenta no fim (canhão, automático, sônico e teleguiado seguem a ordem; depois o lançador leve, o cruzador, o laser, o cerco, o lança-granadas e o arpão) e o protocolo é o 20 ou mais', () => {
     expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(20);
     expect(NET_WEAPONS.slice(10, 14)).toEqual(['cannon', 'autocannon', 'sonic', 'seeker']);
-    expect(NET_WEAPONS.slice(14)).toEqual(['swarm', 'cruise', 'laser', 'siege', 'grenade', 'harpoon']);
+    expect(NET_WEAPONS.slice(14)).toEqual(['swarm', 'cruise', 'laser', 'siege', 'grenade', 'harpoon', 'gas']);
     expect(NET_WEAPONS.slice(0, 10)).toEqual(['plasma', 'rockets', 'blaster', 'chainsaw', 'shotgun', 'barrage', 'railgun', 'emp', 'arc', 'cryo']);
   });
 });

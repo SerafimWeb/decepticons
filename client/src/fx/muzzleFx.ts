@@ -50,6 +50,7 @@ export const MUZZLE_FX: Readonly<Record<WeaponId, MuzzleFx | null>> = {
     ],
   },
   sonic: null, // a onda se desenha sozinha (`fx/WaveVisuals.ts`)
+  gas: null, // mesma onda (o desenho não distingue a arma, só a cor do atirador)
   plasma: null,
   blaster: null,
   shotgun: null,

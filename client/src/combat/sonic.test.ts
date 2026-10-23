@@ -53,8 +53,8 @@ describe('canhão sônico: o que é', () => {
     }
   });
 
-  it('só ela tem onda; o resto do arsenal segue sem o campo', () => {
-    for (const id of WEAPON_IDS) expect(weapon(id).wave !== undefined, id).toBe(id === 'sonic');
+  it('só ela e o gás (P243) têm onda; o resto do arsenal segue sem o campo', () => {
+    for (const id of WEAPON_IDS) expect(weapon(id).wave !== undefined, id).toBe(id === 'sonic' || id === 'gas');
   });
 });
 
