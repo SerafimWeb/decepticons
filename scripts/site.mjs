@@ -748,12 +748,20 @@ async function check() {
   try {
     browser = await launchBrowser();
     const page = await browser.newPage();
+    // O jogo em `jogar/` procura o servidor de jogo em localhost:2567 (`onlineConfig.defaultServer`): sem nada ali, a recusa de conexão
+    // é benigna (mesmo raciocínio do `smoke.mjs`). Numa máquina com um servidor de verdade ali (de outra sessão, ou de produção local),
+    // a resposta pode chegar **sem CORS** para uma rota que esse servidor ainda não tem (achado em 23/10, P246: `/telao`) e o navegador
+    // vira um erro de CORS em vez de "Failed to load resource" — o smoke já aborta essa porta de propósito; aqui falta o mesmo.
+    const SERVIDOR_LOCAL = /^https?:\/\/(localhost|127\.0\.0\.1):2567\//;
+    await page.route(SERVIDOR_LOCAL, (r) => r.abort('connectionrefused'));
     // Fonte do Google que não carrega não é erro nosso: a página cai no monoespaçado do sistema, e o
     // aviso de rede não interrompe nada. O console **não diz qual recurso falhou**, então
     // "Failed to load resource" fica por conta do handler de response, que traz a URL — foi ele que
     // derrubou o check da `main` em 27/09/2026: um 404 de woff2 do Google Fonts virou
     // `console: Failed to load resource`, o filtro de fonte não achou a URL no texto e o deploy não saiu.
     page.on('console', (m) => {
+      const onde = m.location().url;
+      if (SERVIDOR_LOCAL.test(onde) && /Failed to load resource/.test(m.text())) return;
       const texto = m.text();
       if (texto.includes('Failed to load resource')) return;
       if (m.type() === 'error' && !/fonts\.g/.test(texto)) failures.push(`console: ${texto}`);

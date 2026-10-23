@@ -37,6 +37,9 @@ const VISTAS = {
   banco: { cam: '-2,6,-8', mira: '-24,6,-31', fov: 68 },
   cidade: { cam: '4,9,34', mira: '-14,14,-40', fov: 72 },
   chefe: { cam: '8,6,-2', mira: '-8,6,-14', fov: 62 },
+  // Os telões diegéticos (P246): um de cada fachada, de frente para a tela.
+  telao1: { cam: '48,10,-15', mira: '26,11,-15', fov: 55 },
+  telao2: { cam: '4,19,-30', mira: '4,23,-64', fov: 55 },
 };
 
 const server = await createServer({ configFile: resolve('vite.config.ts'), logLevel: 'error', server: { port: 5198, strictPort: false, open: false } });

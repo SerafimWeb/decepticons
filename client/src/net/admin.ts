@@ -25,6 +25,7 @@ import { serverHttpUrl } from '../../../shared/net/serverUrl';
 import { chaveDoToken as chaveDaConta } from './sessao';
 import { ADMIN_REGRAS_GRAVAR_PATH, ADMIN_REGRAS_PATH, lerRegrasDaResposta, type RegrasOnline } from '../../../shared/regras';
 import { ADMIN_VISIBILIDADE_PATH, lerConfig, type ConfigDeVisibilidade, type EstadoDeVisibilidade } from '../../../shared/visibilidade';
+import { ADMIN_TELAO_PATH, lerConfigDeTelao, TELAO_PATH, type ConfigDeTelao, type TelaoItem } from '../../../shared/telao';
 import { parseStatus, STATUS_PATH, type ServerStatus } from '../../../shared/net/status';
 
 /** Por que uma chamada não deu certo, em palavras que a tela traduz. */
@@ -86,8 +87,23 @@ export class AdminCliente {
   /** Grava o que os jogadores veem (P191): só as exceções ao padrão do código. Devolve a configuração nova do servidor. */
   gravarVisibilidade = (itens: Record<string, EstadoDeVisibilidade>): Promise<Resposta<ConfigDeVisibilidade>> =>
     this.chamar(ADMIN_VISIBILIDADE_PATH, (r) => ((r as { itens?: unknown } | null)?.itens ? lerConfig(r) : null), { metodo: 'POST', corpo: { itens } });
+  /** Grava qual vídeo toca em cada telão da Cidade Neon (P246); `null` desliga a tela. Devolve a configuração nova do servidor. */
+  gravarTelao = (itens: Record<string, TelaoItem | null>): Promise<Resposta<ConfigDeTelao>> =>
+    this.chamar(ADMIN_TELAO_PATH, (r) => ((r as { itens?: unknown } | null)?.itens ? lerConfigDeTelao(r) : null), { metodo: 'POST', corpo: { itens } });
   reiniciar = (confirmar: boolean): Promise<Resposta<AdminReiniciar>> =>
     this.chamar(ADMIN_REINICIAR_PATH, lerReinicio, { metodo: 'POST', corpo: { confirmar } });
+
+  /** Os telões da Cidade Neon, públicos e sem token (o mesmo que `GET /telao` responde a qualquer jogador): para o painel mostrar o que já está gravado antes do Comandante mexer. */
+  async telaoPublico(): Promise<ConfigDeTelao | null> {
+    const url = this.base ? `${this.base}${TELAO_PATH}` : null;
+    if (!url) return null;
+    try {
+      const res = await this.buscar(url, { cache: 'no-store', mode: 'cors', signal: AbortSignal.timeout(4000) });
+      return res.ok ? lerConfigDeTelao(await res.json()) : null;
+    } catch {
+      return null;
+    }
+  }
 
   /** O status público: quantos jogam e há quanto tempo o servidor está de pé (`null` = não respondeu). */
   async statusPublico(): Promise<ServerStatus | null> {
