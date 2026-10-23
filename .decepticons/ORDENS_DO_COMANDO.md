@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P249 — O chefão pneu gigante e a trilha do berrante (23/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P249 | 23/10 | Depois de recusado o chefão com a cara/cabelo do Trump (três vezes seguidas), o Comandante propôs: "o chefão pode ser o pneu gigante então! ele sai rolando... é um mecanismo diferente dos robôs humanoides!" e pediu para integrar a trilha sonora (berrante + trompete) que ele trouxe para a fase | 🟡 | **Feito:** `sim/ChefePneu.ts` (pura, 13 testes) — um pneu gigante de 3000 de vida rola em linha reta da Esplanada até a Praça, acertado por tiro/explosão/investida como a multidão; `environment/ChefePneuDesenho.ts` (um objeto só, gira sem derrapar, barra de vida no HUD); `audio/TrilhaDaJaneiro.ts` toca o berrante+trompete em laço (metadado "Bolsonaro" do arquivo original removido antes de entrar no repositório). **Primeira versão de propósito** (R13): não persegue nem ataca o jogador, sem ligação com o fim da missão | `STATUS_REAL.md` P249; `arte/janeiro-chefe-pneu-*.png` |
+
 ## P248 — Multidão atravessando parede e "escalando" prédio: achado, não corrigido ainda (23/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

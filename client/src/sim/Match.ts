@@ -37,6 +37,7 @@ import { TorresDeVigia } from './TorresDeVigia';
 import { MissaoDoRio } from './MissaoDoRio';
 import type { MissaoJaneiro, SituacaoDaPraca } from './MissaoJaneiro';
 import type { Multidao } from './Multidao';
+import type { ChefePneu } from './ChefePneu';
 import { posicaoNaMarcha } from './DragaMarcha';
 import { ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VIDA } from '../environment/ArenaLayout';
 import { QUADRO, QuadroDeLuz } from './QuadroDeLuz';
@@ -268,6 +269,8 @@ export class Match {
   readonly missaoJaneiro: MissaoJaneiro | null = null;
   /** A multidão da missão (`sim/Multidao.ts`): uma linha de dados por figurante, sem corpo na física. O cliente a desenha; o servidor (e o jogo offline) decide a morte e a fuga. */
   readonly multidao: Multidao | null = null;
+  /** O chefão pneu (P248): um alvo só, sem fase, que rola da Esplanada até a Praça. `null` fora da missão do 8 DE JANEIRO. */
+  readonly chefePneu: ChefePneu | null = null;
   /** O tick da missão do 8 DE JANEIRO (o relógio da multidão: o mesmo no servidor e no cliente, G2). */
   private tickJaneiro = 0;
   /** Rascunhos reaproveitados da missão (G4): a situação da Praça, onde estão os jogadores (para o susto) e quem fugiu por causa do jogador. */
@@ -415,6 +418,8 @@ export class Match {
       multidao.aoSair = (i) => {
         if (this.fugaPeloJogador[i] === 1) this.missaoJaneiro?.registrarExpulso();
       };
+      // O chefão pneu (P248): rola da Esplanada até a Praça; um alvo só, sem ligação com o resultado da missão (ela segue decidida pela integridade dos três prédios).
+      this.chefePneu = new J.ChefePneu(J.PADRAO_DO_CHEFE_PNEU);
     }
     // O escudo do Draga (parte D): os geradores nascem na cena como alvos destrutíveis (o mesmo registro dos coqueiros); o último a cair derruba o escudo. A defesa vem do chefe do mapa (sob demanda).
     const defesa = amazonia && survival ? exigirChefe('amazonia').defesa : undefined;
@@ -615,13 +620,16 @@ export class Match {
     };
     // O tiro do jogador também acerta a multidão da missão do 8 DE JANEIRO (ela não tem corpo na física): a linha deste passo do projétil, até onde a parede ou o chão a deixa ir.
     const multidao = this.multidao;
-    if (multidao) {
+    const chefePneu = this.chefePneu;
+    if (multidao || chefePneu) {
       this.projectiles.contraMassa = (ox, oy, oz, dx, dy, dz, alcance, dano) =>
-        multidao.presentes > 0 && multidao.atirar(ox, oy, oz, dx, dy, dz, alcance, dano, this.tickJaneiro) >= 0;
+        (!!multidao && multidao.presentes > 0 && multidao.atirar(ox, oy, oz, dx, dy, dz, alcance, dano, this.tickJaneiro) >= 0) ||
+        (!!chefePneu && chefePneu.atirar(ox, oy, oz, dx, dy, dz, alcance, dano));
     }
     const explode = (at: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats): void => {
       this.combat.explode(at, dir, owner, w);
       if (multidao && w.blastRadius > 0) multidao.explodir(at.x, at.y, at.z, w.blastRadius, w.damage, this.tickJaneiro);
+      if (chefePneu && w.blastRadius > 0) chefePneu.explodir(at.x, at.y, at.z, w.blastRadius, w.damage);
       this.drones?.explosion(at, w);
       this.onExplosion?.(at, w);
     };
@@ -1453,6 +1461,7 @@ export class Match {
     const { RAIO_DA_INVESTIDA, DANO_DA_INVESTIDA, RAIO_DO_SUSTO } = this.janeiroPedaco!;
     const t = ++this.tickJaneiro;
     multidao.avancar(t);
+    this.chefePneu?.avancar(dt);
     const pontos = this.pontosDoSusto;
     while (pontos.length < this.players.length) pontos.push({ x: 0, z: 0 });
     for (let k = 0; k < pontos.length; k++) {
@@ -1460,7 +1469,10 @@ export class Match {
       const vivo = p !== undefined && p.alive;
       pontos[k]!.x = vivo ? p.simPosition.x : 1e6;
       pontos[k]!.z = vivo ? p.simPosition.z : 1e6;
-      if (vivo && p.isDashing) multidao.explodir(p.simPosition.x, 1, p.simPosition.z, RAIO_DA_INVESTIDA, DANO_DA_INVESTIDA, t);
+      if (vivo && p.isDashing) {
+        multidao.explodir(p.simPosition.x, 1, p.simPosition.z, RAIO_DA_INVESTIDA, DANO_DA_INVESTIDA, t);
+        this.chefePneu?.explodir(p.simPosition.x, 1, p.simPosition.z, RAIO_DA_INVESTIDA, DANO_DA_INVESTIDA);
+      }
     }
     multidao.assustarPorPerto(pontos, RAIO_DO_SUSTO, t);
     // Os androides rebeldes entram no cronograma da multidão, um por vaga do pool (no máximo REBELDES_MAX vivos); sem vaga, esperam a próxima.
@@ -1527,6 +1539,7 @@ export class Match {
       this.rebeldesEntraram = 0;
       this.rebeldesVivosN = 0;
       this.bots.setRoster(0, 0); // os androides rebeldes saem de campo e voltam no cronograma
+      this.chefePneu?.reiniciar();
     }
     this.nucleo?.reset();
     this.cabos?.reset();
