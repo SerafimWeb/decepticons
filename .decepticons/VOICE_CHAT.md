@@ -134,6 +134,8 @@ Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qu
 
 **Prova:** `medicoes/efeitos-de-voz.mjs` (29 verificações num `OfflineAudioContext` do Chrome), `gravacao-narrada.mjs` e `gravacao-narrada-jogo.mjs`; fotos `arte/narracao-f10-claude.png` e `arte/voz-efeito-claude.png`.
 
+**O vocabulário da persona (P244):** o léxico que o Comandante fala com o efeito **Grande Irmão** (narração F8) está em `VOCABULARIO_COMANDO.md` — glossário técnico/cru (DEPLOY, FORMATA, DELETADO, PATCH, OVERWRITE, CORROMPIDO, HARD RESET, DROP) e callouts prontos. É referência para a voz humana, não um sistema automático; o documento também diz o que faltaria para o jogo narrar sozinho por evento, se um dia for pedido.
+
 ## 5f. Quando a voz não funciona: o aviso e o diagnóstico (P237, 20/10)
 
 **O que o Comandante viveu:** o microfone funcionava no teste, e a voz não chegou ao outro PC ao lado. A voz **funciona** entre dois navegadores (provado), mas o jogo **não dizia por que** uma pessoa ficava fora dela.
