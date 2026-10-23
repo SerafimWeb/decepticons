@@ -161,6 +161,7 @@ export const WEAPON_LOOK: Readonly<Record<WeaponId, WeaponLook>> = {
   },
   barrage: MISSILE('rocket', 0.9),
   sonic: QUIET,
+  gas: QUIET,
   flamer: QUIET,
   chainsaw: QUIET,
 };

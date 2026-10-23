@@ -90,6 +90,7 @@ const WEAPON_ICON: Record<WeaponId, string> = {
   flamer: WEAPON_ICON_NOVAS.flamer,
   rotary: WEAPON_ICON_NOVAS.rotary,
   sonic: '<rect x="2" y="9" width="5" height="6" rx="1" /><path d="M10 8a5 5 0 0 1 0 8M14 5a9 9 0 0 1 0 14M18 2a13 13 0 0 1 0 20" />',
+  gas: '<circle cx="8" cy="16" r="3" /><circle cx="15" cy="10" r="2.4" /><circle cx="15" cy="22" r="2.4" /><circle cx="21" cy="16" r="1.8" />',
   cannon: '<path d="M2 11h12v6H2z" /><path d="M14 12h6v4h-6z" /><path d="M20 11h2v6h-2" /><path d="M5 17v3h5v-3" /><circle cx="8" cy="14" r="1.2" />',
   siege: '<path d="M1 10h14v7H1z" /><path d="M15 11h7v5h-7z" /><path d="M22 10h3v7h-3" /><path d="M4 17v4h6v-4" /><circle cx="8" cy="13.5" r="1.4" />',
   autocannon: '<path d="M3 12h13v5H3z" /><path d="M16 13h5v3h-5z" /><path d="M6 12V8h6v4" /><path d="M7 17v3h4v-3" /><path d="M21 14h2" /><circle cx="20" cy="6" r="0.8" /><circle cx="17" cy="8" r="0.8" />',
@@ -833,7 +834,7 @@ const CHASSIS_SIGLA: Record<ChassisId, string> = { vector09: 'V09', android: 'A-
 const PLATE_ICON = '<path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z" />';
 
 const DAMAGE_LABEL: Record<DamageType, string> = {
-  termico: 'TÉRMICO', laser: 'LASER', balistico: 'BALÍSTICO', explosivo: 'EXPLOSIVO', pulso: 'PULSO', sonico: 'SÔNICO', corte: 'CORTE', eletrico: 'ELÉTRICO', criogenico: 'CRIOGÊNICO',
+  termico: 'TÉRMICO', laser: 'LASER', balistico: 'BALÍSTICO', explosivo: 'EXPLOSIVO', pulso: 'PULSO', sonico: 'SÔNICO', corte: 'CORTE', eletrico: 'ELÉTRICO', criogenico: 'CRIOGÊNICO', toxico: 'TÓXICO',
 };
 
 /** Quanto a chapa levantada segura de cada natureza de dano (com o bônus do nível). */

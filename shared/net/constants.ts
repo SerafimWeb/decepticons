@@ -25,7 +25,8 @@
 // 19 (16/10): o lança-granadas (`grenade`, P160) entra em `NET_WEAPONS`; o evento de tiro leva a direção até a mira (como o do cruzador) e o cliente refaz o arco. Um cliente da versão 18 recusaria o tiro como evento ruim.
 // 20 (17/10): o arpão magnético (`harpoon`, P77) entra em `NET_WEAPONS` (o disparo é um evento de tiro por ombro; o puxão é só do servidor e chega pelo estado dos robôs); um cliente da versão 19 recusaria o tiro como evento ruim.
 // 21 (19/10): a conexão leva o mapa da sala (`&mapa=`, P218 etapa O1, `shared/net/mapa.ts`); um servidor da versão 20 ignoraria o pedido e poria o jogador na Cidade Neon enquanto o cliente monta outro chão.
-export const PROTOCOL_VERSION = 21;
+// 22 (22/10): o lançador de gás (`gas`, P243) entra em `NET_WEAPONS` (a nuvem é um evento de tiro, igual ao canhão sônico); um cliente da versão 21 recusaria o tiro como evento ruim.
+export const PROTOCOL_VERSION = 22;
 
 /** Tick fixo da simulação, igual no cliente e no servidor (G1). */
 export const SIM_HZ = 60;

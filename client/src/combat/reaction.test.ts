@@ -12,16 +12,16 @@ import { DAMAGE_TYPE, weapon, WEAPON_IDS, type DamageType, type WeaponStats } fr
 const NO_FX = { burst: () => {} } as never;
 /** O torso do rig (protegido no `MechBase`): o teste lê o que o desenho mostra. */
 const torso = (m: Vector09) => (m as unknown as { rig: { torso: { rotation: { x: number; y: number } } } }).rig.torso;
-const TIPOS: DamageType[] = ['termico', 'laser', 'balistico', 'explosivo', 'pulso', 'sonico', 'corte', 'eletrico', 'criogenico'];
+const TIPOS: DamageType[] = ['termico', 'laser', 'balistico', 'explosivo', 'pulso', 'sonico', 'toxico', 'corte', 'eletrico', 'criogenico'];
 
 /**
  * Dono, 11/10 (P69): *"melhorar impactos, local onde eles batem, reação nos inimigos"*. Todo acerto que passa pela defesa empurra o alvo e dá um tranco no torso dele, na medida do
  * que bateu: o canhão pesado joga o robô para trás, a rotatória só o incomoda, o grande resiste.
  */
 describe('a conta da reação (combat/reaction): quanto cada acerto empurra e treme', () => {
-  it('toda natureza de dano tem o seu valor; pulso, som, corte e choque não empurram (o som tem o empurrão dele)', () => {
+  it('toda natureza de dano tem o seu valor; pulso, som, gás, corte e choque não empurram (o som e o gás têm o empurrão deles)', () => {
     expect(Object.keys(PUSH_PER_DAMAGE).sort()).toEqual([...TIPOS].sort());
-    for (const t of ['pulso', 'sonico', 'corte', 'eletrico'] as const) expect(PUSH_PER_DAMAGE[t], t).toBe(0);
+    for (const t of ['pulso', 'sonico', 'toxico', 'corte', 'eletrico'] as const) expect(PUSH_PER_DAMAGE[t], t).toBe(0);
     for (const t of ['balistico', 'explosivo', 'laser', 'termico', 'criogenico'] as const) expect(PUSH_PER_DAMAGE[t], t).toBeGreaterThan(0);
   });
 

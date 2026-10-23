@@ -23,6 +23,13 @@
       "aceita": true
     },
     {
+      "id": "gas",
+      "nome": "Lançador de gás",
+      "tipo": "energy",
+      "intervalo": 1.5,
+      "aceita": true
+    },
+    {
       "id": "seeker",
       "nome": "Míssil teleguiado",
       "tipo": "ammo",

@@ -39,7 +39,7 @@ export const TIERS: readonly TierRule[] = [
 
 import type { StatusInflict } from './StatusEffects';
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer' | 'cannon' | 'autocannon' | 'sonic' | 'seeker' | 'siege' | 'swarm' | 'cruise' | 'laser' | 'grenade' | 'harpoon';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer' | 'cannon' | 'autocannon' | 'sonic' | 'seeker' | 'siege' | 'swarm' | 'cruise' | 'laser' | 'grenade' | 'harpoon' | 'gas';
 
 /**
  * Lançador de mísseis leve (P152: "que solte 8, 16 ou até 32 mísseis sequencialmente"): **um aperto esvazia o lançador**. Os mísseis saem um a um, a `fireInterval` de
@@ -355,6 +355,21 @@ const BASE: Record<WeaponId, WeaponBase> = {
     optimalRange: 10, maxRange: 22, minFactor: 0.35,
     blastRadius: 0, mass: 3,
     wave: { halfAngle: 0.45, shove: 8 }, tierRange: 0.25,
+  },
+  /**
+   * Lançador de gás (dono, 22/10, P243: a segunda arma não letal, "junto da arma de som"). **Arma de ombro**, igual ao canhão sônico (mesmo campo
+   * `wave`: `Match.waveCone` e `Multidao.assustarEmCone` não sabem a diferença entre as duas — qualquer arma de ombro com `wave` já dispersa a
+   * multidão sem matar). O que muda: a nuvem é **mais larga e mais curta** que a onda sônica (80° contra 52°, 16 m contra 22 m: um gás se espalha,
+   * não viaja) e **empurra bem menos** (3 m/s: é fumaça, não pressão). Dano um pouco menor (16 contra 20): o ponto dela também é dispersar, não
+   * ferir. Sobe de nível ganhando alcance (+20% por nível, um pouco menos que o sônico).
+   */
+  gas: {
+    id: 'gas', name: 'Lançador de gás', kind: 'energy',
+    damage: 16, fireInterval: 1.5, heatPerShot: 0.1,
+    magazine: 0, reload: 0, speed: 0,
+    optimalRange: 7, maxRange: 16, minFactor: 0.4,
+    blastRadius: 0, mass: 2.5,
+    wave: { halfAngle: 0.7, shove: 3 }, tierRange: 0.2,
   },
   /**
    * Míssil teleguiado (dono, 11/10; recalibrado em 15/10, P152: "míssil guiado de médio alcance"): o **guiado de médio alcance** do arsenal, o que **não é só mais foguete**.
@@ -694,7 +709,7 @@ function atTier(b: WeaponBase, tier: Tier): WeaponStats {
  * Natureza do dano: escudos físicos seguram cada uma de um jeito (`MetalShield.ts`). Arma nova declara a sua aqui
  * (o `Record` obriga). `sonico` ainda não tem arma: o escudo amortecedor já está pronto para ela.
  */
-export type DamageType = 'termico' | 'laser' | 'balistico' | 'explosivo' | 'pulso' | 'sonico' | 'corte' | 'eletrico' | 'criogenico';
+export type DamageType = 'termico' | 'laser' | 'balistico' | 'explosivo' | 'pulso' | 'sonico' | 'corte' | 'eletrico' | 'criogenico' | 'toxico';
 export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
   plasma: 'termico',
   blaster: 'laser',
@@ -711,6 +726,7 @@ export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
   siege: 'balistico',
   autocannon: 'balistico',
   sonic: 'sonico',
+  gas: 'toxico',
   seeker: 'explosivo',
   swarm: 'explosivo',
   cruise: 'explosivo',

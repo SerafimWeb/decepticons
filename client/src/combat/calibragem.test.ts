@@ -15,6 +15,7 @@ const LEVELS: readonly Tier[] = [0, 1, 2];
 const FAIXAS: Readonly<Record<WeaponId, RangeBand>> = {
   chainsaw: 'corpo',
   sonic: 'curto',
+  gas: 'curto',
   flamer: 'curto',
   shotgun: 'curto',
   cryo: 'curto',

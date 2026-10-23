@@ -466,13 +466,13 @@ function mats(accent: number): Mats {
 
 function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false): WeaponModel {
   const root = new THREE.Group();
-  const accent = weapon?.id === 'sonic' || weapon?.id === 'laser' ? PALETTE.pink : weapon?.id === 'seeker' ? PALETTE.cyan : weapon?.id === 'arc' || weapon?.id === 'cryo' ? PALETTE.cyan : weapon?.id === 'flamer' ? PALETTE.sodium : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : weapon?.id === 'grenade' ? PALETTE.fluo : weapon?.id === 'harpoon' ? PALETTE.cyan : PALETTE.sodium;
+  const accent = weapon?.id === 'sonic' || weapon?.id === 'laser' ? PALETTE.pink : weapon?.id === 'seeker' ? PALETTE.cyan : weapon?.id === 'arc' || weapon?.id === 'cryo' ? PALETTE.cyan : weapon?.id === 'flamer' ? PALETTE.sodium : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : weapon?.id === 'grenade' || weapon?.id === 'gas' ? PALETTE.fluo : weapon?.id === 'harpoon' ? PALETTE.cyan : PALETTE.sodium;
   const M = mats(accent);
   if (shoulder) {
     // Lançador de ombro: o casulo de foguetes, o morteiro da chuva e os lançadores leve e cruzador têm esse desenho. Sem arma (ou outra), o ombro fica limpo.
-    if (weapon?.id !== 'rockets' && weapon?.id !== 'barrage' && weapon?.id !== 'sonic' && weapon?.id !== 'seeker' && weapon?.id !== 'swarm' && weapon?.id !== 'cruise' && weapon?.id !== 'grenade' && weapon?.id !== 'harpoon') return { object: new THREE.Group(), muzzle: new THREE.Vector3() };
+    if (weapon?.id !== 'rockets' && weapon?.id !== 'barrage' && weapon?.id !== 'sonic' && weapon?.id !== 'seeker' && weapon?.id !== 'swarm' && weapon?.id !== 'cruise' && weapon?.id !== 'grenade' && weapon?.id !== 'harpoon' && weapon?.id !== 'gas') return { object: new THREE.Group(), muzzle: new THREE.Vector3() };
     const muzzleZ =
-      weapon.id === 'sonic' ? sonic(root, weapon.tier, M)
+      weapon.id === 'sonic' || weapon.id === 'gas' ? sonic(root, weapon.tier, M)
       : weapon.id === 'barrage' ? mortarPod(root, weapon.tier, M)
       : weapon.id === 'swarm' ? swarmPod(root, weapon.tier, M)
       : weapon.id === 'cruise' ? cruisePod(root, weapon.tier, M)
@@ -542,6 +542,7 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false
         muzzleZ = autocannon(root, weapon.tier, M);
         break;
       case 'sonic':
+      case 'gas':
         muzzleZ = sonic(root, weapon.tier, M);
         break;
       case 'chainsaw':

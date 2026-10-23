@@ -21,6 +21,7 @@ export const PUSH_PER_DAMAGE: Readonly<Record<DamageType, number>> = {
   criogenico: 0.01,
   pulso: 0,
   sonico: 0,
+  toxico: 0, // a nuvem de gás também tem a regra própria (wave/cone), como a onda sônica
   corte: 0,
   eletrico: 0,
 };

@@ -38,8 +38,9 @@ const ritmo = (hoje: string): Ritmo => conteudoPorSemana(new Date(`${hoje}T12:00
 describe.skipIf(!comHistorico)('ritmo de conteúdo: armas e chassis por semana, do código e do git', () => {
   let r: Ritmo;
   // Uma busca no git por unidade (ids do código, datas da `main`): guardada na primeira chamada; com a máquina cheia leva mais de 30 s.
+  // "hoje" é o dia real (não uma data presa no passado, P243): uma arma ou chassi commitado depois de uma data fixa cairia fora de toda semana gerada e os testes de baixo quebrariam sem ser bug nenhum.
   beforeAll(() => {
-    r = ritmo('2026-10-17');
+    r = ritmo(new Date().toISOString().slice(0, 10));
   }, 300_000);
 
   it('toda arma do catálogo conta uma vez, e nenhuma a mais (arma nova entra no ritmo sozinha)', () => {

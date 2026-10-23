@@ -58,6 +58,7 @@ export const WEAPON_FIT: Readonly<Record<WeaponId, WeaponFit>> = {
   plasma: { class: 'medium', size: 2 },
   cryo: { class: 'medium', size: 2 },
   sonic: { class: 'medium', size: 2 },
+  gas: { class: 'light', size: 2 }, // 2,5 t: o limite de leve (ARSENAL.md, "leve até ~2,5 t")
   autocannon: { class: 'medium', size: 2 },
   rotary: { class: 'medium', size: 2 },
   rockets: { class: 'medium', size: 2 },

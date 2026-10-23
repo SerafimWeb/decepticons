@@ -30,22 +30,23 @@ export const METAL_SHIELDS: Readonly<Record<MetalShieldId, MetalShieldModel>> = 
   muralha: {
     id: 'muralha', name: 'Escudo Muralha', mass: 2, integrity: 1.5,
     hint: 'aço maciço: segura um pouco de tudo, nada muito bem; conduz a descarga elétrica',
-    resist: { termico: 0.6, laser: 0.6, balistico: 0.7, explosivo: 0.6, pulso: 0.4, sonico: 0.4, corte: 0.5, eletrico: 0.35, criogenico: 0.45 },
+    resist: { termico: 0.6, laser: 0.6, balistico: 0.7, explosivo: 0.6, pulso: 0.4, sonico: 0.4, corte: 0.5, eletrico: 0.35, criogenico: 0.45, toxico: 0.35 },
   },
   refratario: {
     id: 'refratario', name: 'Escudo Refratário', mass: 1.75, integrity: 1.2,
     hint: 'cerâmica: segura plasma, laser, descarga elétrica e frio (isola); bala e explosão a racham',
-    resist: { termico: 0.9, laser: 0.85, balistico: 0.35, explosivo: 0.4, pulso: 0.5, sonico: 0.3, corte: 0.3, eletrico: 0.9, criogenico: 0.7 },
+    resist: { termico: 0.9, laser: 0.85, balistico: 0.35, explosivo: 0.4, pulso: 0.5, sonico: 0.3, corte: 0.3, eletrico: 0.9, criogenico: 0.7, toxico: 0.4 },
   },
   reativo: {
     id: 'reativo', name: 'Escudo Reativo', mass: 2.5, integrity: 1.6,
     hint: 'placas reativas: seguram bala, trilho e explosão; o calor atravessa',
-    resist: { termico: 0.35, laser: 0.3, balistico: 0.9, explosivo: 0.85, pulso: 0.3, sonico: 0.4, corte: 0.6, eletrico: 0.3, criogenico: 0.3 },
+    resist: { termico: 0.35, laser: 0.3, balistico: 0.9, explosivo: 0.85, pulso: 0.3, sonico: 0.4, corte: 0.6, eletrico: 0.3, criogenico: 0.3, toxico: 0.3 },
   },
+  // Toxico (P243, a arma de gás): números provisórios (R13, ninguém jogou) — tratado como o pulso/sônico, uma coisa que envolve mais do que bate, então o amortecedor segura melhor que as placas rígidas.
   amortecedor: {
     id: 'amortecedor', name: 'Escudo Amortecedor', mass: 2, integrity: 1.4,
     hint: 'malha amortecedora: segura pulso EMP e onda sônica; fraco contra lâmina',
-    resist: { termico: 0.45, laser: 0.45, balistico: 0.5, explosivo: 0.5, pulso: 0.9, sonico: 0.9, corte: 0.35, eletrico: 0.55, criogenico: 0.4 },
+    resist: { termico: 0.45, laser: 0.45, balistico: 0.5, explosivo: 0.5, pulso: 0.9, sonico: 0.9, corte: 0.35, eletrico: 0.55, criogenico: 0.4, toxico: 0.6 },
   },
 };
 

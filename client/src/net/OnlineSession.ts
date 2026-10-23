@@ -632,9 +632,9 @@ export class OnlineSession implements Pilot {
       _aimPoint.copy(_o).addScaledVector(_d, hit ? hit.distance : 400);
       this.o.match.barrage.fire(_o, _d, _aimPoint, r.mech.collider, weapon('barrage'), 0, r.mech.barrageMouth(_mouth));
       r.mech.onFireSecondary();
-    } else if (id === 'sonic') {
-      // A onda sônica de outro jogador: só o desenho (o cone, o dano e o empurrão são do servidor). Cada ombro manda o seu evento.
-      this.o.match.drawWave(_o, _d, weapon('sonic'));
+    } else if (id === 'sonic' || id === 'gas') {
+      // A onda (sônica ou de gás, P243) de outro jogador: só o desenho (o cone, o dano e o empurrão são do servidor). Cada ombro manda o seu evento.
+      this.o.match.drawWave(_o, _d, weapon(id));
       r.mech.onFireSecondary();
     } else if (id === 'cruise') {
       // O cruzador de outro jogador: o evento traz a direção, não o ponto; acha onde o raio bate (o servidor fez o mesmo) e lança o arco até lá. Só desenho.

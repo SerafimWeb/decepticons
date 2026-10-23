@@ -4,7 +4,7 @@ import { fromAngle, fromCm, fromPitch, toAngle, toCm, toPitch, type Reader, type
  * Eventos do servidor (acerto, parte arrancada, abate, explosão, barricada, tiro, renascimento): o que o cliente
  * transforma em efeito, som e placar (MULTIPLAYER.md, seção 9, item 2). Cada evento tem um formato fixo.
  */
-export const NET_WEAPONS = ['plasma', 'rockets', 'blaster', 'chainsaw', 'shotgun', 'barrage', 'railgun', 'emp', 'arc', 'cryo', 'cannon', 'autocannon', 'sonic', 'seeker', 'swarm', 'cruise', 'laser', 'siege', 'grenade', 'harpoon'] as const;
+export const NET_WEAPONS = ['plasma', 'rockets', 'blaster', 'chainsaw', 'shotgun', 'barrage', 'railgun', 'emp', 'arc', 'cryo', 'cannon', 'autocannon', 'sonic', 'seeker', 'swarm', 'cruise', 'laser', 'siege', 'grenade', 'harpoon', 'gas'] as const;
 export type NetWeapon = (typeof NET_WEAPONS)[number];
 
 export const EVENT = {
