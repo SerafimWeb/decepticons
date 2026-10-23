@@ -25,6 +25,8 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 export const BACKUP_REMOTO_ARQUIVO = 'backup-remoto.json';
+/** A frase de exemplo que o próprio projeto escreve ao gerar o arquivo pela primeira vez: nunca vale (mesmo padrão do `email.json`, `server/email.ts`). */
+export const CHAVE_EXEMPLO = 'TROQUE_POR_UMA_FRASE_SECRETA_SUA';
 
 export interface BackupRemotoConfig {
   host: string;
@@ -83,6 +85,10 @@ export function configurar(dirDados: string, anotar: (linha: string) => void = (
     const j = JSON.parse(readFileSync(arquivo, 'utf8')) as Partial<BackupRemotoConfig>;
     if (typeof j.host !== 'string' || typeof j.user !== 'string' || typeof j.key !== 'string' || typeof j.path !== 'string' || typeof j.chave !== 'string' || !j.host || !j.user || !j.key || !j.chave) {
       anotar('backup fora do disco: backup-remoto.json incompleto (precisa de host, user, key, path e chave)');
+      return null;
+    }
+    if (j.chave === CHAVE_EXEMPLO) {
+      anotar('backup fora do disco: a "chave" ainda é a frase de exemplo — troque por uma frase sua antes de ligar o recurso');
       return null;
     }
     if (!caminhoRemotoSeguro(j.path)) {
