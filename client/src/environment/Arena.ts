@@ -6,6 +6,7 @@ import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { buildFloorTexture, buildSkyTexture, FLOOR_TILE_METERS } from './Atmosphere';
 import { WINDOWS, windowedBuildingMaterial, type JanelasDoPredio } from './BuildingWindows';
 import { ArenaQuadro } from './ArenaQuadro';
+import { ArenaTelao } from './ArenaTelao';
 import { buildingBands } from './BuildingBands';
 import type { DestructibleDef, Destructibles } from './Destructibles';
 import { SerafimTower } from './SerafimTower';
@@ -101,6 +102,8 @@ export class Arena {
   private tempo = 0;
   /** O transformador do Banco Vorcaris (P164, parte E): só na missão em ondas da Cidade Neon. */
   readonly transformador: ArenaQuadro | null = null;
+  /** Os telões diegéticos (P246): só na Cidade Neon, em qualquer modo. */
+  readonly telao: ArenaTelao | null = null;
   private relogioDoTransformador = 0;
   private estadoDoTransformador = 0;
   private vidaDoTransformador = 1;
@@ -167,6 +170,8 @@ export class Arena {
     this.buildZones();
     // O transformador do banco (P164, parte E): só quem joga a missão em ondas o tem (no Deathmatch, na Bandeira e no Domínio a Arena é a de sempre).
     if (opcoes.transformador) this.transformador = new ArenaQuadro(scene, physics);
+    // Os telões diegéticos (P246): este ramo já é exclusivo da Cidade Neon (os outros mapas retornam antes); sem checagem de mapa extra.
+    this.telao = new ArenaTelao(scene);
   }
 
   /** O relógio visual do mapa (s, desde que foi montado): só a praia o conta. É o que o ciclo do dia usa quando a partida não traz outro (`CicloDoDia.progressoDaPartida`). */

@@ -1081,6 +1081,8 @@ export class Game {
     const enderecoDoServidor = new URLSearchParams(location.search).get('servidor') || defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER);
     const tokenDoDono = new TokenDoDono(browserStorage(), enderecoDoServidor);
     const adminCliente = new AdminCliente(enderecoDoServidor, tokenDoDono.ler);
+    // Os telões da Cidade Neon (P246): busca uma vez o que o Comandante escolheu; sem rede ou fora dela, as telas ficam sem sinal.
+    void this.match.arena.telao?.carregar(enderecoDoServidor);
     // O painel de visibilidade (P191): só no modo Comandante (o chip aparece com ele); pedaço sob demanda.
     document.getElementById('cc-visibilidade')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1088,6 +1090,11 @@ export class Game {
         const v = visibilidadeGlobal();
         if (v) new m.VisibilidadePanel(v, adminCliente).abrir();
       });
+    });
+    // O painel dos telões (P246): qual vídeo toca em cada tela da Cidade Neon; só no modo Comandante, pedaço sob demanda.
+    document.getElementById('cc-telao')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      void import('../ui/TelaoPanel').then((m) => void new m.TelaoPanel(adminCliente).abrir());
     });
     const painelDoServidor = sobDemanda(async () => new (await import('../ui/ServerPanel')).ServerPanel({ cliente: adminCliente, token: tokenDoDono }));
     // Câmeras ao vivo (P88): o mural de radares de todas as partidas do servidor, com o mesmo token do dono. O canal só existe com a janela aberta.
@@ -2187,6 +2194,8 @@ export class Game {
     this.match.arena.update(dt);
     // A Amazônia (P180, parte B): a câmera leva o céu e o detalhe da floresta junto.
     this.match.arena.observar(this.camera.position.x, this.camera.position.y, this.camera.position.z);
+    // Os telões da Cidade Neon (P246): decide tocar/pausar pela distância da câmera e pelo degrau de qualidade (G12); nos outros mapas, `telao` é `null`.
+    this.match.arena.telao?.atualizar(dt, this.camera.position, this.quality.currentTier);
     // O Draga-01 (P180, parte A, `?walker`): anda em círculo em volta de onde o jogador nasceu e mira o convés nele; **na Amazônia** ele desce o leito sozinho e a frente do rio vai com ele. Só desenho.
     const amazonia = this.match.arena.amazonia;
     // Na missão do rio o Draga é o de verdade (o corpo da partida): o passeio de demonstração só vale no Deathmatch da Amazônia e no `?walker`.

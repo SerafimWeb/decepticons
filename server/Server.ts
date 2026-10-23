@@ -31,6 +31,8 @@ import { FalhasPorConta, LIMITE_LOGIN_DEFAULTS, LimiteLogin } from './login';
 import { corsDoPedido, origemPermitida, origensExtras } from './origem';
 import { VISIBILIDADE_PATH } from '../shared/visibilidade';
 import { ArmazemDeVisibilidade } from './visibilidade';
+import { TELAO_PATH } from '../shared/telao';
+import { ArmazemDeTelao } from './telao';
 import { ArmazemDeRegras } from './regras';
 import { bancoDeContas, pastaDados } from './dados';
 import { carregarToken, DADOS_ARQUIVO, gravarJson, lerJson, TOKEN_ARQUIVO, tokenConfere } from './metricas';
@@ -377,6 +379,7 @@ export async function startServer(
     }
   };
   const visibilidade = new ArmazemDeVisibilidade(dirDados);
+  const telao = new ArmazemDeTelao(dirDados);
   const regras = new ArmazemDeRegras(dirDados, opts.regrasIniciais);
   regras.aoMudar((r) => {
     for (const sala of rooms.values()) sala.aplicarRegras(r);
@@ -458,6 +461,19 @@ export async function startServer(
       const corpoVisibilidade = JSON.stringify(visibilidade.atual());
       res.writeHead(200, { ...cabecalhos, 'content-type': 'application/json; charset=utf-8', 'content-length': Buffer.byteLength(corpoVisibilidade) });
       res.end(corpoVisibilidade);
+      return;
+    }
+    // Os telões da Cidade Neon (P246): público e sem token (é o que a Arena pergunta ao montar a cena); só o dono grava, por `/admin/telao`.
+    if (path === TELAO_PATH && (req.method === 'GET' || req.method === 'OPTIONS')) {
+      const cabecalhos = { 'access-control-allow-origin': '*', 'cache-control': 'no-store' };
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, { ...cabecalhos, 'access-control-allow-methods': 'GET, OPTIONS' });
+        res.end();
+        return;
+      }
+      const corpoTelao = JSON.stringify(telao.atual());
+      res.writeHead(200, { ...cabecalhos, 'content-type': 'application/json; charset=utf-8', 'content-length': Buffer.byteLength(corpoTelao) });
+      res.end(corpoTelao);
       return;
     }
     if (path === STATUS_PATH) {
@@ -1116,6 +1132,7 @@ export async function startServer(
       statusAt = 0; // o /status leva a visibilidade: a próxima resposta já traz a nova
       return visibilidade.gravar(itens);
     },
+    gravarTelao: (itens) => telao.gravar(itens),
     amostrador,
     estado: () =>
       montarEstado(
