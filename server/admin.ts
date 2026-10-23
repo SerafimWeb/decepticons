@@ -37,6 +37,7 @@ import {
 import { PROTOCOL_VERSION, ROOM_SIZE } from '../shared/net/constants';
 import { ADMIN_REGRAS_GRAVAR_PATH, ADMIN_REGRAS_PATH, type RegrasOnline } from '../shared/regras';
 import { ADMIN_VISIBILIDADE_PATH, type ConfigDeVisibilidade } from '../shared/visibilidade';
+import { ADMIN_TELAO_PATH, type ConfigDeTelao } from '../shared/telao';
 import { tokenConfere } from './metricas';
 import { arquivosDoRegistro, REGISTRO_PASTA } from './registro';
 
@@ -475,6 +476,8 @@ export interface AdminOpcoes {
   regras?: { atual: () => RegrasOnline; gravar: (x: unknown) => RegrasOnline };
   /** O que os jogadores veem (P191): grava as exceções ao padrão do código; `null` = formato inválido. Sem isto, `POST /admin/visibilidade` responde 501. */
   gravarVisibilidade?: (itens: unknown) => ConfigDeVisibilidade | null;
+  /** Os telões da Cidade Neon (P246): grava qual arquivo toca em cada tela; `null` = formato inválido. Sem isto, `POST /admin/telao` responde 501. */
+  gravarTelao?: (itens: unknown) => ConfigDeTelao | null;
   /** Faz o servidor salvar e sair com o código de reinício; sem isto, `POST /admin/reiniciar` responde 501. */
   aoReiniciar?: (motivo: string) => void;
   /** O servidor roda sob a tarefa do Windows? */
@@ -495,7 +498,7 @@ const CORS = {
 } as const;
 
 const ROTAS_GET = new Set<string>([ADMIN_ESTADO_PATH, ADMIN_HISTORICO_PATH, ADMIN_LOG_PATH, ADMIN_AVALIAR_PATH, ADMIN_REGRAS_PATH]);
-const ROTAS_POST = new Set<string>([ADMIN_TESTAR_PATH, ADMIN_FECHAR_SALA_PATH, ADMIN_REINICIAR_PATH, ADMIN_VISIBILIDADE_PATH, ADMIN_REGRAS_GRAVAR_PATH]);
+const ROTAS_POST = new Set<string>([ADMIN_TESTAR_PATH, ADMIN_FECHAR_SALA_PATH, ADMIN_REINICIAR_PATH, ADMIN_VISIBILIDADE_PATH, ADMIN_REGRAS_GRAVAR_PATH, ADMIN_TELAO_PATH]);
 
 export class Admin {
   private reiniciando = false;
@@ -627,6 +630,15 @@ export class Admin {
         const nova = corpo ? this.o.gravarVisibilidade(corpo.itens) : null;
         if (!nova) return recusar(400, { erro: 'itens inválidos' });
         this.o.anotar(`painel: visibilidade gravada (versão ${nova.versao}, ${Object.keys(nova.itens).length} exceções)`);
+        json(200, nova);
+        return true;
+      }
+      case ADMIN_TELAO_PATH: {
+        if (!this.o.gravarTelao) return recusar(501, { erro: 'o servidor não guarda os telões' });
+        const corpo = await this.corpo(req, 4_096);
+        const nova = corpo ? this.o.gravarTelao(corpo.itens) : null;
+        if (!nova) return recusar(400, { erro: 'itens inválidos' });
+        this.o.anotar(`painel: telões gravados (versão ${nova.versao}, ${Object.keys(nova.itens).length} tela(s))`);
         json(200, nova);
         return true;
       }
