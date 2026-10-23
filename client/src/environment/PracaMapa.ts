@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { acabamentoDaPraca, texturaDaPraca } from './PracaAcabamento';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { CaixaDaPlanta, InstanciaDoMapa, MapaCarregado } from './mapasSobDemanda';
 import { blocosDaPraca, PRACA_LIMITES, PRACA_PREDIOS, type BlocoDaPraca } from './PracaLayout';
@@ -14,7 +15,7 @@ import { blocosDaPraca, PRACA_LIMITES, PRACA_PREDIOS, type BlocoDaPraca } from '
 const COR: Readonly<Record<BlocoDaPraca['kind'], number>> = {
   pavimento: 0xb7b9b1,
   piso: 0xd9d1bf,
-  gramado: 0x4c8f45,
+  gramado: 0x57774b,
   asfalto: 0x35383c,
   concreto: 0xe9e7df,
   vidro: 0x4a6a80,
@@ -38,10 +39,10 @@ class Praca implements InstanciaDoMapa {
   readonly alcanceDaCamera = 700;
   constructor(scene: THREE.Scene, physics: PhysicsWorld) {
     // O fim de tarde de Brasília: céu claro e quente, névoa leve (a Esplanada de ponta a ponta se vê).
-    scene.background = new THREE.Color(0xa8c8e8);
-    scene.fog = new THREE.FogExp2(0xc7d8e6, 0.0016);
-    scene.add(new THREE.HemisphereLight(0xd6e6f5, 0x8d8a7a, 1.05));
-    const sol = new THREE.DirectionalLight(0xfff0d2, 1.5);
+    scene.background = new THREE.Color(0x93b9d0);
+    scene.fog = new THREE.FogExp2(0xc9d4d5, 0.0018);
+    scene.add(new THREE.HemisphereLight(0xdcecf6, 0x70634a, 1.0));
+    const sol = new THREE.DirectionalLight(0xffe3ae, 2.1);
     sol.position.set(-120, 140, 90);
     scene.add(sol);
     const contra = new THREE.DirectionalLight(0xaec6e0, 0.4);
@@ -70,11 +71,17 @@ class Praca implements InstanciaDoMapa {
       scene.add(malha);
       return malha;
     };
-    montar(solidos, new THREE.MeshStandardMaterial({ roughness: 0.86, metalness: 0.05 }), true);
-    montar(desenho, new THREE.MeshStandardMaterial({ roughness: 0.9, metalness: 0 }), false);
+    for (const b of solidos) if (b.kind === 'cerca') physics.addStaticBox(_p.set(b.x, b.y, b.z), _s.set(b.w, b.h, b.d));
+    const textura = texturaDaPraca();
+    const vidro = new THREE.MeshStandardMaterial({ color: 0xc5e0ed, roughness: 0.25, metalness: 0.5 });
+    montar(solidos.filter((b) => b.kind !== 'vidro' && b.kind !== 'cerca'), new THREE.MeshStandardMaterial({ map: textura, roughness: 0.86, metalness: 0.05 }), true);
+    montar(solidos.filter((b) => b.kind === 'vidro'), vidro, true);
+    montar(desenho.filter((b) => b.kind !== 'vidro'), new THREE.MeshStandardMaterial({ map: textura, roughness: 0.9, metalness: 0 }), false);
+    montar(desenho.filter((b) => b.kind === 'vidro'), vidro, false);
     montar(aguas, new THREE.MeshStandardMaterial({ roughness: 0.15, metalness: 0.25, transparent: true, opacity: 0.88 }), false);
 
     // A cúpula (convexa, ao norte) e a tigela (côncava, ao sul) do Congresso: só desenho sobre os volumes sólidos do layout.
+    acabamentoDaPraca(scene);
     const branco = new THREE.MeshStandardMaterial({ color: 0xf4f2ea, roughness: 0.7 });
     const cupula = new THREE.Mesh(new THREE.SphereGeometry(11.5, 20, 9, 0, Math.PI * 2, 0, Math.PI / 2), branco);
     cupula.position.set(20, 14, -46);

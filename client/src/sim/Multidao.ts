@@ -596,8 +596,8 @@ export class Multidao {
    * foge, **sem perder vida** — ao contrário de `atirar`, isto nunca mata, é o ponto da arma (`combat/weapons.ts`, "sonic": "o ponto dela é tirar o inimigo do lugar"). Entra na
    * mesma régua do susto por perto (`PASSO_DO_SUSTO`). Devolve quantos fugiram.
    */
-  assustarEmCone(ox: number, oz: number, dx: number, dz: number, meioAngulo: number, alcance: number, t: number): number {
-    if (!this.autoridade || t % PASSO_DO_SUSTO !== 0) return 0;
+  assustarEmCone(ox: number, oz: number, dx: number, dz: number, meioAngulo: number, alcance: number, t: number, visivel?: (x: number, z: number) => boolean, imediato = false): number {
+    if (!this.autoridade || (!imediato && t % PASSO_DO_SUSTO !== 0)) return 0;
     const h = Math.sqrt(dx * dx + dz * dz);
     if (h < 1e-9) return 0;
     const ux = dx / h;
@@ -614,6 +614,7 @@ export class Multidao {
       if (d2 > alcance2 || d2 < 1e-9) continue;
       const d = Math.sqrt(d2);
       if ((cx * ux + cz * uz) / d < cosMin) continue;
+      if (visivel && !visivel(this.posX[i]!, this.posZ[i]!)) continue;
       this.fugir(i, t, 'susto');
       n++;
     }

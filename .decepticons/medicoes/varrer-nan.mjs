@@ -7,6 +7,7 @@
  * água, céu, janela).** Sai com código 1 se achar algum pixel não finito.
  *
  *   npm run build && node .decepticons/medicoes/varrer-nan.mjs                  # o mapa da praia, 10 posições
+ *   node .decepticons/medicoes/varrer-nan.mjs --mapa janeiro --extra "modo=survival&comandante=1" --posicoes "66,-12;-24,0;60,30;85,-30" --yaws 8
  *   node .decepticons/medicoes/varrer-nan.mjs --w 1549 --h 925 --q alta           # o tamanho da janela e a qualidade
  *   node .decepticons/medicoes/varrer-nan.mjs --posicoes 0,20;-200,10;250,20      # x,z de cada ponto (separados por ;)
  *   node .decepticons/medicoes/varrer-nan.mjs --extra "multidao=1&cota=3000&t=9000"   # com a multidão do 8 DE JANEIRO na cena (P217)
@@ -27,6 +28,7 @@ const opt = (n, d) => (args.includes(`--${n}`) ? args[args.indexOf(`--${n}`) + 1
 const largura = Number(opt('w', '1549'));
 const altura = Number(opt('h', '925'));
 const qualidade = opt('q', 'alta');
+const mapa = opt('mapa', 'praia'); // permite verificar também os efeitos e materiais de mapas sob demanda
 const guinadas = Number(opt('yaws', '24'));
 const comBloom = args.includes('--bloom'); // mede com o bloom ligado: prova a rede de segurança (sem ela, um NaN toma a tela inteira)
 const comEfeitos = args.includes('--efeitos'); // acende os efeitos de arma em volta do Mech (P160): os shaders novos só entram na conta se estiverem na tela
@@ -56,7 +58,7 @@ const servidor = createServer((req, res) => {
   res.end(readFileSync(arquivo));
 });
 await new Promise((r) => servidor.listen(0, r));
-const url = `http://localhost:${servidor.address().port}${BASE}/?mapa=praia&depurar&build=${build}${dia === null ? '' : `&dia=${dia}`}${extra ? `&${extra}` : ''}`;
+const url = `http://localhost:${servidor.address().port}${BASE}/?mapa=${encodeURIComponent(mapa)}&depurar&build=${build}${dia === null ? '' : `&dia=${dia}`}${extra ? `&${extra}` : ''}`;
 
 let navegador;
 for (const channel of ['chrome', 'msedge', undefined]) {
@@ -161,5 +163,5 @@ for (const r of resultado) {
 console.log(`${ruins}/${total} poses com NaN ou infinito no buffer HDR (${largura}×${altura}, qualidade ${qualidade}, bloom ${comBloom ? 'LIGADO' : 'desligado'}${comEfeitos ? ', efeitos de arma acesos' : ''}; a tela inteira são ${largura * altura} px)`);
 if (errosDePagina.length) console.log('erros de página:', [...new Set(errosDePagina)].slice(0, 3));
 mkdirSync('.tmp/nan-gpu', { recursive: true });
-writeFileSync('.tmp/nan-gpu/ultimo.json', JSON.stringify({ largura, altura, qualidade, resultado }, null, 1));
+writeFileSync('.tmp/nan-gpu/ultimo.json', JSON.stringify({ mapa, largura, altura, qualidade, resultado }, null, 1));
 process.exitCode = ruins ? 1 : 0;
