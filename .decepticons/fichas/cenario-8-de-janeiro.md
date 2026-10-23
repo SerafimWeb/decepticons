@@ -16,9 +16,10 @@
 
 | Tipo | Parte da massa | Comportamento |
 |---|---|---|
-| **GADO** (pessoa com cabeça de gado, verde e amarelo) | ~75% | marcha até um prédio, **depreda** (desgasta a integridade) e **suja** as mesas; **foge** se levar tiro por perto ou se o jogador chega a poucos metros |
+| **GADO** (pessoa com cabeça de gado, verde e amarelo) | ~60% | marcha até um prédio, **depreda** (desgasta a integridade) e **suja** as mesas; **foge** se levar tiro por perto ou se o jogador chega a poucos metros |
 | **CARECA** (idoso careca, de colete, verde e amarelo) | ~12% | mais lento e aguenta 2 acertos; **foge** |
 | **PERUCA** (rapaz de peruca loira, verde e amarelo) | ~8% | mais rápido; **foge** mais cedo (filma de longe e sai correndo) |
+| **BANDEIRA** (invasor genérico erguendo um mastro, verde e amarelo; P243, 22/10) | ~20% | o mesmo comportamento do GADO (marcha, depreda, suja, foge); sem máscara de pessoa ou grupo nenhum — só a cor, igual às outras camisas |
 | **ANDROIDE REBELDE** (misturado à multidão) | ~5% (no máximo 6 vivos de uma vez) | **é o único que luta**: ataca o jogador e os aliados (os `Android` e o `BotController` de hoje, com a vida, o tiro e a rede que eles já têm) |
 
 **De onde vêm (as fontes, posições fixas do mapa):** **ônibus** (chegam pelo Eixo e descarregam um grupo grande de uma vez), **tampas de esgoto** (os bueiros abrem e soltam figurantes por alguns segundos) e **lixeiras** (soltam poucos de cada vez, ao longo da fase). As fontes são **dado do mapa** e o ritmo de cada uma sai do cronograma da fase (semente e tick, G1/G2): não é sorteio ao vivo. O jogador pode **fechar** uma tampa de bueiro ficando sobre ela por alguns segundos? *(pergunta aberta 3)*.

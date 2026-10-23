@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { CARECA, GADO, Multidao, NUNCA, PERUCA, TICKS_DO_TOMBO, type ConfigDaMultidao } from '../sim/Multidao';
-import { empacota, geometriaDaPeruca, geometriaDoCareca, geometriaDoGado, MASCARAS_LIGADAS, MultidaoDesenho } from './MultidaoDesenho';
+import { BANDEIRA, CARECA, GADO, Multidao, NUNCA, PERUCA, TICKS_DO_TOMBO, type ConfigDaMultidao } from '../sim/Multidao';
+import { empacota, geometriaDaBandeira, geometriaDaPeruca, geometriaDoCareca, geometriaDoGado, MASCARAS_LIGADAS, MultidaoDesenho } from './MultidaoDesenho';
 
 const CONFIG: ConfigDaMultidao = {
   semente: 77,
@@ -72,19 +72,20 @@ describe('o desenho da multidão (P217): as três malhas', () => {
 });
 
 describe('as vagas de instância: o custo na GPU segue quem está presente', () => {
-  it('três desenhos para qualquer cota; ninguém nasceu = nenhum vértice enviado; cada nascimento ocupa uma vaga e só ela', () => {
+  it('quatro desenhos para qualquer cota; ninguém nasceu = nenhum vértice enviado; cada nascimento ocupa uma vaga e só ela', () => {
     const m = new Multidao({ ...CONFIG, cota: 1500 });
     const d = new MultidaoDesenho(m);
-    expect(d.custo.desenhos).toBe(3);
+    expect(d.custo.desenhos).toBe(4);
     expect(d.custo.triangulos).toBe(0);
     d.atualizar(18_000); // sem a simulação andar, ninguém sai: todos nascem e ocupam vaga
     expect(d.presentes).toBe(m.total);
-    const por = [0, 0, 0];
+    const por = [0, 0, 0, 0];
     for (let i = 0; i < m.total; i++) por[m.tipo[i]!]!++;
-    const esperado = por[GADO]! * triangulos(geometriaDoGado()) + por[CARECA]! * triangulos(geometriaDoCareca()) + por[PERUCA]! * triangulos(geometriaDaPeruca());
+    const esperado =
+      por[GADO]! * triangulos(geometriaDoGado()) + por[CARECA]! * triangulos(geometriaDoCareca()) + por[PERUCA]! * triangulos(geometriaDaPeruca()) + por[BANDEIRA]! * triangulos(geometriaDaBandeira());
     expect(d.custo.triangulos).toBe(esperado);
     // vagas distintas dentro de cada malha
-    for (let t = 0; t < 3; t++) {
+    for (let t = 0; t < 4; t++) {
       const vagas = new Set<number>();
       for (let i = 0; i < m.total; i++) if (m.tipo[i] === t) vagas.add(d.vagaDe(i));
       expect(vagas.size).toBe(por[t]);
@@ -213,6 +214,6 @@ describe('o desenho ligado à simulação', () => {
   });
 
   it('as máscaras ligadas são o padrão', () => {
-    expect(MASCARAS_LIGADAS).toEqual({ gado: true, careca: true, peruca: true });
+    expect(MASCARAS_LIGADAS).toEqual({ gado: true, careca: true, peruca: true, bandeira: true });
   });
 });
