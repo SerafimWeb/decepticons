@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P248 — Multidão atravessando parede e "escalando" prédio: achado, não corrigido ainda (23/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P248 | 23/10 | "ainda há bugs visuais... os manifestantes estão atravessando as paredes... eles conseguem ESCALAR os prédios, eles não precisam dar a volta! eles escalam e dominam o território, vamos adicionar mais qualidade neles!" | 🟡 | **Causa confirmada:** a multidão não tem corpo físico (G4/G5: milhares de figurantes calculados por fórmula, zero CPU por um); o destino de cada um não sabe nada sobre parede, rampa ou a caixa do prédio. **Visto numa captura real:** figurantes alinhados sobre uma borda elevada perto do Congresso (bate com a rampa, que sobe de 0 a 5 m sem colisão nenhuma pro desenho). **Não corrigido:** um remendo simples não serve pros três prédios juntos (cada um tem a caixa numa direção diferente da frente, e esse dado hoje não chega à simulação genérica); a correção direita pede estender o contrato da missão com a caixa/direção "pra dentro" de cada prédio. Preferi registrar a fazer um remendo que eu não conseguiria conferir (GPU real, capturas, máquina sem fôlego nesta sessão) | `STATUS_REAL.md` P248; `/jogar/?mapa=janeiro&comandante=1&multidao=1&cota=4000&t=4500` |
+
 ## P247 — Quatro figurantes novos aceitos, três recusados como chefe/boneco de pessoa real (23/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
