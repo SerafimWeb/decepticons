@@ -16,6 +16,11 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## EM BRANCH — NÃO ESTÁ NO AR: A CUTSCENE-PILOTO DO 8 DE JANEIRO — Claude, 22/10 (branch `claude/cutscene-piloto-janeiro`, P244)
+
+**O Comandante (22/10):** pediu auditoria e2e completa + cutscenes em vídeo, cinematográficas, com VFX, contando o LORE por missão. **Achado:** a auditoria já tinha sido feita nas últimas 24h por outra sessão (`RESILIENCIA.md` P239, `AUDITORIA_SEGURANCA.md` P242); conferi segredos e histórico do git de novo, nada novo — não dupliquei o resto (detalhe em `ORDENS_DO_COMANDO.md` P244). **Cutscene:** não existe câmera por trilha/keyframe no projeto (hoje ela só segue o jogador). Construindo um módulo pequeno novo pra isso e uma cutscene-piloto curta da abertura do 8 de Janeiro, sem tocar no escopo congelado (`LANCAMENTO.md` §0).
+**Próxima sessão começa com:** o resultado da cutscene-piloto (vídeo, onde conferir) e a decisão do Comandante sobre estender a outras missões.
+
 ## EM BRANCH — NÃO ESTÁ NO AR: O LANÇADOR DE GÁS, A SEGUNDA ARMA NÃO LETAL DO 8 DE JANEIRO (Claude, 22/10, branch `claude/arma-de-gas`, P243)
 
 **Seguindo a mesma ordem** ("quero tudo"): depois do canhão sônico (abaixo, já mesclado), a **arma de gás**. Segue o `ARSENAL.md` à risca (arma de ombro nova, mesmo modelo do canhão sônico: campo `wave`, então `Match.waveCone`/`Multidao.assustarEmCone` já a atendem de graça — zero código novo de regra, só dado e visual). `WeaponId 'gas'`, natureza de dano nova (`toxico`, com resistência nos 4 escudos físicos), nuvem mais larga e mais curta que a onda sônica (80°/16 m contra 52°/22 m), empurra bem menos (3 m/s contra 8). Protocolo de rede 22 (`NET_WEAPONS`). Traduzido nas 7 línguas (dica de uso + nome + a frase longa do Hangar). Visual reaproveita o modelo 3D do canhão sônico (cor diferente, ciclo de qualidade): **honestidade (R13), não é um modelo novo**.
