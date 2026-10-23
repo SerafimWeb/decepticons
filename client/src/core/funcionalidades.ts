@@ -27,6 +27,8 @@ export const NOME_DO_GRUPO: Readonly<Record<GrupoDeFuncionalidade, string>> = {
 };
 
 const fixas: readonly Funcionalidade[] = [
+  { id: 'fase:chefes-janeiro', grupo: 'fases', nome: 'Trampado e Evil · 8 de Janeiro', padrao: 'restrito', efeito: 'o encontro dos dois chefes da missão offline' },
+  { id: 'arma:cacetete-poder', grupo: 'armas', nome: 'Cacetete de poder · prêmio do Evil', padrao: 'restrito', efeito: 'o golpe F conquistado na missão do 8 de Janeiro' },
   { id: 'mapa:arena', grupo: 'fases', nome: 'Cidade Neon (Arena)', padrao: 'publico', efeito: 'o pino vira EM BREVE no mapa-múndi e o link cai na Cidade Neon' },
   { id: 'mapa:bunker', grupo: 'fases', nome: 'Bunker', padrao: 'restrito', efeito: 'o pino vira EM BREVE no mapa-múndi, some das campanhas e o link cai na Cidade Neon' },
   { id: 'mapa:praia', grupo: 'fases', nome: 'Estação dos Cabos (Praia)', padrao: 'publico', efeito: 'o pino vira EM BREVE no mapa-múndi, some das campanhas e o link cai na Cidade Neon' },

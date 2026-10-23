@@ -1,5 +1,14 @@
 # ESTADO ATUAL — CYBERMECH
 
+## P250 — qualidade da Praça e chefes (registro da entrega deste PR) — Codex, 23/10
+
+- Trabalho em `.tmp/wt-codex-janeiro-visual`, branch `codex/janeiro-visual`: modelos da multidão, Trampado/Evil, VFX, cacetete conquistável e acabamento da Praça.
+- Território: `environment/*Janeiro*`, `MultidaoDesenho`, `PracaMapa/Acabamento`, regra dos chefes e ligação em Match/Game. Nenhuma alteração da outra sessão na raiz foi tocada.
+- Validado: 53 testes focados, build, revisão cruzada, Chrome/Vega 11; prêmio persistido e F acionado. Capturas em arte/janeiro-*-codex.png. Pacote inicial 474,5 KB gzip. Check completo fica no hook do push.
+- Disponibilidade: esta entrega passa a valer na `main` com o merge deste PR e no site após o deploy automático; antes disso está EM BRANCH — NÃO ESTÁ NO AR.
+- Próxima sessão começa com: avaliação visual do Comandante no link `/jogar/?mapa=janeiro&modo=survival&comandante=1`; P248 e navegação global dos chefes continuam pendentes.
+
+
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.

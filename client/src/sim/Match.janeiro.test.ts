@@ -173,6 +173,59 @@ describe('a missão do 8 DE JANEIRO no Match (P217, passo 5): a multidão contra
     expect(m.eliminados).toBe(antesMortos);
   });
 
+  it('chefes recebem tiros no Match, seguram a vitória e liberam um golpe utilizável na simulação', async () => {
+    const { match, run, player } = await partida();
+    run(20);
+    const e = match.chefesJaneiro!;
+    const c = e.ativo!;
+    expect(c.config.id).toBe('trampado');
+    expect(match.projectiles.contraMassa!(c.x - 3, 3, c.z, 1, 0, 0, 5, c.vida)).toBe(true);
+    expect(e.restantes).toBe(1);
+    run(3.1);
+    const evil = e.ativo!; expect(evil.config.id).toBe('evil');
+    expect(match.projectiles.contraMassa!(evil.x - 3, 3, evil.z, 1, 0, 0, 5, evil.vida)).toBe(true);
+    expect(e.conquistado).toBe(true); expect(e.restantes).toBe(0);
+    player.respawn(new THREE.Vector3(66, 0, -12));
+    e.golpePendente = true; run(0.02);
+    expect(e.recarga).toBeGreaterThan(1);
+    expect(e.golpeFx).toBeGreaterThan(0);
+    match.restartMission(); expect(e.restantes).toBe(2); expect(e.conquistado).toBe(true);
+  });
+
+  it('cacetete confirma dano e abate, preserva faxineiro e não atravessa parede nem alcança do alto', async () => {
+    for (const caso of ['livre', 'parede', 'alto']) {
+      const { match, player } = await partida();
+      player.respawn(new THREE.Vector3(66, caso === 'alto' ? 18 : 0, -12));
+      match.bots.entrarAndroide(66, -18);
+      const alvo = match.bots.mechs.find((m) => m.alive && match.bots.brainOf(m))!;
+      const faxineiro = match.bots.mechs.find((m) => m.alive && !match.bots.brainOf(m))!;
+      faxineiro.respawn(new THREE.Vector3(68, 0, -17));
+      const vidaFaxina = faxineiro.modules.torso;
+      // Acertar uma parte já destruída deve transferir o dano ao torso e confirmar o abate.
+      alvo.modules.head = alvo.modules.leftArm = alvo.modules.rightArm = alvo.modules.leftLeg = alvo.modules.rightLeg = 0;
+      alvo.modules.torso = 10;
+      if (caso === 'parede') match.physics.addStaticBox(new THREE.Vector3(66, 3, -15), new THREE.Vector3(6, 8, 0.5));
+      match.physics.step();
+      let acertos = 0, abates = 0;
+      match.onMechHit = (e) => { if (e.mech === alvo && e.shooter === player) acertos++; };
+      match.onMechKilled = (m, _at, autor) => { if (m === alvo && autor === player) abates++; };
+      match.chefesJaneiro!.aoGolpear!(66, caso === 'alto' ? 18 : 0, -12, 0);
+      expect(acertos, caso).toBe(caso === 'livre' ? 1 : 0);
+      expect(abates, caso).toBe(caso === 'livre' ? 1 : 0);
+      expect(faxineiro.modules.torso).toBe(vidaFaxina);
+    }
+  });
+
+  it('a cacetada do chefe também dispara dano e morte pelo sistema de combate', async () => {
+    const { match, player } = await partida();
+    player.respawn(new THREE.Vector3(66, 0, -12)); match.physics.step();
+    let morreu = false, acertou = false;
+    match.onMechKilled = (m) => { if (m === player) morreu = true; };
+    match.onMechHit = (e) => { if (e.mech === player) acertou = true; };
+    match.chefesJaneiro!.aoAcertar!(0, 5000, 62, -12);
+    expect(acertou).toBe(true); expect(morreu).toBe(true);
+  });
+
   it('parado, o jogador perde a missão: a fachada e a sujeira derrubam um prédio, o fim sai uma vez pelo aviso de missão e o mundo congela', { timeout: 180_000 }, async () => {
     const { match, run, fins } = await partida();
     run(30);
@@ -220,7 +273,7 @@ describe('a missão do 8 DE JANEIRO no Match (P217, passo 5): a multidão contra
       expect(match.bots.mechs.filter((b) => b.alive).length).toBe(match.rebeldesVivos + PONTOS_DOS_FAXINEIROS.length);
     }
     const situacao = (match as unknown as { situacaoDaPraca: SituacaoDaPraca }).situacaoDaPraca;
-    expect(situacao.presentes).toBe(m.presentes + match.rebeldesVivos); // eles contam na Praça
+    expect(situacao.presentes).toBe(m.presentes + match.rebeldesVivos + match.chefesJaneiro!.restantes); // eles contam na Praça
     expect(situacao.faltamChegar).toBeGreaterThan(m.faltamChegar - 1); // e os agendados contam como por chegar
   });
 

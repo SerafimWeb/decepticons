@@ -5,4 +5,4 @@
  */
 export { Multidao } from './Multidao';
 export * from './MissaoJaneiro';
-export * from './ChefePneu';
+export * from './ChefesJaneiro';

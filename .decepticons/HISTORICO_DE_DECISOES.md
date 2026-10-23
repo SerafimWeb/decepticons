@@ -1,3 +1,11 @@
+## [2026-10-23] Referências do Comandante viram modelos da Praça e dois chefes sequenciais (P250, Codex)
+
+A ordem atual pede explicitamente os shapes de bolsomilicia, Trampado e Evil. Implementados como malhas procedurais originais (as imagens são referências de forma/cor, não arquivos 3D importados): gado com focinho/manchas/mochila, porco, Tio Sam, pneu e viking com pele/barba/chifres; Trampado de caveira/topete/terno azul e Evil grisalho de terno escuro. Esta direção substitui os desenhos genéricos e o chefão-pneu anteriores; os registros históricos de decisões anteriores permanecem no arquivo. A trilha do berrante permanece.
+
+Dois alvos determinísticos, um ativo por vez: Trampado aos 20 s, Evil 3 s após vencê-lo; ataque com aviso de 1,05 s e recuperação. Vencer Evil conquista o cacetete roxo: F dispersa figurantes e causa dano em rebeldes/chefes, sem atingir faxineiros. A recompensa fica só neste navegador, sem conta, rede nem telemetria. Catálogo: fase:chefes-janeiro e arma:cacetete-poder nascem restritos. Vitória exige também os chefes. Praça: materiais, fachadas, ônibus, calçamento, vegetação, horizonte e sombras de contato estáticas; mesmas colisões do mapa.
+
+Custo: dois estados simples a 60 Hz, até um chefe ativo consultando os retângulos do mapa; modelos instanciados da multidão continuam com movimento na GPU, teto de 1.800 triângulos por tipo; efeitos têm pool de 40 partículas. Na Vega 11, amostra de 7 s/120 figurantes/1440×900: mediana 16,8 ms, p95 18,9 ms (não é homologação de multidão máxima). Pacote de partida 474,5 KB gzip. Revisão cruzada corrigiu roteamento do dano/abate e alcance por altura/parede; 53 testes focados verdes, build verde, F e prêmio observados no Chrome. Capturas: arte/janeiro-{praca,figurantes,chefes-modelos,trampado,evil,premio}-codex.png. Limites: missão offline, perseguição local sem navegação global, P248 (trajeto da multidão) ainda pendente.
+
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 ## [2026-10-23] Os telões: lista permitida (não URL livre) e vídeo pré-gravado (não câmera ao vivo) (P246)

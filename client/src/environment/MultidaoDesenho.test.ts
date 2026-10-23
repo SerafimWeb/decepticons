@@ -44,14 +44,14 @@ function ligar(m: Multidao, d: MultidaoDesenho): void {
 }
 
 describe('o desenho da multidão (P217): as três malhas', () => {
-  it('cada tipo é uma malha de baixo polígono (uns 80 a 220 triângulos), e desligar a máscara de um tipo troca a cabeça sem mexer nos outros', () => {
+  it('cada tipo é uma malha de baixo polígono (até 1800 triângulos, oito desenhos para a multidão), e desligar a máscara de um tipo troca a cabeça sem mexer nos outros', () => {
     for (const g of [geometriaDoGado(), geometriaDoCareca(), geometriaDaPeruca(), geometriaDoTioSam(), geometriaDoPorco(), geometriaDoPneu(), geometriaDoBarbaro()]) {
       expect(triangulos(g)).toBeGreaterThan(80);
-      expect(triangulos(g)).toBeLessThan(220);
+      expect(triangulos(g)).toBeLessThan(1800);
     }
     expect(triangulos(geometriaDoGado(false))).not.toBe(triangulos(geometriaDoGado()));
-    expect(triangulos(geometriaDoCareca(false))).toBeLessThan(triangulos(geometriaDoCareca()));
-    expect(triangulos(geometriaDaPeruca(false))).toBeLessThan(triangulos(geometriaDaPeruca()));
+    expect(triangulos(geometriaDoCareca(false))).toBe(triangulos(geometriaDoCareca()));
+    expect(triangulos(geometriaDaPeruca(false))).not.toBe(triangulos(geometriaDaPeruca()));
     expect(triangulos(geometriaDoTioSam(false))).toBeLessThan(triangulos(geometriaDoTioSam()));
     expect(triangulos(geometriaDoPorco(false))).not.toBe(triangulos(geometriaDoPorco()));
     expect(triangulos(geometriaDoPneu(false))).not.toBe(triangulos(geometriaDoPneu()));

@@ -14,6 +14,10 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P250 — Qualidade visual do 8 de Janeiro e chefes das referências (23/10, Codex)
+
+**Ordem:** “graficamente estou achando fraco”; aplicar evil/trampado/bolsomilicia, chefes em sequência e cacetete conquistável. **🟡 Implementado, aguardando publicação e avaliação visual do dono:** modelos, Praça/VFX, Trampado → Evil e prêmio F; testes de combate e GPU conferidos. Branch codex/janeiro-visual. Conferir: /jogar/?mapa=janeiro&modo=survival&comandante=1; arte/janeiro-*-codex.png. Permanece restrito/offline; P248 segue pendente.
+
 ## P249 — O chefão pneu gigante e a trilha do berrante (23/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
