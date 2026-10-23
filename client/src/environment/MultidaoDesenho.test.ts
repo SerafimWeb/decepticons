@@ -1,8 +1,20 @@
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { BANDEIRA, CARECA, GADO, Multidao, NUNCA, PERUCA, TICKS_DO_TOMBO, type ConfigDaMultidao } from '../sim/Multidao';
-import { empacota, geometriaDaBandeira, geometriaDaPeruca, geometriaDoCareca, geometriaDoGado, MASCARAS_LIGADAS, MultidaoDesenho } from './MultidaoDesenho';
+import { BANDEIRA, BARBARO, CARECA, GADO, Multidao, NUNCA, PERUCA, PNEU, PORCO, TICKS_DO_TOMBO, TIO_SAM, TIPOS, type ConfigDaMultidao } from '../sim/Multidao';
+import {
+  empacota,
+  geometriaDaBandeira,
+  geometriaDaPeruca,
+  geometriaDoBarbaro,
+  geometriaDoCareca,
+  geometriaDoGado,
+  geometriaDoPneu,
+  geometriaDoPorco,
+  geometriaDoTioSam,
+  MASCARAS_LIGADAS,
+  MultidaoDesenho,
+} from './MultidaoDesenho';
 
 const CONFIG: ConfigDaMultidao = {
   semente: 77,
@@ -32,14 +44,18 @@ function ligar(m: Multidao, d: MultidaoDesenho): void {
 }
 
 describe('o desenho da multidão (P217): as três malhas', () => {
-  it('cada tipo é uma malha de baixo polígono (uns 100 a 160 triângulos), e desligar a máscara de um tipo troca a cabeça sem mexer nos outros', () => {
-    for (const g of [geometriaDoGado(), geometriaDoCareca(), geometriaDaPeruca()]) {
+  it('cada tipo é uma malha de baixo polígono (uns 80 a 220 triângulos), e desligar a máscara de um tipo troca a cabeça sem mexer nos outros', () => {
+    for (const g of [geometriaDoGado(), geometriaDoCareca(), geometriaDaPeruca(), geometriaDoTioSam(), geometriaDoPorco(), geometriaDoPneu(), geometriaDoBarbaro()]) {
       expect(triangulos(g)).toBeGreaterThan(80);
-      expect(triangulos(g)).toBeLessThan(170);
+      expect(triangulos(g)).toBeLessThan(220);
     }
     expect(triangulos(geometriaDoGado(false))).not.toBe(triangulos(geometriaDoGado()));
     expect(triangulos(geometriaDoCareca(false))).toBeLessThan(triangulos(geometriaDoCareca()));
     expect(triangulos(geometriaDaPeruca(false))).toBeLessThan(triangulos(geometriaDaPeruca()));
+    expect(triangulos(geometriaDoTioSam(false))).toBeLessThan(triangulos(geometriaDoTioSam()));
+    expect(triangulos(geometriaDoPorco(false))).not.toBe(triangulos(geometriaDoPorco()));
+    expect(triangulos(geometriaDoPneu(false))).not.toBe(triangulos(geometriaDoPneu()));
+    expect(triangulos(geometriaDoBarbaro(false))).toBeLessThan(triangulos(geometriaDoBarbaro()));
   });
 
   it('o shader lê só atributos que as malhas têm (um atributo faltando vira zero na GPU e some a multidão sem aviso)', () => {
@@ -72,20 +88,27 @@ describe('o desenho da multidão (P217): as três malhas', () => {
 });
 
 describe('as vagas de instância: o custo na GPU segue quem está presente', () => {
-  it('quatro desenhos para qualquer cota; ninguém nasceu = nenhum vértice enviado; cada nascimento ocupa uma vaga e só ela', () => {
+  it('um desenho por tipo para qualquer cota; ninguém nasceu = nenhum vértice enviado; cada nascimento ocupa uma vaga e só ela', () => {
     const m = new Multidao({ ...CONFIG, cota: 1500 });
     const d = new MultidaoDesenho(m);
-    expect(d.custo.desenhos).toBe(4);
+    expect(d.custo.desenhos).toBe(TIPOS);
     expect(d.custo.triangulos).toBe(0);
     d.atualizar(18_000); // sem a simulação andar, ninguém sai: todos nascem e ocupam vaga
     expect(d.presentes).toBe(m.total);
-    const por = [0, 0, 0, 0];
+    const por: number[] = new Array(TIPOS).fill(0);
     for (let i = 0; i < m.total; i++) por[m.tipo[i]!]!++;
     const esperado =
-      por[GADO]! * triangulos(geometriaDoGado()) + por[CARECA]! * triangulos(geometriaDoCareca()) + por[PERUCA]! * triangulos(geometriaDaPeruca()) + por[BANDEIRA]! * triangulos(geometriaDaBandeira());
+      por[GADO]! * triangulos(geometriaDoGado()) +
+      por[CARECA]! * triangulos(geometriaDoCareca()) +
+      por[PERUCA]! * triangulos(geometriaDaPeruca()) +
+      por[BANDEIRA]! * triangulos(geometriaDaBandeira()) +
+      por[TIO_SAM]! * triangulos(geometriaDoTioSam()) +
+      por[PORCO]! * triangulos(geometriaDoPorco()) +
+      por[PNEU]! * triangulos(geometriaDoPneu()) +
+      por[BARBARO]! * triangulos(geometriaDoBarbaro());
     expect(d.custo.triangulos).toBe(esperado);
     // vagas distintas dentro de cada malha
-    for (let t = 0; t < 4; t++) {
+    for (let t = 0; t < TIPOS; t++) {
       const vagas = new Set<number>();
       for (let i = 0; i < m.total; i++) if (m.tipo[i] === t) vagas.add(d.vagaDe(i));
       expect(vagas.size).toBe(por[t]);
@@ -109,7 +132,9 @@ describe('as vagas de instância: o custo na GPU segue quem está presente', () 
     expect(d.presentes).toBe(0);
     const maxima = malhasDe(d).reduce((a, malha) => a + malha.count, 0);
     expect(maxima).toBeGreaterThanOrEqual(pico);
-    expect(maxima).toBeLessThan(m.total * 0.7); // bem abaixo do total que nasceu
+    // bem abaixo do total que nasceu; a soma dos picos de CADA malha (este número) é sempre ≥ o pico de verdade (todas juntas, ao mesmo tempo) porque cada
+    // tipo pode espichar num tick diferente — com mais tipos (TIPOS = 7, P246) essa folga cresce um pouco, daí 0.8 em vez de 0.7.
+    expect(maxima).toBeLessThan(m.total * 0.8);
   });
 
   it('a missão recomeçada (reiniciar + recomecar): as vagas voltam todas, ninguém fica desenhado, e os nascimentos recomeçam do primeiro como na primeira vez', () => {
@@ -160,7 +185,9 @@ describe('o desenho ligado à simulação', () => {
     m.avancar(t);
     d.atualizar(t);
     m.calcularPosicoes(t);
-    const i = [...m.presente].findIndex((v) => v === 1);
+    // Presente e ainda não fugiu (a fuga automática ao cumprir o tempo na fachada não depende do tipo, só de quando chegou — com mais tipos a
+    // velocidade de quem nasce primeiro muda, e o antigo "primeiro presente" podia já ter fugido sozinho antes do teste medir).
+    const i = [...m.presente].findIndex((v, idx) => v === 1 && m.fugiuNoTick(idx) === -1);
     expect(i).toBeGreaterThanOrEqual(0);
     const vaga = d.vagaDe(i);
     expect(vaga).toBeGreaterThanOrEqual(0);
@@ -214,6 +241,6 @@ describe('o desenho ligado à simulação', () => {
   });
 
   it('as máscaras ligadas são o padrão', () => {
-    expect(MASCARAS_LIGADAS).toEqual({ gado: true, careca: true, peruca: true, bandeira: true });
+    expect(MASCARAS_LIGADAS).toEqual({ gado: true, careca: true, peruca: true, bandeira: true, tioSam: true, porco: true, pneu: true, barbaro: true });
   });
 });

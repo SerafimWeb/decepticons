@@ -39,10 +39,22 @@ export class CutsceneDirector {
     this.state = 'playing';
   }
 
+  /** O jogador pulou (clique ou tecla): vai direto para o fim, sem mais quadros intermediários. */
+  pular(): void {
+    if (this.state !== 'playing') return;
+    this.elapsed = this.path.duration;
+    this.aplicarAmostra(this.path.sample(this.elapsed));
+    this.state = 'done';
+  }
+
   update(dt: number): void {
     if (this.state !== 'playing') return;
     this.elapsed += dt;
-    const s = this.path.sample(this.elapsed);
+    this.aplicarAmostra(this.path.sample(this.elapsed));
+    if (this.elapsed >= this.path.duration) this.state = 'done';
+  }
+
+  private aplicarAmostra(s: ReturnType<CameraPath['sample']>): void {
     this.camera.position.set(s.position.x, s.position.y, s.position.z);
     this.lookAt.set(s.lookAt.x, s.lookAt.y, s.lookAt.z);
     this.camera.lookAt(this.lookAt);
@@ -50,6 +62,5 @@ export class CutsceneDirector {
       this.camera.fov = s.fov;
       this.camera.updateProjectionMatrix();
     }
-    if (this.elapsed >= this.path.duration) this.state = 'done';
   }
 }
