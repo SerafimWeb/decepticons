@@ -4,13 +4,11 @@ import {
   DESGASTE_DA_FACHADA_S,
   DESGASTE_DA_MESA_S,
   DURACAO_DA_MISSAO_TICKS,
-  FAXINEIROS_POR_PREDIO,
   GRACA_TICKS,
   INTEGRIDADE_MAX,
   MissaoJaneiro,
   PERCENTUAL_DE_SUJEIRA,
   sorteioDoFigurante,
-  TEMPO_DE_LIMPEZA_S,
   type ResultadoDaMissaoJaneiro,
   type SituacaoDaPraca,
 } from './MissaoJaneiro';
@@ -153,38 +151,50 @@ describe('a sujeira nas mesas e a faxina (P217): o que desgasta e o que limpa', 
     expect(m.mesasSujas(2)).toBe(MESAS[2]);
   });
 
-  it('cada mesa suja desgasta o prédio, e os faxineiros a limpam no ritmo combinado (dois juntos: metade do tempo)', () => {
+  it('cada mesa suja desgasta o prédio; a limpeza em si é do agente (FaxineiroController), aqui só a reserva e o resultado', () => {
     const { m } = nova();
     const mesa = m.aoChegar(quemSuja(), 1);
     expect(mesa).toBeGreaterThanOrEqual(0);
-    // uma mesa só: um faxineiro trabalha (o outro não tem mesa), então leva TEMPO_DE_LIMPEZA_S
-    m.fixedUpdate(TEMPO_DE_LIMPEZA_S - 0.5, 1, praca());
+    m.fixedUpdate(1, 1, praca());
     expect(m.mesaSuja(1, mesa)).toBe(true);
-    expect(m.integridade[1]).toBeCloseTo(INTEGRIDADE_MAX - (TEMPO_DE_LIMPEZA_S - 0.5) * DESGASTE_DA_MESA_S, 6);
-    m.fixedUpdate(0.5, 2, praca());
+    expect(m.integridade[1]).toBeCloseTo(INTEGRIDADE_MAX - 1 * DESGASTE_DA_MESA_S, 6);
+    expect(m.mesasLimpas).toBe(0); // ninguém limpou ainda: sem agente, a mesa fica suja (não há mais faxina automática)
+    m.limparMesa(1, mesa);
     expect(m.mesaSuja(1, mesa)).toBe(false);
     expect(m.mesasLimpas).toBe(1);
     expect(m.mesasSujas(1)).toBe(0);
-    // com duas sujas os FAXINEIROS_POR_PREDIO trabalham juntos e limpam uma a cada TEMPO/FAXINEIROS
-    let i = 0;
-    let sujas = 0;
-    while (sujas < FAXINEIROS_POR_PREDIO) if (m.aoChegar(i++, 1) >= 0) sujas++;
-    m.fixedUpdate(TEMPO_DE_LIMPEZA_S / FAXINEIROS_POR_PREDIO, 3, praca());
-    expect(m.mesasSujas(1)).toBe(FAXINEIROS_POR_PREDIO - 1);
-    expect(m.mesasLimpas).toBe(2);
   });
 
-  it('mesa suja desgasta o prédio mesmo sem ninguém na fachada, e só o prédio dela', () => {
+  it('reservarMesa dá a primeira suja e livre, nunca a mesma duas vezes; liberarMesa devolve; limparMesa some com a reserva', () => {
+    const { m } = nova();
+    let i = 0;
+    let sujas = 0;
+    while (sujas < 2) if (m.aoChegar(i++, 1) >= 0) sujas++;
+    expect(m.mesasSujas(1)).toBe(2);
+    const a = m.reservarMesa(1);
+    const b = m.reservarMesa(1);
+    expect(a).toBeGreaterThanOrEqual(0);
+    expect(b).toBeGreaterThanOrEqual(0);
+    expect(a).not.toBe(b);
+    expect(m.reservarMesa(1)).toBe(-1); // as duas sujas já têm dono
+    m.liberarMesa(1, a);
+    expect(m.reservarMesa(1)).toBe(a); // livre de novo, pega a mesma
+    m.limparMesa(1, a);
+    expect(m.mesasSujas(1)).toBe(1);
+    expect(m.reservarMesa(1)).toBe(-1); // a limpa não entra mais na reserva; a outra (b) segue reservada por quem já ia nela
+  });
+
+  it('mesa suja desgasta o prédio mesmo sem ninguém na fachada e sem ninguém limpando, e só o prédio dela', () => {
     const { m } = nova();
     const sujas = new Set<number>();
     for (let i = 0; sujas.size < MESAS[0]!; i++) {
       const mesa = m.aoChegar(i, 0);
       if (mesa >= 0) sujas.add(mesa);
     }
-    // as oito mesas sujas de uma vez: os faxineiros limpam uma a cada TEMPO/FAXINEIROS, e nesse meio-tempo o prédio apanha
     for (let t = 0; t < 60 * 20; t++) m.fixedUpdate(DT, t, praca());
     expect(m.integridade[0]).toBeLessThan(INTEGRIDADE_MAX);
     expect(m.integridade[1]).toBe(INTEGRIDADE_MAX);
+    expect(m.mesasSujas(0)).toBe(MESAS[0]); // sem FaxineiroController nesta regra pura, nada limpa sozinho
   });
 
   it('depois do fim, nada mais muda (a sujeira, a faxina e o relógio param) e o reset recomeça tudo', () => {

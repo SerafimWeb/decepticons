@@ -26,6 +26,7 @@ import { applySpread, spreadAt, type Spread } from './spread';
 import { weapon, type Tier, type WeaponId, type WeaponStats } from './weapons';
 import { REPAIR_RATE } from './repair';
 import { TechnicianController } from './TechnicianController';
+import { FaxineiroController, type FaxineiroMissao } from './FaxineiroController';
 import type { Respawner } from './Respawner';
 import { defaultPower, poweredStats, type PowerSpec } from '../tuning/power';
 import { BOT_NAMES } from '../core/botNames';
@@ -138,6 +139,12 @@ export interface BotSystemOptions {
   manifestanteSpawns?: readonly (readonly [number, number])[];
   /** Onde cada andróide técnico nasce (x, z): conserta os Mechs rebeldes, não atira. */
   technicianSpawns?: readonly (readonly [number, number])[];
+  /** Onde cada andróide faxineiro nasce (x, z) e de qual prédio (a ordem de `PracaLayout.PRACA_PREDIOS`): limpa as mesas sujas do saguão dele (missão do 8 de Janeiro, P243). Sem `missaoJaneiro`, não nasce nenhum. */
+  faxineiroSpawns?: readonly { predio: number; x: number; z: number }[];
+  /** As mesas (x, z) de cada prédio, na ordem de `faxineiroSpawns[].predio` (vem de `MissaoJaneiro.MESAS_DOS_PREDIOS`). */
+  mesasDosPredios?: readonly (readonly { x: number; z: number }[])[];
+  /** A missão que diz a cada faxineiro qual mesa suja limpar (o `Match.missaoJaneiro` já implementa a interface). */
+  missaoJaneiro?: FaxineiroMissao;
   /** Onde o Colossus (escala 3) nasce (x, z): um só, com perfil de cerco. Sem isto, a missão não tem boss. */
   bossSpawn?: readonly [number, number];
   /** O chefe do mapa (o Draga-01 da Amazônia, P180 parte C): o mapa cujo chefe nasce no ponto dele. Vem do registro `mapasSobDemanda` (carregado antes de montar a partida). Sem isto, não há chefe de mapa. */
@@ -178,7 +185,7 @@ interface Fighter {
 
 interface Bot {
   mech: MechBase;
-  brain: BotController | TechnicianController | CerebroDoChefe;
+  brain: BotController | TechnicianController | FaxineiroController | CerebroDoChefe;
   name: string;
   home: THREE.Vector3;
   /** A dificuldade é do robô (esquadrão): a das configurações não a troca. */
@@ -370,6 +377,18 @@ export class BotSystem {
       o.scene.add(beam);
       this.bots.push({ mech, brain, name: pick(o.names?.technicians ?? BOT_NAMES.technicians, i, 'T'), home, beam });
     });
+    // Faxineiros: limpam as mesas sujas do saguão do prédio deles (P243). Atrás de portas que nenhum Mech atravessa — sem alvo, sem fuga, só a mesa.
+    if (o.missaoJaneiro) {
+      const missao = o.missaoJaneiro;
+      (o.faxineiroSpawns ?? []).forEach((p, i) => {
+        const mech = new Android({ visor: PALETTE.green, tool: 'repair', stats: poweredStats(ANDROID_STATS, power, 'technician') });
+        const home = place(mech, [p.x, p.z]);
+        const mesas = o.mesasDosPredios?.[p.predio] ?? [];
+        const brain = new FaxineiroController(mech, p.predio, mesas, { x: p.x, z: p.z }, missao);
+        if (o.respawn !== false) o.respawner.track(mech, BOT_RESPAWN_S, () => brain.reset());
+        this.bots.push({ mech, brain, name: `FAXINEIRO ${i + 1}`, home });
+      });
+    }
     this.mechs = this.bots.map((b) => b.mech);
     for (const bot of this.bots) if (bot.brain instanceof BotController) this.fighters.push({ bot, brain: bot.brain, key: 0, side: 0 });
     // Tática de esquadrão (P119): com 3 ou mais lutadores e algum de arma de perto, o primeiro de arma de linha fica
@@ -448,7 +467,8 @@ export class BotSystem {
 
   /**
    * Ativa um recorte do pool por tipo e guarda o restante. Usado apenas entre ondas, nunca cria ou
-   * remove objetos. Devolve quantos inimigos ficaram ativos para a regra conferir seu teto.
+   * remove objetos. Devolve quantos inimigos ficaram ativos para a regra conferir seu teto. O
+   * faxineiro (P243) não é pool de onda — fica sempre ativo, de fora desta conta.
    */
   setRoster(mechCount: number, androidCount: number, bossCount = 0, manifestanteCount = 0): number {
     let mechs = 0;
@@ -456,6 +476,7 @@ export class BotSystem {
     let manifestantes = 0;
     let active = 0;
     for (const { mech, brain, home, beam } of this.bots) {
+      if (brain instanceof FaxineiroController) continue;
       if (!(brain instanceof BotController)) {
         mech.deactivate();
         if (beam) beam.visible = false;
@@ -505,6 +526,13 @@ export class BotSystem {
   technicianOf(mech: MechBase): TechnicianController | undefined {
     const brain = this.bots.find((b) => b.mech === mech)?.brain;
     return brain instanceof TechnicianController ? brain : undefined;
+  }
+
+  /** Quantos de combate (`BotController`: Mechs e androides rebeldes, nunca técnico nem faxineiro) estão vivos agora — o placar da missão do 8 de Janeiro (`rebeldesVivos`) conta só estes; o faxineiro é sempre ativo, de fora da conta. */
+  combatAliveCount(): number {
+    let n = 0;
+    for (const { mech, brain } of this.bots) if (mech.alive && brain instanceof BotController) n++;
+    return n;
   }
 
   /** Um bot levou tiro de um alvo que ele caça: se estava só patrulhando, vira e vai atrás. */

@@ -10,7 +10,7 @@ import { weapon } from '../combat/weapons';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { Match } from './Match';
-import { INTEGRIDADE_MAX, REBELDES_MAX, type SituacaoDaPraca } from './MissaoJaneiro';
+import { INTEGRIDADE_MAX, PONTOS_DOS_FAXINEIROS, REBELDES_MAX, type SituacaoDaPraca } from './MissaoJaneiro';
 import type { CausaDaFuga } from './Multidao';
 import type { MissionStats } from './SurvivalWaves';
 
@@ -64,7 +64,9 @@ describe('a missão do 8 DE JANEIRO no Match (P217, passo 5): a multidão contra
     expect(match.nucleo).toBeNull();
     expect(match.quadro).toBeNull();
     expect(match.rio).toBeNull();
-    expect(match.bots.mechs.filter((m) => m.alive)).toHaveLength(0);
+    // sem rebelde nenhum: só os faxineiros (P243), sempre ativos, de fora do cronograma de ondas
+    expect(match.rebeldesVivos).toBe(0);
+    expect(match.bots.mechs.filter((m) => m.alive)).toHaveLength(PONTOS_DOS_FAXINEIROS.length);
     expect(match.missaoJaneiro!.predios).toBe(PRACA_PREDIOS.length);
     const dm = await partida('deathmatch');
     expect(dm.match.missaoJaneiro).toBeNull();
@@ -214,7 +216,8 @@ describe('a missão do 8 DE JANEIRO no Match (P217, passo 5): a multidão contra
     for (let s = 0; s < 6; s++) {
       run(10);
       expect(match.rebeldesVivos).toBeLessThanOrEqual(REBELDES_MAX);
-      expect(match.bots.mechs.filter((b) => b.alive).length).toBe(match.rebeldesVivos);
+      // os faxineiros (P243) somam à parte: sempre ativos, de fora da conta de rebeldes
+      expect(match.bots.mechs.filter((b) => b.alive).length).toBe(match.rebeldesVivos + PONTOS_DOS_FAXINEIROS.length);
     }
     const situacao = (match as unknown as { situacaoDaPraca: SituacaoDaPraca }).situacaoDaPraca;
     expect(situacao.presentes).toBe(m.presentes + match.rebeldesVivos); // eles contam na Praça
@@ -235,6 +238,26 @@ describe('a missão do 8 DE JANEIRO no Match (P217, passo 5): a multidão contra
     expect(match.rebeldesVivos).toBeLessThanOrEqual(antes);
   });
 
+  it('o faxineiro (P243, agente de verdade) anda até a mesa suja do prédio dele e a limpa sozinho, sem conta abstrata', async () => {
+    const { match, run } = await partida();
+    const portasPredio0 = PONTOS_DOS_FAXINEIROS.filter((p) => p.predio === 0);
+    expect(portasPredio0.length).toBe(2);
+    const faxineiros = match.bots.mechs.filter((m) =>
+      portasPredio0.some((d) => Math.abs(m.simPosition.x - d.x) < 0.01 && Math.abs(m.simPosition.z - d.z) < 0.01),
+    );
+    expect(faxineiros).toHaveLength(2);
+    const homes = faxineiros.map((m) => m.simPosition.clone());
+    // suja a primeira mesa livre do prédio 0, do mesmo jeito que alguém chegando à fachada sujaria
+    let mesa = -1;
+    for (let i = 0; mesa < 0; i++) mesa = match.missaoJaneiro!.aoChegar(i, 0);
+    expect(match.missaoJaneiro!.mesaSuja(0, mesa)).toBe(true);
+    run(1); // tempo de sobra para sair do posto rumo à mesa
+    expect(faxineiros.some((m, i) => m.simPosition.distanceTo(homes[i]!) > 0.3)).toBe(true); // andou de verdade, não é conta abstrata
+    for (let s = 0; s < 30 && match.missaoJaneiro!.mesaSuja(0, mesa); s++) run(1);
+    expect(match.missaoJaneiro!.mesaSuja(0, mesa)).toBe(false);
+    expect(match.missaoJaneiro!.mesasLimpas).toBeGreaterThanOrEqual(1);
+  });
+
   it('o reinício da missão volta tudo: a multidão do zero, os prédios inteiros, o relógio e o placar zerados', async () => {
     const { match, run } = await partida();
     run(30);
@@ -249,6 +272,7 @@ describe('a missão do 8 DE JANEIRO no Match (P217, passo 5): a multidão contra
     expect(match.missaoJaneiro!.tempoS).toBe(0);
     expect(match.missaoJaneiro!.fase).toBe('em-curso');
     expect(match.rebeldesVivos).toBe(0);
-    expect(match.bots.mechs.every((b) => !b.alive)).toBe(true);
+    // os faxineiros (P243) não são do cronograma de ondas: o reinício não os mata, só os bots de combate ficam a zero
+    expect(match.bots.mechs.filter((b) => b.alive).length).toBe(PONTOS_DOS_FAXINEIROS.length);
   });
 });
