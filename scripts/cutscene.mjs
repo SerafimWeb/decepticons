@@ -1,5 +1,5 @@
 /**
- * Grava a cutscene-piloto do 8 DE JANEIRO (P244) em vídeo real, numa GPU de verdade: serve o `dist/` (faça `npm run
+ * Grava a cutscene-piloto do 8 DE JANEIRO (P245) em vídeo real, numa GPU de verdade: serve o `dist/` (faça `npm run
  * build` antes), abre `?mapa=janeiro&modo=survival&comandante=1&cutscene=janeiro-abertura&depurar`, espera a
  * trajetória da câmera terminar (~24 s, `client/src/debug/CutsceneJaneiro.ts`) e converte a gravação do Playwright
  * (.webm) para .mp4 com o ffmpeg do projeto (`scripts/sonsRodar.mjs`, o mesmo usado pelo Estúdio).

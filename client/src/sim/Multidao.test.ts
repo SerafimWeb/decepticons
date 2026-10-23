@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CARECA, GADO, Multidao, PASSO_DO_SUSTO, PERUCA, RAZAO_DA_FUGA, senoParabolico, VELOCIDADE, type CausaDaFuga, type ConfigDaMultidao } from './Multidao';
+import { BANDEIRA, CARECA, GADO, Multidao, PASSO_DO_SUSTO, PERUCA, RAZAO_DA_FUGA, senoParabolico, VELOCIDADE, type CausaDaFuga, type ConfigDaMultidao } from './Multidao';
 
 /** Uma Praça de mentira, só para a regra: dois ônibus e quatro bueiros no oeste, três lixeiras, três prédios no leste, duas saídas. */
 const PRACA: ConfigDaMultidao = {
@@ -42,18 +42,20 @@ describe('o cronograma: a mesma semente é a mesma multidão (G2)', () => {
     expect(a.total + a.androides.length).toBe(PRACA.cota);
   });
 
-  it('os ids seguem o nascimento; ninguém nasce antes da primeira chegada (5 s) nem depois do fim do despejo; as três fontes entram e a mistura tem cerca de 75 / 12 / 8 por cento', () => {
+  it('os ids seguem o nascimento; ninguém nasce antes da primeira chegada (5 s) nem depois do fim do despejo; as três fontes entram e a mistura tem cerca de 60 / 12 / 8 / 20 por cento', () => {
     const m = new Multidao({ ...PRACA, cota: 3000 });
     for (let i = 1; i < m.total; i++) expect(m.nasce[i]!).toBeGreaterThanOrEqual(m.nasce[i - 1]!);
     expect(m.nasce[0]!).toBeGreaterThanOrEqual(300);
     expect(m.nasce[m.total - 1]!).toBeLessThan(18_000);
-    const por = [0, 0, 0];
+    const por = [0, 0, 0, 0];
     for (let i = 0; i < m.total; i++) por[m.tipo[i]!]!++;
     const parte = (n: number) => n / m.total;
-    expect(parte(por[GADO]!)).toBeGreaterThan(0.76);
-    expect(parte(por[GADO]!)).toBeLessThan(0.9);
+    expect(parte(por[GADO]!)).toBeGreaterThan(0.55);
+    expect(parte(por[GADO]!)).toBeLessThan(0.65);
     expect(parte(por[CARECA]!)).toBeGreaterThan(0.08);
     expect(parte(por[PERUCA]!)).toBeGreaterThan(0.05);
+    expect(parte(por[BANDEIRA]!)).toBeGreaterThan(0.15);
+    expect(parte(por[BANDEIRA]!)).toBeLessThan(0.25);
     // cada figurante nasce junto de uma fonte, e as três famílias de fonte despejam
     const usadas = new Set<string>();
     for (let i = 0; i < m.total; i++) {
@@ -179,7 +181,7 @@ describe('o tiro, a explosão e o susto (a autoridade)', () => {
   });
 
   it('o gado cai com dois golpes, o careca aguenta mais; o ferido foge e o morto some, uma vez só', () => {
-    const m = new Multidao({ ...SO_UMA, mistura: [1, 0, 0] });
+    const m = new Multidao({ ...SO_UMA, mistura: [1, 0, 0, 0] });
     const mortos: number[] = [];
     const fugas: Array<[number, CausaDaFuga]> = [];
     m.aoMorrer = (i) => mortos.push(i);

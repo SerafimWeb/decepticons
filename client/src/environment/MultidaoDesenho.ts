@@ -3,7 +3,7 @@ import { CARECA, Multidao, NUNCA, PERUCA, TICKS_DO_TOMBO, TIPOS } from '../sim/M
 import { hex, Montador } from './PraiaMontador';
 
 /**
- * O DESENHO DA MULTIDÃO DO 8 DE JANEIRO (passo 3 da ficha `fichas/cenario-8-de-janeiro.md`): milhares de figurantes em **três desenhos** (um por tipo), sem CPU por figurante por quadro (G4/G5).
+ * O DESENHO DA MULTIDÃO DO 8 DE JANEIRO (passo 3 da ficha `fichas/cenario-8-de-janeiro.md`): milhares de figurantes em **quatro desenhos** (um por tipo), sem CPU por figurante por quadro (G4/G5).
  *
  * Do jeito da gente da praia (`PraiaGente.ts`): cada pessoa é uma instância de malha estática e **a posição é conta da vertex shader**, a partir de números por instância e do tick
  * compartilhado (`uTick`). É a mesma conta de `sim/Multidao.ts` (a posição como função do tempo), escrita em GLSL: o desenho e a simulação nunca divergem porque saem da mesma fórmula
@@ -13,7 +13,8 @@ import { hex, Montador } from './PraiaMontador';
  * é de um buffer pequeno e só nos quadros em que alguém morre ou foge. Sem sombra própria. Nenhuma tem corpo físico (a simulação decide os acertos com um cilindro).
  *
  * **O que cada tipo é** (caricaturas de TIPOS, nunca de pessoas: nenhum nome, marca ou texto): o GADO tem a cabeça de gado (focinho e chifres; "é o mod deles"), o CARECA é o idoso
- * careca de colete e a PERUCA é o rapaz de peruca loira. Cada tipo tem **botão de desligar** (`mascaras`): desligada, a cabeça volta a ser uma cabeça comum e a camisa verde e amarela fica.
+ * careca de colete, a PERUCA é o rapaz de peruca loira e a BANDEIRA é o invasor genérico erguendo um mastro com um pano liso (sem símbolo nenhum). Cada tipo tem **botão de desligar**
+ * (`mascaras`): desligada, a cabeça volta a ser uma cabeça comum (ou as mãos da BANDEIRA ficam vazias) e a camisa verde e amarela fica.
  */
 
 export interface MascarasDaMultidao {
@@ -23,8 +24,10 @@ export interface MascarasDaMultidao {
   careca: boolean;
   /** A peruca loira da PERUCA. */
   peruca: boolean;
+  /** O mastro e o pano da BANDEIRA. */
+  bandeira: boolean;
 }
-export const MASCARAS_LIGADAS: MascarasDaMultidao = { gado: true, careca: true, peruca: true };
+export const MASCARAS_LIGADAS: MascarasDaMultidao = { gado: true, careca: true, peruca: true, bandeira: true };
 
 const CAMISAS = [0x1f8a3b, 0x2faa4a, 0xf2c200, 0xffd21f, 0x17703a, 0xe6e6c8];
 const CALCAS = [0x24304a, 0x3b4a6b, 0x3a3a3a, 0x6b5b45, 0xb9a98a];
@@ -127,6 +130,22 @@ export function geometriaDaPeruca(mascara = true): THREE.BufferGeometry {
     const peruca = new Montador().esfera(0.135, 5, -0.02, 1.7, 0, cor, 1, 0.75, 1.05).caixa(0.07, 0.4, 0.26, -0.13, 1.5, 0, cor).build();
     partes.push(marca(peruca, 0, null));
   } else partes.push(marca(new Montador().esfera(0.12, 5, -0.015, 1.71, 0, cor, 1, 0.62, 1).build(), 0, null));
+  return junta(partes);
+}
+
+/**
+ * A BANDEIRA (P243, ordem do Comandante): o invasor genérico — o corpo e a cabeça comuns, erguendo um mastro com um pano liso (a cor da camisa daquela instância: nenhum símbolo, nenhuma
+ * marca, nenhum time). Sem a máscara, as mãos ficam vazias.
+ */
+export function geometriaDaBandeira(mascara = true): THREE.BufferGeometry {
+  const pele = PELES[2]!;
+  const partes = corpo(pele);
+  partes.push(marca(new Montador().esfera(0.115, 5, 0.01, 1.66, 0, pele).build(), 0, null));
+  if (mascara) {
+    const mastro = new Montador().barra(0.08, 1.3, 0.27, 0.18, 2.3, 0.2, 0.028, hex(0.55, 0.42, 0.28)).build();
+    const pano = new Montador().caixa(0.34, 0.22, 0.015, 0.33, 2.18, 0.19, SEM_COR).build();
+    partes.push(marca(mastro, 0, null), marca(pano, 1, null));
+  }
   return junta(partes);
 }
 
@@ -244,11 +263,11 @@ export class MultidaoDesenho {
   private readonly slotDe: Int32Array;
   private readonly malhas: THREE.InstancedMesh[] = [];
   private readonly dados: DadosDaMalha[] = [];
-  private readonly capacidade = [0, 0, 0];
+  private readonly capacidade = [0, 0, 0, 0];
   private readonly livres: Int32Array[] = [];
-  private readonly nLivres = [0, 0, 0];
-  private readonly marca = [0, 0, 0];
-  private readonly emUso = [0, 0, 0];
+  private readonly nLivres = [0, 0, 0, 0];
+  private readonly marca = [0, 0, 0, 0];
+  private readonly emUso = [0, 0, 0, 0];
   private proximo = 0;
   /** Quem vai soltar a vaga e quando (o corpo caído some `TICKS_DO_TOMBO` depois): poucos por vez, varrido a cada quadro. */
   private readonly filaId: Int32Array;
@@ -268,8 +287,8 @@ export class MultidaoDesenho {
     this.filaTick = new Float64Array(n);
     for (let i = 0; i < n; i++) this.capacidade[multidao.tipo[i]!]!++;
     for (let i = 0; i < n; i++) this.malhaDe[i] = multidao.tipo[i]!;
-    const geos = [geometriaDoGado(mascaras.gado), geometriaDoCareca(mascaras.careca), geometriaDaPeruca(mascaras.peruca)];
-    const nomes = ['gado', 'careca', 'peruca'];
+    const geos = [geometriaDoGado(mascaras.gado), geometriaDoCareca(mascaras.careca), geometriaDaPeruca(mascaras.peruca), geometriaDaBandeira(mascaras.bandeira)];
+    const nomes = ['gado', 'careca', 'peruca', 'bandeira'];
     for (let t = 0; t < TIPOS; t++) {
       const k = Math.max(1, this.capacidade[t]!);
       const d: DadosDaMalha = {
@@ -309,7 +328,7 @@ export class MultidaoDesenho {
 
   /** Quantos figurantes ocupam vaga agora (por tipo). */
   get presentes(): number {
-    return this.emUso[0]! + this.emUso[1]! + this.emUso[2]!;
+    return this.emUso[0]! + this.emUso[1]! + this.emUso[2]! + this.emUso[3]!;
   }
 
   private marcar(t: number, slot: number): void {

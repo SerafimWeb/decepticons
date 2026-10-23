@@ -417,7 +417,7 @@ export class Game {
   private readonly multidaoQuer = multidaoFromSearch(location.search);
   private multidaoDemo: MultidaoDemo | null = null;
   private multidaoCarregando = false;
-  /** A cutscene-piloto do 8 DE JANEIRO (`?cutscene=janeiro-abertura`, P244): câmera por trajetória, sem controle do jogador, para gravar em vídeo (`scripts/cutscene.mjs`). Carregada sob demanda. */
+  /** A cutscene-piloto do 8 DE JANEIRO (`?cutscene=janeiro-abertura`, P245): câmera por trajetória, sem controle do jogador, para gravar em vídeo (`scripts/cutscene.mjs`). Carregada sob demanda. */
   private readonly cutsceneQuer = cutsceneFromSearch(location.search);
   private cutscene: CutsceneJaneiro | null = null;
   private cutsceneCarregando = false;
@@ -1123,7 +1123,7 @@ export class Game {
       void import('../environment/JaneiroJogo').then(({ criarJaneiroJogo }) => {
         this.janeiroJogo = criarJaneiroJogo(this.scene, this.match, document.getElementById('hud')!, (texto) => this.hud.setMissionLinha(texto));
       });
-      // A cutscene-piloto (P244): só com `?cutscene=janeiro-abertura`; nunca pesa em quem joga sem o link (G3/G5).
+      // A cutscene-piloto (P245): só com `?cutscene=janeiro-abertura`; nunca pesa em quem joga sem o link (G3/G5).
       if (this.cutsceneQuer === 'janeiro-abertura' && !this.cutscene && !this.cutsceneCarregando) {
         this.cutsceneCarregando = true;
         void import('../debug/CutsceneJaneiro').then(({ CutsceneJaneiro }) => {

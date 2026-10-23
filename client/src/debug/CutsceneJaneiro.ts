@@ -4,7 +4,7 @@ import { CameraPath } from '../camera/CameraPath';
 import { CutsceneDirector } from '../camera/CutsceneDirector';
 
 /**
- * A CUTSCENE-PILOTO DO 8 DE JANEIRO (P244): prova de conceito de uma câmera cinematográfica por trajetória, para gravar
+ * A CUTSCENE-PILOTO DO 8 DE JANEIRO (P245): prova de conceito de uma câmera cinematográfica por trajetória, para gravar
  * em vídeo com `scripts/cutscene.mjs` (não é gameplay: não entra no pacote de partida — `main.ts` não a importa, só o
  * `Game` por `import()` quando o link pede `?cutscene=janeiro-abertura`, G3/G5). Mostra a Esplanada de onde a multidão
  * vem, a fachada do Congresso e a Praça entre os três poderes, com a mesma legenda 🟢 que já está na missão
