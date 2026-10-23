@@ -15,7 +15,7 @@
 | **Cidade Neon** | offline: Deathmatch, Sobrevivência (6 ondas, Colossus, transformador), Bandeira, Domínio; online: Deathmatch | co-op online (A1 + A2 do `CAMINHO_DO_LANCAMENTO.md`), Bandeira online |
 | **Estação dos Cabos** | offline: Deathmatch e a missão em ondas; online: Deathmatch | a missão em co-op online (A3) |
 | **Terras Raras** | EM BREVE (restrita) | já é real offline: o Comandante a abre no painel (`mapa:amazonia` → público, sem deploy) quando quiser; antes, medir a sala online no servidor |
-| **8 de Janeiro** | EM BREVE (restrita) · **prioridade atual do Comandante (P233, 20/10)** | a v1 jogável offline já existe (restrita); os androides rebeldes e o Relatório com os fatos 🟢 já entraram; faltam os faxineiros agentes, a missão online, a **revisão humana de cada fato** e a **revisão jurídica** antes de liberar |
+| **8 de Janeiro** | EM BREVE (restrita) · **prioridade atual do Comandante (P233, 20/10)** | a v1 jogável offline já existe (restrita); os androides rebeldes, o Relatório com os fatos 🟢 e os faxineiros agentes de verdade (P243, 23/10) já entraram; faltam a missão online, a **revisão humana de cada fato** e a **revisão jurídica** antes de liberar |
 | Bunker | EM BREVE | — |
 
 **Regra para todos os agentes até o lançamento:** nenhum mapa, missão, arma ou modo novo. Só entra (a) o que bloqueia o lançamento, (b) bug que o playtest das duas missões achar, (c) o que o Comandante mandar. **Exceção ordenada em 20/10 (P233): a missão do 8 de Janeiro é a prioridade atual e a Estação dos Cabos melhora.** Os pacotes A1 a A7 do `CAMINHO_DO_LANCAMENTO.md` ficam para a primeira atualização.
