@@ -14,6 +14,13 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P246 — Monetização para "o melhor jogo da Steam": telões diegéticos, não anúncio forçado (23/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P246 | 23/10 | "o desenvolvermos um game que pretendo ser o melhor da STEAM, quais as melhores formas de monetizar esse serviço, sem baixar a qualidade e jogabilidade? […] sera que temos como inserir um 'outdoor' virtual dentro da nossa arena, e ficar rodando os videos nesse outdoor interno?" (trazido de uma conversa externa, junto com um post sobre o "Block Blast", que ajusta a dificuldade por um modelo de propensão a anúncio para forçar o jogador a pagar) | 🟡 | **Registrado em `GAME_DESIGN.md` como ideia em estudo (HORIZONTE), não implementado:** telões/letreiros na Cidade Neon tocando vídeo em loop (textura de superfície comum, fora do tick e do orçamento de rede), começando só com vídeo do próprio jogo (zero rede de anúncio) e trocável por marca real depois sem recompilar. **Recusado por princípio**, e registrado em `GAME_DESIGN.md` § NÃO É PAY-TO-WIN: o modelo "Block Blast" (algoritmo decide matar o jogador para forçar anúncio/reviver) — contraria "nada que se compra ganha partida" e arruinaria a reputação na Steam. **Em aberto para o Comandante decidir (não é código):** a mira em Steam é nova frente de distribuição (hoje o jogo é zero-instalação, navegador, portal primeiro); viável com um wrapper do build atual, mas ninguém decidiu isso ainda | `.decepticons/GAME_DESIGN.md` § HORIZONTE e § NÃO É PAY-TO-WIN |
+| P246 | 23/10 | "primeiro vamos focar na qualidade do game, e nos outdoors. se eles ja puderem mostrar videos, armas, takes, será muito bom (poderemos fazer merchan das nossas armas, equipes, robôs e missões ali) […] sobre a steam, pretendo sim mandar pra la, mas essa nao é a prioridade agora" | 🟡 | **Prioridade confirmada, ainda não implementada:** os telões viram o próximo item da fila depois do que já está em jogo (qualidade/calibragem), mostrando vídeo de armas, robôs, times e missões (mala de divulgação interna, não precisa de anunciante externo para valer a pena). **Steam: confirmado como destino, não como prioridade agora** — resposta técnica dada (empacotar o build atual num wrapper desktop tipo Electron/Tauri + Steamworks SDK; a simulação, a rede e o conteúdo não mudam; semanas de trabalho de empacotamento quando entrar na fila, não reescrita) | `ESTADO_ATUAL.md` (próxima sessão) |
+
 ## P241 — A voz que não chega: a regra de 18 anos solta e a "Mixagem estéreo" (21/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
