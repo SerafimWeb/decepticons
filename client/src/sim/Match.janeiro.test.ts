@@ -11,6 +11,7 @@ import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { Match } from './Match';
 import { INTEGRIDADE_MAX, REBELDES_MAX, type SituacaoDaPraca } from './MissaoJaneiro';
+import type { CausaDaFuga } from './Multidao';
 import type { MissionStats } from './SurvivalWaves';
 
 const IDLE: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, dash: false };
@@ -151,6 +152,23 @@ describe('a missão do 8 DE JANEIRO no Match (P217, passo 5): a multidão contra
     player.respawn(new THREE.Vector3(alvo.x, 0, alvo.z));
     for (let k = 0; k < 12; k++) match.step(FIXED_DT); // o susto é conferido de 6 em 6 ticks
     expect(fugiu(m, alvo.i)).toBe(true);
+  });
+
+  it('o canhão sônico (P242) dispersa a multidão sem matar: quem está no cone foge pela mesma causa de um susto, nunca de um tiro', async () => {
+    const { match, player, run } = await partida();
+    run(30);
+    const m = match.multidao!;
+    const fugas: Array<[number, CausaDaFuga]> = [];
+    m.aoFugir = (i, causa) => fugas.push([i, causa]);
+    const t = match.tickDaMissao;
+    const alvo = umFigurante(match, t)!;
+    const antesMortos = m.eliminados;
+    const origem = new THREE.Vector3(alvo.x - 5, 1, alvo.z);
+    const dir = new THREE.Vector3(1, 0, 0);
+    match.waveCone(player, origem, dir, weapon('sonic'));
+    expect(fugiu(m, alvo.i)).toBe(true);
+    expect(fugas).toContainEqual([alvo.i, 'susto']);
+    expect(m.eliminados).toBe(antesMortos);
   });
 
   it('parado, o jogador perde a missão: a fachada e a sujeira derrubam um prédio, o fim sai uma vez pelo aviso de missão e o mundo congela', { timeout: 180_000 }, async () => {
