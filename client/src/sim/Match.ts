@@ -553,7 +553,7 @@ export class Match {
             mesasDosPredios: janeiro ? this.janeiroPedaco!.MESAS_DOS_PREDIOS : undefined,
             missaoJaneiro: janeiro ? this.missaoJaneiro ?? undefined : undefined,
             personas: o.foes.enemyPersonas,
-            names: { mechs: o.foes.names.mechs, androids: o.foes.names.androids, technicians: o.foes.names.technicians },
+            names: { mechs: o.foes.names.mechs, androids: janeiro ? this.janeiroPedaco!.NOMES_DOS_REBELDES : o.foes.names.androids, technicians: o.foes.names.technicians },
           }),
       // A força de defesa da Amazônia (parte D2) segura o posto em volta dos geradores: não corre atrás do jogador e não renasce.
       ...(defesa ? { defensores: true, alturaDoChao: (x: number, z: number) => exigirMapa('amazonia').alturaDoTerreno?.(x, z) ?? 0 } : {}),

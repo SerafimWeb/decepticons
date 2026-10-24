@@ -25,13 +25,18 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-## EM BRANCH — NÃO ESTÁ NO AR: COOP ONLINE NA MISSÃO DO 8 DE JANEIRO, PRA UMA LIVE — Claude, 23/10 (branch `claude/janeiro-online`, P251)
+## EM BRANCH — NÃO ESTÁ NO AR: O NOME DOS ANDROIDES REBELDES, AI-5 — Claude, 23/10 (branch `claude/androides-ai5`, P252)
+
+**O Comandante:** "o nome dos androides pretos dessa fase devem ser: AI-5 (todos é ai-5 mesmo, nao é 1, 2, 3 nao)" + 8 apelidos, depois insistiu com 3 deles truncados. **Feito:** todo androide rebelde aparece como **AI-5** (`MissaoJaneiro.NOMES_DOS_REBELDES`, usado tanto offline quanto no `ArenaRoom` online — mesmo código do `Match.ts`), nunca numerado. **Recusados, mesmo truncados (CARLUXO/RACHAD/SIONIS):** identificam uma pessoa real (Carlos Bolsonaro) e um esquema de corrupção ligado à família dele, e miram um grupo étnico-religioso real — truncar letras não tira a identificação. **Os outros 5 apelidos** (BANANINHA, NEPOTISMO, LESAPATRIA, TORNOZELEIRO, ANTIDEMOCRATICO) não cabem junto com "AI-5" no nameplate (16 bytes): ficam de referência na ficha, pra narração/LIVE.
+**Provas:** `npm run check` em andamento; teste novo em `Match.janeiro.test.ts` prova o nome do rebelde.
+**Próxima sessão começa com:** abrir o PR.
+
+## MESCLADO NA MAIN (23/10): COOP ONLINE NA MISSÃO DO 8 DE JANEIRO, PRA UMA LIVE (Claude, PR #456, P251)
 
 **O Comandante:** "nao quero usar link, quero poder jogar online, coop, multiplayer nessa fase! vo fazer uma LIVE jogando e quero ver se a galera entra pra jogar!" **Feito:** a sala online aceita `&modo=survival` (genérico — destrava qualquer mapa, não só o Janeiro); a multidão já tinha todo o desenho de rede pronto em `Multidao.ts` (autoridade/espelho, `aplicarMorte`/`aplicarFuga`, `exportarEstado`/`aplicarEstado`), só não ligado — liguei com 2 eventos novos (figurante morreu/fugiu, nunca a posição, G11) e 1 mensagem nova (quem entra no meio da missão recebe o passado). Protocolo 23. `UNIT_KINDS` ganha `faxineiro` (o roster agora distingue do andróide de combate).
 **Achado no caminho, grave e de antes de mim:** o `WELCOME` de qualquer sala fora da Cidade Neon — **inclusive a Estação dos Cabos, já publicada** — mandava um código com `@` e minúsculas que o próprio protocolo da mensagem recusa; o aperto de mão nunca completava (`myId` nunca era atribuído). Confirmado com WebSocket cru antes e depois da correção (`shared/net/mapa.ts:codigoDaChave`). Detalhe em `HISTORICO_DE_DECISOES.md` [2026-10-23].
-**Provas:** `npm run check` completo verde (typecheck, 4025 testes, build, smoke, `mech:bocas`, site) — depois de juntar a `main` (PRs #453/#454 de outra sessão: o chefão pneu e os telões). Teste de integração novo com servidor e WebSocket de verdade (`client/src/net/online-janeiro.test.ts`): a sala aceita o modo, o roster tem faxineiro e andróide rebelde, o servidor decide quem morre/foge na multidão e o espelho do cliente aplica certo, e quem entra depois recebe o passado.
+**Provas:** `npm run check` completo verde (typecheck, 4024 testes, build, smoke, `mech:bocas`, site) — depois de juntar a `main` duas vezes (PRs #453/#454/#455 de outras sessões: o chefão pneu, os telões, a qualidade visual do Codex). Teste de integração novo com servidor e WebSocket de verdade (`client/src/net/online-janeiro.test.ts`): a sala aceita o modo, o roster tem faxineiro e andróide rebelde, o servidor decide quem morre/foge na multidão e o espelho do cliente aplica certo, e quem entra depois recebe o passado.
 **Falta, e não é código:** o servidor roda no PC de trabalho do Comandante, não numa VPS — pra uma LIVE com público entrando ao mesmo tempo é o risco real; decisão dele, nenhuma linha resolve.
-**Próxima sessão começa com:** abrir o PR; depois, se o Comandante confirmar que funcionou numa LIVE de teste, ver se vale estender `modo=survival` às ondas da Cidade Neon e da Estação dos Cabos (a mesma sala agora aceita o modo, só falta a configuração de bots delas).
 
 ## MESCLADO NA MAIN (23/10): O CHEFÃO PNEU GIGANTE E A TRILHA DO BERRANTE (Claude, PR #453, P249)
 

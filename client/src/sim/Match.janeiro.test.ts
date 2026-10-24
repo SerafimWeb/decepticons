@@ -283,6 +283,8 @@ describe('a missão do 8 DE JANEIRO no Match (P217, passo 5): a multidão contra
     run(Math.min(...m.androides.map((a) => a.tick)) / 60 + 3);
     const rebelde = match.bots.mechs.find((b) => b.alive)!;
     expect(rebelde).toBeDefined();
+    // O nome de todo androide rebelde é "AI-5" (P251, ordem do Comandante): o modelo, igual em todos, nunca numerado.
+    expect(match.bots.nameOf(rebelde)).toBe('AI-5');
     const antes = match.rebeldesVivos;
     rebelde.takeHit(new THREE.Vector3(rebelde.simPosition.x, rebelde.simPosition.y + 1, rebelde.simPosition.z), 1e6);
     run(0.1);
