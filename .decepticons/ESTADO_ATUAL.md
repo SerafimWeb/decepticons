@@ -1,12 +1,12 @@
 # ESTADO ATUAL — CYBERMECH
 
-## EM BRANCH — NÃO ESTÁ NO AR: O 8 DE JANEIRO LIBERADO AO PÚBLICO, TRILHA CORRIGIDA, MULTIDÃO E AI-5 AFINADOS (Claude, branch `claude/janeiro-polish`, P253, 24/10)
+## MESCLADO NA MAIN (24/10): O 8 DE JANEIRO LIBERADO AO PÚBLICO, TRILHA CORRIGIDA, MULTIDÃO E AI-5 AFINADOS (Claude, PR #458, P253)
 
 **O Comandante:** a movimentação dos manifestantes está "dura e sem graça", os androides AI-5 "muito agressivos e rápidos" para jogar sozinho, quer a fase mais suave e jogável para atrair jogadores online, **sem precisar de `?comandante=1`**, e o berrante (que nunca chegou a tocar) alternando com o trompetista que ele adicionou; confirmou a revisão dos fatos e a jurídica feitas, liberado para prosseguir.
 **Feito:** `mapa:janeiro` e `tela:relatorio` passaram a `padrao: 'publico'` em `funcionalidades.ts` — toca sem link nem código, offline e online. **O berrante nunca tocava** (achado nesta sessão, apesar do P249 registrar "REAL"): `TrilhaDaJaneiro.ts` tentava no construtor do `Game`, antes do clique que libera o `AudioContext`; agora tenta de novo a cada 500 ms e alterna em ciclo com o trompetista. Multidão: cadência e amplitude do passo variam por pessoa (hash da fase, só no desenho, G14 intocado). AI-5: `BOT_SKILLS.facil` e `maxAttackers: 1` (no máx. 2 atacando por vez, régua da onda 1 da Sobrevivência). `fase:chefes-janeiro`/`arma:cacetete-poder` não tocados (fora do pedido).
 **Provas:** `npm run check` completo verde (typecheck, suíte inteira — 4028 testes —, build, smoke, `mech:bocas`, site).
-**Disponibilidade:** EM BRANCH até o merge; depois vale no site após o deploy automático.
-**Próxima sessão começa com:** abrir o PR, se ainda não aberto.
+**Disponibilidade:** no ar em `cybermech.online` após o deploy automático do merge.
+**Próxima sessão começa com:** o olho do Comandante jogando, para confirmar se o ajuste de suavidade está no ponto; a multidão atravessando parede (P248) segue pendente.
 
 ## P250 — qualidade da Praça e chefes (registro da entrega deste PR) — Codex, 23/10
 
