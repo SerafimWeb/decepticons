@@ -13,9 +13,11 @@ export const ARENA_QUADRO_VIDA = 480;
 export const ARENA_QUADRO_VOLUME = Object.freeze({ w: 3.2, h: 3.4, d: 2 });
 
 /**
- * OS TELÕES DIEGÉTICOS (P246, `GAME_DESIGN.md` § HORIZONTE): dois painéis de vídeo encostados em fachadas que já existem (`BUILDINGS` em `Arena.ts`), virados para o meio da arena — nunca o
+ * OS TELÕES DIEGÉTICOS (P246/P255, `GAME_DESIGN.md` § HORIZONTE): dois painéis de vídeo encostados em fachadas que já existem (`BUILDINGS` em `Arena.ts`), virados para o meio da arena — nunca o
  * prédio do banco (`x: -28`), que já tem o `BankSign`. `ry` é a rotação em Y para a tela encarar o centro (plano nasce de frente para +Z); `w`/`h` cabem dentro da fachada escolhida com folga.
+ * **Tamanho (P255, 24/10):** o Comandante achou os dois pequenos demais; aumentados, e o `telao-2` virou o letreiro grande "estilo Times Square" — a fachada norte do prédio mais alto (`h: 42`)
+ * quase inteira, para ler de longe e dominar o horizonte da cidade.
  */
-export const ARENA_TELAO_1 = Object.freeze({ x: 26, y: 11, z: -15, ry: -Math.PI / 2, w: 9, h: 5 });
-/** A fachada norte do prédio mais alto (`h: 42`): tela maior, mais alta, lida de longe. */
-export const ARENA_TELAO_2 = Object.freeze({ x: 4, y: 23, z: -64, ry: 0, w: 14, h: 6 });
+export const ARENA_TELAO_1 = Object.freeze({ x: 26, y: 12, z: -15, ry: -Math.PI / 2, w: 15, h: 9 });
+/** O letreiro grande (P255): quase a largura da fachada norte, na proporção do vídeo real (~2:1) para não esticar a imagem — a maior tela da arena. */
+export const ARENA_TELAO_2 = Object.freeze({ x: 4, y: 22, z: -64, ry: 0, w: 22, h: 11 });

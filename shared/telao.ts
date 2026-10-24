@@ -26,10 +26,11 @@ export const ADMIN_TELAO_PATH = '/admin/telao';
 export const TELOES_DA_ARENA: readonly IdDeTelao[] = ['arena:telao-1', 'arena:telao-2'];
 
 /**
- * Os vídeos que o painel pode escolher: cresce por PR, quando um arquivo novo entra em `client/public/telao/`. **Vazio por ora** — ainda não há
- * nenhum vídeo no site; o painel mostra "sem vídeo disponível" até o primeiro PR trazer um arquivo e uma linha aqui.
+ * Os vídeos que o painel pode escolher: cresce por PR, quando um arquivo novo entra em `client/public/telao/`. Os dois primeiros (P255) vieram de gravações do próprio Comandante
+ * (`D:\imagens cybermech\`, recortadas e comprimidas com `scripts/otimizar-video-telao.mjs`) — conferidas quadro a quadro antes de entrar aqui: a pasta tinha gravações de outro jogo
+ * misturadas (achado ao processar), e um arquivo errado teria ido parar num telão de verdade.
  */
-export const ARQUIVOS_DE_TELAO: readonly string[] = [];
+export const ARQUIVOS_DE_TELAO: readonly string[] = ['arena-clip2.mp4', 'arena-clip3.mp4'];
 
 /** Quantas telas o servidor aceita por gravação (hoje só 2; a folga é para crescer sem precisar mudar o validador). */
 export const MAX_TELOES = 20;
