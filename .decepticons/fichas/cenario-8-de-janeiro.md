@@ -70,6 +70,8 @@ O que isso compra:
 
 **O custo, dito em números a medir** (§ 4): a conta de bolso dá **≤ 0,1 ms por tick** para a massa e **~60 mil triângulos** na vista mais cheia; **são estimativas** (R13) até a bancada medir.
 
+**O nome dos androides rebeldes (P251, 23/10):** todos aparecem como **AI-5** no jogo — o modelo, nunca numerado (1, 2, 3…), por ordem explícita do Comandante. `MissaoJaneiro.NOMES_DOS_REBELDES`. O Comandante também pediu apelidos individuais de crítica política genérica (nunca nome ou marca de pessoa ou grupo real — a régua de sempre desta fase, `HISTORICO_DE_DECISOES.md` [2026-10-23]); não cabem no nameplate (16 bytes: "AI-5 " já consome 5, e a maioria das palavras estoura o resto), então ficam aqui como referência para quem narrar a partida ou fizer uma LIVE: **BANANINHA, NEPOTISMO, LESAPATRIA, TORNOZELEIRO, ANTIDEMOCRATICO**. Recusados do mesmo pedido, por identificarem uma pessoa real (CARLUXO, RACHADINHA) ou mirarem um grupo étnico-religioso real (SIONISTA) — mesma razão do viking do Capitólio e dos chefes recusados (P243, P247).
+
 ## 4. Os números de aceitação (a bancada, como no Bunker e na Amazônia)
 
 | O que se mede | Como | Teto |

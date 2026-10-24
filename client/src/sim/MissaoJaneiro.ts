@@ -49,6 +49,15 @@ export const PONTOS_DOS_REBELDES: readonly (readonly [number, number])[] = Array
   return [o.x, o.z] as const;
 });
 
+/**
+ * O nome de todo androide rebelde (P251, ordem do Comandante): "AI-5", o modelo — o mesmo em todos, nunca numerado (1, 2, 3…).
+ * Os apelidos individuais que o Comandante pediu junto (crítica política genérica, nunca nome ou marca de pessoa ou grupo real —
+ * a régua de sempre desta fase) não cabem no nameplate (`NAME_MAX` = 16 bytes: "AI-5 " + a maioria das palavras já estoura);
+ * ficam como a lista de referência para quem narrar a partida (`fichas/cenario-8-de-janeiro.md`).
+ */
+export const NOME_DOS_REBELDES = 'AI-5';
+export const NOMES_DOS_REBELDES: readonly string[] = Array.from({ length: REBELDES_MAX }, () => NOME_DOS_REBELDES);
+
 /** Quantas mesas tem o saguão de cada prédio (a ordem é a de `PracaLayout`). */
 export const MESAS_POR_PREDIO: readonly number[] = PRACA_PREDIOS.map((p) => p.saguao.mesas.length);
 /** As mesas de cada prédio (x, z): onde o faxineiro anda para limpar (`combat/FaxineiroController.ts`). */

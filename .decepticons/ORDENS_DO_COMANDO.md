@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P252 — O nome dos androides rebeldes: AI-5 pra todos, apelidos individuais (23/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P252 | 23/10 | "o nome dos androides pretos dessa fase devem ser: AI-5 (todos é ai-5 mesmo, nao é 1, 2, 3 nao); E TAMBEM OS OUTROS SERÃO ESSES NICKS: BANANINHA, NEPOTISMO, LESAPATRIA, TORNOZELEIRO, ANTIDEMOCRATICO, SIONISTA, CARLUXO E RACHADINHA" — depois, pedido de usar as mesmas três truncadas ("sionis; rachad; carlux") | ✅ | **Feito:** todo androide rebelde aparece como **AI-5** (`MissaoJaneiro.NOMES_DOS_REBELDES`), nunca numerado — exatamente a ordem. **Recusados, mantida a posição mesmo truncados:** CARLUXO/RACHAD (identificam uma pessoa real, Carlos Bolsonaro, e um esquema de corrupção ligado à família dele) e SIONIS/SIONISTA (mira um grupo étnico-religioso real) — cortar letras não tira a identificação, só disfarça na tela; mesma régua do P243/P247. **Os outros 5 apelidos** (BANANINHA, NEPOTISMO, LESAPATRIA, TORNOZELEIRO, ANTIDEMOCRATICO) não cabem no nameplate junto com "AI-5" (16 bytes); ficam de referência na ficha, pra narração/LIVE | `fichas/cenario-8-de-janeiro.md`; `client/src/sim/Match.janeiro.test.ts` |
+
 ## P250 — Qualidade visual do 8 de Janeiro e chefes das referências (23/10, Codex)
 
 **Ordem:** “graficamente estou achando fraco”; aplicar evil/trampado/bolsomilicia, chefes em sequência e cacetete conquistável. **🟡 Implementado, aguardando publicação e avaliação visual do dono:** modelos, Praça/VFX, Trampado → Evil e prêmio F; testes de combate e GPU conferidos. Branch codex/janeiro-visual. Conferir: /jogar/?mapa=janeiro&modo=survival&comandante=1; arte/janeiro-*-codex.png. Permanece restrito/offline; P248 segue pendente.
