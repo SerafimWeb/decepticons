@@ -30,9 +30,9 @@ describe('o lançador do servidor (scripts/server.mjs)', () => {
   let saida = '';
 
   beforeAll(async () => {
-    // A pasta de dados é descartável (dentro de .tmp/, G15): nunca o banco de produção. O Comandante já liberou o 8 de Janeiro e a Terras Raras aqui, para a sala abrir sem credencial.
+    // A pasta de dados é descartável (dentro de .tmp/, G15): nunca o banco de produção. O Comandante já liberou a Terras Raras aqui, para a sala abrir sem credencial (o 8 de Janeiro já nasce público, 24/10).
     dados = mkdtempSync(join(tmpdir(), 'cybermech-lancador-'));
-    writeFileSync(join(dados, VISIBILIDADE_ARQUIVO), JSON.stringify({ versao: 1, itens: { 'mapa:janeiro': 'publico', 'mapa:amazonia': 'publico' } }));
+    writeFileSync(join(dados, VISIBILIDADE_ARQUIVO), JSON.stringify({ versao: 1, itens: { 'mapa:amazonia': 'publico' } }));
     filho = spawn(process.execPath, ['scripts/server.mjs'], { cwd: RAIZ, env: { ...process.env, PORT: '0', CYBERMECH_DADOS: dados }, stdio: ['ignore', 'pipe', 'pipe'] });
     const ouvir = (d: Buffer) => {
       saida += d.toString();

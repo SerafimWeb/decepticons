@@ -2,8 +2,6 @@ import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startServer, type GameServer } from '../../../server/Server';
-import { ADMIN_HEADER } from '../../../shared/net/admin';
-import { ADMIN_VISIBILIDADE_PATH } from '../../../shared/visibilidade';
 import { weapon } from '../combat/weapons';
 import { DEFAULT_SETTINGS } from '../core/Settings';
 import { Android } from '../entities/Android';
@@ -33,13 +31,7 @@ describe('M4 + P243: o 8 de Janeiro em coop online', () => {
     await RAPIER.init();
     await carregarMapaSeFor('janeiro');
     server = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', metricasToken: TOKEN_DO_DONO });
-    // O mapa nasce restrito (P191/P226): o painel o libera, como o Comandante faria (mesma técnica de `server/mapas.test.ts`).
-    const r = await fetch(`http://127.0.0.1:${server.port}${ADMIN_VISIBILIDADE_PATH}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', [ADMIN_HEADER]: TOKEN_DO_DONO },
-      body: JSON.stringify({ itens: { 'mapa:janeiro': 'publico' } }),
-    });
-    expect(r.status).toBe(200);
+    // O mapa nasce público (24/10, ordem do Comandante): ninguém precisa liberar nada para entrar.
   });
   afterAll(async () => {
     await server.close();

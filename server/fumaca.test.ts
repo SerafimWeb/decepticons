@@ -25,11 +25,11 @@ describe('a fumaça do servidor', () => {
     const r = await fumacaDoServidor({ base: base() });
     expect(r.problemas, formatarFumaca(r)).toEqual([]);
     expect(r.linhas.map((l) => l.mapa)).toEqual([...MAPAS_ONLINE]);
-    // O padrão do catálogo: a Cidade Neon e a Praia são públicas; o Bunker, a Terras Raras e o 8 de Janeiro são restritos (`core/funcionalidades.ts`).
+    // O padrão do catálogo: a Cidade Neon, a Praia e o 8 de Janeiro são públicos; o Bunker e a Terras Raras são restritos (`core/funcionalidades.ts`).
     const por = Object.fromEntries(r.linhas.map((l) => [l.mapa, `${l.esperado}/${l.obtido}`]));
     expect(por.arena).toBe('entra/entrou');
     expect(por.praia).toBe('entra/entrou');
-    expect(por.janeiro).toBe('recusa/recusado');
+    expect(por.janeiro).toBe('entra/entrou');
     expect(r.ok, formatarFumaca(r)).toBe(true);
     expect(r.uptimeDepoisS).toBeGreaterThanOrEqual(r.uptimeAntesS ?? Infinity);
   }, 90_000);

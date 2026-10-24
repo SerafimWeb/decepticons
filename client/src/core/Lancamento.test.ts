@@ -8,7 +8,7 @@ import { definirVisibilidadeGlobal, Visibilidade } from './Visibilidade';
 /** O público (`false`) ou o Comandante (`true`) olhando o jogo: a visibilidade que o `main.ts` cria na largada. */
 const aplicarLancamento = (comandante: boolean): void => definirVisibilidadeGlobal(new Visibilidade(comandante));
 
-/** Os mapas do lançamento (P197): só a Cidade Neon e a Estação dos Cabos; o Bunker e a Terras Raras "em breve"; o Comandante abre tudo. */
+/** Os mapas do lançamento (P197; 24/10: o 8 DE JANEIRO liberado também): a Cidade Neon, a Estação dos Cabos e o 8 DE JANEIRO; o Bunker e a Terras Raras "em breve"; o Comandante abre tudo. */
 describe('mapas do lançamento', () => {
   afterEach(() => definirVisibilidadeGlobal(null)); // os outros testes do projeto contam com tudo aberto (sem visibilidade criada, tudo aparece)
 
@@ -16,10 +16,10 @@ describe('mapas do lançamento', () => {
     expect(TODOS_OS_MAPAS.every((m) => mapaLiberado(m))).toBe(true);
   });
 
-  it('no lançamento só a Cidade Neon (arena) e a Estação dos Cabos (praia) estão livres', () => {
+  it('no lançamento a Cidade Neon (arena), a Estação dos Cabos (praia) e o 8 DE JANEIRO estão livres', () => {
     aplicarLancamento(false);
-    expect([...MAPAS_DO_LANCAMENTO]).toEqual(['arena', 'praia']);
-    expect(TODOS_OS_MAPAS.filter((m) => mapaLiberado(m))).toEqual(['arena', 'praia']);
+    expect([...MAPAS_DO_LANCAMENTO]).toEqual(['arena', 'praia', 'janeiro']);
+    expect(TODOS_OS_MAPAS.filter((m) => mapaLiberado(m))).toEqual(['arena', 'praia', 'janeiro']);
   });
 
   it('um link para um mapa fechado cai na Cidade Neon; os livres abrem; o Comandante abre todos', () => {
@@ -37,10 +37,12 @@ describe('mapas do lançamento', () => {
     const rio = TEATROS.find((t) => t.mapa === 'amazonia')!;
     const bunker = TEATROS.find((t) => t.mapa === 'bunker')!;
     const cabos = TEATROS.find((t) => t.mapa === 'praia')!;
+    const janeiro = TEATROS.find((t) => t.mapa === 'janeiro')!;
     aplicarLancamento(false);
     expect(estadoDoTeatro(rio, 'arena', 'deathmatch')).toBe('em-breve');
     expect(estadoDoTeatro(bunker, 'arena', 'deathmatch')).toBe('em-breve');
     expect(estadoDoTeatro(cabos, 'arena', 'deathmatch')).toBe('disponivel');
+    expect(estadoDoTeatro(janeiro, 'arena', 'deathmatch')).toBe('disponivel');
     aplicarLancamento(true);
     expect(estadoDoTeatro(rio, 'arena', 'deathmatch')).toBe('disponivel');
     expect(estadoDoTeatro(rio, 'amazonia', 'deathmatch')).toBe('aqui');
