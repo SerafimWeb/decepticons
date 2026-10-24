@@ -57,22 +57,24 @@ export const CITY_NEON: readonly number[] = [PALETTE.cyan, PALETTE.pink, PALETTE
  */
 export const GLOW = {
   // Os tiros do jogador acendem menos que os do inimigo (que são o aviso): o dono achava que a luz do próprio tiro atrapalhava a visão (11/10).
-  friendlyPlasma: new THREE.Color(0.6, 2.6, 1.0),
-  hostilePlasma: new THREE.Color(4.0, 0.4, 0.4),
-  friendlyArc: new THREE.Color(0.8, 2.1, 2.6),
-  hostileArc: new THREE.Color(3.6, 0.8, 4.0),
-  friendlyIce: new THREE.Color(1.7, 2.5, 2.7),
-  hostileIce: new THREE.Color(3.4, 2.6, 4.2),
+  // P256 (24/10): o teto de todo efeito de tiro caiu de ~4,0 para ~2,6 de propósito — o Comandante voltou a dizer que os tiros geram muita luz.
+  // O rastro continua mostrando para onde o tiro foi; o que saiu foi o halo branco que cobria o alvo.
+  friendlyPlasma: new THREE.Color(0.5, 1.75, 0.75),
+  hostilePlasma: new THREE.Color(2.6, 0.32, 0.3),
+  friendlyArc: new THREE.Color(0.6, 1.5, 1.75),
+  hostileArc: new THREE.Color(2.3, 0.6, 2.5),
+  friendlyIce: new THREE.Color(1.15, 1.7, 1.85),
+  hostileIce: new THREE.Color(2.2, 1.7, 2.7),
   // O raio laser (feixe, `fx/BeamVisuals.ts`): magenta do jogador (não se confunde com o plasma verde nem com a elétrica azul) e laranja-vermelho aceso do inimigo.
-  friendlyLaser: new THREE.Color(2.6, 0.45, 2.4),
-  hostileLaser: new THREE.Color(4.0, 1.1, 0.35),
+  friendlyLaser: new THREE.Color(1.75, 0.35, 1.6),
+  hostileLaser: new THREE.Color(2.6, 0.75, 0.3),
   // O tiro de metal (canhão pesado e automático): o corpo é de aço (`fx/kineticShot.ts`), só a cauda quente acende.
-  friendlySlug: new THREE.Color(2.4, 1.6, 0.5),
-  hostileSlug: new THREE.Color(3.4, 0.7, 0.3),
-  spark: new THREE.Color(1.0, 2.3, 1.2),
-  core: new THREE.Color(2.0, 2.4, 2.0),
-  playerMuzzle: new THREE.Color(0.9, 2.4, 1.2),
-  enemyMuzzle: new THREE.Color(3.4, 0.5, 0.45),
+  friendlySlug: new THREE.Color(1.7, 1.15, 0.4),
+  hostileSlug: new THREE.Color(2.3, 0.5, 0.25),
+  spark: new THREE.Color(0.9, 1.6, 0.95),
+  core: new THREE.Color(1.5, 1.8, 1.5),
+  playerMuzzle: new THREE.Color(0.7, 1.55, 0.85),
+  enemyMuzzle: new THREE.Color(2.2, 0.35, 0.32),
   dust: new THREE.Color(0.42, 0.44, 0.43),
   smoke: new THREE.Color(0.32, 0.34, 0.34),
   metal: new THREE.Color(0.23, 0.25, 0.26),

@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P256 — Os tiros ainda dão muita luz: deixar sutil e gostoso de jogar (24/10, Qwen)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P256 | 24/10 | "vamos fazer os refinamentos finais do cybermech. ainda to achando que os tiros geram muita luz e atrapalha um pouco o jogo, temos q tornar isso mais sutil e elegante e gostoso de jogar." (com a instrução de ser objetivo e econômico: "nao precisa LER E TESTAR TUDO") | ✅ | **A causa medida:** o clarão da boca é um cartaz aditivo que nasce a 25 cm do cano, à frente da câmera — o do canhão de cerco ia a **7,5 m** com pico HDR **2,2** e o da boca do trilho a **4,2**; em cima disso o bloom global tinha limiar **0,9** e raio **0,5**, abrindo halo largo sobre o alvo. **Feito:** teto de HDR dos efeitos de tiro de **4,2 → 2,7** (o do jogador ≤ 2,0; o do inimigo segue mais aceso, é o aviso); clarão da boca ~25% menor e 0,05 s, e o **do próprio cano a 72%** do tamanho; pólvora do canhão/cerco de 2,2 → 1,6 e leques de 7,5/5,5 m → 5,0/4,0 m; bloom com limiar **1,05** e raio **0,38**. **Medido nos quadros:** o pico de luz do tiro sobre a cena caiu de **+5,9** para **+1,4** (YAVG), e a cena inteira ficou ~14% menos lavada | `/jogar/` (Deathmatch, Cidade Neon) segurando o tiro; capturas `arte/tiro-luz-antes-p256-qwen.jpg` e `arte/tiro-luz-depois-p256-qwen.jpg` |
+
 ## P255 — Polimento da Cidade Neon: efeitos, telões, prédios, mapa vazio, motoboy kamikaze (24/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

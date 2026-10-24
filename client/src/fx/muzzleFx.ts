@@ -20,33 +20,33 @@ export interface MuzzleFx {
 }
 
 const c = (r: number, g: number, b: number): THREE.Color => new THREE.Color(r, g, b);
-const POWDER = c(2.2, 1.35, 0.45);
+const POWDER = c(1.6, 0.95, 0.3);
 const GAS = c(0.34, 0.33, 0.32);
-const BRASS = c(1.2, 0.85, 0.3);
+const BRASS = c(0.9, 0.65, 0.22);
 const SHOCK = c(0.8, 0.75, 0.7);
 
 export const MUZZLE_FX: Readonly<Record<WeaponId, MuzzleFx | null>> = {
   cannon: {
     flash: [
-      { count: 9, color: POWDER, speed: 24, life: 0.16, size: 3.6, spread: 0.4, gravity: 0, shape: SHAPE.streak },
-      { count: 1, color: POWDER, speed: 0, life: 0.1, size: 5.5, expansion: 3, gravity: 0 },
-      { count: 5, color: GAS, speed: 9, life: 0.9, size: 4.5, expansion: 3, spread: 1, gravity: -0.5, shape: SHAPE.puff },
-      { count: 1, color: SHOCK, speed: 0, life: 0.24, size: 2, expansion: 4, gravity: 0, shape: SHAPE.ring },
+      { count: 9, color: POWDER, speed: 24, life: 0.14, size: 2.4, spread: 0.4, gravity: 0, shape: SHAPE.streak },
+      { count: 1, color: POWDER, speed: 0, life: 0.08, size: 4.0, expansion: 2.5, gravity: 0 },
+      { count: 5, color: GAS, speed: 9, life: 0.9, size: 4.0, expansion: 3, spread: 1, gravity: -0.5, shape: SHAPE.puff },
+      { count: 1, color: SHOCK, speed: 0, life: 0.24, size: 1.8, expansion: 3.5, gravity: 0, shape: SHAPE.ring },
     ],
   },
   autocannon: {
     flash: [
-      { count: 4, color: POWDER, speed: 16, life: 0.07, size: 2, spread: 0.3, gravity: 0, shape: SHAPE.streak },
-      { count: 1, color: POWDER, speed: 0, life: 0.06, size: 2.4, expansion: 1, gravity: 0 },
+      { count: 4, color: POWDER, speed: 16, life: 0.07, size: 1.6, spread: 0.3, gravity: 0, shape: SHAPE.streak },
+      { count: 1, color: POWDER, speed: 0, life: 0.06, size: 1.8, expansion: 1, gravity: 0 },
     ],
     casing: { count: 1, color: BRASS, speed: 4.5, life: 0.8, size: 1.5, spread: 0.4, gravity: 16, spin: 18, shape: SHAPE.casing },
   },
   siege: {
     flash: [
-      { count: 14, color: POWDER, speed: 30, life: 0.18, size: 4.6, spread: 0.45, gravity: 0, shape: SHAPE.streak },
-      { count: 1, color: POWDER, speed: 0, life: 0.12, size: 7.5, expansion: 4, gravity: 0 },
-      { count: 7, color: GAS, speed: 10, life: 1.1, size: 6, expansion: 3.5, spread: 1, gravity: -0.5, shape: SHAPE.puff },
-      { count: 1, color: SHOCK, speed: 0, life: 0.3, size: 2.6, expansion: 5, gravity: 0, shape: SHAPE.ring },
+      { count: 14, color: POWDER, speed: 30, life: 0.16, size: 3.0, spread: 0.45, gravity: 0, shape: SHAPE.streak },
+      { count: 1, color: POWDER, speed: 0, life: 0.1, size: 5.0, expansion: 3, gravity: 0 },
+      { count: 7, color: GAS, speed: 10, life: 1.1, size: 5.0, expansion: 3.5, spread: 1, gravity: -0.5, shape: SHAPE.puff },
+      { count: 1, color: SHOCK, speed: 0, life: 0.3, size: 2.2, expansion: 4, gravity: 0, shape: SHAPE.ring },
     ],
   },
   sonic: null, // a onda se desenha sozinha (`fx/WaveVisuals.ts`)

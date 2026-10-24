@@ -1,5 +1,14 @@
 # ESTADO ATUAL — CYBERMECH
 
+## OS TIROS FICAM SUTIS: MENOS CLARÃO NA BOCA E BLOOM MAIS ESTREITO — Qwen, 24/10 (branch `qwen/tiros-luz-sutil`, P256)
+
+**O Comandante:** "ainda to achando que os tiros geram muita luz e atrapalha um pouco o jogo... temos q tornar isso mais sutil e elegante e gostoso de jogar" — e pediu objetividade, sem ler e testar tudo.
+**A causa (medida no código, não no olho):** o clarão da boca é um cartaz aditivo que nasce a **25 cm do cano, à frente da câmera** — o do canhão de cerco ia a 7,5 m de diâmetro com pico HDR 2,2; o da boca do trilho a 4,2. Somava-se o bloom global com limiar 0,9 e raio 0,5, que abria halo largo por cima do alvo.
+**Feito:** (1) teto de HDR dos efeitos de tiro de **4,2 → 2,7**, com o do jogador em ≤ 2,0 e o do inimigo mais aceso (ele é o aviso); (2) clarões da boca ~25% menores e de 0,05 s, e o **do próprio cano a 72%** do tamanho (`MUZZLE_FRIENDLY_SCALE` em `fx/WeaponFx.ts`) — é o que fica entre a câmera e o alvo; (3) pólvora do canhão/cerco de 2,2 → 1,6 e leques de 7,5/5,5 m → 5,0/4,0 m; (4) bloom: limiar **0,9 → 1,05** e raio **0,5 → 0,38**, constantes em `fx/bloomSeguro.ts` que o teste lê em vez de repetir o número.
+**Provas:** 53 testes focados verdes (`glare`, `WeaponFx`, `steelWeapons`), typecheck verde; `glare.test.ts` ganhou duas regras novas (teto de HDR e nenhuma boca acima de 2,6 m). **Medido em quadro** (mesmo mapa, 12 quadros segurando o tiro, YAVG): o pico de luz do tiro sobre a cena caiu de **+5,9** para **+1,4**, e a cena inteira ficou ~14% menos lavada. Capturas: `arte/tiro-luz-antes-p256-qwen.jpg` e `arte/tiro-luz-depois-p256-qwen.jpg` (feitas em página de teste com o jogo real, R13 — **eu não leio imagem: o veredito estético é do Comandante**).
+**Onde conferir:** `/jogar/` na Cidade Neon, segurando o tiro de plasma; e `/jogar/?mapa=arena&comandante=1`.
+**Próxima sessão começa com:** o olho do Comandante jogando. Se ainda achar forte, o corte seguinte é separar o desenho do clarão do resto (hoje todo clarão da cena é um lote só, `fx/Billboards.ts`) ou baixar o padrão do "brilho" nas configurações (hoje 0,6).
+
 ## JANELAS DOS PRÉDIOS ESTÁVEIS, FLASH DE IMPACTO MENOR, DOC DO CHÃO CORRIGIDA — Claude, 24/10 (branch `claude/cidade-neon-vfx-predios`, P255, PR 2 de 2)
 
 **Continuação do P255** (PR 1, os telões, já na `main`): os outros achados do Comandante.
