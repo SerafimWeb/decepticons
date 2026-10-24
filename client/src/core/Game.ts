@@ -63,7 +63,7 @@ import type { DebrisSystem } from '../environment/DebrisSystem';
 import { CtfObjectives } from '../environment/CtfObjectives';
 import { DominioPontos } from '../environment/DominioPontos';
 import { DamageVisuals } from '../fx/DamageVisuals';
-import { protegerBloom } from '../fx/bloomSeguro';
+import { LIMIAR_DO_BLOOM, protegerBloom, RAIO_DO_BLOOM } from '../fx/bloomSeguro';
 import { criarFxaa } from '../fx/Fxaa';
 import { FlameVisuals } from '../fx/FlameVisuals';
 import { FireRingVisuals } from '../fx/FireRingVisuals';
@@ -551,7 +551,9 @@ export class Game {
     this.renderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(this.renderPass);
     this.composer.addPass(this.frameCopy); // desligada até haver onda no ar (custo zero)
-    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.85, 0.5, 0.9);
+    // P256: 0,6 é o brilho padrão das configurações (o 0,85 daqui valia só para o primeiro quadro) e o limiar/raio vêm do
+    // `bloomSeguro.ts` — mais alto e mais estreito, o clarão do tiro floresce no miolo em vez de lavar a tela.
+    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.6, RAIO_DO_BLOOM, LIMIAR_DO_BLOOM);
     protegerBloom(this.bloomPass); // um NaN num pixel não vira mais a tela preta (P130/P136)
     this.composer.addPass(this.bloomPass);
     this.composer.addPass(new OutputPass());

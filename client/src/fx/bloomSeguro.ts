@@ -17,6 +17,14 @@ import type { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPas
 /** A linha do high-pass do three que lê a cena (o teste confere que ela ainda existe na versão instalada). */
 const LEITURA_DA_CENA = 'vec4 texel = texture2D( tDiffuse, vUv );';
 
+/**
+ * O que acende com halo, e quanto ele se espalha (P256). Eram 0,9 e 0,5: qualquer tiro virava um borrão largo por cima do alvo.
+ * Com 1,05 e 0,38 só o miolo do efeito floresce — o rastro continua aceso, o halo que escondia o inimigo não. O teste
+ * `combat/glare.test.ts` usa este número em vez de repetir o literal.
+ */
+export const LIMIAR_DO_BLOOM = 1.05;
+export const RAIO_DO_BLOOM = 0.38;
+
 export const GLSL_LIMPA_TEXEL = /* glsl */ `
 vec4 limpaTexel(vec4 t) {
   uvec4 bits = floatBitsToUint(t);

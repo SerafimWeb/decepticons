@@ -33,6 +33,12 @@ const RAIL_COLOR = new THREE.Color(0.8, 1.4, 2.6);
 const RAIL_HOSTILE = new THREE.Color(2.6, 0.6, 1.5);
 
 /**
+ * O clarão do NOSSO cano nasce menor que o do inimigo (P256). Ele aparece a 25 cm do cano, à frente da câmera: era o que fechava a
+ * visão em fogo sustentado. O do inimigo fica inteiro — ele é o aviso de que estão atirando em você.
+ */
+export const MUZZLE_FRIENDLY_SCALE = 0.72;
+
+/**
  * Os efeitos de arma do cliente num lugar só (P160): cartazes de luz (`Billboards`), marcas (`Marks`), rastros (`Trails`) e explosões
  * (`Explosions`), conduzidos pela tabela de aparência (`weaponLook.ts`). O `Game` cria um, põe os lotes na cena (`objects`), entrega como `fx` aos
  * sistemas de tiro, chama `beginFrame` antes de desenhar os projéteis e `update` depois.
@@ -72,14 +78,15 @@ export class WeaponFx implements ShotFx {
     const m = look.muzzle;
     if (m) {
       const color = hostile ? m.hostile : m.friendly;
+      const escala = hostile ? 1 : MUZZLE_FRIENDLY_SCALE;
       _at.copy(origin).addScaledVector(dir, 0.25);
-      this.bill.flash(_at, color, m.shape, m.size * 0.6, m.size, m.life, (this.flicker++ % 4) * 0.4);
+      this.bill.flash(_at, color, m.shape, m.size * 0.6 * escala, m.size * escala, m.life, (this.flicker++ % 4) * 0.4);
       if (m.tongue) {
         // A língua de fogo deitada na direção do tiro, vista de lado: o comprimento é o quanto a direção aparece na tela (de costas para a câmera, quase nada).
         _v.copy(dir).transformDirection(this.camera.matrixWorldInverse);
         const side = Math.hypot(_v.x, _v.y);
         if (side > 0.15) {
-          const len = m.size * 1.1 * side;
+          const len = m.size * 1.1 * side * escala;
           _at.copy(origin).addScaledVector(dir, len * 0.5);
           this.bill.flash(_at, color, BILL.spike, len, len * 1.15, m.life * 0.8, Math.atan2(_v.y, _v.x));
         }

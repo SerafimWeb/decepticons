@@ -69,19 +69,21 @@ export interface WeaponLook {
 
 const c = (r: number, g: number, b: number): THREE.Color => new THREE.Color(r, g, b);
 
-const GREEN_CORE = c(1.6, 3.4, 1.9);
-const RED_CORE = c(4.2, 1.0, 0.8);
-const POWDER = c(2.6, 1.5, 0.5);
-const POWDER_HOSTILE = c(4.0, 1.2, 0.4);
-const STEEL_HOT = c(3.0, 1.5, 0.45);
-const STEEL_HOT_HOSTILE = c(3.6, 0.8, 0.3);
-const RAIL = c(1.8, 2.6, 3.6);
-const RAIL_HOSTILE = c(3.6, 1.2, 2.4);
+// P256: os picos de HDR desta tabela desceram ~30% (o teto era 4,2). A leitura de combate não muda — o tiro do inimigo continua
+// mais aceso que o do jogador —, mas o clarão deixa de lavar a cena branca em fogo sustentado.
+const GREEN_CORE = c(1.35, 2.5, 1.6);
+const RED_CORE = c(2.8, 0.7, 0.55);
+const POWDER = c(1.8, 1.05, 0.35);
+const POWDER_HOSTILE = c(2.5, 0.85, 0.3);
+const STEEL_HOT = c(2.0, 1.0, 0.32);
+const STEEL_HOT_HOSTILE = c(2.3, 0.55, 0.22);
+const RAIL = c(1.35, 1.85, 2.5);
+const RAIL_HOSTILE = c(2.4, 0.85, 1.7);
 const NONE = null;
 
 const ENERGY = (size: number, muzzle: number, mark: number): Pick<WeaponLook, 'glow' | 'muzzle' | 'hit' | 'mark'> => ({
   glow: { shape: BILL.glow, size, friendly: GREEN_CORE, hostile: RED_CORE },
-  muzzle: { shape: BILL.star, size: muzzle, life: 0.07, friendly: GLOW.friendlyPlasma, hostile: GLOW.hostilePlasma, tongue: false },
+  muzzle: { shape: BILL.star, size: muzzle, life: 0.05, friendly: GLOW.friendlyPlasma, hostile: GLOW.hostilePlasma, tongue: false },
   // P255: era `size * 2.2` — no canhão de plasma (a arma de partida do Marauder) um tiro automático contra o mesmo alvo empilha
   // vários clarões aditivos de ~2,5 m seguidos (0,1 s cada), e a soma cobria boa parte da tela ("muito claro", o Comandante).
   // 1.4 cobre bem menos área (o tamanho entra ao quadrado): clarão ainda visível, sem virar borrão branco em fogo sustentado.
@@ -91,14 +93,14 @@ const ENERGY = (size: number, muzzle: number, mark: number): Pick<WeaponLook, 'g
 
 const KINETIC = (glow: number, muzzle: number, mark: number, every = 1): Pick<WeaponLook, 'glow' | 'muzzle' | 'hit' | 'mark'> => ({
   glow: glow > 0 ? { shape: BILL.glow, size: glow, friendly: STEEL_HOT, hostile: STEEL_HOT_HOSTILE } : NONE,
-  muzzle: { shape: BILL.star, size: muzzle, life: 0.06, friendly: POWDER, hostile: POWDER_HOSTILE, tongue: true },
+  muzzle: { shape: BILL.star, size: muzzle, life: 0.05, friendly: POWDER, hostile: POWDER_HOSTILE, tongue: true },
   hit: { shape: BILL.star, size: muzzle * 0.8, friendly: STEEL_HOT, hostile: STEEL_HOT_HOSTILE },
   mark: { kind: MARK.hole, size: mark, life: 7, friendly: STEEL_HOT, hostile: STEEL_HOT_HOSTILE, every },
 });
 
-const ROCKET_MUZZLE: LookMuzzle = { shape: BILL.star, size: 2.4, life: 0.08, friendly: POWDER, hostile: POWDER_HOSTILE, tongue: false };
-const MOTOR = c(3.6, 1.6, 0.45);
-const MOTOR_GUIDED = c(1.4, 2.2, 3.6);
+const ROCKET_MUZZLE: LookMuzzle = { shape: BILL.star, size: 1.8, life: 0.06, friendly: POWDER, hostile: POWDER_HOSTILE, tongue: false };
+const MOTOR = c(2.4, 1.1, 0.32);
+const MOTOR_GUIDED = c(1.05, 1.55, 2.4);
 /** O míssil: o brilho do motor (`size` m) no corpo, a fumaça e o fogo em fita (`trail`) e o clarão do lançamento. */
 const MISSILE = (trail: TrailKind, size: number, muzzle: LookMuzzle | null = ROCKET_MUZZLE, motor = MOTOR): WeaponLook => ({
   glow: { shape: BILL.glow, size, friendly: motor, hostile: motor },
@@ -107,59 +109,59 @@ const MISSILE = (trail: TrailKind, size: number, muzzle: LookMuzzle | null = ROC
 const QUIET: WeaponLook = { glow: NONE, muzzle: NONE, hit: NONE, mark: NONE, trail: NONE, blast: false, rail: false };
 
 export const WEAPON_LOOK: Readonly<Record<WeaponId, WeaponLook>> = {
-  plasma: { ...ENERGY(1.15, 1.7, 1.1), trail: NONE, blast: false, rail: false },
-  blaster: { ...ENERGY(0.8, 1.2, 0.75), trail: NONE, blast: false, rail: false },
-  shotgun: { ...KINETIC(0.42, 3.0, 0.6), trail: NONE, blast: false, rail: false },
-  rotary: { ...KINETIC(0.36, 1.3, 0.5, 3), trail: NONE, blast: false, rail: false },
-  autocannon: { ...KINETIC(0.6, 1.9, 0.85), trail: NONE, blast: false, rail: false },
-  cannon: { ...KINETIC(1.3, 2.4, 2.2), trail: 'shell', blast: false, rail: false },
-  siege: { ...KINETIC(1.8, 3.6, 2.8), trail: 'shell', blast: true, rail: false },
+  plasma: { ...ENERGY(1.15, 1.35, 1.1), trail: NONE, blast: false, rail: false },
+  blaster: { ...ENERGY(0.8, 0.95, 0.75), trail: NONE, blast: false, rail: false },
+  shotgun: { ...KINETIC(0.42, 2.2, 0.6), trail: NONE, blast: false, rail: false },
+  rotary: { ...KINETIC(0.36, 1.0, 0.5, 3), trail: NONE, blast: false, rail: false },
+  autocannon: { ...KINETIC(0.6, 1.45, 0.85), trail: NONE, blast: false, rail: false },
+  cannon: { ...KINETIC(1.3, 1.8, 2.2), trail: 'shell', blast: false, rail: false },
+  siege: { ...KINETIC(1.8, 2.6, 2.8), trail: 'shell', blast: true, rail: false },
   railgun: {
     glow: { shape: BILL.glow, size: 1.0, friendly: RAIL, hostile: RAIL_HOSTILE },
-    muzzle: { shape: BILL.star, size: 3.2, life: 0.1, friendly: RAIL, hostile: RAIL_HOSTILE, tongue: false },
-    hit: { shape: BILL.star, size: 3.0, friendly: RAIL, hostile: RAIL_HOSTILE },
+    muzzle: { shape: BILL.star, size: 2.4, life: 0.08, friendly: RAIL, hostile: RAIL_HOSTILE, tongue: false },
+    hit: { shape: BILL.star, size: 2.2, friendly: RAIL, hostile: RAIL_HOSTILE },
     mark: { kind: MARK.hole, size: 1.4, life: 8, friendly: RAIL, hostile: RAIL_HOSTILE, every: 1 },
     trail: NONE, blast: false, rail: true,
   },
   arc: {
     glow: { shape: BILL.star, size: 1.3, friendly: GLOW.friendlyArc, hostile: GLOW.hostileArc },
-    muzzle: { shape: BILL.star, size: 1.6, life: 0.08, friendly: GLOW.friendlyArc, hostile: GLOW.hostileArc, tongue: false },
-    hit: { shape: BILL.glow, size: 2.2, friendly: GLOW.friendlyArc, hostile: GLOW.hostileArc },
+    muzzle: { shape: BILL.star, size: 1.3, life: 0.06, friendly: GLOW.friendlyArc, hostile: GLOW.hostileArc, tongue: false },
+    hit: { shape: BILL.glow, size: 1.8, friendly: GLOW.friendlyArc, hostile: GLOW.hostileArc },
     mark: NONE, trail: NONE, blast: false, rail: false,
   },
   cryo: {
     glow: { shape: BILL.glow, size: 1.0, friendly: GLOW.friendlyIce, hostile: GLOW.hostileIce },
-    muzzle: { shape: BILL.star, size: 1.4, life: 0.08, friendly: GLOW.friendlyIce, hostile: GLOW.hostileIce, tongue: false },
+    muzzle: { shape: BILL.star, size: 1.15, life: 0.06, friendly: GLOW.friendlyIce, hostile: GLOW.hostileIce, tongue: false },
     hit: NONE,
     mark: { kind: MARK.frost, size: 1.5, life: 6, friendly: c(0.75, 0.9, 1.0), hostile: c(0.9, 0.78, 1.0), every: 1 },
     trail: NONE, blast: false, rail: false,
   },
   emp: {
-    glow: { shape: BILL.ring, size: 1.6, friendly: GLOW.friendlyArc, hostile: GLOW.hostileArc },
-    muzzle: { shape: BILL.ring, size: 1.8, life: 0.12, friendly: GLOW.friendlyArc, hostile: GLOW.hostileArc, tongue: false },
+    glow: { shape: BILL.ring, size: 1.4, friendly: GLOW.friendlyArc, hostile: GLOW.hostileArc },
+    muzzle: { shape: BILL.ring, size: 1.4, life: 0.1, friendly: GLOW.friendlyArc, hostile: GLOW.hostileArc, tongue: false },
     hit: NONE, mark: NONE, trail: NONE, blast: false, rail: false,
   },
   laser: {
     glow: NONE,
-    muzzle: { shape: BILL.glow, size: 0.9, life: 0.1, friendly: GLOW.friendlyLaser, hostile: GLOW.hostileLaser, tongue: false },
-    hit: { shape: BILL.glow, size: 1.2, friendly: GLOW.friendlyLaser, hostile: GLOW.hostileLaser },
+    muzzle: { shape: BILL.glow, size: 0.8, life: 0.08, friendly: GLOW.friendlyLaser, hostile: GLOW.hostileLaser, tongue: false },
+    hit: { shape: BILL.glow, size: 1.05, friendly: GLOW.friendlyLaser, hostile: GLOW.hostileLaser },
     mark: { kind: MARK.hole, size: 0.65, life: 3, friendly: GLOW.friendlyLaser, hostile: GLOW.hostileLaser, every: 2 },
     trail: NONE, blast: false, rail: false,
   },
   rockets: MISSILE('rocket', 1.1),
   seeker: MISSILE('guided', 1.1, ROCKET_MUZZLE, MOTOR_GUIDED),
   swarm: MISSILE('micro', 0.55, NONE),
-  cruise: MISSILE('cruise', 1.8, { ...ROCKET_MUZZLE, size: 3.4, life: 0.12 }),
+  cruise: MISSILE('cruise', 1.8, { ...ROCKET_MUZZLE, size: 2.5, life: 0.09 }),
   // O arpão (P77): o disparo é um raio (o `BeamVisuals`) e o cabo preso é o `HookVisuals`; aqui só o clarão da boca, em ciano-magnético (o inimigo em vermelho).
   harpoon: {
     glow: NONE,
-    muzzle: { shape: BILL.star, size: 1.6, life: 0.1, friendly: c(0.6, 2.2, 3.2), hostile: c(3.4, 0.7, 0.5), tongue: false },
+    muzzle: { shape: BILL.star, size: 1.3, life: 0.08, friendly: c(0.5, 1.6, 2.3), hostile: c(2.3, 0.5, 0.35), tongue: false },
     hit: NONE, mark: NONE, trail: NONE, blast: false, rail: false,
   },
   // A granada (P160 parte 2b): a luz que pisca no corpo (verde-limão do jogador, vermelha do inimigo), a fita fina de fumaça e o "tum" do lançamento.
   grenade: {
-    glow: { shape: BILL.star, size: 0.9, friendly: c(1.6, 2.6, 0.4), hostile: c(3.6, 0.6, 0.3) },
-    muzzle: { shape: BILL.star, size: 2.0, life: 0.08, friendly: POWDER, hostile: POWDER_HOSTILE, tongue: false },
+    glow: { shape: BILL.star, size: 0.9, friendly: c(1.3, 2.0, 0.35), hostile: c(2.5, 0.45, 0.25) },
+    muzzle: { shape: BILL.star, size: 1.55, life: 0.06, friendly: POWDER, hostile: POWDER_HOSTILE, tongue: false },
     hit: NONE, mark: NONE, trail: 'micro', blast: false, rail: false,
   },
   barrage: MISSILE('rocket', 0.9),
