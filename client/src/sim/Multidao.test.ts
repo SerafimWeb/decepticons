@@ -385,3 +385,12 @@ describe('o custo (a conta da ficha, § 3 e § 4)', () => {
     expect(VELOCIDADE[GADO]).toBeLessThan(VELOCIDADE[PERUCA]);
   });
 });
+
+// O cacetete é um pulso, não um sensor periódico: todo aperto válido precisa dispersar.
+it('pulso não letal funciona entre passos do susto, mas respeita oclusão', () => {
+  const m = new Multidao(SO_UMA);
+  const t = Math.ceil(m.nasce[0]! / PASSO_DO_SUSTO) * PASSO_DO_SUSTO + 1;
+  m.avancar(t); m.posicao(0, t, p);
+  expect(m.assustarEmCone(p.x - 2, p.z, 1, 0, 0.6, 9, t, () => false, true)).toBe(0);
+  expect(m.assustarEmCone(p.x - 2, p.z, 1, 0, 0.6, 9, t, () => true, true)).toBe(1);
+});

@@ -14,11 +14,15 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
-## P250 — Coop online na missão do 8 de Janeiro, pra uma LIVE (23/10, Claude)
+## P250 — Qualidade visual do 8 de Janeiro e chefes das referências (23/10, Codex)
+
+**Ordem:** “graficamente estou achando fraco”; aplicar evil/trampado/bolsomilicia, chefes em sequência e cacetete conquistável. **🟡 Implementado, aguardando publicação e avaliação visual do dono:** modelos, Praça/VFX, Trampado → Evil e prêmio F; testes de combate e GPU conferidos. Branch codex/janeiro-visual. Conferir: /jogar/?mapa=janeiro&modo=survival&comandante=1; arte/janeiro-*-codex.png. Permanece restrito/offline; P248 segue pendente.
+
+## P251 — Coop online na missão do 8 de Janeiro, pra uma LIVE (23/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
 |---|---|---|---|---|---|
-| P250 | 23/10 | "nao quero usar link, quero poder jogar online, coop, multiplayer nessa fase! vo fazer uma LIVE jogando e quero ver se a galera entra pra jogar! temos que facilitar!" | 🟡 | **Feito: a sala online aceita `&modo=survival`** (genérico, não só o Janeiro — `ArenaRoom`/`Game.ts` deixam passar, antes travava sempre em Deathmatch). A multidão já tinha o desenho de rede pronto (`Multidao.ts`: autoridade/espelho, `aplicarMorte`/`aplicarFuga`, `exportarEstado`/`aplicarEstado`), só não ligado: liguei com 2 eventos novos (figurante morreu/fugiu, nunca a posição, G11) e 1 mensagem nova (quem entra no meio da missão recebe o passado). Protocolo 23. **Achado no caminho, grave e de antes:** o `WELCOME` de qualquer sala fora da Cidade Neon (inclusive a Estação dos Cabos, já publicada) mandava um código com `@`/minúsculas que o próprio protocolo recusa — **o aperto de mão nunca terminava**; corrigido. Teste de integração com servidor e WebSocket de verdade prova o ciclo inteiro. **Falta, e não é código:** o servidor roda no seu PC de trabalho, não numa VPS — pra uma LIVE com público entrando ao mesmo tempo, é o risco real, e só você decide hospedagem | `STATUS_REAL.md`; `client/src/net/online-janeiro.test.ts` |
+| P251 | 23/10 | "nao quero usar link, quero poder jogar online, coop, multiplayer nessa fase! vo fazer uma LIVE jogando e quero ver se a galera entra pra jogar! temos que facilitar!" | 🟡 | **Feito: a sala online aceita `&modo=survival`** (genérico, não só o Janeiro — `ArenaRoom`/`Game.ts` deixam passar, antes travava sempre em Deathmatch). A multidão já tinha o desenho de rede pronto (`Multidao.ts`: autoridade/espelho, `aplicarMorte`/`aplicarFuga`, `exportarEstado`/`aplicarEstado`), só não ligado: liguei com 2 eventos novos (figurante morreu/fugiu, nunca a posição, G11) e 1 mensagem nova (quem entra no meio da missão recebe o passado). Protocolo 23. **Achado no caminho, grave e de antes:** o `WELCOME` de qualquer sala fora da Cidade Neon (inclusive a Estação dos Cabos, já publicada) mandava um código com `@`/minúsculas que o próprio protocolo recusa — **o aperto de mão nunca terminava**; corrigido. Teste de integração com servidor e WebSocket de verdade prova o ciclo inteiro. **Falta, e não é código:** o servidor roda no seu PC de trabalho, não numa VPS — pra uma LIVE com público entrando ao mesmo tempo, é o risco real, e só você decide hospedagem | `STATUS_REAL.md`; `client/src/net/online-janeiro.test.ts` |
 
 ## P249 — O chefão pneu gigante e a trilha do berrante (23/10, Claude)
 

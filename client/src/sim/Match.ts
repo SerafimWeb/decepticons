@@ -37,7 +37,7 @@ import { TorresDeVigia } from './TorresDeVigia';
 import { MissaoDoRio } from './MissaoDoRio';
 import type { MissaoJaneiro, SituacaoDaPraca } from './MissaoJaneiro';
 import type { Multidao } from './Multidao';
-import type { ChefePneu } from './ChefePneu';
+import type { ChefesJaneiro } from './ChefesJaneiro';
 import { posicaoNaMarcha } from './DragaMarcha';
 import { ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VIDA } from '../environment/ArenaLayout';
 import { QUADRO, QuadroDeLuz } from './QuadroDeLuz';
@@ -179,6 +179,9 @@ const _beamEnd = new THREE.Vector3();
 const _hitNormal = new THREE.Vector3();
 const _flameAt = new THREE.Vector3();
 const _flameTo = new THREE.Vector3();
+const _caceteteFrom = new THREE.Vector3();
+const _caceteteDir = new THREE.Vector3();
+const _caceteteTo = new THREE.Vector3();
 /** O "acerto" que o cone entrega ao CombatSystem: um objeto só, reescrito a cada alvo (nada alocado por pulso). */
 const _hookEnd = new THREE.Vector3();
 /** A metralhadora das torres de vigia da Amazônia (P180, parte D2): a automática de aço, de dano baixo e alcance longo (o fogo de cobertura atravessa o rio). */
@@ -269,8 +272,8 @@ export class Match {
   readonly missaoJaneiro: MissaoJaneiro | null = null;
   /** A multidão da missão (`sim/Multidao.ts`): uma linha de dados por figurante, sem corpo na física. O cliente a desenha; o servidor (e o jogo offline) decide a morte e a fuga. */
   readonly multidao: Multidao | null = null;
-  /** O chefão pneu (P248): um alvo só, sem fase, que rola da Esplanada até a Praça. `null` fora da missão do 8 DE JANEIRO. */
-  readonly chefePneu: ChefePneu | null = null;
+  /** Trampado e Evil (P250), em sequência. `null` fora da missão offline do 8 DE JANEIRO. */
+  readonly chefesJaneiro: ChefesJaneiro | null = null;
   /** O tick da missão do 8 DE JANEIRO (o relógio da multidão: o mesmo no servidor e no cliente, G2). */
   private tickJaneiro = 0;
   /** Rascunhos reaproveitados da missão (G4): a situação da Praça, onde estão os jogadores (para o susto) e quem fugiu por causa do jogador. */
@@ -430,8 +433,55 @@ export class Match {
       multidao.aoSair = (i) => {
         if (this.fugaPeloJogador[i] === 1) this.missaoJaneiro?.registrarExpulso();
       };
-      // O chefão pneu (P248): rola da Esplanada até a Praça; um alvo só, sem ligação com o resultado da missão (ela segue decidida pela integridade dos três prédios).
-      this.chefePneu = new J.ChefePneu(J.PADRAO_DO_CHEFE_PNEU);
+      // P250: dois chefes em sequência; a vitória também exige vencê-los.
+      this.chefesJaneiro = new J.ChefesJaneiro();
+      this.chefesJaneiro.aoAcertar = (i, dano, x, z) => {
+        const p = this.players[i];
+        if (!p?.alive) return;
+        p.partWorldPosition('torso', _flameHit.point, true);
+        _caceteteFrom.set(x, 3, z);
+        _caceteteTo.subVectors(_flameHit.point, _caceteteFrom);
+        const distancia = _caceteteTo.length();
+        _caceteteTo.normalize();
+        const parede = this.physics.raycast(_caceteteFrom, _caceteteTo, distancia);
+        if (parede && parede.collider !== p.collider && !this.combat.mechOf(parede.collider) && parede.distance < distancia - p.stats.radius) return;
+        _flameHit.collider = p.collider; _flameHit.distance = distancia;
+        this.combat.onProjectileHit(_flameHit, _caceteteTo, dano, undefined, weapon('sonic'), distancia);
+      };
+      const figuranteVisivel = (x: number, z: number): boolean => {
+        _caceteteTo.set(x - _caceteteFrom.x, 1 - _caceteteFrom.y, z - _caceteteFrom.z);
+        const distancia = _caceteteTo.length();
+        if (distancia > J.CACETETE.alcance) return false;
+        _caceteteTo.normalize();
+        const parede = this.physics.raycast(_caceteteFrom, _caceteteTo, distancia, this.players[0]?.collider);
+        return !parede || !!this.combat.mechOf(parede.collider) || parede.distance >= distancia - 0.3;
+      };
+      this.chefesJaneiro.aoGolpear = (x, y, z, yaw) => {
+        const jogador = this.players[0];
+        if (!jogador?.alive || !this.combat.damageEnabled) return;
+        _caceteteFrom.set(x, y + jogador.stats.height * 0.5, z);
+        _caceteteDir.set(-Math.sin(yaw), 0, -Math.cos(yaw));
+        multidao.assustarEmCone(x, z, _caceteteDir.x, _caceteteDir.z, Math.PI * 0.45, J.CACETETE.alcance, this.tickJaneiro, figuranteVisivel, true);
+        const chefe = this.chefesJaneiro?.ativo;
+        if (chefe) {
+          _caceteteTo.set(chefe.x - x, Math.min(chefe.config.escala * 2.3, Math.max(0, _caceteteFrom.y)) - _caceteteFrom.y, chefe.z - z);
+          const distancia = _caceteteTo.length();
+          if (distancia > 0.01 && distancia <= J.CACETETE.alcance && _caceteteTo.dot(_caceteteDir) / distancia >= Math.cos(Math.PI * 0.45)) {
+            _caceteteTo.normalize();
+            const parede = this.physics.raycast(_caceteteFrom, _caceteteTo, distancia, jogador.collider);
+            if (!parede || !!this.combat.mechOf(parede.collider) || parede.distance >= distancia - 1)
+              this.chefesJaneiro!.atirar(x, _caceteteFrom.y, z, _caceteteTo.x, _caceteteTo.y, _caceteteTo.z, J.CACETETE.alcance, J.CACETETE.dano);
+          }
+        }
+        const w = weapon('sonic');
+        for (const bot of this.bots.mechs) {
+          if (!this.bots.brainOf(bot)) continue;
+          const gap = this.coneGap(jogador, _caceteteFrom, _caceteteDir, w, Math.PI * 0.45, bot, true, J.CACETETE.alcance);
+          if (gap < 0) continue;
+          this.combat.onProjectileHit(_flameHit, _caceteteDir, J.CACETETE.dano, jogador.collider, w, gap);
+          bot.push(_caceteteDir.x, _caceteteDir.z, 8);
+        }
+      };
     }
     // O escudo do Draga (parte D): os geradores nascem na cena como alvos destrutíveis (o mesmo registro dos coqueiros); o último a cair derruba o escudo. A defesa vem do chefe do mapa (sob demanda).
     const defesa = amazonia && survival ? exigirChefe('amazonia').defesa : undefined;
@@ -632,16 +682,16 @@ export class Match {
     };
     // O tiro do jogador também acerta a multidão da missão do 8 DE JANEIRO (ela não tem corpo na física): a linha deste passo do projétil, até onde a parede ou o chão a deixa ir.
     const multidao = this.multidao;
-    const chefePneu = this.chefePneu;
-    if (multidao || chefePneu) {
+    const chefesJaneiro = this.chefesJaneiro;
+    if (multidao || chefesJaneiro) {
       this.projectiles.contraMassa = (ox, oy, oz, dx, dy, dz, alcance, dano) =>
         (!!multidao && multidao.presentes > 0 && multidao.atirar(ox, oy, oz, dx, dy, dz, alcance, dano, this.tickJaneiro) >= 0) ||
-        (!!chefePneu && chefePneu.atirar(ox, oy, oz, dx, dy, dz, alcance, dano));
+        (!!chefesJaneiro && chefesJaneiro.atirar(ox, oy, oz, dx, dy, dz, alcance, dano));
     }
     const explode = (at: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats): void => {
       this.combat.explode(at, dir, owner, w);
       if (multidao && w.blastRadius > 0) multidao.explodir(at.x, at.y, at.z, w.blastRadius, w.damage, this.tickJaneiro);
-      if (chefePneu && w.blastRadius > 0) chefePneu.explodir(at.x, at.y, at.z, w.blastRadius, w.damage);
+      if (chefesJaneiro && w.blastRadius > 0) chefesJaneiro.explodir(at.x, at.y, at.z, w.blastRadius, w.damage);
       this.drones?.explosion(at, w);
       this.onExplosion?.(at, w);
     };
@@ -1473,7 +1523,7 @@ export class Match {
     const { RAIO_DA_INVESTIDA, DANO_DA_INVESTIDA, RAIO_DO_SUSTO } = this.janeiroPedaco!;
     const t = ++this.tickJaneiro;
     multidao.avancar(t);
-    this.chefePneu?.avancar(dt);
+    this.chefesJaneiro?.avancar(dt, this.players);
     const pontos = this.pontosDoSusto;
     while (pontos.length < this.players.length) pontos.push({ x: 0, z: 0 });
     for (let k = 0; k < pontos.length; k++) {
@@ -1483,7 +1533,7 @@ export class Match {
       pontos[k]!.z = vivo ? p.simPosition.z : 1e6;
       if (vivo && p.isDashing) {
         multidao.explodir(p.simPosition.x, 1, p.simPosition.z, RAIO_DA_INVESTIDA, DANO_DA_INVESTIDA, t);
-        this.chefePneu?.explodir(p.simPosition.x, 1, p.simPosition.z, RAIO_DA_INVESTIDA, DANO_DA_INVESTIDA);
+        this.chefesJaneiro?.explodir(p.simPosition.x, 1, p.simPosition.z, RAIO_DA_INVESTIDA, DANO_DA_INVESTIDA);
       }
     }
     multidao.assustarPorPerto(pontos, RAIO_DO_SUSTO, t);
@@ -1500,7 +1550,7 @@ export class Match {
     const s = this.situacaoDaPraca;
     s.naFachada = multidao.contarNaFachada(t);
     s.faltamChegar = multidao.faltamChegar + (agenda.length - this.rebeldesEntraram);
-    s.presentes = multidao.presentes + vivos;
+    s.presentes = multidao.presentes + vivos + (this.chefesJaneiro?.restantes ?? 0);
     s.eliminados = multidao.eliminados;
     s.rebeldesEliminados = this.rebeldesEntraram - vivos;
     missao.fixedUpdate(dt, t, s);
@@ -1551,7 +1601,7 @@ export class Match {
       this.rebeldesEntraram = 0;
       this.rebeldesVivosN = 0;
       this.bots.setRoster(0, 0); // os androides rebeldes saem de campo e voltam no cronograma
-      this.chefePneu?.reiniciar();
+      this.chefesJaneiro?.reiniciar();
     }
     this.nucleo?.reset();
     this.cabos?.reset();

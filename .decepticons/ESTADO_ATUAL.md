@@ -1,6 +1,13 @@
 # ESTADO ATUAL — CYBERMECH
 
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+## P250 — qualidade da Praça e chefes (registro da entrega deste PR) — Codex, 23/10
+
+- Trabalho em `.tmp/wt-codex-janeiro-visual`, branch `codex/janeiro-visual`: modelos da multidão, Trampado/Evil, VFX, cacetete conquistável e acabamento da Praça.
+- Território: `environment/*Janeiro*`, `MultidaoDesenho`, `PracaMapa/Acabamento`, regra dos chefes e ligação em Match/Game. Nenhuma alteração da outra sessão na raiz foi tocada.
+- Validado: 53 testes focados, build, revisão cruzada, Chrome/Vega 11; prêmio persistido e F acionado. Capturas em arte/janeiro-*-codex.png. Pacote inicial 474,5 KB gzip. Check completo fica no hook do push.
+- Disponibilidade: esta entrega passa a valer na `main` com o merge deste PR e no site após o deploy automático; antes disso está EM BRANCH — NÃO ESTÁ NO AR.
+- Próxima sessão começa com: avaliação visual do Comandante no link `/jogar/?mapa=janeiro&modo=survival&comandante=1`; P248 e navegação global dos chefes continuam pendentes.
+
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
@@ -16,7 +23,9 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-## EM BRANCH — NÃO ESTÁ NO AR: COOP ONLINE NA MISSÃO DO 8 DE JANEIRO, PRA UMA LIVE — Claude, 23/10 (branch `claude/janeiro-online`, P250)
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
+## EM BRANCH — NÃO ESTÁ NO AR: COOP ONLINE NA MISSÃO DO 8 DE JANEIRO, PRA UMA LIVE — Claude, 23/10 (branch `claude/janeiro-online`, P251)
 
 **O Comandante:** "nao quero usar link, quero poder jogar online, coop, multiplayer nessa fase! vo fazer uma LIVE jogando e quero ver se a galera entra pra jogar!" **Feito:** a sala online aceita `&modo=survival` (genérico — destrava qualquer mapa, não só o Janeiro); a multidão já tinha todo o desenho de rede pronto em `Multidao.ts` (autoridade/espelho, `aplicarMorte`/`aplicarFuga`, `exportarEstado`/`aplicarEstado`), só não ligado — liguei com 2 eventos novos (figurante morreu/fugiu, nunca a posição, G11) e 1 mensagem nova (quem entra no meio da missão recebe o passado). Protocolo 23. `UNIT_KINDS` ganha `faxineiro` (o roster agora distingue do andróide de combate).
 **Achado no caminho, grave e de antes de mim:** o `WELCOME` de qualquer sala fora da Cidade Neon — **inclusive a Estação dos Cabos, já publicada** — mandava um código com `@` e minúsculas que o próprio protocolo da mensagem recusa; o aperto de mão nunca completava (`myId` nunca era atribuído). Confirmado com WebSocket cru antes e depois da correção (`shared/net/mapa.ts:codigoDaChave`). Detalhe em `HISTORICO_DE_DECISOES.md` [2026-10-23].

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { Match } from '../sim/Match';
 import { INTEGRIDADE_MAX } from '../sim/MissaoJaneiro';
 import { MultidaoDesenho } from './MultidaoDesenho';
+import { ChefesJaneiroDesenho } from './ChefesJaneiroDesenho';
 import { PRACA_PREDIOS } from './PracaLayout';
 
 /**
@@ -51,7 +52,9 @@ export interface JaneiroJogo {
   dispose(): void;
 }
 
-export function criarJaneiroJogo(scene: THREE.Scene, match: Match, hud: HTMLElement, setLinha: (texto: string) => void): JaneiroJogo {
+export function criarJaneiroJogo(scene: THREE.Scene, match: Match, hud: HTMLElement, setLinha: (texto: string) => void, pedirGolpe: () => boolean = () => false): JaneiroJogo {
+  const chefes = match.chefesJaneiro ? new ChefesJaneiroDesenho(match, hud) : null;
+  if (chefes) scene.add(chefes.grupo);
   const multidao = match.multidao!;
   const missao = match.missaoJaneiro!;
   const desenho = new MultidaoDesenho(multidao);
@@ -139,7 +142,7 @@ export function criarJaneiroJogo(scene: THREE.Scene, match: Match, hud: HTMLElem
         ? `DEFENDA OS TRÊS PRÉDIOS · NA PRAÇA ${naPraca}`
         : naPraca > 0
           ? `ESVAZIE A PRAÇA · ${naPraca} RESTANTES`
-          : 'A PRAÇA ESVAZIOU';
+          : (match.chefesJaneiro?.restantes ?? 0) > 0 ? 'VENÇA OS CHEFES · PROTEJA A PRAÇA' : 'A PRAÇA ESVAZIOU';
     if (linha !== ultimaLinha) {
       ultimaLinha = linha;
       setLinha(linha);
@@ -160,6 +163,7 @@ export function criarJaneiroJogo(scene: THREE.Scene, match: Match, hud: HTMLElem
   return {
     desenhar(alpha: number): void {
       desenho.atualizar(match.tickDaMissao + alpha);
+      chefes?.atualizar(pedirGolpe());
       const p = Math.floor(match.tickDaMissao / 12);
       if (p !== passo) {
         passo = p;
@@ -178,6 +182,7 @@ export function criarJaneiroJogo(scene: THREE.Scene, match: Match, hud: HTMLElem
       atualizar();
     },
     dispose(): void {
+      chefes?.dispose();
       scene.remove(desenho.grupo);
       scene.remove(montinho);
       desenho.dispose();
