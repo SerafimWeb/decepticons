@@ -13,19 +13,31 @@ const ARQUIVOS = ['arena-trailer.mp4', 'marauder.mp4'];
 
 afterAll(() => rmSync(pasta, { recursive: true, force: true }));
 
-describe('o contrato dos telões (P246)', () => {
-  it('só passam ids das telas da Cidade Neon, com um arquivo da lista permitida ou null (desligada); o resto do item (titulo) é cosmético e opcional', () => {
-    expect(normalizarItensDeTelao({ 'arena:telao-1': { arquivo: 'arena-trailer.mp4' }, 'arena:telao-2': null }, ARQUIVOS)).toEqual({
-      'arena:telao-1': { arquivo: 'arena-trailer.mp4' },
+describe('o contrato dos telões (P246/P254)', () => {
+  it('só passam ids das telas da Cidade Neon, com um item de vídeo (arquivo da lista permitida) ou de câmera ao vivo, ou null (desligada); o título é cosmético e opcional', () => {
+    expect(normalizarItensDeTelao({ 'arena:telao-1': { tipo: 'video', arquivo: 'arena-trailer.mp4' }, 'arena:telao-2': null }, ARQUIVOS)).toEqual({
+      'arena:telao-1': { tipo: 'video', arquivo: 'arena-trailer.mp4' },
       'arena:telao-2': null,
     });
-    expect(normalizarItensDeTelao({ 'arena:telao-1': { arquivo: 'arena-trailer.mp4', titulo: '  Trailer da Arena  ' } }, ARQUIVOS)).toEqual({
-      'arena:telao-1': { arquivo: 'arena-trailer.mp4', titulo: 'Trailer da Arena' },
+    expect(normalizarItensDeTelao({ 'arena:telao-1': { tipo: 'video', arquivo: 'arena-trailer.mp4', titulo: '  Trailer da Arena  ' } }, ARQUIVOS)).toEqual({
+      'arena:telao-1': { tipo: 'video', arquivo: 'arena-trailer.mp4', titulo: 'Trailer da Arena' },
     });
   });
 
-  it('recusa silenciosamente o que não presta: tela que não existe, arquivo fora da lista, item em formato torto — cada um vira ausente, não derruba o resto', () => {
-    expect(normalizarItensDeTelao({ 'arena:telao-1': { arquivo: 'nao-existe.mp4' }, 'mapa:amazonia': { arquivo: 'arena-trailer.mp4' }, 'arena:telao-2': 'lixo' }, ARQUIVOS)).toEqual({});
+  it('a câmera ao vivo nunca precisa de arquivo (vale mesmo com ARQUIVOS_DE_TELAO vazio)', () => {
+    expect(normalizarItensDeTelao({ 'arena:telao-1': { tipo: 'camera' } }, [])).toEqual({ 'arena:telao-1': { tipo: 'camera' } });
+    expect(normalizarItensDeTelao({ 'arena:telao-1': { tipo: 'camera', arquivo: 'o-que-vier-e-ignorado.mp4' } }, [])).toEqual({ 'arena:telao-1': { tipo: 'camera' } });
+  });
+
+  it('recusa silenciosamente o que não presta: tela que não existe, arquivo fora da lista, tipo desconhecido, item em formato torto — cada um vira ausente, não derruba o resto', () => {
+    expect(
+      normalizarItensDeTelao(
+        { 'arena:telao-1': { tipo: 'video', arquivo: 'nao-existe.mp4' }, 'mapa:amazonia': { tipo: 'video', arquivo: 'arena-trailer.mp4' }, 'arena:telao-2': 'lixo' },
+        ARQUIVOS,
+      ),
+    ).toEqual({});
+    expect(normalizarItensDeTelao({ 'arena:telao-1': { tipo: 'holograma' } }, ARQUIVOS)).toEqual({});
+    expect(normalizarItensDeTelao({ 'arena:telao-1': { arquivo: 'arena-trailer.mp4' } }, ARQUIVOS), 'sem `tipo`, o formato antigo não vale mais').toEqual({});
   });
 
   it('formato torto ou grande demais é recusado inteiro (null)', () => {
@@ -34,9 +46,10 @@ describe('o contrato dos telões (P246)', () => {
     expect(normalizarItensDeTelao(Object.fromEntries(Array.from({ length: 21 }, (_, i) => [`arena:telao-${i}`, null])))).toBeNull();
   });
 
-  it('sem nenhum arquivo em produção ainda (ARQUIVOS_DE_TELAO vazio), todo arquivo é recusado: só desligar (null) vale', () => {
-    expect(normalizarItensDeTelao({ 'arena:telao-1': { arquivo: 'arena-trailer.mp4' } })).toEqual({});
+  it('sem nenhum arquivo em produção ainda (ARQUIVOS_DE_TELAO vazio), todo vídeo é recusado; desligar e a câmera ao vivo continuam valendo', () => {
+    expect(normalizarItensDeTelao({ 'arena:telao-1': { tipo: 'video', arquivo: 'arena-trailer.mp4' } })).toEqual({});
     expect(normalizarItensDeTelao({ 'arena:telao-1': null })).toEqual({ 'arena:telao-1': null });
+    expect(normalizarItensDeTelao({ 'arena:telao-1': { tipo: 'camera' } })).toEqual({ 'arena:telao-1': { tipo: 'camera' } });
   });
 });
 
@@ -46,17 +59,17 @@ describe('o armazém: guarda no arquivo e sobrevive ao reinício', () => {
     mkdirSync(pasta, { recursive: true });
     const a = new ArmazemDeTelao(pasta, ARQUIVOS);
     expect(a.atual()).toEqual({ versao: 0, itens: {} });
-    expect(a.gravar({ 'arena:telao-1': { arquivo: 'arena-trailer.mp4' } })?.versao).toBe(1);
+    expect(a.gravar({ 'arena:telao-1': { tipo: 'video', arquivo: 'arena-trailer.mp4' } })?.versao).toBe(1);
     expect(a.gravar('lixo')).toBeNull();
-    expect(JSON.parse(readFileSync(join(pasta, TELAO_ARQUIVO), 'utf8')).itens).toEqual({ 'arena:telao-1': { arquivo: 'arena-trailer.mp4' } });
-    expect(new ArmazemDeTelao(pasta, ARQUIVOS).atual()).toEqual({ versao: 1, itens: { 'arena:telao-1': { arquivo: 'arena-trailer.mp4' } } });
+    expect(JSON.parse(readFileSync(join(pasta, TELAO_ARQUIVO), 'utf8')).itens).toEqual({ 'arena:telao-1': { tipo: 'video', arquivo: 'arena-trailer.mp4' } });
+    expect(new ArmazemDeTelao(pasta, ARQUIVOS).atual()).toEqual({ versao: 1, itens: { 'arena:telao-1': { tipo: 'video', arquivo: 'arena-trailer.mp4' } } });
   });
 
   it('gravar de novo troca a tela inteira: desligar uma não desliga a outra, mas a que não vier mais some (sem sinal)', () => {
     rmSync(pasta, { recursive: true, force: true });
     mkdirSync(pasta, { recursive: true });
     const a = new ArmazemDeTelao(pasta, ARQUIVOS);
-    a.gravar({ 'arena:telao-1': { arquivo: 'arena-trailer.mp4' }, 'arena:telao-2': { arquivo: 'marauder.mp4' } });
+    a.gravar({ 'arena:telao-1': { tipo: 'video', arquivo: 'arena-trailer.mp4' }, 'arena:telao-2': { tipo: 'camera' } });
     const depois = a.gravar({ 'arena:telao-1': null });
     expect(depois).toEqual({ versao: 2, itens: { 'arena:telao-1': null } });
   });
@@ -78,13 +91,13 @@ describe('as rotas, com o servidor de verdade', () => {
       expect((await post(null, { itens: {} })).status).toBe(401);
       expect((await post('chave-errada-chave-errada', { itens: {} })).status).toBe(401);
       expect((await post(TOKEN, { itens: 'lixo' })).status).toBe(400);
-      // Desligar uma tela sempre vale (não depende de nenhum arquivo existir em produção).
-      const ok = await post(TOKEN, { itens: { 'arena:telao-1': null } });
-      expect(ok.status).toBe(200);
-      expect(await ok.json()).toEqual({ versao: 1, itens: { 'arena:telao-1': null } });
-      expect(await (await fetch(base + TELAO_PATH)).json()).toEqual({ versao: 1, itens: { 'arena:telao-1': null } });
-      // Sem nenhum arquivo cadastrado em produção ainda, um arquivo pedido some da gravação (não derruba a chamada: só aquela tela fica de fora).
-      const comArquivo = await post(TOKEN, { itens: { 'arena:telao-2': { arquivo: 'qualquer.mp4' } } });
+      // A câmera ao vivo sempre vale (não depende de nenhum arquivo existir em produção).
+      const comCamera = await post(TOKEN, { itens: { 'arena:telao-1': { tipo: 'camera' } } });
+      expect(comCamera.status).toBe(200);
+      expect(await comCamera.json()).toEqual({ versao: 1, itens: { 'arena:telao-1': { tipo: 'camera' } } });
+      expect(await (await fetch(base + TELAO_PATH)).json()).toEqual({ versao: 1, itens: { 'arena:telao-1': { tipo: 'camera' } } });
+      // Sem nenhum arquivo cadastrado em produção ainda, um vídeo pedido some da gravação (não derruba a chamada: só aquela tela fica de fora).
+      const comArquivo = await post(TOKEN, { itens: { 'arena:telao-2': { tipo: 'video', arquivo: 'qualquer.mp4' } } });
       expect(comArquivo.status).toBe(200);
       expect(await comArquivo.json()).toEqual({ versao: 2, itens: {} });
     } finally {

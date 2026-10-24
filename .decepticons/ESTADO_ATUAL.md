@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## OS TELÕES GANHAM CÂMERA AO VIVO — Claude, 24/10 (branch `claude/teloes-camera-ao-vivo`, P254)
+
+**O Comandante:** não achou o chip TELÕES (investigado ao vivo em `cybermech.online` com Playwright: **aparece certinho** assim que o jogo termina de carregar — antes disso, TODO chip do Comandante fica escondido, não só o dele; o mais provável é ter olhado antes do boot terminar. **Não é organização mal feita**: o mecanismo de "só o Comandante vê" é o mesmo da VISIBILIDADE, que já funciona há semanas). Também reconsiderou o conteúdo: em vez de vídeo pré-gravado (ele tem ~100 gravações em `D:\imagens cybermech\*.webm`, 348 KB a 256 MB, brutas), **mostrar a própria câmera da partida ao vivo**, por ser mais simples (sem arquivo pra otimizar).
+**Feito:** cada tela agora escolhe entre **desligada**, **câmera ao vivo** (uma `THREE.PerspectiveCamera` fixa por tela, olhando pro centro da arena, redesenhada num `WebGLRenderTarget` pequeno — 320×180 — fora do `composer`, a ~2 Hz, só quem está perto e com o tier de `Quality` bom) ou um **vídeo** de `ARQUIVOS_DE_TELAO` (segue vazio). Contrato virou união discriminada (`shared/telao.ts`: `{tipo:'video'|'camera'}`). **Explicado ao Comandante, não implementado:** câmera ao vivo custa GPU por quadro redesenhado (escala com a partida); vídeo só decodifica (não escala) — os dois ficam, escolhidos por tela.
+**De carona:** `scripts/otimizar-video-telao.mjs` (novo, `npm run telao`): recorta e reencoda um trecho de uma gravação de fora do repositório para um `.mp4` pequeno em `client/public/telao/`, reaproveitando o `ffmpeg` do projeto — para quando o Comandante escolher qual das ~100 gravações quer usar.
+**Provas:** `npm run check` verde; testes novos em `server/telao.test.ts` (o tipo câmera) e `client/src/environment/ArenaTelao.test.ts` (a câmera só redesenha perto e com qualidade boa, com um `WebGLRenderer` de mentira — Node não tem GPU).
+**Falta (R13):** nenhum vídeo ainda (ele escolhe o trecho); o custo de verdade da câmera ao vivo não foi medido em GPU real (só a lógica, em SwiftShader/Node).
+**Onde conferir:** `/jogar/?mapa=arena&comandante=1`, chip TELÕES ▸, escolher "Câmera ao vivo" numa tela e chegar perto dela.
+**Próxima sessão começa com:** o que o Comandante achar da câmera ao vivo jogando de verdade (o custo em GPU real); ou qual gravação ele quer como primeiro vídeo.
+
 ## MESCLADO NA MAIN (24/10): O 8 DE JANEIRO LIBERADO AO PÚBLICO, TRILHA CORRIGIDA, MULTIDÃO E AI-5 AFINADOS (Claude, PR #458, P253)
 
 **O Comandante:** a movimentação dos manifestantes está "dura e sem graça", os androides AI-5 "muito agressivos e rápidos" para jogar sozinho, quer a fase mais suave e jogável para atrair jogadores online, **sem precisar de `?comandante=1`**, e o berrante (que nunca chegou a tocar) alternando com o trompetista que ele adicionou; confirmou a revisão dos fatos e a jurídica feitas, liberado para prosseguir.

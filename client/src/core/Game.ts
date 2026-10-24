@@ -1139,7 +1139,7 @@ export class Game {
       void import('../environment/JaneiroJogo').then(({ criarJaneiroJogo }) => {
         this.janeiroJogo = criarJaneiroJogo(this.scene, this.match, document.getElementById('hud')!, (texto) => this.hud.setMissionLinha(texto), () => this.playing && this.input.wasPressed('KeyF'));
       });
-      // A trilha da missão (berrante e trompetista, P248/P253): alterna entre as duas, baixinho, sob demanda.
+      // A trilha da missão (berrante e trompetista, P248/P254): alterna entre as duas, baixinho, sob demanda.
       void import('../audio/TrilhaDaJaneiro').then(({ TrilhaDaJaneiro }) => {
         this.trilhaDaJaneiro = new TrilhaDaJaneiro(this.audio);
         const base = import.meta.env.BASE_URL;
@@ -2528,6 +2528,9 @@ export class Game {
     this.waveRings.setFrame(waveFrame);
     this.heatHaze.setFrame(waveFrame);
     hangarRings?.setFrame(waveFrame);
+    // Os telões em modo câmera ao vivo (P254): redesenha a cena numa segunda câmera pequena, fora do composer (sem bloom), antes do `info.reset()` abaixo — assim os desenhos extras não entram na
+    // contagem que o painel de depuração mostra para o quadro principal. O alvo de render dos telões é outro (não o canvas principal): a ordem aqui não muda o que o jogador vê.
+    this.match.arena.telao?.renderizarCameras(this.renderer, this.scene);
     this.renderer.info.reset();
     this.composer.render(dt);
     this.recorder.capturarQuadro();

@@ -14,6 +14,13 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P254 — Os telões: não achei o chip, e câmera ao vivo em vez de vídeo (23–24/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P254 | 23/10 | "falei que podemos deixar uma das cameras do jogo, aparecendo no telao [...] nao achei o chip teloes. acho que ainda estamos com algum erro de organizacao, dos elementos que só eu posso ver, com os elementos que o publico pode ver.... precisamos de reorientar isso? sera que escolhi uma decisao errada ou crescemos sobre uma semente mal plantada no codigo?" | ✅ | **Investigado ao vivo (Playwright contra `cybermech.online`):** o chip TELÕES aparece corretamente, igual à VISIBILIDADE, assim que o jogo termina de carregar — antes disso todo chip do Comandante fica escondido (não é bug específico dele, nem desorganização: é o boot ainda não ter terminado) | `/jogar/?mapa=arena&comandante=1`, esperar `[ clique para jogar ]` antes de procurar o chip |
+| P254 | 23/10 | "da pra usarmos alguns dos vídeos que temos salvos em decepticons/imagens cybermech/? alguns vídeos que temos lá são bons... mas outros são grandes e podem ficar pesados? temos que otimizar... talvez o mais barato e leve seja que as telas sejam as câmeras da própria partida" | 🟡 | **Construído: cada telão escolhe entre desligada, câmera ao vivo (a própria partida, numa câmera de segurança fixa) ou um vídeo.** Corrigida a ideia de "mais barato": câmera ao vivo não pesa no pacote (zero JS/arquivo), mas custa GPU por quadro redesenhado (escala com a partida); vídeo só decodifica (não escala) — por isso os dois ficam, à escolha dele. `scripts/otimizar-video-telao.mjs` (`npm run telao`) recorta e comprime uma gravação das ~100 que ele tem fora do repositório. **Falta:** ele escolher qual gravação e que trecho virar o primeiro vídeo; medir o custo da câmera ao vivo em GPU real (só testado em SwiftShader/Node) | `/jogar/?mapa=arena&comandante=1`, chip TELÕES ▸ |
+
 ## P253 — O 8 de Janeiro liberado ao público, trilha corrigida, multidão e androides AI-5 afinados (24/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
