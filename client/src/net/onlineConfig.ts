@@ -1,4 +1,4 @@
-import { MAPA_PADRAO, type MapaOnline } from '../../../shared/net/mapa';
+import { MAPA_PADRAO, MODO_PADRAO, type MapaOnline, type SalaModo } from '../../../shared/net/mapa';
 
 /** Porta padrão do servidor de jogo (`npm run server`). */
 export const DEFAULT_SERVER_PORT = 2567;
@@ -30,6 +30,14 @@ export function urlComMapa(url: string, mapa: MapaOnline): string {
   const u = new URL(url);
   if (mapa === MAPA_PADRAO) u.searchParams.delete('mapa');
   else u.searchParams.set('mapa', mapa);
+  return u.toString();
+}
+
+/** O endereço da conexão com o modo da sala (P243): Deathmatch é o padrão e não leva `modo`; a Sobrevivência pede a sala própria dela no servidor. */
+export function urlComModo(url: string, modo: SalaModo): string {
+  const u = new URL(url);
+  if (modo === MODO_PADRAO) u.searchParams.delete('modo');
+  else u.searchParams.set('modo', modo);
   return u.toString();
 }
 

@@ -9,6 +9,7 @@ import type { NetInput } from '../../../shared/net/input';
 import {
   decodeAviso,
   decodeEvents,
+  decodeJaneiroMultidao,
   decodePong,
   decodeReject,
   decodeRoster,
@@ -24,6 +25,7 @@ import {
   newSnapshot,
   type AvisoMsg,
   type EventBatch,
+  type JaneiroMultidaoMsg,
   type RejectReason,
   type RosterEntry,
   type Snapshot,
@@ -47,6 +49,8 @@ export interface NetClientEvents {
   texto?(de: number, texto: string): void;
   /** O servidor avisou que vai reiniciar (P204): em `segundos` ele corta e volta em cerca de `voltaEmS`. */
   aviso(m: AvisoMsg): void;
+  /** O estado compacto da multidão do 8 DE JANEIRO (P243): quem já morreu e quem fugiu, pra quem entrou no meio da missão refazer o passado no espelho (`Multidao.aplicarEstado`). Só nesse mapa e modo. */
+  janeiroMultidao?(m: JaneiroMultidaoMsg): void;
   /** `code` e `reason` são os do fechamento do WebSocket (0 e vazio quando a conexão nem abriu): `CLOSE_REINICIO` diz "reiniciando" e o motivo é o tempo de volta em segundos. */
   closed(code: number, reason: string): void;
 }
@@ -172,6 +176,11 @@ export class NetClient {
       case MSG.REJECT: {
         const r = decodeReject(bytes);
         if (r) this.on.reject?.(r);
+        return;
+      }
+      case MSG.JANEIRO_MULTIDAO: {
+        const m = decodeJaneiroMultidao(bytes);
+        if (m) this.on.janeiroMultidao?.(m);
         return;
       }
       case VOZ.LISTA:

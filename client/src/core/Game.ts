@@ -142,7 +142,7 @@ import { AdminCliente, TokenDoDono } from '../net/admin';
 import { PALETTE } from './palette';
 import { PilotLabels } from '../ui/PilotLabels';
 import { PowerSettings } from '../ui/PowerSettings';
-import { defaultServer, onlineConfig, urlComMapa } from '../net/onlineConfig';
+import { defaultServer, onlineConfig, urlComMapa, urlComModo } from '../net/onlineConfig';
 import { OnlineSwitch } from '../ui/OnlineSwitch';
 import { ServerStatus } from '../ui/ServerStatus';
 import { type FabricaDeCadeiaDeVoz, GameRecorder } from './GameRecorder';
@@ -568,9 +568,14 @@ export class Game {
     // rodada própria (quem decide é o servidor); o jogo prevê o seu Mech e desenha os outros.
     const publicServer = import.meta.env.VITE_GAME_SERVER;
     const net = onlineConfig(location.search, location.hostname, publicServer);
+    // O modo pedido (`?modo=`): online, só a Sobrevivência tem sala própria hoje (P243, o 8 de Janeiro); CTF e Domínio continuam só no Deathmatch online.
+    const modoPedido = gameModeFromSearch(location.search);
     // O mapa da sala (P218, etapa O1): o mesmo que a partida local monta (`mapFromSearch` já aplica o lançamento: mapa restrito cai na Cidade Neon), para o servidor e o cliente jogarem no mesmo chão.
-    const online = net && !('error' in net) ? { ...net, url: urlComMapa(net.url, mapFromSearch(location.search, true, 'deathmatch')) } : null;
-    this.gameMode = online ? 'deathmatch' : gameModeFromSearch(location.search);
+    const online =
+      net && !('error' in net)
+        ? { ...net, url: urlComModo(urlComMapa(net.url, mapFromSearch(location.search, true, 'deathmatch')), modoPedido === 'survival' ? 'survival' : 'deathmatch') }
+        : null;
+    this.gameMode = online ? (modoPedido === 'survival' ? 'survival' : 'deathmatch') : modoPedido;
     const foes = online
       ? { ...this.settings.value, enemyMechs: 0, enemyAndroids: 0, technician: false }
       : this.gameMode === 'survival'
