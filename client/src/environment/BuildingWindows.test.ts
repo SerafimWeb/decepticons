@@ -36,10 +36,14 @@ describe('remendo do shader', () => {
     patchWindowShader(shader);
     expect(shader.vertexShader).not.toBe(original.vertexShader);
     expect(shader.fragmentShader).not.toBe(original.fragmentShader);
-    // A posição no mundo sai do vértice e chega ao fragmento.
+    // A posição e a normal da face saem do vértice (P255: a normal do vértice, não mais das derivadas de tela) e chegam ao fragmento.
     expect(shader.vertexShader).toContain('varying vec3 vWindowPos;');
     expect(shader.vertexShader).toContain('vWindowPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    expect(shader.vertexShader).toContain('varying vec3 vWindowNormal;');
+    expect(shader.vertexShader).toContain('vWindowNormal = normalize(mat3(modelMatrix) * normal);');
     expect(shader.fragmentShader).toContain('varying vec3 vWindowPos;');
+    expect(shader.fragmentShader).toContain('varying vec3 vWindowNormal;');
+    expect(shader.fragmentShader).not.toContain('dFdx'); // a versão antiga, instável em coordenadas grandes do mundo
     expect(shader.fragmentShader).toContain('uniform vec3 windowColor;');
     expect(shader.fragmentShader).toContain('totalEmissiveRadiance +=');
     // Os trechos do three continuam lá: o remendo acrescenta, não substitui.

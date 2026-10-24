@@ -82,7 +82,10 @@ const NONE = null;
 const ENERGY = (size: number, muzzle: number, mark: number): Pick<WeaponLook, 'glow' | 'muzzle' | 'hit' | 'mark'> => ({
   glow: { shape: BILL.glow, size, friendly: GREEN_CORE, hostile: RED_CORE },
   muzzle: { shape: BILL.star, size: muzzle, life: 0.07, friendly: GLOW.friendlyPlasma, hostile: GLOW.hostilePlasma, tongue: false },
-  hit: { shape: BILL.glow, size: size * 2.2, friendly: GLOW.friendlyPlasma, hostile: GLOW.hostilePlasma },
+  // P255: era `size * 2.2` — no canhão de plasma (a arma de partida do Marauder) um tiro automático contra o mesmo alvo empilha
+  // vários clarões aditivos de ~2,5 m seguidos (0,1 s cada), e a soma cobria boa parte da tela ("muito claro", o Comandante).
+  // 1.4 cobre bem menos área (o tamanho entra ao quadrado): clarão ainda visível, sem virar borrão branco em fogo sustentado.
+  hit: { shape: BILL.glow, size: size * 1.4, friendly: GLOW.friendlyPlasma, hostile: GLOW.hostilePlasma },
   mark: { kind: MARK.hole, size: mark, life: 5, friendly: GLOW.friendlyPlasma, hostile: GLOW.hostilePlasma, every: 1 },
 });
 
