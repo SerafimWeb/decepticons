@@ -7,9 +7,14 @@ const NOME_DA_TELA: Readonly<Record<IdDeTelao, string>> = {
   'arena:telao-2': 'Telão 2 · fachada norte',
 };
 
+/** O valor do `<option>` da câmera ao vivo: nunca colide com um nome de arquivo real (`ARQUIVOS_DE_TELAO` não leva `@`). */
+const CAMERA_AO_VIVO = '@camera';
+
 /**
- * O PAINEL DOS TELÕES (P246, `GAME_DESIGN.md` § HORIZONTE): escolhe qual vídeo de `ARQUIVOS_DE_TELAO` toca em cada tela da Cidade Neon, ou desliga ("sem sinal"). **SALVAR PARA TODOS** grava no
- * servidor (com a chave do dono) e vale na próxima vez que o jogo montar a Cidade Neon. Só abre no modo Comandante; pedaço sob demanda (R7). Módulo independente (G3).
+ * O PAINEL DOS TELÕES (P246/P253, `GAME_DESIGN.md` § HORIZONTE): escolhe, por tela da Cidade Neon, entre **desligada**
+ * (sem sinal), **câmera ao vivo** (a própria partida, sem nenhum arquivo) ou um vídeo de `ARQUIVOS_DE_TELAO`.
+ * **SALVAR PARA TODOS** grava no servidor (com a chave do dono) e vale na próxima vez que o jogo montar a Cidade Neon.
+ * Só abre no modo Comandante; pedaço sob demanda (R7). Módulo independente (G3).
  */
 export class TelaoPanel {
   private modal: HTMLElement | null = null;
@@ -71,24 +76,21 @@ export class TelaoPanel {
     for (const id of TELOES_DA_ARENA) {
       const linha = this.el('div', 'telao-linha');
       linha.append(this.el('b', 'telao-nome', NOME_DA_TELA[id] ?? id));
-      if (ARQUIVOS_DE_TELAO.length === 0) {
-        linha.append(this.el('span', 'telao-vazio', 'Nenhum vídeo no site ainda'));
-      } else {
-        const select = this.el('select', 'telao-select') as HTMLSelectElement;
-        const desligada = this.el('option', '', 'Desligada (sem sinal)') as HTMLOptionElement;
-        desligada.value = '';
-        select.append(desligada);
-        for (const arquivo of ARQUIVOS_DE_TELAO) {
-          const op = this.el('option', '', arquivo) as HTMLOptionElement;
-          op.value = arquivo;
-          select.append(op);
-        }
-        select.value = this.escolhas[id]?.arquivo ?? '';
-        select.addEventListener('change', () => {
-          this.escolhas[id] = select.value ? { arquivo: select.value } : null;
-        });
-        linha.append(select);
-      }
+      const select = this.el('select', 'telao-select') as HTMLSelectElement;
+      const opcao = (valor: string, texto: string): HTMLOptionElement => {
+        const op = this.el('option', '', texto) as HTMLOptionElement;
+        op.value = valor;
+        return op;
+      };
+      select.append(opcao('', 'Desligada (sem sinal)'), opcao(CAMERA_AO_VIVO, 'Câmera ao vivo (a própria partida)'));
+      for (const arquivo of ARQUIVOS_DE_TELAO) select.append(opcao(arquivo, arquivo));
+      const atual = this.escolhas[id];
+      select.value = !atual ? '' : atual.tipo === 'camera' ? CAMERA_AO_VIVO : atual.arquivo;
+      select.addEventListener('change', () => {
+        this.escolhas[id] = !select.value ? null : select.value === CAMERA_AO_VIVO ? { tipo: 'camera' } : { tipo: 'video', arquivo: select.value };
+      });
+      linha.append(select);
+      if (ARQUIVOS_DE_TELAO.length === 0) linha.append(this.el('span', 'telao-vazio', 'nenhum vídeo no site ainda'));
       lista.append(linha);
     }
     this.mensagem = this.el('p', 'telao-mensagem', 'Sem vídeo atribuído, a tela fica escura ("sem sinal"). Vale para todo jogador assim que gravar.');

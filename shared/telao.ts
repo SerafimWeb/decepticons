@@ -5,12 +5,12 @@
  */
 export type IdDeTelao = string;
 
-export interface TelaoItem {
-  /** Um nome de `ARQUIVOS_DE_TELAO` (ex.: `arena-trailer.mp4`), nunca uma URL livre. */
-  readonly arquivo: string;
-  /** Um título opcional, só para o painel do Comandante lembrar o que é; não aparece no jogo. */
-  readonly titulo?: string;
-}
+/**
+ * O que toca numa tela (P253): um **vídeo** (um nome de `ARQUIVOS_DE_TELAO`, nunca uma URL livre) ou a **câmera ao
+ * vivo** daquela tela (a própria partida, redesenhada numa câmera de segurança fixa — sem arquivo nenhum, mas com
+ * custo de GPU por quadro redesenhado, diferente do vídeo, que só decodifica: `ArenaTelao.ts` explica o porquê).
+ */
+export type TelaoItem = { tipo: 'video'; readonly arquivo: string; readonly titulo?: string } | { tipo: 'camera' };
 
 export interface ConfigDeTelao {
   /** Sobe a cada gravação (o cliente guarda a última que viu, mesma ideia de `shared/visibilidade.ts`). */
@@ -39,10 +39,12 @@ export const configVaziaDeTelao = (): ConfigDeTelao => ({ versao: 0, itens: {} }
 function normalizarItem(x: unknown, arquivosPermitidos: readonly string[]): TelaoItem | null | undefined {
   if (x === null) return null; // desligada: válida
   if (!x || typeof x !== 'object' || Array.isArray(x)) return undefined; // formato inválido: a tela inteira é recusada
-  const o = x as { arquivo?: unknown; titulo?: unknown };
+  const o = x as { tipo?: unknown; arquivo?: unknown; titulo?: unknown };
+  if (o.tipo === 'camera') return { tipo: 'camera' };
+  if (o.tipo !== 'video') return undefined;
   if (typeof o.arquivo !== 'string' || !arquivosPermitidos.includes(o.arquivo)) return undefined;
   const titulo = typeof o.titulo === 'string' && o.titulo.trim() ? o.titulo.trim().slice(0, 80) : undefined;
-  return titulo ? { arquivo: o.arquivo, titulo } : { arquivo: o.arquivo };
+  return titulo ? { tipo: 'video', arquivo: o.arquivo, titulo } : { tipo: 'video', arquivo: o.arquivo };
 }
 
 /**

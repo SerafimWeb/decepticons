@@ -2527,6 +2527,9 @@ export class Game {
     this.waveRings.setFrame(waveFrame);
     this.heatHaze.setFrame(waveFrame);
     hangarRings?.setFrame(waveFrame);
+    // Os telões em modo câmera ao vivo (P253): redesenha a cena numa segunda câmera pequena, fora do composer (sem bloom), antes do `info.reset()` abaixo — assim os desenhos extras não entram na
+    // contagem que o painel de depuração mostra para o quadro principal. O alvo de render dos telões é outro (não o canvas principal): a ordem aqui não muda o que o jogador vê.
+    this.match.arena.telao?.renderizarCameras(this.renderer, this.scene);
     this.renderer.info.reset();
     this.composer.render(dt);
     this.recorder.capturarQuadro();
