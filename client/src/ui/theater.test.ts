@@ -79,7 +79,7 @@ describe('as missões do teatro de operações', () => {
     expect(TEATROS.filter((t) => !t.proposta).map((t) => t.id).sort()).toEqual(['cabos', 'janeiro']);
   });
 
-  it('o 8 DE JANEIRO (P217) ocupa Brasília, onde era o Bunker, e o Bunker foi para o Mato Grosso do Sul; o mapa existe, mas nasce restrito ao Comandante (`mapa:janeiro`)', () => {
+  it('o 8 DE JANEIRO (P217) ocupa Brasília, onde era o Bunker, e o Bunker foi para o Mato Grosso do Sul', () => {
     const janeiro = TEATROS.find((x) => x.id === 'janeiro')!;
     const bunker = TEATROS.find((x) => x.id === 'bunker')!;
     expect(janeiro.lugar).toMatch(/Brasília/);

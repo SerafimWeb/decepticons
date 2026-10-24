@@ -32,7 +32,7 @@ const fixas: readonly Funcionalidade[] = [
   { id: 'mapa:arena', grupo: 'fases', nome: 'Cidade Neon (Arena)', padrao: 'publico', efeito: 'o pino vira EM BREVE no mapa-múndi e o link cai na Cidade Neon' },
   { id: 'mapa:bunker', grupo: 'fases', nome: 'Bunker', padrao: 'restrito', efeito: 'o pino vira EM BREVE no mapa-múndi, some das campanhas e o link cai na Cidade Neon' },
   { id: 'mapa:praia', grupo: 'fases', nome: 'Estação dos Cabos (Praia)', padrao: 'publico', efeito: 'o pino vira EM BREVE no mapa-múndi, some das campanhas e o link cai na Cidade Neon' },
-  { id: 'mapa:janeiro', grupo: 'fases', nome: '8 DE JANEIRO (Praça dos Três Poderes)', padrao: 'restrito', efeito: 'o pino vira EM BREVE no mapa-múndi, some das campanhas e o link cai na Cidade Neon' },
+  { id: 'mapa:janeiro', grupo: 'fases', nome: '8 DE JANEIRO (Praça dos Três Poderes)', padrao: 'publico', efeito: 'o pino vira EM BREVE no mapa-múndi, some das campanhas e o link cai na Cidade Neon' },
   { id: 'mapa:amazonia', grupo: 'fases', nome: 'Amazônia · Terras Raras', padrao: 'restrito', efeito: 'o pino vira EM BREVE no mapa-múndi, some das campanhas e o link cai na Cidade Neon' },
   { id: 'modo:deathmatch', grupo: 'modos', nome: 'Deathmatch', padrao: 'publico', efeito: 'o botão do modo' },
   { id: 'modo:survival', grupo: 'modos', nome: 'Sobrevivência (missões)', padrao: 'publico', efeito: 'o botão do modo' },
@@ -47,7 +47,7 @@ const fixas: readonly Funcionalidade[] = [
   { id: 'tela:voz', grupo: 'telas', nome: 'Chat de voz (online)', padrao: 'restrito', efeito: 'a seção CHAT DE VOZ das Configurações e a voz na sala online (some junto o pedido de microfone)' },
   { id: 'tela:chat', grupo: 'telas', nome: 'Pilotos da REDE: ver o Hangar do outro e conversar por texto (online)', padrao: 'restrito', efeito: 'a lista de pilotos no monitor REDE, a visita ao Hangar de outro piloto e o chat de texto (some junto o aviso de mensagem)' },
   { id: 'tela:lado', grupo: 'telas', nome: 'Seletor de lado (Aliança ou Consórcio)', padrao: 'restrito', efeito: 'o chip ESCOLHA O LADO' },
-  { id: 'tela:relatorio', grupo: 'telas', nome: 'Relatório de Consequências', padrao: 'restrito', efeito: 'o chip RELATÓRIO depois da missão' },
+  { id: 'tela:relatorio', grupo: 'telas', nome: 'Relatório de Consequências', padrao: 'publico', efeito: 'o chip RELATÓRIO depois da missão' },
 ];
 
 /** Os robôs e as armas vêm dos dados do jogo: robô ou arma nova aparece no painel sozinha, **já pública** (o padrão de hoje); o Comandante a restringe se quiser. */

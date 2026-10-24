@@ -1,5 +1,13 @@
 # ESTADO ATUAL — CYBERMECH
 
+## EM BRANCH — NÃO ESTÁ NO AR: O 8 DE JANEIRO LIBERADO AO PÚBLICO, TRILHA CORRIGIDA, MULTIDÃO E AI-5 AFINADOS (Claude, branch `claude/janeiro-polish`, P253, 24/10)
+
+**O Comandante:** a movimentação dos manifestantes está "dura e sem graça", os androides AI-5 "muito agressivos e rápidos" para jogar sozinho, quer a fase mais suave e jogável para atrair jogadores online, **sem precisar de `?comandante=1`**, e o berrante (que nunca chegou a tocar) alternando com o trompetista que ele adicionou; confirmou a revisão dos fatos e a jurídica feitas, liberado para prosseguir.
+**Feito:** `mapa:janeiro` e `tela:relatorio` passaram a `padrao: 'publico'` em `funcionalidades.ts` — toca sem link nem código, offline e online. **O berrante nunca tocava** (achado nesta sessão, apesar do P249 registrar "REAL"): `TrilhaDaJaneiro.ts` tentava no construtor do `Game`, antes do clique que libera o `AudioContext`; agora tenta de novo a cada 500 ms e alterna em ciclo com o trompetista. Multidão: cadência e amplitude do passo variam por pessoa (hash da fase, só no desenho, G14 intocado). AI-5: `BOT_SKILLS.facil` e `maxAttackers: 1` (no máx. 2 atacando por vez, régua da onda 1 da Sobrevivência). `fase:chefes-janeiro`/`arma:cacetete-poder` não tocados (fora do pedido).
+**Provas:** `npm run check` completo verde (typecheck, suíte inteira — 4028 testes —, build, smoke, `mech:bocas`, site).
+**Disponibilidade:** EM BRANCH até o merge; depois vale no site após o deploy automático.
+**Próxima sessão começa com:** abrir o PR, se ainda não aberto.
+
 ## P250 — qualidade da Praça e chefes (registro da entrega deste PR) — Codex, 23/10
 
 - Trabalho em `.tmp/wt-codex-janeiro-visual`, branch `codex/janeiro-visual`: modelos da multidão, Trampado/Evil, VFX, cacetete conquistável e acabamento da Praça.
@@ -13,23 +21,10 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
-
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
-
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
-
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
-
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
-
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
-
-## EM BRANCH — NÃO ESTÁ NO AR: O NOME DOS ANDROIDES REBELDES, AI-5 — Claude, 23/10 (branch `claude/androides-ai5`, P252)
+## MESCLADO NA MAIN (23/10): O NOME DOS ANDROIDES REBELDES, AI-5 (Claude, PR #457, P252)
 
 **O Comandante:** "o nome dos androides pretos dessa fase devem ser: AI-5 (todos é ai-5 mesmo, nao é 1, 2, 3 nao)" + 8 apelidos, depois insistiu com 3 deles truncados. **Feito:** todo androide rebelde aparece como **AI-5** (`MissaoJaneiro.NOMES_DOS_REBELDES`, usado tanto offline quanto no `ArenaRoom` online — mesmo código do `Match.ts`), nunca numerado. **Recusados, mesmo truncados (CARLUXO/RACHAD/SIONIS):** identificam uma pessoa real (Carlos Bolsonaro) e um esquema de corrupção ligado à família dele, e miram um grupo étnico-religioso real — truncar letras não tira a identificação. **Os outros 5 apelidos** (BANANINHA, NEPOTISMO, LESAPATRIA, TORNOZELEIRO, ANTIDEMOCRATICO) não cabem junto com "AI-5" no nameplate (16 bytes): ficam de referência na ficha, pra narração/LIVE.
-**Provas:** `npm run check` em andamento; teste novo em `Match.janeiro.test.ts` prova o nome do rebelde.
-**Próxima sessão começa com:** abrir o PR.
+**Provas:** `npm run check` completo verde; teste novo em `Match.janeiro.test.ts` prova o nome do rebelde.
 
 ## MESCLADO NA MAIN (23/10): COOP ONLINE NA MISSÃO DO 8 DE JANEIRO, PRA UMA LIVE (Claude, PR #456, P251)
 

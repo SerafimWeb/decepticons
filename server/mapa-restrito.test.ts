@@ -82,18 +82,18 @@ describe('o mapa restrito só abre para a conta de administrador, conferida no s
     return e;
   };
 
-  it('a regra: a exceção do painel vence o padrão do catálogo (o Bunker, a Amazônia e o 8 DE JANEIRO nascem restritos; a Cidade Neon e os Cabos, públicos)', () => {
-    expect(mapaRestrito('janeiro', {})).toBe(true);
+  it('a regra: a exceção do painel vence o padrão do catálogo (o Bunker e a Amazônia nascem restritos; a Cidade Neon, os Cabos e o 8 DE JANEIRO, públicos)', () => {
     expect(mapaRestrito('bunker', {})).toBe(true);
     expect(mapaRestrito('amazonia', {})).toBe(true);
     expect(mapaRestrito('arena', {})).toBe(false);
     expect(mapaRestrito('praia', {})).toBe(false);
-    expect(mapaRestrito('janeiro', { 'mapa:janeiro': 'publico' })).toBe(false);
+    expect(mapaRestrito('janeiro', {})).toBe(false);
+    expect(mapaRestrito('amazonia', { 'mapa:amazonia': 'publico' })).toBe(false);
     expect(mapaRestrito('praia', { 'mapa:praia': 'restrito' })).toBe(true);
   });
 
   it('sem credencial: recusado com o motivo "restrito" e cortado (1008), e a sala nem é criada', async () => {
-    const e = novo(s.port, 'janeiro', null);
+    const e = novo(s.port, 'amazonia', null);
     await until(() => e.fechou !== null);
     expect(e.recusa).toBe('restrito');
     expect(e.fechou).toBe(1008);
@@ -102,7 +102,7 @@ describe('o mapa restrito só abre para a conta de administrador, conferida no s
   });
 
   it('com o token de uma conta comum: recusado do mesmo jeito (digitar o link não dá privilégio nenhum)', async () => {
-    const e = novo(s.port, 'janeiro', comum);
+    const e = novo(s.port, 'amazonia', comum);
     await until(() => e.fechou !== null);
     expect(e.recusa).toBe('restrito');
     expect(e.bemVindo).toBe(false);
@@ -110,7 +110,7 @@ describe('o mapa restrito só abre para a conta de administrador, conferida no s
   });
 
   it('com um token inventado: recusado', async () => {
-    const e = novo(s.port, 'janeiro', 'token-inventado-que-nao-existe-1234');
+    const e = novo(s.port, 'amazonia', 'token-inventado-que-nao-existe-1234');
     await until(() => e.fechou !== null);
     expect(e.recusa).toBe('restrito');
     expect(s.rooms.size).toBe(0);
@@ -150,11 +150,11 @@ describe('o mapa restrito só abre para a conta de administrador, conferida no s
   }, 120_000);
 
   it('quem pede o mapa restrito e fica calado é recusado depois da espera, sem prender uma sala', async () => {
-    const e = novo(s.port, 'janeiro', null, false);
+    const e = novo(s.port, 'amazonia', null, false);
     await new Promise((r) => setTimeout(r, 500));
     expect(e.fechou).toBeNull(); // ainda dentro da espera
     await until(() => e.fechou !== null, CREDENCIAL_ESPERA_MS + 5000);
     expect(e.recusa).toBe('restrito');
-    expect(s.rooms.has('PROVA@janeiro')).toBe(false);
+    expect(s.rooms.has('PROVA@amazonia')).toBe(false);
   }, 30_000);
 });
