@@ -1,5 +1,12 @@
 # ESTADO ATUAL — CYBERMECH
 
+## OS TELÕES FICAM MAIORES, UM VIRA LETREIRO DE TIMES SQUARE, E GANHAM OS DOIS PRIMEIROS VÍDEOS — Claude, 24/10 (branch `claude/cidade-neon-polimento`, P255, PR 1 de 2)
+
+**O Comandante jogou de verdade e mandou seis achados de uma vez (P255); este PR resolve o dos telões.** "os teloes estao PEQUENOS... coloque o telao maior no predio, tipo timesquare... pode usar os videos menores que temos na pasta". **Feito:** `telao-1` cresceu de 9×5 para 15×9 m; `telao-2` virou o letreiro grande — 22×11 m (a proporção real do vídeo, ~2:1, para não esticar a imagem) na fachada norte do prédio mais alto, bem visível de longe. **Dois vídeos de verdade entraram** (`ARQUIVOS_DE_TELAO` deixa de estar vazio): recortados de gravações do próprio Comandante com `npm run telao`, conferidos quadro a quadro antes de entrar — **achado no caminho: a pasta `D:\imagens cybermech\` tem gravação de outro jogo (Roblox) misturada**; um primeiro clipe testado era isso, descartado antes de ir para o repositório. Os dois que entraram (`arena-clip2.mp4`, `arena-clip3.mp4`) são Cidade Neon de verdade (combate, Banco Vorcaris, o Colossus).
+**Falta:** o Comandante ainda escolhe no painel TELÕES ▸ qual vídeo (ou câmera ao vivo) vai em cada tela — nada toca sozinho até ele gravar.
+**Os outros cinco achados (efeitos, pisar no chão, prédios, mapa vazio, motoboy) seguem no PR 2 e no registro da ordem** (`ORDENS_DO_COMANDO.md` P255).
+**Onde conferir:** `/jogar/?mapa=arena&comandante=1`, chip TELÕES ▸; a tela grande na fachada norte do prédio mais alto.
+
 ## OS TELÕES GANHAM CÂMERA AO VIVO — Claude, 24/10 (branch `claude/teloes-camera-ao-vivo`, P254)
 
 **O Comandante:** não achou o chip TELÕES (investigado ao vivo em `cybermech.online` com Playwright: **aparece certinho** assim que o jogo termina de carregar — antes disso, TODO chip do Comandante fica escondido, não só o dele; o mais provável é ter olhado antes do boot terminar. **Não é organização mal feita**: o mecanismo de "só o Comandante vê" é o mesmo da VISIBILIDADE, que já funciona há semanas). Também reconsiderou o conteúdo: em vez de vídeo pré-gravado (ele tem ~100 gravações em `D:\imagens cybermech\*.webm`, 348 KB a 256 MB, brutas), **mostrar a própria câmera da partida ao vivo**, por ser mais simples (sem arquivo pra otimizar).

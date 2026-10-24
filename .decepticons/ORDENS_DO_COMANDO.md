@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P255 — Polimento da Cidade Neon: efeitos, telões, prédios, mapa vazio, motoboy kamikaze (24/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P255 | 24/10 | "OS EFEITOS ESTAO MUITO IMPACTANTES, ta ficando muito claro quando tomo um tiro ou dou no inimigo, dificulta a visibilidade, vamos melhorar isso, e a jogabilidade. as vezes eu piso abaixo do chao; os teloes estao PEQUENOS. pode usar os videos menores que temos na pasta, pra passar eles no telao (coloque o telao maior no predio, tipo timesquare, algo bem moderno, nivel cidades modernas da china. Os predios ainda fica uma luz meio falhada, seria bom corrigir e aumentar a qualidade dos predios (pode manter a cor neon - luzes fluorescentes) mas melhorar o acabamento. adiciona mais itens na fase do neon, o mapa ta muito vazio. prossiga. cria um personagem: o motoboy com cabeça de boi e mochila quadrada vermelha, numa moto velha, fazendo kamikaze nos atacando. poucos, pra nao poluir o cenario." (duas capturas do jogo real anexadas, mostrando o flash branco do impacto cobrindo boa parte da tela e o telão pequeno e escuro numa fachada) | 🟡 | **Seis pedidos num só, tratados em PRs separados (regra 19e — cada um é o menor PR que resolve):** (1) flash de dano/tiro menos ofuscante; (2) o Mech pisando abaixo do chão; (3) telões maiores, estilo letreiro de Times Square, com vídeos das gravações salvas; (4) luz "falhada" dos prédios corrigida e acabamento melhor, mesma paleta neon; (5) mais itens na Cidade Neon (mapa muito vazio); (6) o motoboy kamikaze (cabeça de boi, mochila quadrada vermelha, moto velha), poucos por partida. Estado de cada um detalhado conforme os PRs saem | Ver as entradas seguintes desta sessão em `ESTADO_ATUAL.md` |
+
 ## P254 — Os telões: não achei o chip, e câmera ao vivo em vez de vídeo (23–24/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
