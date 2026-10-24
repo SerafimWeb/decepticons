@@ -1,6 +1,6 @@
 # ESTADO ATUAL — CYBERMECH
 
-## OS TELÕES GANHAM CÂMERA AO VIVO — Claude, 24/10 (branch `claude/teloes-camera-ao-vivo`, P253)
+## OS TELÕES GANHAM CÂMERA AO VIVO — Claude, 24/10 (branch `claude/teloes-camera-ao-vivo`, P254)
 
 **O Comandante:** não achou o chip TELÕES (investigado ao vivo em `cybermech.online` com Playwright: **aparece certinho** assim que o jogo termina de carregar — antes disso, TODO chip do Comandante fica escondido, não só o dele; o mais provável é ter olhado antes do boot terminar. **Não é organização mal feita**: o mecanismo de "só o Comandante vê" é o mesmo da VISIBILIDADE, que já funciona há semanas). Também reconsiderou o conteúdo: em vez de vídeo pré-gravado (ele tem ~100 gravações em `D:\imagens cybermech\*.webm`, 348 KB a 256 MB, brutas), **mostrar a própria câmera da partida ao vivo**, por ser mais simples (sem arquivo pra otimizar).
 **Feito:** cada tela agora escolhe entre **desligada**, **câmera ao vivo** (uma `THREE.PerspectiveCamera` fixa por tela, olhando pro centro da arena, redesenhada num `WebGLRenderTarget` pequeno — 320×180 — fora do `composer`, a ~2 Hz, só quem está perto e com o tier de `Quality` bom) ou um **vídeo** de `ARQUIVOS_DE_TELAO` (segue vazio). Contrato virou união discriminada (`shared/telao.ts`: `{tipo:'video'|'camera'}`). **Explicado ao Comandante, não implementado:** câmera ao vivo custa GPU por quadro redesenhado (escala com a partida); vídeo só decodifica (não escala) — os dois ficam, escolhidos por tela.
@@ -9,6 +9,14 @@
 **Falta (R13):** nenhum vídeo ainda (ele escolhe o trecho); o custo de verdade da câmera ao vivo não foi medido em GPU real (só a lógica, em SwiftShader/Node).
 **Onde conferir:** `/jogar/?mapa=arena&comandante=1`, chip TELÕES ▸, escolher "Câmera ao vivo" numa tela e chegar perto dela.
 **Próxima sessão começa com:** o que o Comandante achar da câmera ao vivo jogando de verdade (o custo em GPU real); ou qual gravação ele quer como primeiro vídeo.
+
+## MESCLADO NA MAIN (24/10): O 8 DE JANEIRO LIBERADO AO PÚBLICO, TRILHA CORRIGIDA, MULTIDÃO E AI-5 AFINADOS (Claude, PR #458, P253)
+
+**O Comandante:** a movimentação dos manifestantes está "dura e sem graça", os androides AI-5 "muito agressivos e rápidos" para jogar sozinho, quer a fase mais suave e jogável para atrair jogadores online, **sem precisar de `?comandante=1`**, e o berrante (que nunca chegou a tocar) alternando com o trompetista que ele adicionou; confirmou a revisão dos fatos e a jurídica feitas, liberado para prosseguir.
+**Feito:** `mapa:janeiro` e `tela:relatorio` passaram a `padrao: 'publico'` em `funcionalidades.ts` — toca sem link nem código, offline e online. **O berrante nunca tocava** (achado nesta sessão, apesar do P249 registrar "REAL"): `TrilhaDaJaneiro.ts` tentava no construtor do `Game`, antes do clique que libera o `AudioContext`; agora tenta de novo a cada 500 ms e alterna em ciclo com o trompetista. Multidão: cadência e amplitude do passo variam por pessoa (hash da fase, só no desenho, G14 intocado). AI-5: `BOT_SKILLS.facil` e `maxAttackers: 1` (no máx. 2 atacando por vez, régua da onda 1 da Sobrevivência). `fase:chefes-janeiro`/`arma:cacetete-poder` não tocados (fora do pedido).
+**Provas:** `npm run check` completo verde (typecheck, suíte inteira — 4028 testes —, build, smoke, `mech:bocas`, site).
+**Disponibilidade:** no ar em `cybermech.online` após o deploy automático do merge.
+**Próxima sessão começa com:** o olho do Comandante jogando, para confirmar se o ajuste de suavidade está no ponto; a multidão atravessando parede (P248) segue pendente.
 
 ## P250 — qualidade da Praça e chefes (registro da entrega deste PR) — Codex, 23/10
 
@@ -23,23 +31,10 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
-
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
-
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
-
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
-
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
-
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
-
-## EM BRANCH — NÃO ESTÁ NO AR: O NOME DOS ANDROIDES REBELDES, AI-5 — Claude, 23/10 (branch `claude/androides-ai5`, P252)
+## MESCLADO NA MAIN (23/10): O NOME DOS ANDROIDES REBELDES, AI-5 (Claude, PR #457, P252)
 
 **O Comandante:** "o nome dos androides pretos dessa fase devem ser: AI-5 (todos é ai-5 mesmo, nao é 1, 2, 3 nao)" + 8 apelidos, depois insistiu com 3 deles truncados. **Feito:** todo androide rebelde aparece como **AI-5** (`MissaoJaneiro.NOMES_DOS_REBELDES`, usado tanto offline quanto no `ArenaRoom` online — mesmo código do `Match.ts`), nunca numerado. **Recusados, mesmo truncados (CARLUXO/RACHAD/SIONIS):** identificam uma pessoa real (Carlos Bolsonaro) e um esquema de corrupção ligado à família dele, e miram um grupo étnico-religioso real — truncar letras não tira a identificação. **Os outros 5 apelidos** (BANANINHA, NEPOTISMO, LESAPATRIA, TORNOZELEIRO, ANTIDEMOCRATICO) não cabem junto com "AI-5" no nameplate (16 bytes): ficam de referência na ficha, pra narração/LIVE.
-**Provas:** `npm run check` em andamento; teste novo em `Match.janeiro.test.ts` prova o nome do rebelde.
-**Próxima sessão começa com:** abrir o PR.
+**Provas:** `npm run check` completo verde; teste novo em `Match.janeiro.test.ts` prova o nome do rebelde.
 
 ## MESCLADO NA MAIN (23/10): COOP ONLINE NA MISSÃO DO 8 DE JANEIRO, PRA UMA LIVE (Claude, PR #456, P251)
 

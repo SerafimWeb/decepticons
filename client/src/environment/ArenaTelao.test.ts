@@ -37,7 +37,7 @@ function rendererFalso() {
 const PERTO = new THREE.Vector3(ARENA_TELAO_1.x, ARENA_TELAO_1.y, ARENA_TELAO_1.z);
 const LONGE = new THREE.Vector3(ARENA_TELAO_1.x + 1000, ARENA_TELAO_1.y, ARENA_TELAO_1.z);
 
-describe('os telões diegéticos da Cidade Neon (P246/P253)', () => {
+describe('os telões diegéticos da Cidade Neon (P246/P254)', () => {
   it('só a Cidade Neon tem telão: a praia e o bunker (que retornam antes, no construtor) ficam sem — o mesmo ramo que já guarda o transformador guarda o telão', async () => {
     expect((await arena('arena')).arena.telao).not.toBeNull();
     await carregarMapaSeFor('praia'); // sob demanda (P228)
@@ -64,7 +64,7 @@ describe('os telões diegéticos da Cidade Neon (P246/P253)', () => {
     expect(setRenderTarget).not.toHaveBeenCalled();
   });
 
-  it('câmera ao vivo (P253): perto, redesenha a cena nessa tela a cada ~0,5 s; longe, ou em qualidade baixa, não redesenha', async () => {
+  it('câmera ao vivo (P254): perto, redesenha a cena nessa tela a cada ~0,5 s; longe, ou em qualidade baixa, não redesenha', async () => {
     const { arena: a, scene } = await arena('arena');
     await a.telao!.carregar('ws://127.0.0.1:0', async () => ({ ok: true, json: async () => ({ versao: 1, itens: { 'arena:telao-1': { tipo: 'camera' } } }) }) as unknown as Response);
 

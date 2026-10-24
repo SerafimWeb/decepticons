@@ -2,6 +2,7 @@ import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { BarrageSystem } from '../combat/BarrageSystem';
 import { BotSystem, type BotKit, type BotSystemOptions } from '../combat/BotSystem';
+import { BOT_SKILLS } from '../combat/BotController';
 import { CombatSystem, type MechHitEvent } from '../combat/CombatSystem';
 import { CruiseSystem } from '../combat/CruiseSystem';
 import { GrenadeSystem } from '../combat/GrenadeSystem';
@@ -562,6 +563,8 @@ export class Match {
         ? { chefeDoMapa: 'amazonia' as const, visualDoChefe: o.visualDoChefe ?? null, ...(o.marcha ? { chefeNascimento: { x: posicaoNaMarcha(o.marcha), z: rioEmX(posicaoNaMarcha(o.marcha)) } } : {}) }
         : {}),
       ...(janeiro ? { androidPaint: 0x15171a } : {}), // os androides rebeldes da Praça de preto, no meio do verde e amarelo
+      // O 8 de Janeiro é para o jogador sozinho: reação, mira e giro mais lentos (achado 24/10: "muito agressivos e rapidos pra eu combater sozinho").
+      ...(janeiro ? { skill: BOT_SKILLS.facil } : {}),
       ...(o.bossMask === undefined ? {} : { mascaraDoChefe: o.bossMask }),
       respawn: !survival,
       respawnAtHome: ctf,
@@ -569,6 +572,8 @@ export class Match {
       waypoints: survival && praia ? PRAIA_ASSALTO : this.spawnPoints,
       power: o.power,
     });
+    // Mesma régua da onda 1 do Survival (só androides, também solo-friendly): no máx. 2 atacam por vez, o resto cerca e espera a vez.
+    if (janeiro) this.bots.maxAttackers = 1;
     const escolta = plano?.aliados;
     this.allies =
       escolta && escolta.mechs.length + escolta.androids.length > 0

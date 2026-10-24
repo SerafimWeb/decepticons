@@ -13,7 +13,7 @@ const ARQUIVOS = ['arena-trailer.mp4', 'marauder.mp4'];
 
 afterAll(() => rmSync(pasta, { recursive: true, force: true }));
 
-describe('o contrato dos telões (P246/P253)', () => {
+describe('o contrato dos telões (P246/P254)', () => {
   it('só passam ids das telas da Cidade Neon, com um item de vídeo (arquivo da lista permitida) ou de câmera ao vivo, ou null (desligada); o título é cosmético e opcional', () => {
     expect(normalizarItensDeTelao({ 'arena:telao-1': { tipo: 'video', arquivo: 'arena-trailer.mp4' }, 'arena:telao-2': null }, ARQUIVOS)).toEqual({
       'arena:telao-1': { tipo: 'video', arquivo: 'arena-trailer.mp4' },

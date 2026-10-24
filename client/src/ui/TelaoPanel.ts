@@ -11,7 +11,7 @@ const NOME_DA_TELA: Readonly<Record<IdDeTelao, string>> = {
 const CAMERA_AO_VIVO = '@camera';
 
 /**
- * O PAINEL DOS TELÕES (P246/P253, `GAME_DESIGN.md` § HORIZONTE): escolhe, por tela da Cidade Neon, entre **desligada**
+ * O PAINEL DOS TELÕES (P246/P254, `GAME_DESIGN.md` § HORIZONTE): escolhe, por tela da Cidade Neon, entre **desligada**
  * (sem sinal), **câmera ao vivo** (a própria partida, sem nenhum arquivo) ou um vídeo de `ARQUIVOS_DE_TELAO`.
  * **SALVAR PARA TODOS** grava no servidor (com a chave do dono) e vale na próxima vez que o jogo montar a Cidade Neon.
  * Só abre no modo Comandante; pedaço sob demanda (R7). Módulo independente (G3).

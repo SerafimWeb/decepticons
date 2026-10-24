@@ -76,6 +76,8 @@ vec3 desempacota(float c) {
 }
 // O mesmo seno em parábolas por partes de sim/Multidao.ts.
 float senoP(float u) { float f = u - floor(u); float h = f < 0.5 ? f * 2.0 : f * 2.0 - 1.0; float y = 4.0 * h * (1.0 - h); return f < 0.5 ? y : -y; }
+// Só para o jeito de andar (nunca a posição): um hash da fase de cada um, já única por figurante, sem atributo novo.
+float hashDaPessoa(float x) { return fract(sin(x * 127.1 + 311.7) * 43758.5453123); }
 // O tick em que a posição vale: quem morreu fica onde caiu.
 float tickDoCorpo() { return min(uTick, aFim.x); }
 bool correndo() { return tickDoCorpo() >= aFim.y; }
@@ -108,9 +110,13 @@ const POSICAO = /* glsl */ `
     px = aA.x + d.x * andou - d.y * lat; pz = aA.y + d.y * andou + d.x * lat;
     vel = falta > 0.0 ? aB.y : 0.0;
   }
+  // O jeito de cada um: cadência e tamanho do passo variam por pessoa (a fase já é única por figurante), não só a defasagem —
+  // sem isto, a amplitude e o ritmo eram o mesmo número pra todo mundo e a multidão inteira parecia um clone andando fora de passo (achado 24/10).
+  float cadenciaPessoal = 0.85 + 0.3 * hashDaPessoa(aB.z);
+  float amplPessoal = 0.75 + 0.5 * hashDaPessoa(aB.z + 0.37);
   // o passo (andando e correndo) ou o gingado de quem chegou e grita na fachada
-  float ciclo = vel > 0.0 ? t / 60.0 * vel * 4.3 + aB.z * 31.0 : t / 60.0 * 7.0 + aB.z * 31.0;
-  float agita = vel > 0.0 ? 1.0 : 1.6;
+  float ciclo = vel > 0.0 ? t / 60.0 * vel * 4.3 * cadenciaPessoal + aB.z * 31.0 : t / 60.0 * 7.0 * cadenciaPessoal + aB.z * 31.0;
+  float agita = (vel > 0.0 ? 1.0 : 1.6) * amplPessoal;
   float balanco = sin(ciclo) * aVert.z * aVert.y * agita;
   transformed.x += balanco * 0.3;
   transformed.y += abs(sin(ciclo)) * 0.03 + (vel > 0.0 ? 0.0 : abs(sin(ciclo * 0.5)) * 0.07);

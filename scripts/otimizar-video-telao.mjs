@@ -1,5 +1,5 @@
 /**
- * OTIMIZA UM VÍDEO PARA UM TELÃO (P253): recorta um trecho de uma gravação (ex.: `D:\imagens cybermech\*.webm`, fora do
+ * OTIMIZA UM VÍDEO PARA UM TELÃO (P254): recorta um trecho de uma gravação (ex.: `D:\imagens cybermech\*.webm`, fora do
  * repositório) e reencoda para um `.mp4` pequeno, pronto para `client/public/telao/` — o Comandante escolhe o trecho
  * (não o agente: só ele sabe quais gravações são boas), a ferramenta faz o recorte e a compressão. Reaproveita o
  * mesmo `ffmpeg` do projeto (`scripts/sonsRodar.mjs`, o mesmo do Estúdio e de `scripts/cutscene.mjs`).

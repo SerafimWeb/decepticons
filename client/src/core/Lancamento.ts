@@ -3,7 +3,7 @@ import { padraoDe } from './funcionalidades';
 import { funcionalidadeVisivel } from './Visibilidade';
 
 /**
- * Os mapas do lançamento (ordem P197, 18/10): **só a CIDADE NEON (a Arena) e a ESTAÇÃO DOS CABOS (a Praia dos Cabos) ficam livres ao público.** O Bunker e a TERRAS RARAS (a Amazônia) ficam "EM BREVE".
+ * Os mapas do lançamento (ordem P197, 18/10; 24/10: o 8 DE JANEIRO liberado também): **a CIDADE NEON (a Arena), a ESTAÇÃO DOS CABOS (a Praia dos Cabos) e o 8 DE JANEIRO ficam livres ao público.** O Bunker e a TERRAS RARAS (a Amazônia) ficam "EM BREVE".
  * **Quem decide agora é o painel de visibilidade (P191, `PAINEL_ADMIN.md` § 6):** o padrão de cada mapa mora no catálogo (`funcionalidades.ts`, `mapa:*`) e o Comandante libera ou segura um mapa no painel,
  * **sem mexer no código** (o servidor guarda a exceção e todo jogador a recebe ao abrir). O modo Comandante (`?comandante=1`) abre todos, para o dono continuar testando.
  *

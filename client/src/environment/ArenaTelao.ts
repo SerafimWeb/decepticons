@@ -34,7 +34,7 @@ interface Tela {
   video: HTMLVideoElement | null;
   textura: THREE.Texture | null;
   arquivo: string | null;
-  /** Modo câmera ao vivo (P253): a câmera de segurança fixa da tela e onde ela desenha. `null` fora desse modo. */
+  /** Modo câmera ao vivo (P254): a câmera de segurança fixa da tela e onde ela desenha. `null` fora desse modo. */
   camera: THREE.PerspectiveCamera | null;
   alvo: THREE.WebGLRenderTarget | null;
   /** Vídeo tocando, ou (modo câmera) a tela está perto o bastante para valer a pena redesenhar. */
@@ -43,7 +43,7 @@ interface Tela {
 }
 
 /**
- * OS TELÕES DIEGÉTICOS DA CIDADE NEON (P246/P253): dois painéis encostados em fachadas (`ArenaLayout.ts`), com o que o Comandante escolheu no painel de admin (`ui/TelaoPanel.ts` →
+ * OS TELÕES DIEGÉTICOS DA CIDADE NEON (P246/P254): dois painéis encostados em fachadas (`ArenaLayout.ts`), com o que o Comandante escolheu no painel de admin (`ui/TelaoPanel.ts` →
  * `POST /admin/telao`): um **vídeo** de `ARQUIVOS_DE_TELAO`, a **câmera ao vivo** da própria partida, ou nada ("sem sinal" — nunca pública até ele escolher algo).
  *
  * **Custo, os dois modos (G12):** o **vídeo** só decodifica (`THREE.VideoTexture` sobre um `<video>` comum — o mesmo custo de qualquer vídeo aberto no navegador, não escala com a partida). A
@@ -127,7 +127,7 @@ export class ArenaTelao {
     );
   }
 
-  /** A câmera de segurança da tela (P253): fixa, no lugar da tela, olhando para o meio da arena — nunca segue ninguém (zero lógica por quadro além da distância/tier já existentes). */
+  /** A câmera de segurança da tela (P254): fixa, no lugar da tela, olhando para o meio da arena — nunca segue ninguém (zero lógica por quadro além da distância/tier já existentes). */
   private ligarCamera(t: Tela): void {
     if (t.camera) return;
     this.desligar(t);

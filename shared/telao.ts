@@ -6,7 +6,7 @@
 export type IdDeTelao = string;
 
 /**
- * O que toca numa tela (P253): um **vídeo** (um nome de `ARQUIVOS_DE_TELAO`, nunca uma URL livre) ou a **câmera ao
+ * O que toca numa tela (P254): um **vídeo** (um nome de `ARQUIVOS_DE_TELAO`, nunca uma URL livre) ou a **câmera ao
  * vivo** daquela tela (a própria partida, redesenhada numa câmera de segurança fixa — sem arquivo nenhum, mas com
  * custo de GPU por quadro redesenhado, diferente do vídeo, que só decodifica: `ArenaTelao.ts` explica o porquê).
  */
