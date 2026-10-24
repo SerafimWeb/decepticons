@@ -20,8 +20,9 @@ export const WINDOWS = {
   /** Onde a janela começa e quanto mede, dentro do andar. */
   bottom: 1.4,
   height: 2.1,
-  /** Fração das janelas acesas. */
-  litShare: 0.3,
+  /** Fração das janelas acesas. P255: era 0.3 — poucas janelas acesas, espalhadas, não formavam grade nenhuma visível (lido
+   * como "falhado" pelo Comandante); mais acesas deixam a fachada legível como prédio, não como pontos soltos. */
+  litShare: 0.48,
   /** Fração das acesas em tom de sódio (laranja), para a cidade não ser de uma cor só. */
   sodiumShare: 0.22,
   /** Brilho das janelas; passa de 1 para pegar no bloom sem estourar a fachada. */
@@ -30,21 +31,31 @@ export const WINDOWS = {
 
 const num = (n: number): string => n.toFixed(4);
 
-const VERTEX_DECLARATIONS = 'varying vec3 vWindowPos;';
-const VERTEX_BODY = 'vWindowPos = (modelMatrix * vec4(transformed, 1.0)).xyz;';
+const VERTEX_DECLARATIONS = 'varying vec3 vWindowPos;\nvarying vec3 vWindowNormal;';
+// mat3(modelMatrix), não a inversa-transposta: certo aqui porque os prédios são caixas sem rotação nenhuma (só translação e
+// escala não uniforme, `Arena.ts:addSolid`/`body.scale`) — uma caixa alinhada aos eixos tem a normal da face sempre pura
+// num eixo (1,0,0 etc.), e qualquer escala diagonal preserva essa direção; o `normalize()` tira a magnitude. Um prédio
+// rotacionado quebraria esta conta (precisaria da normal matrix de verdade): nenhum tem rotação hoje (`addSolid` só a
+// aplica à rampa da plataforma, que não usa este material).
+const VERTEX_BODY = 'vWindowPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWindowNormal = normalize(mat3(modelMatrix) * normal);';
 
 const FRAGMENT_DECLARATIONS = `varying vec3 vWindowPos;
+varying vec3 vWindowNormal;
 uniform vec3 windowColor;
 uniform vec3 windowSodium;
 ${GLSL_NORMAL_SEGURA}
 float windowHash(vec2 c) { return fract(sin(dot(c, vec2(127.1, 311.7))) * 43758.5453); }`;
 
 /**
- * Normal da face lida das derivadas da posição no mundo (cada face de uma caixa é plana), para saber se a janela fica no
- * eixo x ou z, e sem janela no teto. O sorteio de cada janela vem da célula no mundo: prédios vizinhos não repetem o padrão.
+ * Normal da face interpolada do vértice (cada face de uma caixa é plana: a normal não muda dentro da face), para saber se a
+ * janela fica no eixo x ou z, e sem janela no teto. **Antes (até P255) lia as derivadas de tela da posição**
+ * (`cross(dFdx(vWindowPos), dFdy(vWindowPos))`): instável em coordenadas grandes do mundo (os prédios ficam a dezenas de
+ * metros da origem) e por quadro, lido como "luz falhada" pelo Comandante — a normal do vértice é constante por face,
+ * sem esse problema, e mais barata (sem derivada por pixel). O sorteio de cada janela vem da célula no mundo: prédios
+ * vizinhos não repetem o padrão.
  */
 const FRAGMENT_BODY = `{
-  vec3 faceN = abs(normalSegura(cross(dFdx(vWindowPos), dFdy(vWindowPos))));
+  vec3 faceN = abs(normalSegura(vWindowNormal));
   float alongX = step(faceN.z, faceN.x);
   float across = mix(vWindowPos.x, vWindowPos.z, alongX);
   vec2 cell = vec2(floor(across / ${num(WINDOWS.pitch)}), floor(vWindowPos.y / ${num(WINDOWS.floor)}));

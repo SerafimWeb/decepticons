@@ -1,0 +1,23 @@
+{
+  "data": "2026-10-24",
+  "tela": "1280x720",
+  "render": "SwiftShader (sem GPU: só contagem, não tempo)",
+  "vistas": {
+    "banco": {
+      "desenhos": 45,
+      "triangulos": 8666,
+      "construcaoMs": 94
+    },
+    "cidade": {
+      "desenhos": 61,
+      "triangulos": 8808,
+      "construcaoMs": 74
+    },
+    "telao2": {
+      "desenhos": 30,
+      "triangulos": 8542,
+      "construcaoMs": 17
+    }
+  },
+  "errosDePagina": []
+}
