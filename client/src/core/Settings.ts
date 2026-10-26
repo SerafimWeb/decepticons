@@ -112,10 +112,10 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
   touchAutoFire: true,
   invertY: false,
   fovOffset: 0,
-  // Mira fina e discreta por padrão (era de 48 px, opaca, 1,25 px de traço); o brilho do bloom baixou de 0,85 para 0,6.
+  // Mira fina e discreta por padrão (era de 48 px, opaca, 1,25 px de traço); o brilho do bloom baixou de 0,85 para 0,6 (11/10) e para 0,45 (26/10, P256: "ainda" muita luz depois do corte no clarão e no bloom).
   reticleSize: 0.8,
   reticleOpacity: 0.85,
-  glow: 0.6,
+  glow: 0.45,
   quality: 'auto',
   // A dificuldade de hoje foi aprovada pelo dono como a "normal" (2026-09-24).
   difficulty: 'normal',

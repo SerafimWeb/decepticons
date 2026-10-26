@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P257 — O 8 de Janeiro não abria pelo seletor de mapa, online nem offline; o brilho ainda forte (26/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P257 | 26/10 | "ainda nao consegui jogar na fase 8 de janeiro, online, na missao contra os manifestantes. quero jogar nessa missao online com meus amigos!!!!" + (à parte) "ainda to achando que os tiros geram muita luz e atrapalha um pouco o jogo... temos q tornar isso mais sutil e elegante e gostoso de jogar" | ✅ | **Achado:** `MapLinks.ts:mapHref()` — a função atrás de todo clique num pino do mapa de operações (`WorldMap.ts`, visível a qualquer jogador) — tirava o `modo` da URL ao escolher um mapa, e só forçava `modo=survival` para a Amazônia; o 8 de Janeiro nunca ganhou esse tratamento (sem teste cobrindo), então o pino levava a um Deathmatch vazio da Praça, nunca à missão contra a multidão, online ou offline. **Corrigido:** `mapHref` força `modo=survival` para o 8 de Janeiro também, nos dois casos — online preserva a sala (é assim que o amigo já na sala se encontra, P251). **O brilho:** mais um corte depois do P256 — `glow` (bloom global) de 0,6 → 0,45, a recomendação que o próprio P256 deixou escrita; não reabri o sistema de cartazes (`fx/Billboards.ts`) ainda | `client/src/ui/MapLinks.ts` (+2 testes); `client/src/core/Settings.ts` |
+
 ## P256 — Os tiros ainda dão muita luz: deixar sutil e gostoso de jogar (24/10, Qwen)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
