@@ -1,5 +1,13 @@
 # ESTADO ATUAL — CYBERMECH
 
+## EM BRANCH — NÃO ESTÁ NO AR: O SELETOR DE MAPA PERDIA A MISSÃO DO 8 DE JANEIRO (ONLINE E OFFLINE), E O BRILHO BAIXA DE NOVO (Claude, branch `claude/janeiro-online-amigos`, P257, 26/10)
+
+**O Comandante:** "ainda nao consegui jogar na fase 8 de janeiro, online, na missao contra os manifestantes. quero jogar nessa missao online com meus amigos!!!!" — e, à parte, "ainda to achando que os tiros geram muita luz... temos q tornar isso mais sutil".
+**A causa do 8 de Janeiro (achada no código, não só suposta):** `MapLinks.ts:mapHref()` — a função por trás de TODO clique num pino do mapa de operações (`WorldMap.ts`, visível a qualquer jogador, não só ao Comandante) — tirava o `modo` da URL ao trocar de mapa, e só forçava `modo=survival` para a Amazônia. O 8 de Janeiro nunca ganhou esse tratamento: clicar no pino (online ou offline) levava a um Deathmatch vazio da Praça, nunca à missão contra a multidão — nem existia teste cobrindo `janeiro` nesta função. **Corrigido:** `mapHref` agora força `modo=survival` para o 8 de Janeiro também, online (preserva a sala — é assim que o amigo que já está lá se encontra, P251) e offline; o hint do seletor parou de dizer "(em construção)". 2 testes novos (`MapLinks.test.ts`).
+**O brilho:** mais uma rodada depois do P256 (Qwen): o Comandante ainda achou forte depois de testar. Segui a recomendação que o próprio P256 deixou escrita ("baixar o padrão do brilho") em vez de reabrir o sistema de cartazes: `glow` (bloom global, `Settings.ts`) de 0,6 → 0,45. Não toquei no `MUZZLE_FRIENDLY_SCALE`/HDR do P256 nem separei o lote de desenho do clarão — é o próximo corte **se ainda** achar forte depois deste.
+**Provas:** `npm run check` em andamento.
+**Próxima sessão começa com:** abrir o PR; depois, o olho do Comandante jogando o 8 de Janeiro online com um amigo, e vendo se o brilho em 0,45 já está bom.
+
 ## OS TIROS FICAM SUTIS: MENOS CLARÃO NA BOCA E BLOOM MAIS ESTREITO — Qwen, 24/10 (branch `qwen/tiros-luz-sutil`, P256)
 
 **O Comandante:** "ainda to achando que os tiros geram muita luz e atrapalha um pouco o jogo... temos q tornar isso mais sutil e elegante e gostoso de jogar" — e pediu objetividade, sem ler e testar tudo.

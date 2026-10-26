@@ -23,6 +23,13 @@ describe('mapHref: o link do seletor de mapa', () => {
     expect(abre('https://exemplo.test/jogar/?mapa=amazonia&modo=deathmatch')).toBe('amazonia');
   });
 
+  it('o link do 8 DE JANEIRO abre a missão contra a multidão (P233) quando se joga offline, não o Deathmatch vazio da Praça', () => {
+    const href = mapHref('https://exemplo.test/cybermech/jogar/?modo=ctf', 'janeiro');
+    expect(abre(href)).toBe('janeiro');
+    const url = new URL(href);
+    expect(url.searchParams.get('modo'), 'achado 26/10: o link caía sem `modo`, e sem ele a missão (a multidão) nem monta').toBe('survival');
+  });
+
   it('o link do Bunker abre o Bunker', () => {
     expect(abre(mapHref('https://exemplo.test/cybermech/jogar/', 'bunker'))).toBe('bunker');
   });
@@ -45,6 +52,15 @@ describe('mapHref: o link do seletor de mapa', () => {
       expect(u.searchParams.has('modo')).toBe(false);
       expect(abre(href, true), mapa).toBe(mapa);
     }
+  });
+
+  it('online, o 8 DE JANEIRO também leva à missão (P251/P253: a mesma sala aceita `modo=survival`), diferente dos outros mapas que caem no Deathmatch', () => {
+    const href = mapHref('https://exemplo.test/jogar/?sala=ARENA&servidor=wss://jogo.test&nome=PILOTO', 'janeiro');
+    const u = new URL(href);
+    expect(u.searchParams.get('sala'), 'o jogador fica na mesma sala: é assim que o amigo que já estava lá o encontra').toBe('ARENA');
+    expect(u.searchParams.get('nome')).toBe('PILOTO');
+    expect(u.searchParams.get('modo')).toBe('survival');
+    expect(abre(href, true)).toBe('janeiro');
   });
 
   it('o link da Arena tira o mapa e preserva o resto do endereço', () => {
