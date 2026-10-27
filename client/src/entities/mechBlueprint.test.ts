@@ -5,7 +5,7 @@ import { buildMechBlueprintRig, COLOSSUS_01_BLUEPRINT, HEAVY_MECH_BLUEPRINT, LIG
 import { Vector09 } from './Vector09';
 
 describe('blueprints visuais dos Mechs', () => {
-  it('diferencia as quatro silhuetas pela geometria sem exceder 10 draws articulados', () => {
+  it('diferencia as quatro silhuetas pela geometria sem exceder 11 draws articulados', () => {
     const rigs = [LIGHT_MECH_BLUEPRINT, MEDIUM_MECH_BLUEPRINT, HEAVY_MECH_BLUEPRINT, COLOSSUS_01_BLUEPRINT].map((blueprint) => {
       const rig = buildMechBlueprintRig(blueprint);
       const boxes = new THREE.Box3().setFromObject(rig.model);
@@ -14,7 +14,9 @@ describe('blueprints visuais dos Mechs', () => {
       return { rig, boxes, draws };
     });
 
-    expect(rigs.map(({ draws }) => draws)).toEqual([10, 10, 10, 10]);
+    // 27/10 (P261): +1 pela capa de gelo (`meshKit.ts:frostShell`) — uma malha a mais por Mech, invisível
+    // (custo zero de desenho) fora do estado congelado.
+    expect(rigs.map(({ draws }) => draws)).toEqual([11, 11, 11, 11]);
     expect(rigs[0]!.boxes.getSize(new THREE.Vector3()).x).toBeLessThan(rigs[1]!.boxes.getSize(new THREE.Vector3()).x);
     expect(rigs[1]!.boxes.getSize(new THREE.Vector3()).x).toBeLessThan(rigs[2]!.boxes.getSize(new THREE.Vector3()).x);
     expect(rigs.map(({ rig }) => [rig.head.name, rig.torso.name, rig.leftArm.name, rig.rightArm.name, rig.leftLeg.hip.name, rig.rightLeg.hip.name]))

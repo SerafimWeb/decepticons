@@ -44,17 +44,20 @@ export function statusTint(status: StatusSet, time: number, out: Tint): void {
   }
   if (status.shock > 0) {
     // Chocado: pulsos curtos e secos, a ~5 por segundo, com um fundo fraco entre eles.
+    // 27/10 (P261, "a luz ainda pisca forte em geral"): continuava o único liga/desliga puro (degrau, não
+    // curva) do jogo — um estrobo de verdade a ~5 Hz. O pico caiu (0,66 → 0,42 de azul) mas a forma do
+    // degrau ficou (é o "seco" do nome).
     const pulse = Math.sin(time * 31) > 0.5 ? 1 : 0.18;
-    r = Math.max(r, 0.08 * pulse);
-    g = Math.max(g, 0.28 * pulse);
-    b = Math.max(b, 0.66 * pulse);
+    r = Math.max(r, 0.05 * pulse);
+    g = Math.max(g, 0.18 * pulse);
+    b = Math.max(b, 0.42 * pulse);
   }
   if (status.stun > 0) {
     // Atordoado: amarelo que pulsa mais devagar (sobrepõe o azul do choque, que é de onde ele vem).
     const p = 0.55 + 0.45 * Math.sin(time * 14);
-    r = Math.max(r, 0.6 * p);
-    g = Math.max(g, 0.5 * p);
-    b = Math.max(b, 0.05 * p);
+    r = Math.max(r, 0.4 * p);
+    g = Math.max(g, 0.33 * p);
+    b = Math.max(b, 0.03 * p);
   }
   out.r = r;
   out.g = g;

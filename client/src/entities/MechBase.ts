@@ -146,6 +146,8 @@ export interface MechRig {
   setGuardVisual?: (dt: number, shown: boolean, raised: boolean) => void;
   /** Atualiza sinais visuais de calor sem tocar na simulação. */
   setHeatVisual?: (dt: number, heat: number, overheated: boolean, coolingBoost: boolean) => void;
+  /** Capa de gelo sobre o torso (`meshKit.ts:frostShell`): aparece e some com `status.frozen`, sem tocar na simulação. */
+  setFrozenVisual?: (dt: number, frozen: number) => void;
   /** Materiais do casco (por instância): piscam quando o Mech toma dano. */
   hullMaterials: THREE.MeshStandardMaterial[];
   hipHeight: number;
@@ -997,6 +999,7 @@ export abstract class MechBase {
 
     r.setHeatVisual?.(dt, this.heat, this.overheated, this.coolingBoost);
     r.setGuardVisual?.(dt, this.metalShield.intact && this.modules.leftArm > 0, this.metalShield.raised);
+    r.setFrozenVisual?.(dt, this.status.frozen);
 
     // Cor do casco: o flash de dano (vermelho, ~0,17 s) e a cor do estado (gelo, chamas, choque) somam na luz própria do casco.
     // Só escreve no material quando a cor muda (parado e sem estado, nunca).

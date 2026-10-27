@@ -637,6 +637,10 @@ export class AudioSystem {
   /**
    * MOTOSSERRA — um corte (5 por segundo): serra grave com o motor tremendo e o chiado do metal.
    * `gain` 0..1 pela distância até o jogador; longe demais, nem toca.
+   * 27/10 (P261, Comandante: "o som da motoserra esta MUITO ALTO"): a 5 Hz, sem nenhum limite entre
+   * vários andróides atacando juntos, o pico de cada corte somava até virar um zumbido constante.
+   * Picos cortados (0,14 → 0,085 no motor, 0,1 → 0,055 no chiado agudo do metal, a parte mais cansativa
+   * repetida 5×/s); a cadência e o timbre continuam os mesmos.
    */
   playChainsaw(gain = 1): void {
     const { ctx, masterGain } = this;
@@ -649,7 +653,7 @@ export class AudioSystem {
     osc.frequency.linearRampToValueAtTime(100, now + 0.17);
     const og = ctx.createGain();
     og.gain.setValueAtTime(0.0001, now);
-    og.gain.exponentialRampToValueAtTime(0.14 * gain, now + 0.02);
+    og.gain.exponentialRampToValueAtTime(0.085 * gain, now + 0.02);
     og.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
     osc.connect(og);
     og.connect(masterGain);
@@ -664,7 +668,7 @@ export class AudioSystem {
     band.frequency.value = 2400;
     band.Q.value = 2;
     const ng = ctx.createGain();
-    ng.gain.setValueAtTime(0.1 * gain, now);
+    ng.gain.setValueAtTime(0.055 * gain, now);
     ng.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
     src.connect(band);
     band.connect(ng);

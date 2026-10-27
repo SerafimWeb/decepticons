@@ -27,8 +27,11 @@ const CHILL: BurstOptions = { count: 1, color: new THREE.Color(0.3, 0.64, 0.83),
 const FLAME: BurstOptions = { count: 4, color: new THREE.Color(2.0, 0.85, 0.12), speed: 3.4, life: 0.7, size: 2.4, expansion: 0.8, spread: 0.8, gravity: -3, shape: SHAPE.flame };
 const EMBER: BurstOptions = { count: 2, color: new THREE.Color(2.2, 1.0, 0.25), speed: 4, life: 1, size: 0.9, spread: 1.2, gravity: -2, shape: SHAPE.dot };
 const SMOKE: BurstOptions = { count: 1, color: new THREE.Color(0.28, 0.3, 0.3), speed: 1.4, life: 1.3, size: 2.6, expansion: 1.6, spread: 0.5, gravity: -1.2, shape: SHAPE.puff };
-const SPARK: BurstOptions = { count: 2, color: new THREE.Color(0.9, 1.8, 2.5), speed: 6, life: 0.28, size: 2.6, spread: 1.8, gravity: 0, spin: 10, shape: SHAPE.bolt };
-const STARS: BurstOptions = { count: 2, color: new THREE.Color(1.6, 1.4, 0.25), speed: 2.2, life: 0.45, size: 1.8, spread: 1.4, gravity: -1, spin: 6, shape: SHAPE.star };
+// 27/10 (P261, "a luz ainda pisca forte em geral"): faísca e estrela eram as partículas mais acesas do jogo
+// (pico 2,5 e 1,6, bem acima do limiar 1,05), e saem junto do estrobo do choque/atordoamento em `statusTint.ts`
+// — a combinação lia como flash, não como VFX. Cor e tamanho cortados, mesma forma e cadência.
+const SPARK: BurstOptions = { count: 2, color: new THREE.Color(0.4, 0.8, 1.1), speed: 6, life: 0.28, size: 2.0, spread: 1.8, gravity: 0, spin: 10, shape: SHAPE.bolt };
+const STARS: BurstOptions = { count: 2, color: new THREE.Color(1.0, 0.88, 0.16), speed: 2.2, life: 0.45, size: 1.4, spread: 1.4, gravity: -1, spin: 6, shape: SHAPE.star };
 
 export class StatusVisuals {
   private readonly origin = new THREE.Vector3();

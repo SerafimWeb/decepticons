@@ -182,6 +182,38 @@ export function heatVapor(parent: THREE.Object3D, width: number, rearZ: number):
 }
 
 /**
+ * Capa de gelo fina sobre o torso, para o estado congelado (dono, 27/10, P261: "não é colocar ele dentro de
+ * um cubo de gelo... mais como uma capa, uma cobertura, com os detalhes de congelamento, pra ficar bonito e
+ * realista"). Uma caixa um pouco maior que o torso, material translúcido — não tenta seguir o contorno exato
+ * das placas em V (`mechBlueprint.ts`), só envolve o volume com folga; a transparência e o `statusTint.ts`
+ * por baixo fazem o resto parecer gelo, não um bloco. Malha e material nascem uma vez com o rig (G4); por
+ * quadro só a opacidade muda — sobe rápido ao congelar (~0,35 s), desce devagar ao derreter (~1,3 s), some
+ * de vez (`mesh.visible = false`) fora do estado: sem ninguém congelado, custo zero.
+ */
+export function frostShell(parent: THREE.Object3D, w: number, h: number, d: number, y = 0): (dt: number, frozen: number) => void {
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xdcf2ff, transparent: true, opacity: 0, depthWrite: false,
+    metalness: 0.05, roughness: 0.2, emissive: 0x264a5c, emissiveIntensity: 0.2,
+  });
+  const mesh = box(parent, w * 1.15, h * 1.2, d * 1.15, material, 0, y, 0);
+  mesh.visible = false;
+  mesh.renderOrder = 1; // desenha depois do casco por baixo, pra não brigar na mesma distância
+  let shown = 0;
+  let time = 0;
+  return (dt, frozen) => {
+    const target = frozen > 0 ? 1 : 0;
+    shown += (target - shown) * Math.min(1, dt * (target > shown ? 8 : 2));
+    if (shown < 0.01) {
+      if (mesh.visible) mesh.visible = false;
+      return;
+    }
+    mesh.visible = true;
+    time += dt;
+    material.opacity = shown * (0.38 + 0.08 * Math.sin(time * 3));
+  };
+}
+
+/**
  * Combina as malhas estáticas filhas de cada pivô articulado. Cada pivô vira um draw call,
  * mantendo materiais por vértice (cor, metal, rugosidade e emissão) e a visibilidade da peça.
  * Chamado só ao construir o rig; o custo não entra no frame nem no tick.
@@ -209,7 +241,6 @@ export function batchRigMeshes(root: THREE.Object3D, hullMaterials: readonly THR
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vMechEmission * mix(1.0, mechDashScale, vMechDash) + mechHitFlashColor * vMechHull + vec3(1.0, 0.18, 0.015) * mechHeatGlow * vMechHull;');
   };
   material.customProgramCacheKey = () => 'cybermech-articulated-batch-v2';
-  material.userData.setHitFlash = (value: number) => flash.value.setRGB(value * 1.4, value * 0.35, value * 0.2);
   /** Cor inteira somada à luz própria do casco: o flash de dano e a cor do estado (gelo, chamas, choque; `entities/statusTint.ts`). */
   material.userData.setTint = (r: number, g: number, b: number) => flash.value.setRGB(r, g, b);
   material.userData.setDash = (active: boolean) => { dash.value = active ? 7 : 1; };
