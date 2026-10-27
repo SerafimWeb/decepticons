@@ -1,13 +1,42 @@
 # ESTADO ATUAL — CYBERMECH
 
-## WARGAME PR 1/3 — o roteiro e a simulação, sem tela ainda (Claude, P262, branch `claude/wargame`)
+## WARGAME completo — painel, mapa clicável, câmera e legenda (Claude, P262, PR 2/2, branch `claude/wargame-mapa`)
+
+**O PR1 (abaixo) já tinha a simulação; este PR entrega o resto, tudo de uma vez** — na prática, o que o plano
+original separava em PR2 (mapa) e PR3 (painel/link/câmera) virou **um PR só**: o mapa clicável só serve dentro do
+painel, e o painel só vale a pena com o mapa — testar/entregar os dois pela metade não dava nada demonstrável ao
+Comandante (regra 16: toda entrega visível fecha com o caminho para vê-la).
+**O que entra:** `client/src/ui/RoteiroMapa.ts` (o mapa clicável, 100% em cima do `TacticalRadar` já existente —
+mesma planta, mesmas cores de ponto; a conta de tela virou `transformeDoRadar`, exportada e com teste de ida-e-volta);
+`client/src/ui/WargamePanel.ts` (o painel: elenco **padrão**/**o meu** como a tela CAMPANHA já faz, lista de
+batidas — tick, ordem+ponto marcado no mapa, legenda, câmera —, salvar/link `?wargame=`, EXECUTAR);
+`client/src/core/RoteiroStore.ts` (guardar no aparelho, molde de `CampanhaStore`); `client/src/ui/WargameCaptionOverlay.ts`
+(a legenda na tela, CSS adaptado de `CutsceneJaneiro.ts`); o chip `WARGAME ▸` no Modo Comandante (mesma família de
+TELÕES/VISIBILIDADE — ferramenta só do dono, não entra no catálogo `funcionalidades.ts`); e o `Game.ts` detecta
+`?wargame=`, entra direto no modo espectador (reaproveita o `SpectatorCam`/CFTV já pronto, zero câmera nova) e
+**esconde o HUD do jogador** (`hud.toggleVisibility()`, o mesmo botão do F1 — não faz sentido mostrar vida/munição
+de um Mech que ninguém pilota).
+**Decisão que mudou do plano original:** o Mech do Comandante continua nascendo normal (`addPlayer` de sempre,
+zero risco nos ~78 lugares de `Game.ts` que dependem de `this.mech`); só ganhou `espectador: true` no `Match`, que
+tira os `players` da mira dos bots — mais barato e seguro que tentar eliminar o Mech do jogador (registrado em
+`HISTORICO_DE_DECISOES.md`).
+**Verificado no Chrome de verdade (não só o smoke):** `.tmp/wargame-check.mjs` (script de bancada, fora do
+repositório) monta um episódio de 2 batidas pelo painel inteiro (nomear, elenco, marcar duas ordens no mapa,
+legenda, câmera fixa), aperta EXECUTAR, entra no jogo e deixa rodar — **zero erro de página** em duas rodadas.
+Capturas: `arte/wargame-painel-claude.jpg` (o painel com as duas batidas marcadas) e `arte/wargame-episodio-claude.jpg`
+(o episódio rodando: os dois esquadrões em contato, a legenda "O ATAQUE COMEÇA" na tela, sem HUD de jogador).
+**Falta (v2, não bloqueia):** a ordem `focus` (mirar num Mech específico, não um ponto); outros mapas além da
+Arena (`camerasDoMapa` só tem câmeras fixas nela); mais itens no mapa/robô novo (P255, à parte).
+**Testes:** `TacticalRadar.test.ts` (4, a conta de tela), `RoteiroStore.test.ts` (8). `npm run check` verde, inclui
+o orçamento do pacote (480/500 KB, `WargamePanel` sob demanda e fora do que todo jogador baixa).
+
+## WARGAME PR 1/2 — o roteiro e a simulação, sem tela ainda (Claude, P262, branch `claude/wargame`)
 
 **O pedido do Comandante:** transformar a gameplay num "filme"/episódio roteirizado — dois times com objetivos,
 ele monta e aperta PLAY, grava com F9. Confirmado na conversa: os bots agem **naturalmente** (mesma IA de combate
 de sempre; o roteiro só dá ordem de alto nível em momentos-chave, "como um técnico gritando da lateral"), autoria
 por **clique num mapa fixo**, um **painel só** no Modo Comandante, botão EXECUTAR cai na tela de jogo sem o
-Comandante controlar o Mech (só troca de câmera, como o CFTV já faz). Plano completo em 3 PRs no
-`ORDENS_DO_COMANDO.md` (P262).
+Comandante controlar o Mech (só troca de câmera, como o CFTV já faz).
 **Este PR1:** `client/src/sim/Roteiro.ts` (contrato tick-indexado + `RoteiroStepper`, zero alocação fora das
 batidas de verdade — G4/G5 — + link `?wargame=`, no molde de `campanha.ts`/`esquadrao.ts`) e `Match.ts` ganha
 `MatchOptions.roteiro`/`espectador` + `aplicarRoteiro()`, disparando `BotController.receiveOrder('hold'|'follow', …)`

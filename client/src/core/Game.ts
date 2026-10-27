@@ -131,6 +131,9 @@ import { CampaignRunHud } from '../ui/CampaignRunHud';
 import { CampanhaStore } from './CampanhaStore';
 import { EtapaEmCurso } from './EtapaEmCurso';
 import { linkDaEtapa, PARAM_DA_CAMPANHA, PARAM_DA_ETAPA } from '../sim/campanha';
+import { roteiroDoLink, type CameraDoRoteiro } from '../sim/Roteiro';
+import { RoteiroStore } from './RoteiroStore';
+import type { WargameCaptionOverlay } from '../ui/WargameCaptionOverlay';
 import type { CameraWall } from '../ui/CameraWall';
 import type { ResumoDaPraca, ResumoDoRio } from '../ui/RelatorioPanel';
 import { abrirSobDemanda, sobDemanda } from './sobDemanda';
@@ -279,6 +282,8 @@ export class Game {
   private readonly spectatorCam: SpectatorCam;
   private readonly spectatorHud: SpectatorHUD;
   private readonly btnCftv: HTMLButtonElement | null;
+  /** O WARGAME (P262): a legenda das batidas do roteiro; `null` fora de uma sessão `?wargame=` (carrega sob demanda, G5). */
+  private wargameLegenda: WargameCaptionOverlay | null = null;
   private readonly touch: TouchControls;
   private readonly assist: AimAssist;
   private readonly player: PlayerController;
@@ -577,7 +582,10 @@ export class Game {
       net && !('error' in net)
         ? { ...net, url: urlComModo(urlComMapa(net.url, mapFromSearch(location.search, true, 'deathmatch')), modoPedido === 'survival' ? 'survival' : 'deathmatch') }
         : null;
-    this.gameMode = online ? (modoPedido === 'survival' ? 'survival' : 'deathmatch') : modoPedido;
+    // O WARGAME (P262): o link `?wargame=` carrega um roteiro (os dois esquadrões, o mapa e as batidas) e vira um Deathmatch
+    // espectador — o Comandante nunca controla o Mech, só troca de câmera (como o CFTV já faz); ver `espectador` abaixo.
+    const roteiro = roteiroDoLink(location.search);
+    this.gameMode = online ? (modoPedido === 'survival' ? 'survival' : 'deathmatch') : roteiro ? 'deathmatch' : modoPedido;
     const foes = online
       ? { ...this.settings.value, enemyMechs: 0, enemyAndroids: 0, technician: false }
       : this.gameMode === 'survival'
@@ -592,6 +600,7 @@ export class Game {
       foes,
       power,
       ...(online || !this.squad.current ? {} : { squad: this.squad.current }),
+      ...(roteiro && !online ? { squad: roteiro.esquadrao, roteiro, espectador: true } : {}),
       // A tática do esquadrão aliado (ordem P122): vem do link `?tatica=`; sem ela, o esquadrão entra pelo centro.
       tatica: taticaDeTexto(new URLSearchParams(location.search).get(PARAM_DA_TATICA)),
       // Os bots do esquadrão com chassi de malha importada (Marauder, Lancer...) nascem com o corpo certo, não como Vector-09.
@@ -600,7 +609,7 @@ export class Game {
         return a ? tryInstantiateMechRig(a.url, CHASSIS[id].height) : null;
       },
       mode: this.gameMode,
-      map: mapFromSearch(location.search, !!online, this.gameMode),
+      map: roteiro && !online ? roteiro.mapa : mapFromSearch(location.search, !!online, this.gameMode),
       startWave: waveFromSearch(location.search, SURVIVAL_WAVE_PLANS.length),
       bossMask: mascaraFromSearch(location.search), // a máscara do chefe (P165): `?mascara=0` a tira
       ...(visualDoChefe ? { visualDoChefe } : {}), // o desenho do Draga-01 (P180, parte C), já baixado
@@ -752,6 +761,19 @@ export class Game {
       this.spectatorHud.setVisible(false);
       this.btnCftv?.classList.remove('active');
     };
+    if (roteiro && !online) {
+      // Entra direto no modo espectador (o mesmo do botão CFTV): o Comandante nunca controla o Mech do WARGAME.
+      this.toggleSpectatorCam();
+      // O HUD do jogador (vida, munição, ordens do esquadrão) não tem sentido numa cena que ninguém pilota — o
+      // mesmo botão do F1 (sempre começa visível, então um toggle só já esconde).
+      this.hud.toggleVisibility();
+      // A legenda é pequena (CSS + uma classe) e só este link a usa: carrega sob demanda (G5), sem travar o boot nela.
+      void import('../ui/WargameCaptionOverlay').then((m) => { this.wargameLegenda = new m.WargameCaptionOverlay(); });
+      this.match.onRoteiroEvento = (beat) => {
+        if (beat.legenda) this.wargameLegenda?.mostrar(beat.legenda.texto, beat.legenda.duracaoS);
+        if (beat.camera) this.aplicarCorteDeCamera(beat.camera);
+      };
+    }
     this.player = new PlayerController(this.mech, this.input, this.rig, this.projectiles, this.particles, this.rockets, this.barrage);
     this.match.pilots.push(this.player);
     this.player.melee = (w) => { this.onboarding.armaEmUso(w); this.match.meleeNearest(this.mech, w); };
@@ -1046,7 +1068,7 @@ export class Game {
     if (blocoConta) void import('../ui/ContaSettings').then((m) => new m.ContaSettings(blocoConta, sessao));
 
     // Console de comando (P86): a pausa vira a sala de comando. Os monitores só leem o jogo por estes callbacks (G3).
-    const mapa = mapFromSearch(location.search, !!online, this.gameMode);
+    const mapa = roteiro && !online ? roteiro.mapa : mapFromSearch(location.search, !!online, this.gameMode);
     const allies = (): readonly MechBase[] => this.match.allies?.mechs ?? [];
     // Janela do esquadrão (P91): offline, na Arena e no Bunker. Online o servidor manda os inimigos; as missões têm o pool delas.
     const esquadraoIndisponivel = (): string | null =>
@@ -1080,6 +1102,16 @@ export class Game {
       base: () => location.origin + location.pathname,
     }));
     this.ligarCampanha(mapa, !!online);
+    // O painel WARGAME (P262): só na Cidade Neon (as câmeras fixas de `camerasDoMapa` ainda não existem nos outros mapas),
+    // e nunca dentro de uma sessão online (o roteiro precisa rodar sozinho, sem outro jogador na sala).
+    const wargameIndisponivel = (): string | null =>
+      online ? 'Online não dá para montar um WARGAME — abra o jogo offline na Cidade Neon.' : mapa !== 'arena' ? 'O WARGAME funciona na Cidade Neon — abra o jogo nela para montar um episódio.' : null;
+    const wargamePanel = sobDemanda(async () => new (await import('../ui/WargamePanel')).WargamePanel({
+      store: new RoteiroStore(browserStorage()),
+      planta: { mapa: 'arena', meia: this.match.arena.halfSize, caixas: plantaDaArena(this.match.arena.occluders) },
+      esquadraoMeu: () => new EsquadraoStore(browserStorage(), '').current,
+      indisponivel: wargameIndisponivel,
+    }));
     // Janela ARSENAL (fase 4C): só leitura, as fichas das armas e dos chassis; abre sempre (offline e online).
     const arsenal = sobDemanda(async () => new (await import('../ui/ArsenalPanel')).ArsenalPanel({ chassisDeBot: CHASSIS_DOS_BOTS }));
     // Janela do servidor (P93): o endereço é o do jogo online (o público do build, ou o do próprio PC); sem ele, o item se apaga.
@@ -1100,6 +1132,11 @@ export class Game {
     document.getElementById('cc-telao')?.addEventListener('click', (e) => {
       e.stopPropagation();
       void import('../ui/TelaoPanel').then((m) => void new m.TelaoPanel(adminCliente).abrir());
+    });
+    // O painel WARGAME (P262): monta um episódio de IA contra IA; só no modo Comandante, pedaço sob demanda.
+    document.getElementById('cc-wargame')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      abrirSobDemanda(wargamePanel);
     });
     const painelDoServidor = sobDemanda(async () => new (await import('../ui/ServerPanel')).ServerPanel({ cliente: adminCliente, token: tokenDoDono }));
     // Câmeras ao vivo (P88): o mural de radares de todas as partidas do servidor, com o mesmo token do dono. O canal só existe com a janela aberta.
@@ -2107,6 +2144,24 @@ export class Game {
       this.spectatorHud.setLabel(this.spectatorCam.currentTargetLabel);
       this.btnCftv?.classList.add('active');
     }
+  }
+
+  /**
+   * O corte de câmera de uma batida do WARGAME (P262). Fixa: o índice em `camerasDoMapa` (array estável). Mech: a
+   * N-ésima câmera viva daquele lado, resolvida agora (nunca um índice cru guardado entre ticks — um drone morto no
+   * meio do episódio deslocaria todos os índices depois dele em `SpectatorCam.getTargets()`).
+   */
+  private aplicarCorteDeCamera(camera: CameraDoRoteiro): void {
+    if (camera.modo === 'fixa') {
+      this.spectatorCam.setTarget(camera.indice);
+    } else {
+      const vivos = (camera.lado === 'inimigo' ? this.bots.mechs : this.match.allies?.mechs ?? []).filter((m) => m.alive);
+      const alvo = vivos[camera.ordinal];
+      if (!alvo) return;
+      const i = this.spectatorCam.getTargets().findIndex((t) => t.kind === 'mech' && t.mech === alvo);
+      if (i >= 0) this.spectatorCam.setTarget(i);
+    }
+    this.spectatorHud.setLabel(this.spectatorCam.currentTargetLabel);
   }
 
   private setPlaying(playing: boolean): void {

@@ -43,6 +43,35 @@ export interface RadarQuadro {
   inimigos: readonly (RadarUnidade & { grande: boolean })[];
 }
 
+/** A conta de tela: `X`/`Y` (mundo → tela) e o inverso `paraMundo` (tela → mundo, o clique no mapa do WARGAME, P262). */
+export interface TransformeDoRadar {
+  k: number;
+  ox: number;
+  oy: number;
+  X(x: number): number;
+  Y(z: number): number;
+  paraMundo(telaX: number, telaY: number): { x: number; z: number };
+}
+
+/**
+ * A escala e a origem que encaixam um mapa de `meia`×`meiaZ` metros (meia-largura, meia-altura) num canvas de
+ * `w`×`h` pixels CSS, com 8 px de margem de cada lado — a mesma conta que `desenhar()` já fazia inline; extraída
+ * para o editor do WARGAME (`RoteiroMapa.ts`) converter um clique em ponto do mundo sem duplicar a fórmula.
+ */
+export function transformeDoRadar(w: number, h: number, meia: number, meiaZ: number): TransformeDoRadar {
+  const k = Math.min((w - 16) / (meia * 2), (h - 16) / (meiaZ * 2));
+  const ox = w / 2;
+  const oy = h / 2;
+  return {
+    k,
+    ox,
+    oy,
+    X: (x) => ox + x * k,
+    Y: (z) => oy + z * k,
+    paraMundo: (telaX, telaY) => ({ x: (telaX - ox) / k, z: (telaY - oy) / k }),
+  };
+}
+
 /** O Banco VORCARIS é o prédio de (-28, -35) (`BANCO_VORCARIS.md`); a torre da SERAFIM tem posição própria. */
 const ROTULOS_ARENA = [
   { x: SERAFIM_TOWER.x, z: SERAFIM_TOWER.z, texto: 'SERAFIM', cor: 'rgba(57, 255, 106, 0.9)' },
@@ -199,13 +228,9 @@ export class TacticalRadar {
     const q = this.quadro();
     // O mapa cabe inteiro na tela: quadrado (Arena, Bunker) ou retangular (a praia, 640 × 240 m): vale a escala do lado que aperta.
     const meiaZ = q.meiaZ ?? q.meia;
-    const k = Math.min((w - 16) / (q.meia * 2), (h - 16) / (meiaZ * 2));
+    const { k, ox, oy, X, Y } = transformeDoRadar(w, h, q.meia, meiaZ);
     const larguraDoMapa = q.meia * 2 * k;
     const alturaDoMapa = meiaZ * 2 * k;
-    const ox = w / 2;
-    const oy = h / 2;
-    const X = (x: number) => ox + x * k;
-    const Y = (z: number) => oy + z * k;
     g.clearRect(0, 0, w, h);
 
     // O mar (a praia): pintado do lado de z negativo da linha d'água, com a linha mais viva por cima.
