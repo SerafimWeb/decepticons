@@ -65,7 +65,7 @@ describe('o casco do Mech mostra o estado', () => {
     mech.damagePart('torso', 5);
     quadro(1);
     const comFlash = escritas.at(-1)!;
-    expect(comFlash[0]).toBeGreaterThan(semFlash[0] + 0.5); // o vermelho do flash
+    expect(comFlash[0]).toBeGreaterThan(semFlash[0] + 0.25); // o vermelho do flash (26/10: cortado de 1,4 para 0,35 de pico — acendia o casco inteiro como lâmpada)
     quadro(30); // 0,5 s: o flash (1/6 s) já acabou
     const depois = escritas.at(-1)!;
     expect(depois[0]).toBeLessThan(0.2);

@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P259 — Os robôs acendiam como lâmpada ao tomar tiro; o print do commit "errado" era só o atraso do ciclo de publicação (26/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P259 | 26/10 | "os robos ainda estao ficando com LUZ quando tomam tiro... tanto eu quanto os outros robos se iluminam, isso ta artificial, e nao ta bom! é apenas pra receberem os EFEITOS VFX do tiro, e nao pra acenderem como uma lampada!!!!! adicione mais qualidade e encontre esse evento pra controlar e melhorar ele." + "no game esta aparecendo ac828b6 contra [3b72c17 no git]... os numeros nao estao batendo!" | ✅ | **O print do commit:** não era bug — o `atualizacao.log`/`publicar-site-console.log` do servidor provam `3b72c17` publicado ~1 min depois do print; o ciclo automático (verificar → religar o servidor → montar e enviar o site) leva uns 6–7 min do merge. **O robô acendendo:** `MechBase.ts`, o flash de dano (`hitFlash`) escrevia um emissivo de pico 1,4 (acima de 1,0, HDR) em todo o `hullMaterials` do robô — como o casco é um material só, batido num lote por Mech (G4/G5, sem isso custaria um draw call a mais por robô), o corpo inteiro acendia junto, não só a peça atingida. Vale para o jogador e todo bot (`Android extends MechBase`). Cortados os multiplicadores para 0,35/0,09/0,05 (~75% menos), mesma cor, ainda perceptível | `client/src/entities/MechBase.ts` (+`mechTint.test.ts` ajustado) |
+
 ## P258 — O tiro atravessava a multidão online, o flash de dano forte, janelas "com defeito" e o token de métricas (26/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
