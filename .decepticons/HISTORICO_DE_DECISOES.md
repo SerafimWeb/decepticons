@@ -1,3 +1,16 @@
+## [2026-10-27] WARGAME, PR1: não eliminar o Mech do jogador — só torná-lo inofensivo (P262)
+
+O Comandante quer episódios roteirizados (dois esquadrões brigando sozinhos, ele só assiste e grava com F9). A
+ideia óbvia para "sem jogador" era não chamar `Match.addPlayer()` e podar tudo que depende de `this.mech` no
+`Game.ts` — mas contei **78 usos de `this.mech`** ali (câmera, HUD, input, toque, calibração de mouse, kill-cam,
+nameplates…): podar isso tudo é mudança grande e espalhada, fácil de quebrar algo que nenhum teste cobre.
+**Decisão (para o PR3, registrada agora para não ser retomada por engano):** continuar chamando `addPlayer`
+normalmente (o Mech do jogador existe, os 78 pontos continuam intocados) e neutralizá-lo com duas mudanças
+pequenas — `MatchOptions.espectador` (exclui `players` da mira dos bots, confirmado nesta sessão: `Match.ts` já
+funciona com dois esquadrões se caçando sem nenhum jogador, de graça) e, no `Game.ts`, forçar `SpectatorCam.start(0)`
+assim que o roteiro carrega (o loop de render já pula o `CameraRig` normal quando `spectatorCam.overridesRig` é
+verdadeiro, então a câmera do jogador nunca aparece). Mais barato e mais seguro que eliminar o Mech.
+
 ## [2026-10-27] Capa de gelo nova, e o choque/atordoamento era o estrobo que sobrava (P261)
 
 Depois de três rodadas cortando luz (vinheta, flash de dano, partículas de gelo), o Comandante ainda achou a luz forte "em geral" — e separadamente pediu uma capa de gelo visual no congelado, não um efeito novo de dano. **A capa de gelo** é a primeira vez que um Mech ganha uma malha extra condicional (`meshKit.ts:frostShell`, um `THREE.Mesh` a mais no torso, invisível fora do estado). **Decisão de engenharia:** criá-la DEPOIS de `batchRigMeshes()`, não antes — `batchRigMeshes` varre cada pivô e funde/remove todo `THREE.Mesh` filho nele (é como o casco vira um material só); criada antes, a capa seria varrida e desapareceria sem erro nenhum (silencioso, só se perceberia olhando o jogo). O orçamento de "draws articulados" (`mechBlueprint.test.ts`) subiu de 10 para 11 de propósito — é o primeiro teste que guarda esse número, e ele devia mesmo subir quando uma malha nova e deliberada entra no rig. **Decisão de escopo na "luz em geral":** em vez de adivinhar mais efeitos para cortar, fui atrás do que as três rodadas anteriores **deixaram de propósito intocado** — fogo/choque/atordoamento, registrados como "sem queixa nova" em cada entrada do `HISTORICO`. Lendo `statusTint.ts` de novo, o choque usa um degrau binário puro (`sin > 0.5 ? 1 : 0.18`) a ~5 Hz — um estrobo de verdade, diferente de todo outro estado (que usa curva contínua). Cortei o pico (mantendo o degrau — é a característica "seca" do efeito, pedida de propósito) e as partículas `SPARK`/`STARS` que o acompanham, sem tocar fogo (já foi reforçado antes por estar fraco) nem reabrir mais nada do gelo (P260 já resolvido). **Achado incidental:** `meshKit.ts` tinha um `setHitFlash` sem nenhum chamador em todo o `client/`, ainda com o multiplicador antigo (1,4) do P259 — quase me enganou como se fosse um bug vivo; removido por higiene (P200), já que código morto ao lado do código real é mais perigoso que útil.

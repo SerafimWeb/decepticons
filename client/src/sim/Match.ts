@@ -63,6 +63,7 @@ import { atribuirPontos } from './DominioObjetivos';
 import { NASCIMENTOS_DO_DOMINIO, PONTOS_DO_DOMINIO } from './dominioMapa';
 import { ehTita } from '../entities/chassis';
 import { esquadraoDeFoes, planejarEsquadrao, sanearEsquadrao, type EsquadraoSpec, type PlanoDoEsquadrao, type SlotDoPlano } from './esquadrao';
+import { RoteiroStepper, type BeatDoRoteiro, type RoteiroSpec } from './Roteiro';
 import type { GameMode } from './gameMode';
 import { ALLY_COUNT, ANDROID_SPAWNS, BOT_SPAWNS, COLOSSUS_SPAWN } from './nascimentos';
 import {
@@ -168,6 +169,14 @@ export interface MatchOptions {
   squad?: EsquadraoSpec;
   /** A **tática** do esquadrão aliado (ordem P122): a formação e o leash. Ausente = `centro`. */
   tatica?: TaticaId | null;
+  /** O roteiro do WARGAME (P262): dispara ordens de alto nível nos dois esquadrões em ticks marcados. Ausente = o jogo de sempre. */
+  roteiro?: RoteiroSpec;
+  /**
+   * Modo espectador (P262, o WARGAME): os bots dos dois lados nunca miram nos `players` — eles continuam existindo
+   * e simulando normalmente (câmera, HUD, input do `Game.ts` não mudam nada), só ficam fora da mira da IA, para o
+   * Comandante assistir dois esquadrões brigarem entre si sem o próprio Mech virar alvo nem atrapalhar a cena.
+   */
+  espectador?: boolean;
 }
 
 /**
@@ -242,6 +251,11 @@ export class Match {
   readonly allies: BotSystem | null;
   /** Drones da base Serafim, do lado do jogador (`combat/DroneSystem.ts`); `null` fora da Arena offline. */
   readonly drones: DroneSystem | null;
+  /** O WARGAME (P262): `null` fora de um roteiro ativo. */
+  private readonly roteiroStepper: RoteiroStepper | null;
+  private tickRoteiro = 0;
+  /** P262: os bots nunca miram nos `players` quando o roteiro está rodando (ver `MatchOptions.espectador`). */
+  private readonly espectador: boolean;
   readonly round: Round;
   /** Máquina da missão, presente apenas no modo Sobrevivência. */
   readonly waves: SurvivalWaves | null;
@@ -318,6 +332,7 @@ export class Match {
   private readonly rumoDosAlvos: number[] = [];
   private readonly pontosDosAlvos = [...PONTOS_DOS_CABOS, ...PORTAS_DA_ESTACAO, PRAIA_QUADRO_DE_LUZ].map((p) => new THREE.Vector3(p.x, 0, p.z));
   private readonly _pontoDoAlvo = new THREE.Vector3();
+  private readonly _pontoDoRoteiro = new THREE.Vector3();
   /** Os códigos de estado dos três cabos (0 livre a 3 cortado), refeitos a cada replanejamento: o chefe escolhe o cabo que ainda não caiu. */
   private readonly estadosDosCabosDoChefe = [0, 0, 0];
   private cabosReplanejaEm = 0;
@@ -335,6 +350,8 @@ export class Match {
    * 8 s por time). `allied`: foi um aliado do jogador. Só tela; a regra já aconteceu dentro do `BotSystem`.
    */
   onRadio?: (from: string, target: MechBase, allied: boolean) => void;
+  /** Uma batida do roteiro do WARGAME disparou (P262): quem desenha (legenda, corte de câmera) decide o que fazer; a ordem de combate já foi aplicada. */
+  onRoteiroEvento?: (beat: BeatDoRoteiro) => void;
   /** Foguete explodiu em `at` (o dano já foi aplicado): fogo, fumaça, tremor, som. `w` é a arma que explodiu (o tamanho do estouro vem do raio dela). */
   onExplosion?: (at: THREE.Vector3, w: WeaponStats) => void;
   /** Saiu um pulso do raio laser (o servidor o transforma em evento de tiro para os outros jogadores desenharem). */
@@ -380,6 +397,8 @@ export class Match {
     const ctf = o.mode === 'ctf';
     const dominio = o.mode === 'dominio';
     this.physics = o.physics;
+    this.espectador = o.espectador ?? false;
+    this.roteiroStepper = o.roteiro ? new RoteiroStepper(o.roteiro.beats) : null;
     this.round = survival || ctf || dominio ? new Round(Number.POSITIVE_INFINITY) : o.roundS === undefined ? new Round() : new Round(o.roundS);
     this.scene = o.scene;
     this.debris = o.debris === false ? (new NoDebris() as unknown as DebrisSystem) : new DebrisSystem(o.scene, o.physics);
@@ -836,7 +855,8 @@ export class Match {
   }
 
   private refreshEnemyTargets(): void {
-    this.bots.targets = this.allies ? [...this.players, ...this.allies.mechs] : this.players;
+    const players = this.espectador ? [] : this.players;
+    this.bots.targets = this.allies ? [...players, ...this.allies.mechs] : players;
   }
 
   /**
@@ -1217,6 +1237,7 @@ export class Match {
       this.tickDasPortas(dt);
       this.tickDoQuadro(dt);
       this.drenarONucleo(dt);
+      this.aplicarRoteiro();
     }
     if (this.round.fixedUpdate(dt) !== 'started') return false;
     this.restart();
@@ -1514,6 +1535,31 @@ export class Match {
       }
       if (novo !== rumo[i] || cerebro.order !== 'hold') cerebro.receiveOrder('hold', this.pontosV3[novo]!, null);
       rumo[i] = novo;
+    }
+  }
+
+  /**
+   * O WARGAME (P262): dispara as batidas do tick atual (`RoteiroStepper.tick`, vazio na maioria dos ticks — G4/G5).
+   * Para cada batida com `ordem`, manda o lado inteiro para o ponto (mesmo padrão de `dirigirLado`/a Resistência:
+   * `brainOf(m)?.receiveOrder(...)`) — os bots continuam andando, mirando e errando sozinhos, a ordem só diz para
+   * onde ir e o que fazer lá. Sempre avisa `onRoteiroEvento` (legenda e câmera são decisão de quem desenha, não da regra).
+   */
+  private aplicarRoteiro(): void {
+    const stepper = this.roteiroStepper;
+    if (!stepper) return;
+    const batidas = stepper.tick(this.tickRoteiro++);
+    if (batidas.length === 0) return;
+    for (const b of batidas) {
+      if (b.lado && b.ordem) {
+        const sistema = b.lado === 'inimigo' ? this.bots : this.allies;
+        if (sistema) {
+          this._pontoDoRoteiro.set(b.ordem.ponto.x, 0, b.ordem.ponto.z);
+          for (const m of sistema.mechs) {
+            if (m.alive) sistema.brainOf(m)?.receiveOrder(b.ordem.tipo, this._pontoDoRoteiro, null);
+          }
+        }
+      }
+      this.onRoteiroEvento?.(b);
     }
   }
 

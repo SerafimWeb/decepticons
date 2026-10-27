@@ -1,5 +1,26 @@
 # ESTADO ATUAL — CYBERMECH
 
+## WARGAME PR 1/3 — o roteiro e a simulação, sem tela ainda (Claude, P262, branch `claude/wargame`)
+
+**O pedido do Comandante:** transformar a gameplay num "filme"/episódio roteirizado — dois times com objetivos,
+ele monta e aperta PLAY, grava com F9. Confirmado na conversa: os bots agem **naturalmente** (mesma IA de combate
+de sempre; o roteiro só dá ordem de alto nível em momentos-chave, "como um técnico gritando da lateral"), autoria
+por **clique num mapa fixo**, um **painel só** no Modo Comandante, botão EXECUTAR cai na tela de jogo sem o
+Comandante controlar o Mech (só troca de câmera, como o CFTV já faz). Plano completo em 3 PRs no
+`ORDENS_DO_COMANDO.md` (P262).
+**Este PR1:** `client/src/sim/Roteiro.ts` (contrato tick-indexado + `RoteiroStepper`, zero alocação fora das
+batidas de verdade — G4/G5 — + link `?wargame=`, no molde de `campanha.ts`/`esquadrao.ts`) e `Match.ts` ganha
+`MatchOptions.roteiro`/`espectador` + `aplicarRoteiro()`, disparando `BotController.receiveOrder('hold'|'follow', …)`
+em cada tick marcado — **o mesmo jeito que `Match.ts` já usa hoje** para a Resistência e o Domínio (`brainOf(m)
+.receiveOrder('hold', ponto, null)`, 4 chamadas existentes). **Achado confirmado lendo o código:** com `players`
+vazio (sem `addPlayer`), os dois esquadrões já se caçam sozinhos (`refreshEnemyTargets`/`allies.targets`) — zero
+mudança de regra precisou disso, só o roteiro por cima. `espectador: true` exclui os `players` da mira dos bots
+(para o PR3, quando o Mech do Comandante existir mas ficar parado assistindo).
+**Testes:** `Roteiro.test.ts` (20), `Match.roteiro.test.ts` (4: nasce sem jogador, batida sem ordem não toca bot,
+3 batidas disparam nos ticks certos em ordem, sem roteiro nada dispara). `npm run check` verde.
+**Falta (PR2/PR3):** o mapa clicável de autoria, o painel WARGAME, o link no boot do `Game.ts`, a câmera (reaproveita
+o `SpectatorCam`/CFTV já pronto) e a legenda. Nada disto aparece no jogo ainda — é só a simulação por baixo.
+
 ## MESCLADO NA MAIN (26/10): OS ROBÔS ACENDIAM COMO LÂMPADA AO TOMAR TIRO (Claude, PR #466, P259)
 
 **O Comandante jogou o que saiu no P258 e achou mais um (de imediato, antes de confirmar os outros):** "os robos ainda estao ficando com LUZ quando tomam tiro... tanto eu quanto os outros robos se iluminam, isso ta artificial, e nao ta bom! é apenas pra receberem os EFEITOS VFX do tiro, e nao pra acenderem como uma lampada!!!!! adicione mais qualidade e encontre esse evento pra controlar e melhorar ele." Também perguntou por que o site mostrava o commit `ac828b6` em vez do `3b72c17` que acabou de mesclar — **não era bug**: o `atualizacao.log` e o `publicar-site-console.log` do servidor (`.tmp/wt-servidor-prod`) provam que `3b72c17` foi publicado 1 min depois do print dele (o ciclo automático leva ~6–7 min do merge até o site atualizar: verificar + religar o servidor + montar e enviar o site).

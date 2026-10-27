@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P262 — WARGAME: episódios roteirizados de IA contra IA, pra gravar com F9 e publicar (27/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P262 | 27/10 | "será que teríamos como transformar nossas gameplay em um tipo de 'filme' ou novela? (...) a gente cria o enredo de um time contra o outro, com contexto, com objetivos (...) eu dou PLAY nisso, deixo gravando, fazemos uns esquemas de ataques, defesas, e planos (...) eu gravo com o F9 e publico." Confirmado em conversa: os bots devem agir **naturalmente** (a mesma IA de combate de sempre — "como um técnico gritando da lateral", nunca controle remoto passo a passo), a autoria é **por cliques num mapa fixo** (não editar dado à mão), tudo num **painel só** dentro do Modo Comandante com um botão EXECUTAR que cai na tela de jogo normal sem controlar o Mech (só troca de câmera, como o CFTV já faz hoje). Nome aprovado: **WARGAME**. | 🔧 | **Plano em 3 PRs (o menor que resolve cada parte, regra 19e):** PR1 — o contrato do roteiro (tick-indexado) e o `Match.ts` disparando ordens (`BotController.receiveOrder`, já usado assim hoje) nos dois esquadrões, sem jogador, com teste de simulação (G14). PR2 — o mapa fixo clicável (em cima do `TacticalRadar.ts`, sem câmera 3D nem raycasting). PR3 — o painel WARGAME, o link `?wargame=`, o corte de câmera (reaproveita o `SpectatorCam`/CFTV já pronto) e a legenda. v1 só no mapa Arena, ordens `hold`/`follow` (não `focus`, que precisa de alvo específico, não de um ponto do mapa). | `client/src/sim/Roteiro.ts`, `Match.ts`, `client/src/ui/WargamePanel.ts`, `RoteiroMapa.ts` (conforme os PRs saem) |
+
 ## P261 — Capa de gelo no congelado, choque/atordoamento mais fracos, motosserra mais baixa (27/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
