@@ -1,3 +1,17 @@
+## [2026-10-27] WARGAME, PR2: um PR só em vez de dois (mapa + painel) (P262)
+
+O plano original separava o mapa clicável (PR2) do painel/link/câmera (PR3), seguindo a regra do menor PR que
+resolve. Na prática, ao chegar na hora de entregar, **nenhum dos dois sozinho dava algo que o Comandante pudesse
+ver funcionando** (regra 16): o `RoteiroMapa.ts` sem o `WargamePanel.ts` é um componente órfão, sem ninguém que o
+chame; o painel sem o mapa teria que nascer com uma UI de autoria pior (coordenadas digitadas à mão) para depois
+ser jogada fora quando o mapa chegasse. **Decisão: juntar os dois num PR só**, maior que o planejado mas
+genuinamente a menor fatia que entrega algo demonstrável de ponta a ponta — exatamente o caso que a regra 19e
+prevê ("PR de uma ordem acima de ~400 linhas traz o motivo escrito no corpo"). Também descoberto nesta entrega,
+lendo `CampaignPanel.ts` de novo: ele **não** embute o editor de esquadrão completo (`SquadPanel`) dentro de si —
+usa só um seletor "padrão"/"o meu" (o que está salvo na tela ESQUADRÃO). Copiei esse padrão para o WARGAME em vez
+de tentar abrir um modal dentro de outro modal (dois `document.addEventListener('keydown', ..., true)` de Escape
+brigando por qual fecha primeiro) — mais simples e já provado.
+
 ## [2026-10-27] WARGAME, PR1: não eliminar o Mech do jogador — só torná-lo inofensivo (P262)
 
 O Comandante quer episódios roteirizados (dois esquadrões brigando sozinhos, ele só assiste e grava com F9). A

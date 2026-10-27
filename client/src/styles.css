@@ -4550,6 +4550,39 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .telao-mensagem { margin: 0; font-size: 11px; line-height: 1.4; color: var(--muted); min-height: 30px; }
 .telao-rodape { flex-wrap: wrap; justify-content: center; }
 
+/* O painel WARGAME (P262): elenco + mapa clicável + lista de batidas, no mesmo molde de placa do seletor de lado. */
+.wargame-modal { z-index: 2100; }
+.wargame-placa { width: min(980px, 96vw); max-height: 92vh; display: flex; flex-direction: column; gap: 8px; }
+.wargame-titulo { margin: 0; text-align: center; font-size: 14px; letter-spacing: 3px; color: var(--warn); }
+.wargame-nome { font: inherit; color: var(--ink); background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); padding: 4px 8px; }
+.wargame-elenco { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink); }
+.wargame-elenco-select { font: inherit; color: var(--ink); background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); padding: 2px 6px; }
+.wargame-elenco-resumo { color: var(--muted); }
+.wargame-corpo { display: grid; grid-template-columns: minmax(260px, 420px) 1fr; gap: 12px; min-height: 0; }
+.wargame-mapa { position: relative; width: 100%; aspect-ratio: 1 / 1; background: var(--cc-screen); border: 1px solid rgba(0, 229, 255, 0.35); border-radius: 4px; overflow: hidden; }
+.wargame-mapa canvas { position: absolute; inset: 0; cursor: crosshair; }
+.wargame-lista { display: flex; flex-direction: column; gap: 6px; min-height: 0; max-height: calc(100vh - 340px); overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: rgba(0, 229, 255, 0.4) transparent; }
+.wargame-vazio { margin: 0; font-size: 11px; color: var(--muted); }
+.wargame-linha { display: grid; grid-template-columns: 56px 1fr 1fr 1fr 22px; gap: 8px; align-items: start; padding: 6px; font-size: 11px; color: var(--ink); background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 3px; }
+.wargame-linha.wargame-armada { border-color: var(--warn); box-shadow: 0 0 0 1px var(--warn); }
+.wargame-grupo { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.wargame-grupo b { font-size: 9px; letter-spacing: 1.5px; color: var(--muted); width: 100%; }
+.wargame-linha select, .wargame-linha input { font: inherit; font-size: 11px; color: var(--ink); background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.2); padding: 2px 4px; }
+.wargame-campo-curto { width: 52px; }
+.wargame-campo-longo { flex: 1; min-width: 90px; }
+.wargame-ponto { color: var(--muted); white-space: nowrap; }
+.wargame-camera-valor { display: flex; gap: 4px; min-width: 0; }
+.wargame-camera-valor select { min-width: 0; text-overflow: ellipsis; }
+.wargame-remover { align-self: start; background: none; border: 1px solid rgba(255, 255, 255, 0.2); color: var(--muted); cursor: pointer; line-height: 1; padding: 2px 6px; }
+.wargame-remover:hover { color: var(--hot); border-color: var(--hot); }
+.wargame-mensagem { margin: 0; font-size: 11px; line-height: 1.4; color: var(--muted); min-height: 30px; }
+.wargame-rodape { flex-wrap: wrap; justify-content: center; }
+@media (max-width: 900px), (max-height: 540px) {
+  .wargame-corpo { grid-template-columns: 1fr; }
+  .wargame-mapa { aspect-ratio: 16 / 9; }
+  .wargame-lista { max-height: 40vh; }
+}
+
 /* O objetivo na tela (TERRAS RARAS, ui via environment/AmazoniaObjetivos.ts): a ordem fica na linha da missão (#mission-status); aqui a dica logo abaixo e os marcadores no mundo
    (losango com nome e distância; fora da tela, preso na borda com uma seta). Verde = gerador (o mais perto, maior e pulsando), vermelho = o Draga, ciano = a escotilha. */
 .obj-dica { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); z-index: 3; margin: 0; max-width: min(600px, 86vw); padding: 5px 14px; text-align: center; font-size: 12px; line-height: 1.35; letter-spacing: 1px; color: var(--ink); background: rgba(6, 8, 10, 0.78); border: 1px solid rgba(255, 225, 77, 0.55); border-left-width: 4px; text-shadow: 0 0 6px #000; pointer-events: none; }
