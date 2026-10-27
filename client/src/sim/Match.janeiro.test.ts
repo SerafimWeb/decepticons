@@ -20,10 +20,10 @@ const SEM_INIMIGOS = { ...DEFAULT_SETTINGS, enemyMechs: 0, enemyAndroids: 0, tec
 const abertas: PhysicsWorld[] = [];
 
 /** A missão do 8 DE JANEIRO (P217, passo 5), sem tela: a multidão contra os três prédios; o jogador nasce na Praça. */
-async function partida(mode: 'survival' | 'deathmatch' = 'survival') {
+async function partida(mode: 'survival' | 'deathmatch' = 'survival', opts: { damage?: boolean } = {}) {
   const physics = await PhysicsWorld.create();
   abertas.push(physics);
-  const match = new Match({ physics, scene: new THREE.Scene(), map: 'janeiro', mode, particles: NO_FX, foes: SEM_INIMIGOS, debris: false, allies: false });
+  const match = new Match({ physics, scene: new THREE.Scene(), map: 'janeiro', mode, particles: NO_FX, foes: SEM_INIMIGOS, debris: false, allies: false, ...opts });
   const fins: { sobreviveu: boolean; stats: MissionStats }[] = [];
   match.onMissionEnd = (sobreviveu, _onda, stats) => fins.push({ sobreviveu, stats });
   const player = new Vector09();
@@ -118,6 +118,20 @@ describe('a missão do 8 DE JANEIRO no Match (P217, passo 5): a multidão contra
       acertou = m.eliminados > antesMortos || fugiu(m, onde.i);
     }
     expect(acertou).toBe(true);
+  });
+
+  it('o espelho online (damage: false, achado 26/10) também para o tiro na multidão — antes o tiro de quem não é autoridade atravessava os figurantes sem nenhum efeito, porque eles não têm corpo físico', async () => {
+    const { match, run } = await partida('survival', { damage: false });
+    run(20);
+    const t = match.tickDaMissao;
+    const alvo = umFigurante(match, t);
+    expect(alvo).not.toBeNull();
+    const m = match.multidao!;
+    expect(match.multidao!.autoridade).toBe(false);
+    // de lado, na linha de um figurante presente: o projétil precisa parar (contraMassa === true), mas ninguém morre (só o evento do servidor mata no espelho).
+    expect(match.projectiles.contraMassa!(alvo!.x + 8, 1.2, alvo!.z, -1, 0, 0, 50, 7)).toBe(true);
+    expect(m.eliminados).toBe(0);
+    expect(fugiu(m, alvo!.i)).toBe(false);
   });
 
   it('a explosão do jogador derruba um aglomerado e assusta o resto (uma granada dentro da multidão)', async () => {

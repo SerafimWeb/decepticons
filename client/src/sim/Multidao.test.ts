@@ -184,6 +184,32 @@ describe('o tiro, a explosão e o susto (a autoridade)', () => {
     expect(m.atirar(x, 6, z, 0, -1, 0, 50, 1, t)).toBeGreaterThanOrEqual(0); // de cima para baixo
   });
 
+  it('naMira() acerta a mesma mira que atirar(), mas sem ferir ninguém — e o espelho (autoridade: false) também pode chamá-la (achado 26/10: sem isto, o tiro de quem não é autoridade atravessava a multidão sem nenhum efeito)', () => {
+    const m = new Multidao({ ...SO_UMA, mistura: [1, 0, 0, 0] }); // GADO: 12 de vida, cai com dois golpes de 7 (mesma régua do teste abaixo)
+    const t = m.nasce[0]! + 30;
+    m.avancar(t);
+    const i = algumPresente(m, t);
+    m.posicao(i, t, p);
+    const { x, z } = p;
+    expect(m.naMira(x + 8, 1.2, z, -1, 0, 0, 50, t)).toBe(i); // a mesma mira que atirar() acertaria
+    expect(m.naMira(x + 8, 1.2, z, 1, 0, 0, 50, t)).toBe(-1); // e erra do mesmo jeito para o lado errado
+    expect(m.naMira(x + 8, 1.2, z, -1, 0, 0, 50, t)).toBe(i); // chamar de novo não muda nada (pura)
+    expect(m.eliminados).toBe(0);
+    // Se naMira() tivesse ferido de verdade, um só golpe de 7 já mataria (vida só 12); confirma que ainda precisa de dois.
+    expect(m.atirar(x + 8, 1.2, z, -1, 0, 0, 50, 7, t)).toBe(i);
+    expect(m.eliminados).toBe(0);
+    m.avancar(t + 1);
+    m.posicao(i, t + 1, p);
+    expect(m.atirar(p.x + 8, 1.2, p.z, -1, 0, 0, 50, 7, t + 1)).toBe(i); // o segundo golpe mata
+    expect(m.eliminados).toBe(1);
+
+    const espelho = new Multidao({ ...SO_UMA, mistura: [1, 0, 0, 0], autoridade: false });
+    espelho.avancar(t);
+    expect(espelho.naMira(x + 8, 1.2, z, -1, 0, 0, 50, t)).toBe(i); // o espelho vê a mesma mira: o tiro dele para no lugar certo
+    expect(espelho.atirar(x + 8, 1.2, z, -1, 0, 0, 50, 1, t)).toBe(-1); // mas continua sem ferir — quem mata é só o evento do servidor
+    expect(espelho.eliminados).toBe(0);
+  });
+
   it('o gado cai com dois golpes, o careca aguenta mais; o ferido foge e o morto some, uma vez só', () => {
     const m = new Multidao({ ...SO_UMA, mistura: [1, 0, 0, 0] });
     const mortos: number[] = [];

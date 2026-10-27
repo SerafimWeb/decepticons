@@ -14,8 +14,10 @@ import { mulberry32 } from '../core/rng';
  * - **Determinismo:** só `+ − × ÷`, `floor` e `sqrt` (exatos no IEEE-754) e o `mulberry32` com semente; o balanço usa um seno em parábolas por partes (`senoParabolico`), não `Math.sin`, para
  *   dar o mesmo número em qualquer navegador.
  *
- * **Modos.** `autoridade: true` (o servidor e o jogo offline): os tiros, as explosões e o susto por perto geram morte e fuga. `autoridade: false` (o cliente online, o "espelho"): só aplica os
- * eventos do servidor (`aplicarMorte`, `aplicarFuga`); a chegada, a fuga automática e a saída são as mesmas, porque saem do tempo.
+ * **Modos.** `autoridade: true` (o servidor e o jogo offline): os tiros, as explosões e o susto por perto geram morte e fuga de verdade (`ferir`). `autoridade: false` (o cliente online, o "espelho"):
+ * só aplica os eventos do servidor (`aplicarMorte`, `aplicarFuga`); a chegada, a fuga automática e a saída são as mesmas, porque saem do tempo. **O espelho não é cego ao próprio tiro** (achado
+ * 26/10: sem nenhum corpo físico — ela não tem colisor — o tiro de quem não é autoridade atravessava os figurantes sem nenhum efeito, nem visual): `naMira` é a mesma conta geométrica de `atirar`,
+ * pura e sem efeito (não fere, não mata), para o projétil parar e soltar a faísca na hora certa no cliente que não decide; quem morre de verdade continua vindo só do servidor.
  *
  * **Os androides rebeldes** (os únicos que lutam) **não** são linhas deste vetor: são entidades de verdade, no máximo 6 vivos. A multidão só **agenda** a chegada deles (`androides`: tick e lugar);
  * a missão os cria.
@@ -505,12 +507,8 @@ export class Multidao {
     if (!silencioso) this.aoMorrer?.(i);
   }
 
-  /**
-   * O tiro: o primeiro figurante na linha da mira (origem, direção unitária, alcance em metros) no tick `t`. Devolve o id, ou -1 se errou; `dano` tira vida (morre ou foge). Só a autoridade
-   * atira: o espelho devolve -1.
-   */
-  atirar(ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, alcance: number, dano: number, t: number): number {
-    if (!this.autoridade) return -1;
+  /** A linha de mira: o primeiro figurante que a reta (origem, direção unitária, alcance em metros) cruza no tick `t`, ou -1. Pura: só geometria, nenhum efeito — qualquer um pode chamar. */
+  private primeiroNaMira(ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, alcance: number, t: number): number {
     this.calcularPosicoes(t);
     const h2 = dx * dx + dz * dz;
     let melhorI = -1;
@@ -545,8 +543,27 @@ export class Multidao {
         melhorI = i;
       }
     }
-    if (melhorI >= 0) this.ferir(melhorI, dano, t);
     return melhorI;
+  }
+
+  /**
+   * O tiro: o primeiro figurante na linha da mira (origem, direção unitária, alcance em metros) no tick `t`. Devolve o id, ou -1 se errou; `dano` tira vida (morre ou foge) de verdade. Só a
+   * autoridade atira: o espelho devolve -1 (`naMira` é a versão sem efeito, para o espelho).
+   */
+  atirar(ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, alcance: number, dano: number, t: number): number {
+    if (!this.autoridade) return -1;
+    const i = this.primeiroNaMira(ox, oy, oz, dx, dy, dz, alcance, t);
+    if (i >= 0) this.ferir(i, dano, t);
+    return i;
+  }
+
+  /**
+   * Quem a mira cruzaria agora, sem ferir ou matar ninguém (G1/G2: só geometria pura, determinística). O espelho (`autoridade: false`) chama isto para o próprio projétil parar e soltar a faísca
+   * na hora certa — sem isto o tiro de quem não é autoridade atravessava a multidão sem nenhum efeito visual, porque ela não tem corpo físico (achado 26/10). Quem morre de verdade só vem do
+   * evento do servidor (`aplicarMorte`); esta função nunca mata.
+   */
+  naMira(ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, alcance: number, t: number): number {
+    return this.primeiroNaMira(ox, oy, oz, dx, dy, dz, alcance, t);
   }
 
   /** A explosão: tira `dano` de todos no raio (em 3D, com o chão) e **assusta** quem está até o dobro do raio. Devolve quantos morreram. Só a autoridade. */
