@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P261 — Capa de gelo no congelado, choque/atordoamento mais fracos, motosserra mais baixa (27/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P261 | 27/10 | "quando o robô receber a carga de gelo suficiente pra congelar, seria bom adicionar um efeito de gelo nele, sutil (...) mais como uma capa de gelo, uma cobertura (...) pra ficar bonito e realista. acho que a luz ainda continua piscando forte em geral. O barulho do ataque da motoserra pelos droids está MUITO ALTO! VAMOS MELHORAR o som e luz em geral pra lançarmos." | ✅ | **Capa de gelo:** malha nova por Mech (`meshKit.ts:frostShell`), translúcida sobre o torso, aparece/some com `status.frozen`; ligada em todo blueprint e no andróide. **Luz geral:** o único estrobo puro (degrau binário, ~5 Hz) do jogo era o choque/atordoamento em `statusTint.ts`, nunca tocado nas rodadas anteriores — cortado, junto das partículas `SPARK`/`STARS` (as mais acesas do jogo, pico 2,5). Removido também um `setHitFlash` morto em `meshKit.ts` com o multiplicador antigo do P259. **Motosserra:** ganho cortado ~40% em `AudioSystem.ts`. | `client/src/entities/meshKit.ts`, `mechBlueprint.ts`, `Android.ts`, `MechBase.ts`, `entities/statusTint.ts`, `fx/StatusVisuals.ts`, `audio/AudioSystem.ts` |
+
 ## P260 — O congelado virava um bloco de luz branca: era o VFX do gelo, não o flash de dano (27/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

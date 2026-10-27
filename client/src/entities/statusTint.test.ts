@@ -65,8 +65,8 @@ describe('a cor do estado no casco', () => {
     s.shockUp(false);
     const { min, max } = varrer(s);
     expect(max.b).toBeGreaterThan(max.g);
-    expect(max.b).toBeGreaterThan(0.6);
-    expect(max.b - min.b).toBeGreaterThan(0.35); // pisca
+    expect(max.b).toBeGreaterThan(0.35); // 27/10 (P261): pico cortado de 0,66 pra 0,42 — era o único estrobo puro do jogo
+    expect(max.b - min.b).toBeGreaterThan(0.3); // pisca
     expect(min.b).toBeGreaterThan(0); // o fundo existe: entre os pulsos o corpo não volta ao normal
   });
 
@@ -75,8 +75,8 @@ describe('a cor do estado no casco', () => {
     s.shockUp(true); // tiro na cabeça: choca e atordoa
     expect(s.stunned).toBe(true);
     const { max } = varrer(s);
-    expect(max.r).toBeGreaterThan(0.5);
-    expect(max.g).toBeGreaterThan(0.4);
+    expect(max.r).toBeGreaterThan(0.3); // 27/10 (P261): pico cortado de 0,6 pra 0,4
+    expect(max.g).toBeGreaterThan(0.25); // pico cortado de 0,5 pra 0,33
   });
 
   it('nenhum estado passa de 0,7 (bem abaixo do limiar do bloom, 0,9): lê-se no corpo, não vira halo nem satura o casco em branco', () => {

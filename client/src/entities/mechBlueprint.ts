@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import type { Loadout } from '../combat/weapons';
 import { PALETTE } from '../core/palette';
 import type { LegRig, MechRig } from './MechBase';
-import { batchRigMeshes, beveledBox, box, cyl, group, heatVapor, taperedBox } from './meshKit';
+import { batchRigMeshes, beveledBox, box, cyl, frostShell, group, heatVapor, taperedBox } from './meshKit';
 
 /** Parâmetros visuais apenas; não altera colisão, massa, vida, calor ou armas da simulação. */
 export interface MechBlueprint {
@@ -274,6 +274,10 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   const barrageMouth = buildBackMortar(rack, blueprint, M);
 
   const batchedMaterial = batchRigMeshes(model, [M.armor, M.paint]);
+  // Só depois do lote: `batchRigMeshes` varre e remove todo `THREE.Mesh` dos pivôs para fundir no casco —
+  // criada antes, a capa de gelo seria varrida junto (ela é um `THREE.Mesh` comum, não um `THREE.Points` como
+  // o vapor do calor). Cobre as duas placas do torso (cintura + peito, acima) com folga, não cada uma de perto.
+  const updateFrost = frostShell(torso, torsoW, torsoH, torsoD, torsoH * 0.7);
   // O braço esquerdo mostra o casulo de foguetes, ou fica liso quando a arma é a chuva (o morteiro está nas costas). A variante lisa
   // é montada à parte e fundida do mesmo jeito (mesmas peças, mesmo casco); só a geometria vai e volta. **A boca (`leftMuzzle`) NÃO se
   // move:** o `MechBase` mede a boca de simulação do rig uma vez, no construtor, e o `equip` não a mede de novo; mexer nela aqui daria
@@ -379,7 +383,7 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   return {
     model, pelvis, torso, head, leftArm, rightArm, leftLeg, rightLeg, muzzle, leftMuzzle,
     thrusters, thrusterMaterial: batchedMaterial, setDashVisual: batchedMaterial.userData.setDash,
-    hullMaterials: [batchedMaterial], hipHeight, setHeatVisual, setGuardVisual, mountWeapons, barrageMouth,
+    hullMaterials: [batchedMaterial], hipHeight, setHeatVisual, setFrozenVisual: updateFrost, setGuardVisual, mountWeapons, barrageMouth,
   };
 }
 

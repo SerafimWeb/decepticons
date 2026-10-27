@@ -3,7 +3,7 @@ import type { Loadout } from '../combat/weapons';
 import { PALETTE } from '../core/palette';
 import { ANDROID_STATS } from './chassis';
 import { MechBase, type LegRig, type MechRig, type MechStats } from './MechBase';
-import { batchRigMeshes, box, cyl, group, heatVapor } from './meshKit';
+import { batchRigMeshes, box, cyl, frostShell, group, heatVapor } from './meshKit';
 
 /** Os números do andróide ficam em `chassis.ts` (sem 3D: o servidor e o site leem de lá). */
 export { ANDROID_STATS };
@@ -99,6 +99,8 @@ function buildRig(paint: number, visor: number, tool: AndroidTool, height: numbe
   }
 
   const batchedMaterial = batchRigMeshes(model, [M.shell]);
+  // Só depois do lote (ver nota em mechBlueprint.ts): antes, `batchRigMeshes` varreria a capa de gelo junto.
+  const updateFrost = frostShell(torso, 0.46, 0.55, 0.28, 0.32);
   const setHeatVisual = (dt: number, heat: number, overheated: boolean, coolingBoost: boolean): void => {
     const setHeat = batchedMaterial.userData.setHeat;
     if (typeof setHeat === 'function') setHeat(Math.max(0, (heat - 0.65) / 0.35) * (overheated ? 0.62 : 0.52));
@@ -122,6 +124,7 @@ function buildRig(paint: number, visor: number, tool: AndroidTool, height: numbe
     hullMaterials: [batchedMaterial],
     hipHeight: HIP,
     setHeatVisual,
+    setFrozenVisual: updateFrost,
   };
 }
 
