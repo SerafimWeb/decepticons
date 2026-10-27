@@ -1,12 +1,19 @@
 # ESTADO ATUAL — CYBERMECH
 
-## EM BRANCH — NÃO ESTÁ NO AR: OS ROBÔS ACENDIAM COMO LÂMPADA AO TOMAR TIRO (Claude, branch `claude/mech-hit-flash-sutil`, P259, 26/10)
+## MESCLADO NA MAIN (26/10): OS ROBÔS ACENDIAM COMO LÂMPADA AO TOMAR TIRO (Claude, PR #466, P259)
 
 **O Comandante jogou o que saiu no P258 e achou mais um (de imediato, antes de confirmar os outros):** "os robos ainda estao ficando com LUZ quando tomam tiro... tanto eu quanto os outros robos se iluminam, isso ta artificial, e nao ta bom! é apenas pra receberem os EFEITOS VFX do tiro, e nao pra acenderem como uma lampada!!!!! adicione mais qualidade e encontre esse evento pra controlar e melhorar ele." Também perguntou por que o site mostrava o commit `ac828b6` em vez do `3b72c17` que acabou de mesclar — **não era bug**: o `atualizacao.log` e o `publicar-site-console.log` do servidor (`.tmp/wt-servidor-prod`) provam que `3b72c17` foi publicado 1 min depois do print dele (o ciclo automático leva ~6–7 min do merge até o site atualizar: verificar + religar o servidor + montar e enviar o site).
 **O achado:** `MechBase.ts:update()` — o "flash de dano" (`hitFlash`, setado para `1` em `damagePart()` a cada acerto, decaindo a `dt*6`) escreve direto no `emissive` de **todos** os `hullMaterials` do robô: `fr = hitFlash*1.4 + tint.r`. Um emissivo de **1,4** (acima de 1,0, já em faixa HDR) somado à cor toda do casco é, literalmente, acender o corpo inteiro — e como o casco é **um material só, batido num lote** (`batchRigMeshes`, G4/G5: sem isso o jogo pagaria um draw call a mais por Mech), não dá pra acender só a peça atingida sem desfazer esse lote. **Vale para qualquer `MechBase`:** o jogador e todo bot (`Android extends MechBase`), exatamente "eu e os outros robôs".
 **Corrigido:** cortados os multiplicadores de pico de 1,4/0,35/0,2 para 0,35/0,09/0,05 (~75% menos), mantendo a mesma proporção de cor (vermelho-alaranjado) — ainda dá pra perceber o acerto, sem acender como lâmpada. Não mexi na velocidade do decaimento (já rápida, ~0,17 s) nem tentei o flash por peça (exigiria quebrar o lote do casco — custo de desenho a mais por Mech, fora de escopo para este pedido).
-**Provas:** `npm run check` em andamento.
-**Próxima sessão começa com:** abrir o PR; depois, o olho do Comandante confirmando os cinco achados de hoje (P258 + este) antes de decidir o escopo da Cidade Neon.
+**Provas:** `npm run check` verde.
+
+## EM BRANCH — NÃO ESTÁ NO AR: O CONGELADO VIRAVA UM BLOCO DE LUZ BRANCA (Claude, branch `claude/parked-mech-hit-flash`, P260, 27/10)
+
+**O Comandante jogou o P259 no ar e mandou dois prints: "sera q estamos falando da mesma 'luz' que acende no robô? veja o print...como ele fica iluminado quando toma tiros!... o brilho total deve ser amenizado, pois nem todo jogador va ter a visao de reduzir o brilho da configuracao."** Os dois prints são da câmera de vigilância/espectador mirando um alvo **congelado** (arma de gelo): o robô aparece quase todo branco, sem silhueta, com neve ao redor.
+**O achado:** não era mais o `hitFlash` do P259 (esse já estava cortado e correto). Era `fx/StatusVisuals.ts` — as partículas do estado congelado (`VAPOR` e `SHARD`, cor de propósito acima de 1,0 para acender o bloom, herdado do 11/10: "o congelamento não se percebia"). O cursor que solta a rajada gira por **todas as 6 partes do corpo em ~0,6 s**, e cada rajada dura até 0,9 s — então, a qualquer instante sob congelamento sustentado, várias partes têm vapor+caco acesos ao mesmo tempo, e o halo de bloom de cada partícula se soma ao do vizinho até cobrir o robô inteiro, exatamente como nos prints.
+**Corrigido:** cor e tamanho de `VAPOR`/`SHARD`/`CHILL` cortados (ex.: `SHARD` de pico 2,1 para 1,05 — no limiar do bloom, não acima dele; tamanho de 2,6 para 2,0) — o gelo ainda aparece (a cor, a forma de floco/vapor, e o tingimento azul-gelo do casco em `statusTint.ts`, intocado) sem virar halo contínuo. Não toquei em fogo/choque/atordoamento (sem queixa nova sobre eles; fogo já foi reforçado em 11/10 por estar fraco demais — mexer de novo arrisca reabrir aquilo).
+**Provas:** `npx vitest run StatusVisuals.test.ts mechTint.test.ts statusTint.test.ts` verde (22 testes); `npm run check` verde.
+**Próxima sessão começa com:** abrir o PR; o escopo da Cidade Neon (mapa vazio, motoboy) segue esperando o Comandante confirmar que esta rodada de luz ficou boa.
 
 ## MESCLADO NA MAIN (26/10): O TIRO ATRAVESSAVA A MULTIDÃO ONLINE, O FLASH DE DANO E AS JANELAS DOS PRÉDIOS (Claude, PR #465, P258)
 

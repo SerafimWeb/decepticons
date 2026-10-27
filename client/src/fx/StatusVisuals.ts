@@ -16,9 +16,13 @@ import { SHAPE } from './particleShapes';
 const PARTS: readonly MechPart[] = ['torso', 'head', 'leftArm', 'rightArm', 'leftLeg', 'rightLeg'];
 const UP = new THREE.Vector3(0, 1, 0);
 // Cores acima de 1 acendem o bloom; as do estado ficam em torno de 1 de propósito (aparecem, sem virar halo).
-const VAPOR: BurstOptions = { count: 2, color: new THREE.Color(0.5, 1.0, 1.25), speed: 1.2, life: 0.9, size: 1.9, expansion: 1.2, spread: 0.6, gravity: 0.8, shape: SHAPE.puff };
-const SHARD: BurstOptions = { count: 2, color: new THREE.Color(1.3, 1.9, 2.1), speed: 3.2, life: 0.6, size: 2.6, spread: 1.6, gravity: 5, spin: 4, shape: SHAPE.flake };
-const CHILL: BurstOptions = { count: 1, color: new THREE.Color(0.4, 0.85, 1.1), speed: 1, life: 0.9, size: 2.4, spread: 0.6, gravity: 0.5, spin: 3, shape: SHAPE.flake };
+// 27/10 (P260): congelado girava por todas as 6 partes em ~0,6 s e cada rajada durava até 0,9 s — em qualquer instante várias
+// partes tinham vapor+caco acesos ao mesmo tempo, e o halo de cada um se somava com o vizinho até cobrir o robô inteiro
+// (o Comandante: "fica iluminado quando toma tiros", print do alvo congelado quase todo branco). Cor e tamanho cortados para
+// o gelo ainda aparecer sem virar um bloco de luz.
+const VAPOR: BurstOptions = { count: 2, color: new THREE.Color(0.32, 0.64, 0.8), speed: 1.2, life: 0.9, size: 1.5, expansion: 1.2, spread: 0.6, gravity: 0.8, shape: SHAPE.puff };
+const SHARD: BurstOptions = { count: 2, color: new THREE.Color(0.65, 0.95, 1.05), speed: 3.2, life: 0.6, size: 2.0, spread: 1.6, gravity: 5, spin: 4, shape: SHAPE.flake };
+const CHILL: BurstOptions = { count: 1, color: new THREE.Color(0.3, 0.64, 0.83), speed: 1, life: 0.9, size: 2.0, spread: 0.6, gravity: 0.5, spin: 3, shape: SHAPE.flake };
 // O fogo no corpo (dono, 11/10: "o fogo está muito fraco"): línguas maiores e mais altas, brasas que sobem e uma fumaça mais gorda.
 const FLAME: BurstOptions = { count: 4, color: new THREE.Color(2.0, 0.85, 0.12), speed: 3.4, life: 0.7, size: 2.4, expansion: 0.8, spread: 0.8, gravity: -3, shape: SHAPE.flame };
 const EMBER: BurstOptions = { count: 2, color: new THREE.Color(2.2, 1.0, 0.25), speed: 4, life: 1, size: 0.9, spread: 1.2, gravity: -2, shape: SHAPE.dot };
