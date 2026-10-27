@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P260 — O congelado virava um bloco de luz branca: era o VFX do gelo, não o flash de dano (27/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P260 | 27/10 | "sera q estamos falando da mesma 'luz' que acende no robô? veja o print...como ele fica iluminado quando toma tiros! ... o brilho total deve ser amenizado, pois nem todo jogador va ter a visao de reduzir o brilho da configuracao. e reduz essa luz pra melhorarmos o ux ui e jogabilidade, sem cansar a vista" (2 prints de um alvo congelado pela câmera de vigilância/espectador, quase todo branco) | ✅ | Não era o `hitFlash` do P259 (já correto) — era `fx/StatusVisuals.ts`: as partículas `VAPOR`/`SHARD` do estado congelado tinham cor de propósito acima do limiar do bloom (herdado do 11/10, "o congelamento não se percebia"); o cursor gira pelas 6 partes do corpo em ~0,6 s e cada rajada dura até 0,9 s, então sob congelamento sustentado várias partes acendiam ao mesmo tempo e os halos se somavam até cobrir o robô inteiro. Cor e tamanho cortados (pico de 2,1 para 1,05, no limiar em vez de acima); o tingimento azul do casco (`statusTint.ts`) ficou intocado, o gelo ainda se vê | `client/src/fx/StatusVisuals.ts` |
+
 ## P259 — Os robôs acendiam como lâmpada ao tomar tiro; o print do commit "errado" era só o atraso do ciclo de publicação (26/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
