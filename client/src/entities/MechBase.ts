@@ -1000,12 +1000,14 @@ export abstract class MechBase {
 
     // Cor do casco: o flash de dano (vermelho, ~0,17 s) e a cor do estado (gelo, chamas, choque) somam na luz própria do casco.
     // Só escreve no material quando a cor muda (parado e sem estado, nunca).
+    // 26/10: o pico (1,4/0,35/0,2) acendia o corpo inteiro como lâmpada — o casco é um material só, batido num draw call
+    // (G4/G5: sem como acender só a peça atingida sem quebrar o lote); cortado para ficar perceptível, não ofuscante.
     this.hitFlash = Math.max(0, this.hitFlash - dt * 6);
     this.visualTime += dt;
     statusTint(this.status, this.visualTime, _tint);
-    const fr = this.hitFlash * 1.4 + _tint.r;
-    const fg = this.hitFlash * 0.35 + _tint.g;
-    const fb = this.hitFlash * 0.2 + _tint.b;
+    const fr = this.hitFlash * 0.35 + _tint.r;
+    const fg = this.hitFlash * 0.09 + _tint.g;
+    const fb = this.hitFlash * 0.05 + _tint.b;
     if (fr !== this.shownR || fg !== this.shownG || fb !== this.shownB) {
       this.shownR = fr;
       this.shownG = fg;
