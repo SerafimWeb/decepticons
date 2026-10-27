@@ -20,8 +20,9 @@ export const WINDOWS = {
   /** Onde a janela começa e quanto mede, dentro do andar. */
   bottom: 1.4,
   height: 2.1,
-  /** Fração das janelas acesas. P255: era 0.3 — poucas janelas acesas, espalhadas, não formavam grade nenhuma visível (lido
-   * como "falhado" pelo Comandante); mais acesas deixam a fachada legível como prédio, não como pontos soltos. */
+  /** Fração MÉDIA das janelas acesas (26/10: cada andar varia em volta dela — ver `FRAGMENT_BODY` —, não é mais um número só
+   * pra fachada inteira). P255: era 0.3 — poucas janelas acesas, espalhadas, não formavam grade nenhuma visível (lido como
+   * "falhado" pelo Comandante); mais acesas deixam a fachada legível como prédio, não como pontos soltos. */
   litShare: 0.48,
   /** Fração das acesas em tom de sódio (laranja), para a cidade não ser de uma cor só. */
   sodiumShare: 0.22,
@@ -65,10 +66,16 @@ const FRAGMENT_BODY = `{
   float inY = step(${num(WINDOWS.bottom / WINDOWS.floor)}, inCell.y) * step(inCell.y, ${num((WINDOWS.bottom + WINDOWS.height) / WINDOWS.floor)});
   float facade = step(faceN.y, 0.5);
   vec2 id = cell + vec2(alongX * 41.0, 0.0);
-  float lit = step(1.0 - ${num(WINDOWS.litShare)}, windowHash(id));
+  // Por andar, não pela fachada inteira: cada andar sorteia sua própria ocupação em volta da média (achado 26/10 — cada
+  // janela sorteando sozinha lia como "defeito", não como prédio; andares inteiros mais cheios ou mais vazios leem como
+  // prédio de verdade). A média continua a mesma (${num(WINDOWS.litShare)}); só a distribuição por andar mudou.
+  float andarHash = windowHash(vec2(cell.y, alongX * 7.0 + 101.0));
+  float andarOcupado = clamp(${num(WINDOWS.litShare)} + (andarHash - 0.5) * 0.55, 0.0, 1.0);
+  float lit = step(1.0 - andarOcupado, windowHash(id));
   float sodium = step(1.0 - ${num(WINDOWS.sodiumShare)}, windowHash(id + 7.3));
   float level = 0.65 + 0.35 * windowHash(id + 19.1);
-  totalEmissiveRadiance += mix(windowColor, windowSodium, sodium) * level * inX * inY * lit * facade;
+  // A janela apagada não é um buraco preto: um resto de brilho (o vidro contra o céu da cidade) em vez de zero — suaviza o contraste que o bloom exagerava.
+  totalEmissiveRadiance += mix(windowColor, windowSodium, sodium) * mix(0.05, level, lit) * inX * inY * facade;
 }`;
 
 /** Aplica a troca de trechos de shader. Separado do material para o teste conferir os pontos de encaixe no three atual. */

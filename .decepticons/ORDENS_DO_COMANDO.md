@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P258 — O tiro atravessava a multidão online, o flash de dano forte, janelas "com defeito" e o token de métricas (26/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P258 | 26/10 | "o brilho quando eu tomo tiro ainda ta muito forte... fico todo aceso e dou uma piscada que chega a embaçar a tela. melhore isso. na fase do 8, tentei jogar mas meu tiro nao pegava no manifestante... na fase neon, o brilho dos predios fica irregular, ele parece com defeito... na pagina d metricas, NAO QUERO TER Q colocar o token sempre, ele precisa ficar salvo no meu perfil, no meu login! ou nao dá?" | 🟡 | **Tiro não pegava no manifestante (✅, achado grave):** `Multidao.atirar()` só funciona para a autoridade, e todo cliente online é espelho — sem corpo físico na multidão, o tiro de quem não é autoridade atravessava sem nenhum efeito desde que a missão ficou online (P251). Extraída a conta geométrica pura (`naMira()`, sem matar ninguém) para o espelho também parar o tiro e soltar a faísca; quem morre continua vindo só do servidor. **Flash de dano (✅):** 120px/55% → 60px/30%, sem teto por taxa de tiro ainda (sob fogo muito rápido continua podendo prender). **Janelas da Cidade Neon (✅ primeira passada):** cada janela sorteava sozinha, sem nenhuma relação com a vizinha — trocado por sorteio por andar (andares mais cheios/vazios, mesma média) e um resto de brilho na janela apagada em vez de preto puro. **Token de `/metricas` (🟡 sem código):** já persiste em `localStorage` por servidor; suspeita é o Brave limpando dados ou acesso de mais de um aparelho — ligar ao login é possível mas é mudança de autenticação (risco alto), fica para PR dedicado. **Fora desta entrega (conteúdo novo, não bug):** o mapa vazio da Cidade Neon e o motoboy kamikaze seguem esperando decisão de escopo (já registrados em P255) | `client/src/sim/Multidao.ts`/`Match.ts` (+2 testes); `client/src/styles.css`; `client/src/environment/BuildingWindows.ts` |
+
 ## P257 — O 8 de Janeiro não abria pelo seletor de mapa, online nem offline; o brilho ainda forte (26/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

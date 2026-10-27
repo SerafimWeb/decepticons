@@ -689,9 +689,16 @@ export class Match {
     const multidao = this.multidao;
     const chefesJaneiro = this.chefesJaneiro;
     if (multidao || chefesJaneiro) {
-      this.projectiles.contraMassa = (ox, oy, oz, dx, dy, dz, alcance, dano) =>
-        (!!multidao && multidao.presentes > 0 && multidao.atirar(ox, oy, oz, dx, dy, dz, alcance, dano, this.tickJaneiro) >= 0) ||
-        (!!chefesJaneiro && chefesJaneiro.atirar(ox, oy, oz, dx, dy, dz, alcance, dano));
+      this.projectiles.contraMassa = (ox, oy, oz, dx, dy, dz, alcance, dano) => {
+        if (multidao && multidao.presentes > 0) {
+          // O espelho (online, não autoridade) não decide quem morre, mas precisa do mesmo tiro parando na hora certa (achado 26/10: sem isto, o tiro atravessava a multidão sem nenhum efeito).
+          const acertou = multidao.autoridade
+            ? multidao.atirar(ox, oy, oz, dx, dy, dz, alcance, dano, this.tickJaneiro) >= 0
+            : multidao.naMira(ox, oy, oz, dx, dy, dz, alcance, this.tickJaneiro) >= 0;
+          if (acertou) return true;
+        }
+        return !!chefesJaneiro && chefesJaneiro.atirar(ox, oy, oz, dx, dy, dz, alcance, dano);
+      };
     }
     const explode = (at: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats): void => {
       this.combat.explode(at, dir, owner, w);
