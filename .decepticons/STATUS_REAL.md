@@ -9,16 +9,13 @@ Antes, o `?wargame=` sobrevivia a uma troca de mapa (`MapLinks.ts`) e nenhum dos
 que isso, no WARGAME, não devolve o controle (`wargameAtivo` o trava de propósito desde o P263). **Conferido no
 Chrome:** depois de C, segurando W, o Mech andou 6,17 m (zero antes da correção). `MapLinks.test.ts` (+1).
 
-**P264 — atmosfera cyberpunk-distópica da Cidade Neon (PR1 REAL; v2 listada em AUSENTE):** `ArenaAderecos.ts` povoa
-a Arena (antes ~12 objetos) com 26 letreiros verticais (barras/blocos de cor neon, sem texto nem glifo real — o
-clima Chinatown/gueto é densidade e paleta, nunca idioma ou marca copiados), 13 postes de rua com bulbo que pisca/
-falha (respiração + "mau contato" raro, função pura do tempo, sem alocação por quadro) e 6 bueiros soltando vapor
-pelo `ParticleSystem` já existente (nenhum sistema novo). Zero luz dinâmica nova, zero colisor, custo medido:
-~1 KB gzip (pacote em 481,5/500 KB). **Conferido:** contagem de instâncias por script (26/13/13/6, nada rejeitado
-pelo espalhamento que evita prédio/barricada/ponto de nascimento), `npm run check` verde. **AUSENTE (v2, não
-bloqueia, já planejado):** mais telões; letreiros/postes ainda não escurecem com o transformador do banco (só
-afeta a missão em ondas); o motoboy kamikaze do P255 segue à parte. **Onde conferir:** `?mapa=arena&comandante=1`,
-chip CÂMERAS DO LOCAL ▸; captura `arte/cidade-neon-atmosfera-claude.jpg`.
+**P264 — a Cidade Neon virou uma cidade (REAL no jogo, visto no Chrome na GPU real; PARCIAL: falta o olho do Comandante e os itens abaixo):** a praça cercada por três filas de torres (uma chamada de
+desenho, janelas finas, neon nas quinas, lojas no térreo, névoa em camadas), 47 telões que passam anúncios (falha de sinal na troca, grafismos animados), letreiros de bandeira e desenhos em tubo de neon,
+**a rua desenhada no lugar do quadriculado** (calçadão, avenida com faixas e faixas de pedestre, postes de 10 m, bueiros com vapor) e chão molhado com reflexo (truque de shader, sem desenhar a cena
+duas vezes). `CidadeNeon*.ts`, pedaço sob demanda de 15 KB gzip (partida 478,4/500 KB; a PR1, `ArenaAderecos.ts`, foi substituída). **Conferido:** AMD Vega 11, janela do Comandante, rodadas alternadas
+main × branch: GPU 12,5→12,1 ms parado, 16,1→16,3 do alto, 9,6→10,9 rente à avenida; abertura +~0,8 s; 0/672 poses com NaN; +40 testes. **AUSENTE:** pista elevada/passarelas, hologramas, tráfego voador,
+chuva, mobília de rua; os 3 prédios do meio seguem caixas; poste sem colisor (de propósito: o servidor não tem a cidade); só 8 anúncios (repetem); o reflexo do chão não sabe o que está na frente da
+fonte, e a cor do reflexo de um telão é a do primeiro anúncio dele (não acompanha a troca). **Onde conferir:** `?mapa=arena&comandante=1`, chip CÂMERAS DO LOCAL ▸; `arte/cidade-neon-*-claude.jpg`.
 
 **P263 — o WARGAME (P262) corrigido: o Comandante não controla mais o Mech dele, e os dois esquadrões brigam no nível
 mais afiado (REAL, corrige uma lacuna real da verificação do P262 — "zero erro de página" não provava que o input

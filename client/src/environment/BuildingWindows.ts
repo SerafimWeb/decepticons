@@ -11,10 +11,11 @@ import { GLSL_NORMAL_SEGURA } from './glslSeguro';
 
 /** Medidas da grade, em metros. A altura do andar é a das faixas neon do `Arena.addBuilding` (a cada 5 m). */
 export const WINDOWS = {
-  /** Largura de cada coluna (janela + parede). */
-  pitch: 3.2,
+  /** Largura de cada coluna (janela + parede). P264 (28/10): era 3,2 m com janela de 1,4 — ao lado das torres da cidade em volta (janelas
+   * finas, `CidadeNeonTorres.ts`) os prédios da praça liam como blocos de brinquedo; a grade mais fina é a das referências. */
+  pitch: 2.2,
   /** Largura da janela. */
-  width: 1.4,
+  width: 1.0,
   /** Altura de um andar: a janela fica entre duas faixas neon. */
   floor: 5,
   /** Onde a janela começa e quanto mede, dentro do andar. */
@@ -94,12 +95,22 @@ export interface JanelasDoPredio {
   windowSodium: { value: THREE.Color };
 }
 
+/** O branco-azulado da luz de dentro de um cômodo: a cor do prédio só tinge a janela (P264), quem pinta o prédio são as arestas e as faixas. */
+export const LUZ_DE_DENTRO = 0xe4f4ff;
+/** Quanto a cor do prédio tinge a janela acesa. */
+export const TINTA_DA_JANELA = 0.38;
+
+/** A cor da janela acesa de um prédio de destaque `accent`: a luz de dentro tingida por ele. Fonte única (o teste confere por aqui). */
+export function corDaJanela(accent: number): THREE.Color {
+  return new THREE.Color(LUZ_DE_DENTRO).lerp(new THREE.Color(accent), TINTA_DA_JANELA).multiplyScalar(WINDOWS.intensity);
+}
+
 /**
- * Põe janelas acesas, na cor `accent` do prédio, num material de prédio já clonado (o clone é de cada prédio: a câmera
+ * Põe janelas acesas, tingidas da cor `accent` do prédio, num material de prédio já clonado (o clone é de cada prédio: a câmera
  * o torna translúcido atrás do Mech, e as janelas somem junto porque a emissão sai com a mesma opacidade).
  */
 export function windowedBuildingMaterial(material: THREE.MeshStandardMaterial, accent: number): THREE.MeshStandardMaterial {
-  const windowColor = { value: new THREE.Color(accent).multiplyScalar(WINDOWS.intensity) };
+  const windowColor = { value: corDaJanela(accent) };
   const windowSodium = { value: new THREE.Color(PALETTE.sodium).multiplyScalar(WINDOWS.intensity) };
   material.onBeforeCompile = (shader) => {
     shader.uniforms.windowColor = windowColor;

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { PALETTE } from '../core/palette';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { Arena } from './Arena';
-import { patchWindowShader, WINDOWS, windowedBuildingMaterial } from './BuildingWindows';
+import { corDaJanela, patchWindowShader, WINDOWS, windowedBuildingMaterial } from './BuildingWindows';
 import { Destructibles } from './Destructibles';
 
 const standard = (): { vertexShader: string; fragmentShader: string } => ({
@@ -73,13 +73,13 @@ describe('windowedBuildingMaterial', () => {
     return shader;
   };
 
-  it('cada prédio acende na cor do seu letreiro, e a de sódio é compartilhada em valor', () => {
+  it('cada prédio acende na cor do seu letreiro (a luz de dentro, tingida por ele), e a de sódio é compartilhada em valor', () => {
     const cyan = windowedBuildingMaterial(new THREE.MeshStandardMaterial(), PALETTE.cyan);
     const pink = windowedBuildingMaterial(new THREE.MeshStandardMaterial(), PALETTE.pink);
     const a = run(cyan);
     const b = run(pink);
-    expect(a.uniforms.windowColor!.value.equals(new THREE.Color(PALETTE.cyan).multiplyScalar(WINDOWS.intensity))).toBe(true);
-    expect(b.uniforms.windowColor!.value.equals(new THREE.Color(PALETTE.pink).multiplyScalar(WINDOWS.intensity))).toBe(true);
+    expect(a.uniforms.windowColor!.value.equals(corDaJanela(PALETTE.cyan))).toBe(true);
+    expect(b.uniforms.windowColor!.value.equals(corDaJanela(PALETTE.pink))).toBe(true);
     expect(a.uniforms.windowColor!.value.equals(b.uniforms.windowColor!.value)).toBe(false);
     expect(a.uniforms.windowSodium!.value.equals(new THREE.Color(PALETTE.sodium).multiplyScalar(WINDOWS.intensity))).toBe(true);
     // Mexer na cor de um não muda a do outro (objetos distintos).

@@ -1,26 +1,22 @@
 # ESTADO ATUAL — CYBERMECH
 
-## A Cidade Neon ganha atmosfera cyberpunk — PR1: letreiros, postes e vapor (Claude, P264, branch `claude/cidade-neon-atmosfera`)
+## A Cidade Neon vira uma cidade — PR2: torres, telões, ruas e chão molhado (Claude, P264, branch `claude/cidade-neon-cidade`)
 
-**O pedido, depois de jogar o WARGAME na Arena quase vazia:** "torne-a um universo cyberpunk futurista distópico
-e de ruptura cybermech" (com referências de vídeo) + "gases saindo do underground... poste piscando falhando...
-neons, mais teloes.... chinatown.... getto... scifi" — exatamente a decisão de escopo que o P255 (24/10) tinha
-deixado em aberto ("mapa vazio... pede decisão do Comandante").
-**Esta entrega (PR1 de uma sequência pequena, a ordem que mais ataca "feio/vazio" primeiro):** `ArenaAderecos.ts`
-(novo) — 26 letreiros verticais (barras/blocos de cor, **sem texto nem glifo real** — o clima Chinatown/gueto é
-densidade e paleta, nunca idioma ou marca copiados, de propósito), 13 postes de rua com bulbo que pisca e falha
-("mau contato" raro, defasado por poste, função pura do tempo — zero `Math.random` por quadro), 6 grelhas de
-bueiro soltando vapor pelo `ParticleSystem` **já existente** (nenhum sistema novo). **Decisões de custo:** zero luz
-dinâmica nova (emissivo com bloom, como todo neon do jogo já ilumina), zero colisor, `InstancedMesh` (só a cor do
-bulbo escreve por quadro) — medido: a feature inteira custou **~1 KB gzip** (pacote em 481,5/500 KB).
-**Verificado:** contagem de instâncias por script (26/13/13/6, nada rejeitado pelo espalhamento que evita prédio/
-barricada/plataforma/torre/ponto de nascimento), captura real no Chrome (`arte/cidade-neon-atmosfera-claude.jpg`,
-um poste e um letreiro visíveis perto da porta do Banco Vorcaris), `npm run check` verde.
-**Falta (v2, já planejado, não bloqueia):** mais telões (extensão de dado em `shared/telao.ts`/`ArenaLayout.ts`,
-mecânica); letreiros/postes ainda não escurecem com o transformador do banco (só afeta a missão em ondas — não dá
-para reescrever a cor de uma instância só registrando um `THREE.Color`, como funciona para material comum).
-**Próxima sessão começa com:** o olho do Comandante jogando (densidade, brilho, se quer mais ou menos) antes de
-engatar o PR2 (mais telões).
+**O pedido (28/10), depois de ver a PR1:** "eu quero que o cenário fique nesse nível dos exemplos que enviei. ainda tá muito longe disso" (os 4 quadros de uma cidade cyberpunk à
+noite) e "os postes eu achei meio frágeis... só se tiver o desenho das ruas, pois nesse quadriculado não achei bom não". **Achado:** a PR1 pôs enfeite solto num chão quadriculado e num
+horizonte de caixas sem janela; os quadros mostram o contrário, a praça **dentro de uma cidade** (leitura em `REFERENCIA_VISUAL.md` § 9).
+**Entrega (7 arquivos `CidadeNeon*.ts`, só desenho, um pedaço sob demanda):** (1) três filas de torres em volta (221 caixas — 129 torres, 55 coroas e 37 antenas — numa chamada de desenho: janelas finas, neon nas quinas e
+coroas, lojas no térreo, névoa em camadas); (2) 47 telões que passam anúncios (troca a cada 6–13 s com falha de sinal, grafismos animados), letreiros de bandeira (glifos inventados, uns
+queimados) e desenhos em tubo de neon; (3) **a rua desenhada** no lugar do quadriculado (calçadão, avenida em anel com faixas, meio-fio, faixas de pedestre), postes de 10 m na calçada (uns
+piscam e falham) e bueiros com vapor; (4) **chão molhado**: poças e o reflexo de cada telão e poste no asfalto por um truque de vertex shader, sem desenhar a cena duas vezes. Saíram a
+`ArenaAderecos.ts` da PR1, o horizonte antigo (80 caixas + estrelas) e a captura da PR1; as janelas dos 3 prédios do meio ficaram finas e de luz branca tingida; névoa e horizonte, mais turquesa.
+**Custo (GPU real, a AMD Vega 11, janela do Comandante 1549×925@1,25, rodadas alternadas main × branch, mediana de 3):** GPU por quadro 12,5→12,1 ms parado, 16,1→16,3 do alto, 9,6→10,9 rente
+à avenida; triângulos 47,9 mil→30 mil; abertura do jogo +~0,8 s (compilar shaders na tela de carregamento); pacote de partida **478,4/500 KB** (baixou 3 KB), a cidade é um pedaço de 15 KB gzip;
+zero luz dinâmica, zero colisor (o servidor não tem a cidade: colisor só no cliente desalinharia a predição online), nada alocado por quadro.
+**Verificado:** 0/672 poses com NaN na GPU real; +40 testes (`CidadeNeonLayout/Cenario/Shaders.test.ts`: nada invade a praça, interface vértice/fragmento dos shaders, a luz da cidade cai com o
+transformador); smoke OK; fotos `arte/cidade-neon-{cidade,avenida,alto,letreiros}-claude.jpg`.
+**Falta (o Comandante diz o que vem primeiro):** pista elevada e passarelas, hologramas, tráfego de veículos voadores, chuva, mobília de rua, os 3 prédios do meio da praça (ainda caixas); só 8
+anúncios (o padrão repete). **Próxima sessão começa com:** o olho do Comandante jogando, e o que ele estranhar.
 
 ## WARGAME: não tinha como sair (Claude, P265, branch `claude/wargame-sair`)
 
@@ -30,7 +26,7 @@ novo — corrigido, sempre tira o parâmetro) e os quatro lugares que soltam a c
 "voltar ao mech", ⎵/Esc, botão de câmera) eram cópias quase iguais que não sabiam que, no WARGAME, isso não basta
 (`wargameAtivo` trava o controle de propósito) — unificados num `sairDoWargame()` só, que recarrega sem o link.
 **Provado no Chrome:** depois de C, segurando W, o Mech andou 6,17 m (zero antes). **Testes:** +1 em `MapLinks.test.ts`.
-**Em paralelo no mesmo pedido, nasceu o P264** (atmosfera cyberpunk da Cidade Neon) — branch separada, ver abaixo.
+**Em paralelo no mesmo pedido, nasceu o P264** (atmosfera cyberpunk da Cidade Neon) — branch separada, ver acima.
 
 ## WARGAME: o Comandante ainda jogava, e os bots pareciam fracos (Claude, P263, branch `claude/pos-wargame`)
 

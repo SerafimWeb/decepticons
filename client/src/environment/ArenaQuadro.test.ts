@@ -136,7 +136,7 @@ describe('a Arena com o transformador: a cidade escurece com a energia (P164, pa
     expect(brilho(j.windowColor.value)).toBeCloseTo(base * (PISO_DA_LUZ_DA_CIDADE + (1 - PISO_DA_LUZ_DA_CIDADE) * 0.25), 6);
   });
 
-  it('as arestas dos prédios e as torres do horizonte escurecem junto, e o desenho das zonas some sem energia e volta com ela', async () => {
+  it('as arestas e as faixas dos prédios escurecem junto, e o desenho das zonas some sem energia e volta com ela', async () => {
     const { arena: a, scene } = await arena(true);
     const arestas: THREE.LineBasicMaterial[] = [];
     const discos: THREE.Mesh[] = [];
@@ -147,7 +147,9 @@ describe('a Arena com o transformador: a cidade escurece com a energia (P164, pa
       if ((o as THREE.InstancedMesh).isInstancedMesh && (o as THREE.InstancedMesh).material instanceof THREE.MeshBasicMaterial) horizonte.push((o as THREE.InstancedMesh).material as THREE.MeshBasicMaterial);
     });
     expect(arestas.length).toBeGreaterThanOrEqual(5); // 3 prédios + plataforma + rampa + (a torre Serafim e a grade, que ficam de fora)
-    expect(horizonte.length).toBeGreaterThanOrEqual(6); // as duas do horizonte, as faixas de cada prédio e os LEDs da torre Serafim (que ficam de fora)
+    // As faixas de cada prédio e os LEDs da torre Serafim (que ficam de fora). A cidade em volta (P264) não mora mais na Arena: ela escurece
+    // pelo uniforme que entrega a `registraLuzes` (`CidadeNeonCenario.test.ts`).
+    expect(horizonte.length).toBeGreaterThanOrEqual(4);
     expect(discos).toHaveLength(2); // as duas zonas
     const brilho = (c: THREE.Color): number => c.r + c.g + c.b; // o ciano puro tem r = 0: o brilho é a soma dos canais
     const antesArestas = arestas.map((m) => brilho(m.color));
@@ -155,9 +157,9 @@ describe('a Arena com o transformador: a cidade escurece com a energia (P164, pa
     a.setEnergia(0);
     // as arestas dos três prédios, da plataforma e da rampa baixaram (a torre Serafim, a grade e o contorno ficam como são), e as faixas e o horizonte também
     expect(arestas.filter((m, i) => brilho(m.color) < antesArestas[i]! - 1e-6)).toHaveLength(5);
-    // as faixas dos três prédios e as duas do horizonte caem até o piso; os LEDs da torre Serafim (a base do time, com os modos próprios) não são da cidade
+    // as faixas dos três prédios caem até o piso; os LEDs da torre Serafim (a base do time, com os modos próprios) não são da cidade
     const escurecidas = horizonte.map((m, i) => [m, i] as const).filter(([m, i]) => brilho(m.color) < antesHorizonte[i]! - 1e-6);
-    expect(escurecidas).toHaveLength(5);
+    expect(escurecidas).toHaveLength(3);
     for (const [m, i] of escurecidas) expect(brilho(m.color)).toBeCloseTo(antesHorizonte[i]! * PISO_DA_LUZ_DA_CIDADE, 6);
     for (const d of discos) expect(d.visible, 'sem energia as zonas somem').toBe(false);
     a.setEnergia(0.3);

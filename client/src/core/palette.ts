@@ -11,13 +11,14 @@ import * as THREE from 'three';
 export const PALETTE = {
   // Ambiente: espaço escuro, chão com grade ciano (Tron). O céu é um degradê (`environment/Atmosphere.ts`) do zênite
   // quase preto até um brilho de horizonte; a névoa é um tom acima do preto para as torres distantes se
-  // destacarem do céu em vez de sumir nele.
+  // destacarem do céu em vez de sumir nele. P264 (28/10): a névoa e o horizonte ficaram num turquesa mais aceso e mais
+  // verde, o das referências de cidade cyberpunk do Comandante — é nele que a cidade em volta da praça some ao longe.
   skyZenith: 0x03040a,
   skyUpper: 0x060a1a,
   skyMid: 0x0a1a30,
-  skyGlow: 0x143448,
-  skyHorizon: 0x1f4d60,
-  fog: 0x0c2230,
+  skyGlow: 0x163e49,
+  skyHorizon: 0x225863,
+  fog: 0x10323b,
   ground: 0x1c2832,
   gridMain: 0x00a8c0,
   gridSub: 0x0c2a36,

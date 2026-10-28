@@ -51,7 +51,7 @@ import { multidaoFromSearch } from '../debug/multidaoLink';
 import type { MultidaoDemo } from '../debug/MultidaoDemo';
 import { cutsceneFromSearch } from '../debug/cutsceneLink';
 import type { CutsceneJaneiro } from '../debug/CutsceneJaneiro';
-import { carregarChefeSeFor, carregarHudDaMissao, carregarMapaSeFor, chefeCarregado, exigirChefe, exigirHudDaMissao, exigirMapa, type HudDaMissao, type ObjetivosCarregados } from '../environment/mapasSobDemanda';
+import { carregarCenarioDaCidade, carregarChefeSeFor, carregarHudDaMissao, carregarMapaSeFor, cenarioDaCidadeCarregado, chefeCarregado, exigirChefe, exigirHudDaMissao, exigirMapa, type CenarioDaCidade, type HudDaMissao, type ObjetivosCarregados } from '../environment/mapasSobDemanda';
 import type { EstadoDosObjetivos } from '../environment/AmazoniaObjetivos';
 import { AMAZONIA_GERADORES } from '../environment/AmazoniaLayout';
 import { aoMudarVisibilidade, aplicarGlobal, funcionalidadeVisivel, visibilidadeGlobal } from './Visibilidade';
@@ -428,6 +428,8 @@ export class Game {
   private readonly multidaoQuer = multidaoFromSearch(location.search);
   private multidaoDemo: MultidaoDemo | null = null;
   private multidaoCarregando = false;
+  /** A cidade em volta da Cidade Neon (P264): as torres, os telões, a rua e o chão molhado. Só desenho, pedaço sob demanda; `null` nos outros mapas. */
+  private cidade: CenarioDaCidade | null = null;
   /** A cutscene-piloto do 8 DE JANEIRO (`?cutscene=janeiro-abertura`, P245): câmera por trajetória, sem controle do jogador, para gravar em vídeo (`scripts/cutscene.mjs`). Carregada sob demanda. */
   private readonly cutsceneQuer = cutsceneFromSearch(location.search);
   private cutscene: CutsceneJaneiro | null = null;
@@ -495,6 +497,11 @@ export class Game {
     if (mapaPedido === 'praia' || gameModeFromSearch(location.search) === 'survival') await carregarHudDaMissao();
     // A Praça dos Três Poderes (o 8 DE JANEIRO, P217) também é um mapa sob demanda: o código dele só baixa para quem o abre (liberado no painel de visibilidade ou no modo Comandante).
     if (new URLSearchParams(location.search).get('mapa') === 'janeiro' && mapaLiberado('janeiro')) await carregarMapaSeFor('janeiro');
+    // A cidade em volta da Cidade Neon (P264): só desenho, num pedaço próprio que só baixa quem joga nela (o WARGAME também roda nela).
+    // É só desenho: se o pedaço não baixar (rede caindo, aba velha com os nomes de arquivo de outra versão), o jogo abre igual, com a Arena de sempre.
+    if (mapFromSearch(location.search, false, gameModeFromSearch(location.search)) === 'arena' || roteiroDoLink(location.search)) {
+      await carregarCenarioDaCidade().catch((erro: unknown) => console.warn('a cidade em volta da Cidade Neon não baixou; seguindo sem ela', erro));
+    }
     bootProgresso('jogo');
     const game = new Game(container, physics, hangar, visualDoChefe);
     await game.precompileShaders();
@@ -632,6 +639,12 @@ export class Game {
     if (this.match.arena.serafim) {
       this.match.arena.registraLuzes(addBankSign(this.scene)); // a placa do banco cai junto com o transformador (P164, parte E)
       addSerafimPlaque(this.scene);
+      // A cidade em volta (P264): se o pedaço baixou (`Game.create`), as luzes dela também caem com o transformador.
+      const cidade = cenarioDaCidadeCarregado();
+      if (cidade) {
+        this.cidade = cidade.construir(this.scene, this.match.arena, this.particles);
+        this.match.arena.registraLuzes(this.cidade.luzes);
+      }
     }
     this.droneVisuals = this.match.drones ? new DroneVisuals(this.scene, this.match.drones) : null;
     this.weaponFx = new WeaponFx(this.particles, this.camera, (x, y, z) => physics.terrainY(x, z, y + 1, 40), this.match.beams);
@@ -887,6 +900,7 @@ export class Game {
         this.bloomPass.enabled = enabled;
         this.refractWaves = enabled;
         this.match.arena.praia?.setDetalhe(enabled); // o último degrau do rebaixamento também tira as nuvens e o ruído do mar
+        this.cidade?.setDetalhe(enabled); // e, na Cidade Neon, o chão molhado e a grade de LEDs dos telões
       },
     );
     // Hangar: enquanto está aberto, o desenho troca a arena pelo galpão (o jogo está pausado).
@@ -1573,6 +1587,7 @@ export class Game {
     this.bloomPass.enabled = quality !== 'baixa';
     this.refractWaves = quality !== 'baixa';
     this.match.arena.praia?.setDetalhe(quality !== 'baixa');
+    this.cidade?.setDetalhe(quality !== 'baixa');
     this.quality.setAdaptive(quality === 'auto');
   }
 
@@ -2264,6 +2279,7 @@ export class Game {
     this.dominioPontos?.update(dt);
     // O mapa que anima (o mar da praia, P126): nos outros, o `Arena.update` não faz nada.
     this.match.arena.update(dt);
+    this.cidade?.update(dt);
     // A Amazônia (P180, parte B): a câmera leva o céu e o detalhe da floresta junto.
     this.match.arena.observar(this.camera.position.x, this.camera.position.y, this.camera.position.z);
     // Os telões da Cidade Neon (P246): decide tocar/pausar pela distância da câmera e pelo degrau de qualidade (G12); nos outros mapas, `telao` é `null`.
