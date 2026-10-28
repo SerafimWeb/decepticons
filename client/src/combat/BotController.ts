@@ -32,6 +32,11 @@ export interface BotSkill {
   readAim: number;
   /** Quando lê a mira, chance de a troca de lado vir com dash. */
   jukeDash: number;
+  /**
+   * Quanto o time coordena (`CerebroDoTime`): 0 = só reagrupa (nada de pinça); 1 = pinça com um flanqueador; 2 = pinça
+   * com dois, de lados opostos. Ausente vale 1. A dificuldade escala a coordenação, não só a mira.
+   */
+  coordenacao?: number;
 }
 
 /** Aprovado pelo dono jogando ("grau de dificuldade considerável, está bom assim", 2026-09-24). */
@@ -44,12 +49,13 @@ export const BOT_SKILL_NORMAL: BotSkill = {
   burstPauseS: 0.9,
   readAim: 0.6,
   jukeDash: 0.25,
+  coordenacao: 1,
 };
 
 export const BOT_SKILLS: Record<Difficulty, BotSkill> = {
-  facil: { reactionS: 0.9, aimErrorRad: 0.085, leadFactor: 0.15, turnRate: 2.2, burstShots: 3, burstPauseS: 1.4, readAim: 0, jukeDash: 0 },
+  facil: { reactionS: 0.9, aimErrorRad: 0.085, leadFactor: 0.15, turnRate: 2.2, burstShots: 3, burstPauseS: 1.4, readAim: 0, jukeDash: 0, coordenacao: 0 },
   normal: BOT_SKILL_NORMAL,
-  dificil: { reactionS: 0.3, aimErrorRad: 0.028, leadFactor: 0.85, turnRate: 4.0, burstShots: 5, burstPauseS: 0.7, readAim: 1, jukeDash: 0.6 },
+  dificil: { reactionS: 0.3, aimErrorRad: 0.028, leadFactor: 0.85, turnRate: 4.0, burstShots: 5, burstPauseS: 0.7, readAim: 1, jukeDash: 0.6, coordenacao: 2 },
 };
 
 const VISION_RANGE = 90;
@@ -200,6 +206,10 @@ const THREAT_MEMORY_S = 4;
 const RADIO_INTERVAL_S = 1.5;
 /** Cerco: dentro deste ângulo do flanco (rad) o bot já chegou e só corrige devagar. */
 const FLANK_SETTLED_RAD = 0.2;
+/** "Em posição" da pinça: a até este ângulo (~26°) do flanco que o time mandou, com o alvo à vista. */
+const FLANCO_NO_PONTO_RAD = 0.45;
+/** Reagrupando: a esta distância (m) do ponto, o bot para e espera os outros. */
+const REAGRUPA_CHEGOU_M = 12;
 
 const _eye = new THREE.Vector3();
 const _aim = new THREE.Vector3();
@@ -274,6 +284,43 @@ export class BotController {
    */
   hasFlank = false;
   flankBearing = 0;
+  /**
+   * Tarefa do time (`CerebroDoTime`, quem escreve): `flanco` = anda em volta do alvo até `tarefaBearing` (rad, como `flankBearing`) e só abre fogo
+   * quando o time dá o sinal; `reagrupar` = na patrulha, vai a `tarefaPonto` e espera lá. O bot continua dono da mira, do desvio e do recuo: a tarefa só
+   * decide **para onde ele anda** e **quando pode atirar**. `nenhuma` = o comportamento de sempre.
+   */
+  tarefa: 'nenhuma' | 'flanco' | 'reagrupar' = 'nenhuma';
+  tarefaBearing = 0;
+  readonly tarefaPonto = new THREE.Vector3();
+  /** Flanqueador esperando o sinal: não atira e não ocupa vaga de ataque. */
+  segurarFogo = false;
+  /** O sinal foi dado (a pinça está no golpe): o diretor atende este bot primeiro. */
+  golpe = false;
+  /** Pode atirar agora: tem a vaga de ataque e o time não mandou segurar o fogo. */
+  get podeAtirar(): boolean {
+    return this.hasToken && !this.segurarFogo;
+  }
+  /** Está no flanco que o time mandou (a até `FLANCO_NO_PONTO_RAD` do ângulo, com o alvo à vista)? É o "em posição" da pinça. */
+  get noFlanco(): boolean {
+    const t = this.target;
+    if (!t || !this.targetVisible) return false;
+    const me = this.mech.simPosition;
+    const tp = t.simPosition;
+    return Math.abs(wrapAngle(Math.atan2(me.x - tp.x, me.z - tp.z) - this.tarefaBearing)) < FLANCO_NO_PONTO_RAD;
+  }
+  /** O ponto da rota de patrulha em que está (o time põe todo mundo no mesmo ao reagrupar). */
+  get rotaAtual(): number {
+    return this.waypoint;
+  }
+  seguirRota(i: number): void {
+    if (i >= 0 && i < this.waypoints.length) this.waypoint = i;
+  }
+  /** Larga a tarefa do time (o plano acabou, o alvo morreu ou o bot renasceu). */
+  largarTarefa(): void {
+    this.tarefa = 'nenhuma';
+    this.segurarFogo = false;
+    this.golpe = false;
+  }
   /** Rádio do clã: o alvo que este bot está vendo, para passar aos companheiros (o `BotSystem` lê e limpa). */
   radioReport: MechBase | null = null;
   /** Primeiro contato visual (saiu da patrulha ou da varredura por ter visto): vira aviso na tela. */
@@ -478,6 +525,7 @@ export class BotController {
     this.radioReport = null;
     this.radioContact = false;
     this.hasFlank = false;
+    this.largarTarefa();
     this.yaw = this.mech.yaw;
     this.stuckFrom.copy(this.mech.simPosition);
     this.stuckTimer = STUCK_CHECK_S;
@@ -722,6 +770,14 @@ export class BotController {
 
     switch (this.state) {
       case 'patrol': {
+        // Reagrupar (time): vai ao ponto que o time marcou e espera lá, em vez de seguir a rota sozinho.
+        if (this.tarefa === 'reagrupar') {
+          if (this.flatDistance(this.tarefaPonto) > REAGRUPA_CHEGOU_M) {
+            this.towards(this.tarefaPonto);
+            faceYaw = yawOf(_move.x, _move.z);
+          }
+          break;
+        }
         if (!this.waypoints.length) break;
         const wp = this.waypoints[this.waypoint]!;
         if (this.flatDistance(wp) < WAYPOINT_REACHED) this.nextWaypoint();
@@ -733,6 +789,12 @@ export class BotController {
         break;
       }
       case 'chase': {
+        // Pinça do time: vai ao flanco que o time mandou (e fica lá, sem atirar, até o sinal).
+        if (this.targetVisible && this.target && this.tarefa === 'flanco') {
+          this.orbit(this.target.simPosition, this.attackRange * HOLD_SCALE, this.tarefaBearing);
+          faceYaw = this.yawTo(this.target.simPosition);
+          break;
+        }
         // Esperando a vaga com o alvo à vista: já vai pelo flanco que o diretor deu, em vez de ir reto até ele.
         if (this.targetVisible && this.target && !this.hasToken && this.hasFlank && !this.profile.melee) {
           this.orbit(this.target.simPosition, this.attackRange * HOLD_SCALE);
@@ -759,6 +821,11 @@ export class BotController {
           if (p.dodgeChance > 0 && this.rand() < p.dodgeChance && this.mech.mobility > 0) this.input.dash = true;
         }
         this.dodgeAim();
+        // Pinça do time: segura o flanco mandado (a pinça só vale para quem atira de longe; o corpo a corpo nunca recebe a tarefa).
+        if (this.tarefa === 'flanco' && !this.profile.melee) {
+          this.orbit(t, this.attackRange * HOLD_SCALE, this.tarefaBearing);
+          break;
+        }
         // Sem a vaga, com flanco dado pelo diretor: anda em volta do alvo até o flanco e espera lá, sem atirar.
         if (!this.hasToken && this.hasFlank && !this.profile.melee) {
           this.orbit(t, this.attackRange * HOLD_SCALE);
@@ -868,13 +935,13 @@ export class BotController {
    * Cerco: anda em volta do alvo (tangente ao círculo, sem cortar pela frente dele) até a direção `flankBearing`,
    * corrigindo para ficar a `radius` dele.
    */
-  private orbit(t: Readonly<THREE.Vector3>, radius: number): void {
+  private orbit(t: Readonly<THREE.Vector3>, radius: number, goal = this.flankBearing): void {
     const me = this.mech.simPosition;
     const dx = me.x - t.x;
     const dz = me.z - t.z;
     const r = Math.hypot(dx, dz) || 1;
     const bearing = Math.atan2(dx, dz);
-    const diff = wrapAngle(this.flankBearing - bearing);
+    const diff = wrapAngle(goal - bearing);
     const radial = Math.max(-1, Math.min(1, (radius - r) / 6));
     const tangential = Math.abs(diff) > FLANK_SETTLED_RAD ? Math.sign(diff) : diff / FLANK_SETTLED_RAD;
     // Posição = alvo + r·(sen b, cos b): girar b para mais anda em (cos b, −sen b).
@@ -929,7 +996,7 @@ export class BotController {
     if (this.volleyLeft === 0) {
       const perto = volleyMinDistance(w);
       const longe = Math.min(w.maxRange, VISION_RANGE);
-      if (this.volleyCooldown > 0 || !this.hasToken || dist < perto || dist > longe || facingOff > VOLLEY_CONE_RAD) return;
+      if (this.volleyCooldown > 0 || !this.podeAtirar || dist < perto || dist > longe || facingOff > VOLLEY_CONE_RAD) return;
       if (w.salvo ? l.ammo < w.magazine : l.ammo === 0) return;
       this.volleyLeft = w.salvo ? w.magazine : Math.min(l.ammo, VOLLEY_SHOTS);
       this.volleyGap = 0;
@@ -980,7 +1047,7 @@ export class BotController {
       m.applyFacing(this.yaw, 0);
       if (this.hasToken) this.tokenHeld += dt;
       const w = m.loadout.primary;
-      if (dist - m.stats.radius - t.stats.radius > w.maxRange || this.fireCooldown > 0 || !m.canFirePrimary || !this.hasToken) return;
+      if (dist - m.stats.radius - t.stats.radius > w.maxRange || this.fireCooldown > 0 || !m.canFirePrimary || !this.podeAtirar) return;
       this.wantsToFire = true;
       this.fireCooldown = Math.max(this.fireCooldown, -dt) + w.fireInterval;
       return;
@@ -996,7 +1063,7 @@ export class BotController {
 
     const facingOff = Math.abs(wrapAngle(this.yawTo(tp) - this.yaw));
     if (this.hasToken) this.tokenHeld += dt;
-    const naMira = !(dist > FIRE_RANGE || facingOff > FIRE_CONE_RAD || !this.hasToken);
+    const naMira = !(dist > FIRE_RANGE || facingOff > FIRE_CONE_RAD || !this.podeAtirar);
     const primario = naMira && this.fireCooldown <= 0 && m.canFirePrimary;
     // A mão esquerda (P108 b) tem a cadência e o alcance da arma dela e atira junto, na mesma mira; sem arma secundária no esquadrão, nada disto roda.
     const w2 = this.useSecondary && m.loadout.secondary?.kind !== 'ammo' ? m.loadout.secondary : null;

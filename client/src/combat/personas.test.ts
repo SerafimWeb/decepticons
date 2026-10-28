@@ -37,6 +37,8 @@ async function arena(spawns: [number, number][], personas: Persona[], maxAttacke
   const bots = new BotSystem({ scene: new THREE.Scene(), physics, combat, projectiles, particles, respawner, spawns, waypoints: spawns, seed: 3, personas, kits });
   bots.targets = [player];
   bots.maxAttackers = maxAttackers;
+  // Estes testes são o contrato do diretor de ataque sozinho; a pinça do time (que abre uma vaga a mais no golpe) tem os dela em `CerebroDoTime.test.ts`.
+  bots.coordenar = false;
   physics.step();
   const firedBy = new Map<unknown, number>();
   let maxConcurrent = 0;

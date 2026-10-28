@@ -15,6 +15,7 @@ import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { PERSONA_LABELS, type Difficulty, type Persona } from '../core/Settings';
 import { ANDROID_PROFILE, BOSS_PROFILE, BOT_SKILL_NORMAL, BOT_SKILLS, BotController, type BotSkill, type SquadOrder, MECH_PROFILE, PERSONAS } from './BotController';
 import { escolherRearguarda } from './tatica';
+import { CerebroDoTime } from './CerebroDoTime';
 import { parametrosDaTatica, type TaticaId } from './taticas';
 import type { CombatSystem } from './CombatSystem';
 import type { ProjectileSystem } from './ProjectileSystem';
@@ -244,6 +245,12 @@ export class BotSystem {
   private readonly cand: Fighter[] = [];
   /** Aviso de rádio na tela (o `Game` liga; o servidor não). */
   onRadio?: RadioCallout;
+  /**
+   * O cérebro do time (ordem P269): pinça e reagrupar, com o rádio que as anuncia (`cerebro.onFala`). O interruptor `ia:time` do painel de visibilidade
+   * liga e desliga `coordenar`: desligado, o time luta como antes (só o diretor e o rádio de contato).
+   */
+  readonly cerebro = new CerebroDoTime();
+  coordenar = true;
   private radioQuiet = 0;
   private readonly projectiles: ProjectileSystem;
   private readonly combat: CombatSystem;
@@ -253,6 +260,7 @@ export class BotSystem {
 
   constructor(private readonly o: BotSystemOptions) {
     this.projectiles = o.projectiles;
+    this.cerebro.segurarFogo = !o.escort; // o time do jogador flanqueia atirando; o inimigo segura o fogo até o sinal
     this.combat = o.combat;
     this.particles = o.particles;
     const waypoints = o.waypoints.map(([x, z]) => new THREE.Vector3(x, 0, z));
@@ -597,14 +605,16 @@ export class BotSystem {
       const target = brain.currentTarget;
       q.side = 0;
       brain.hasFlank = false;
-      if (!q.bot.mech.alive || !brain.wantsToken || !target) {
+      // Quem segura o fogo na pinça (o flanqueador a caminho) não ocupa vaga nem entra na fila: o sinal do time é que o solta.
+      if (!q.bot.mech.alive || !brain.wantsToken || !target || brain.segurarFogo) {
         brain.hasToken = false;
         brain.tokenHeld = 0;
         continue;
       }
       // 0 = no turno; 1 = esperando; 2 = o turno acabou: vai para o fim da fila (sem isso, o mais perto do
       // alvo, que é quem estava atacando, ganhava a vaga de novo e só largava quando superaquecia).
-      const onTurn = !brain.hasToken ? 1 : brain.tokenHeld < TURN_S ? 0 : 2;
+      // O golpe da pinça (-1) passa na frente: o sinal vale mais que a fila.
+      const onTurn = brain.golpe ? -1 : !brain.hasToken ? 1 : brain.tokenHeld < TURN_S ? 0 : 2;
       const me = q.bot.mech.simPosition;
       const tp = target.simPosition;
       // Prioridade (passos de 1e4) > espera (passos de 100 a cada 0,2 s, até 99) > distância (até 99 m).
@@ -619,7 +629,8 @@ export class BotSystem {
       }
       cand[i] = q;
     }
-    let budget = this.maxAttackers;
+    // A pinça em golpe abre uma vaga a mais por flanqueador, só enquanto dura o golpe (`CerebroDoTime.bonusVagas`).
+    let budget = this.maxAttackers + this.cerebro.bonusVagas;
     for (const q of cand) {
       const cost = q.bot.mech instanceof Android ? ANDROID_COST : 1;
       if (cost <= budget + 1e-9) {
@@ -657,6 +668,10 @@ export class BotSystem {
       const off = wrapAngle(Math.atan2(me.x - tp.x, me.z - tp.z) - anchor);
       let left = 0;
       let right = 0;
+      // Os flanqueadores da pinça (cérebro do time) já ocupam um lado do alvo: contam, para o cerco não pôr outro no mesmo.
+      for (const f of this.fighters) {
+        if (f.brain.tarefa === 'flanco' && f.brain.currentTarget === target) wrapAngle(f.brain.tarefaBearing - anchor) > 0 ? left++ : right++;
+      }
       for (const o of cand) {
         if (o === q) break;
         if (o.side !== 0 && o.brain.currentTarget === target) o.side > 0 ? left++ : right++;
@@ -714,6 +729,7 @@ export class BotSystem {
       this.order = 'follow';
       for (const { brain } of this.fighters) brain.receiveOrder('follow', this.orderPoint, null);
     }
+    this.cerebro.planejar(dt, this.fighters, this.coordenar, this.reserves);
     this.direct(dt);
     this.radioQuiet -= dt;
     for (const bot of this.bots) {

@@ -29,6 +29,8 @@ export const NOME_DO_GRUPO: Readonly<Record<GrupoDeFuncionalidade, string>> = {
 const fixas: readonly Funcionalidade[] = [
   { id: 'fase:chefes-janeiro', grupo: 'fases', nome: 'Trampado e Evil · 8 de Janeiro', padrao: 'restrito', efeito: 'o encontro dos dois chefes da missão offline' },
   { id: 'arma:cacetete-poder', grupo: 'armas', nome: 'Cacetete de poder · prêmio do Evil', padrao: 'restrito', efeito: 'o golpe F conquistado na missão do 8 de Janeiro' },
+  // P269: o cérebro do time dos bots (pinça e reagrupar). Nasce RESTRITO: a bancada bot × bot não mostrou ganho de força (45% / 38% / 45% de vitória, 40 duelos por dificuldade), então o Comandante julga jogando e libera aqui. Também é o interruptor de segurança: restrito devolve os bots ao comportamento de antes, tick a tick (esquadraoPadrao.test.ts).
+  { id: 'ia:time', grupo: 'modos', nome: 'IA de time dos bots (pinça e reagrupar)', padrao: 'restrito', efeito: 'os bots deixam de combinar pinça e reagrupamento e lutam como antes (o diretor de ataque e o rádio de contato continuam)' },
   { id: 'mapa:arena', grupo: 'fases', nome: 'Cidade Neon (Arena)', padrao: 'publico', efeito: 'o pino vira EM BREVE no mapa-múndi e o link cai na Cidade Neon' },
   { id: 'mapa:bunker', grupo: 'fases', nome: 'Bunker', padrao: 'restrito', efeito: 'o pino vira EM BREVE no mapa-múndi, some das campanhas e o link cai na Cidade Neon' },
   { id: 'mapa:praia', grupo: 'fases', nome: 'Estação dos Cabos (Praia)', padrao: 'publico', efeito: 'o pino vira EM BREVE no mapa-múndi, some das campanhas e o link cai na Cidade Neon' },

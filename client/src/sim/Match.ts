@@ -2,6 +2,7 @@ import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { BarrageSystem } from '../combat/BarrageSystem';
 import { BotSystem, type BotKit, type BotSystemOptions } from '../combat/BotSystem';
+import type { Fala } from '../combat/CerebroDoTime';
 import { BOT_SKILLS } from '../combat/BotController';
 import { CombatSystem, type MechHitEvent } from '../combat/CombatSystem';
 import { CruiseSystem } from '../combat/CruiseSystem';
@@ -350,6 +351,19 @@ export class Match {
    * 8 s por time). `allied`: foi um aliado do jogador. Só tela; a regra já aconteceu dentro do `BotSystem`.
    */
   onRadio?: (from: string, target: MechBase, allied: boolean) => void;
+  /**
+   * O que o cérebro do time diz no rádio (ordem P269): `pinca` (um flanqueador avisa que vai abrir o flanco), `posicao` (chegou), `vai` (o sinal), `reagrupar`. `target` é o alvo da
+   * pinça (null ao reagrupar). Só tela; a regra já aconteceu no tick (`combat/CerebroDoTime.ts`).
+   */
+  onFala?: (from: string, fala: Fala, target: MechBase | null, allied: boolean) => void;
+  /**
+   * O interruptor da coordenação dos times (`ia:time`, painel de visibilidade): ligado por padrão. Desligado, os dois times lutam como antes do cérebro do time (pinça e reagrupar param
+   * e quem estava com tarefa a larga no próximo tick). Vale ao vivo; o tick não depende de rede nem de tela.
+   */
+  setCoordenacao(ligada: boolean): void {
+    this.bots.coordenar = ligada;
+    if (this.allies) this.allies.coordenar = ligada;
+  }
   /** Uma batida do roteiro do WARGAME disparou (P262): quem desenha (legenda, corte de câmera) decide o que fazer; a ordem de combate já foi aplicada. */
   onRoteiroEvento?: (beat: BeatDoRoteiro) => void;
   /** Foguete explodiu em `at` (o dano já foi aplicado): fogo, fumaça, tremor, som. `w` é a arma que explodiu (o tamanho do estouro vem do raio dela). */
@@ -661,6 +675,8 @@ export class Match {
     this.ringOfRebels = { foes: this.allies ? [this.players, this.allies.mechs] : [this.players], friends: [this.bots.mechs] };
     this.bots.onRadio = (from, target) => this.onRadio?.(from, target, false);
     if (this.allies) this.allies.onRadio = (from, target) => this.onRadio?.(from, target, true);
+    this.bots.cerebro.onFala = (from, fala, target) => this.onFala?.(from, fala, target, false);
+    if (this.allies) this.allies.cerebro.onFala = (from, fala, target) => this.onFala?.(from, fala, target, true);
     for (const b of this.bots.mechs) this.round.register(b, this.bots.nameOf(b));
     if (this.allies) for (const b of this.allies.mechs) this.round.register(b, this.allies.nameOf(b));
     this.waves = survival && !amazonia && !janeiro

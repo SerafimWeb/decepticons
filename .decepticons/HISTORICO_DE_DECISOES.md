@@ -1,3 +1,11 @@
+## [2026-10-28] O cérebro do time dos bots nasce restrito, porque a medida não mostrou ganho (P269)
+
+O Comandante pediu bots "mais estratégicos… que combinem ataques e defesas, como se se comunicassem". Entrou `CerebroDoTime` (pinça, reagrupar, rádio no feed) atrás do interruptor `ia:time`. **O Comandante escolheu liberar já; depois da bancada ele escolheu RESTRITO**, e a decisão segue os números:
+**(1) A bancada bot × bot** (`.tmp/bancada/`, 4×4, 150 s, 40 sementes, lados trocados) deu **45% / 38% / 45%** de vitória ao time com cérebro (fácil/normal/difícil; 50% é empate, ±8 de ruído): nenhum ganho. **(2) O FOCO no mais fraco** foi **pior** (1/40 no normal): manda todo mundo atrás de quem está recuando e se esquivando; saiu do código.
+**(3) A pinça segura o fogo do flanqueador só nos inimigos**; o time aliado flanqueia atirando (um aliado calado enquanto o jogador apanha é pior que nenhuma pinça). **(4) O golpe abre uma vaga a mais por flanqueador por 5 s** (o teto `maxAttackers` segue valendo no resto do tempo); a pinça esfria 20 s (14 s no difícil).
+**(5) O interruptor desligado devolve a partida de antes, tick a tick** (`esquadraoPadrao.test.ts` guarda as fotos de 16/10 com a coordenação desligada; as fotos da partida padrão ligada foram refeitas). **(6) Online:** o servidor lê `ia:time` ao abrir a sala e ao gravar a visibilidade; sem exceção gravada vale o padrão do catálogo (restrito = desligado); no online não há modo Comandante, restrito vale para todos.
+**(7) O que a bancada ainda não testou e é o próximo experimento:** cobertura mútua, recuo coordenado para as zonas de cura, e o time sem o teto de atacantes. Contra um jogador humano o efeito pode ser outro (a bancada mede bot contra bot): o juiz é o Comandante jogando.
+
 ## [2026-10-28] Outdoors que alternam, ajustados num painel do Comandante e guardados no servidor (P267)
 
 O Comandante: "tá meio poluído… quero um painel pra configurar quantas imagens devem aparecer… trocar elas a cada 10 ou 15 segundos". Decisões de propósito:

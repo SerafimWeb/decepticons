@@ -38,10 +38,11 @@ function foto(match: Match, player: MechBase): string {
 }
 
 /** Roda a partida com o jogador parado e devolve o hash de cada foto. */
-async function rodar(opcoes: Partial<MatchOptions> & { foes: MatchOptions['foes'] }): Promise<string[]> {
+async function rodar(opcoes: Partial<MatchOptions> & { foes: MatchOptions['foes'] }, coordenacao = true): Promise<string[]> {
   const physics = await PhysicsWorld.create();
   try {
     const match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, debris: false, ...opcoes });
+    match.setCoordenacao(coordenacao);
     const player = new Vector09();
     match.addPlayer(player, 'VOCÊ');
     match.pilots.push({ fixedUpdate: (dt) => player.fixedUpdate(IDLE, dt) });
@@ -73,6 +74,9 @@ const FOES_DO_SERVIDOR: GameSettings = {
  * **Refeitas em 16/10 (P160 parte 4, "bote pra torar na iteração das armas"):** os Mechs bots passaram a lançar a arma explosiva da mão esquerda (o
  * casulo de foguetes de fábrica) em salvas; a primeira foto (1 s) não muda, as outras sim. Medido: no offline padrão o jogador parado apanha menos (os
  * aliados também lançam e limpam os rebeldes antes: 448 contra 1 178 de dano em 90 s, com 50 explosões contra 3) e na Arena do servidor, 34% a mais.
+ *
+ * **Refeitas em 28/10 (P269, o cérebro do time: pinça e reagrupar):** a primeira foto (1 s) não muda, as outras sim (a pinça se forma a partir de ~1 s). As fotos de 16/10 seguem valendo com o
+ * interruptor `ia:time` desligado (o teste logo abaixo): é a garantia de que restringir a funcionalidade no painel devolve a partida de antes.
  */
 describe('esquadrão padrão: a partida de hoje, tick a tick', () => {
   beforeAll(async () => {
@@ -80,15 +84,22 @@ describe('esquadrão padrão: a partida de hoje, tick a tick', () => {
   });
 
   it('Arena com aliados e drones (o jogo offline padrão)', async () => {
-    expect(await rodar({ foes: DEFAULT_SETTINGS })).toEqual(['8446b764', '956e91fd', '6523429f', '36873663']);
+    expect(await rodar({ foes: DEFAULT_SETTINGS })).toEqual(['8446b764', '229d75ab', 'a927c684', '7bee478f']);
   });
 
   it('Arena do servidor (3 Mechs, 3 andróides, técnico, sem aliados)', async () => {
-    expect(await rodar({ foes: FOES_DO_SERVIDOR, allies: false, drones: false })).toEqual(['0188c3d7', '244883ef', 'eeecc73d', '594aeb79']);
+    expect(await rodar({ foes: FOES_DO_SERVIDOR, allies: false, drones: false })).toEqual(['0188c3d7', '244883ef', '146398e3', '731ee2db']);
   });
 
   it('Bunker com aliados (o mapa vertical)', async () => {
-    expect(await rodar({ foes: DEFAULT_SETTINGS, map: 'bunker' })).toEqual(['19bc4530', '33e48f88', 'a36db023', '4a84a16f']);
+    expect(await rodar({ foes: DEFAULT_SETTINGS, map: 'bunker' })).toEqual(['0543dfe7', 'eee8119a', 'b4c11912', '9e8d7231']);
+  });
+
+  // O interruptor `ia:time` (P269) desligado devolve a partida de antes do cérebro do time, tick a tick: as fotos tiradas em 16/10, intactas.
+  it('com a coordenação desligada (ia:time restrito) a partida é exatamente a de antes do cérebro do time', async () => {
+    expect(await rodar({ foes: DEFAULT_SETTINGS }, false)).toEqual(['8446b764', '956e91fd', '6523429f', '36873663']);
+    expect(await rodar({ foes: FOES_DO_SERVIDOR, allies: false, drones: false }, false)).toEqual(['0188c3d7', '244883ef', 'eeecc73d', '594aeb79']);
+    expect(await rodar({ foes: DEFAULT_SETTINGS, map: 'bunker' }, false)).toEqual(['19bc4530', '33e48f88', 'a36db023', '4a84a16f']);
   });
 
   it('Arena sem inimigos além do técnico: os aliados e os drones esperam', async () => {

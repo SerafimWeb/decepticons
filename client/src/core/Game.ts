@@ -55,6 +55,7 @@ import { carregarCenarioDaCidade, carregarChefeSeFor, carregarHudDaMissao, carre
 import type { EstadoDosObjetivos } from '../environment/AmazoniaObjetivos';
 import { AMAZONIA_GERADORES } from '../environment/AmazoniaLayout';
 import { aoMudarVisibilidade, aplicarGlobal, funcionalidadeVisivel, visibilidadeGlobal } from './Visibilidade';
+import { FALA_SEM_ALVO, FALA_TEXTO } from '../combat/radioFalas';
 import { diaFromSearch, progressoDaPartida } from '../environment/CicloDoDia';
 import { Vector09 } from '../entities/Vector09';
 import { Android } from '../entities/Android';
@@ -1779,6 +1780,14 @@ export class Game {
       const name = target === mech ? 'VOCÊ' : this.round.scoreOf(target)?.name ?? 'ALVO';
       this.killFeed.push(`◈ ${from}: CONTATO`, name, false);
     };
+    // O cérebro do time (P269): o que a pinça e o reagrupamento dizem no rádio aparece no feed, como o aviso de contato. O interruptor `ia:time` do painel de visibilidade liga e desliga a coordenação ao vivo.
+    this.match.onFala = (from, fala, target) => {
+      if (this.online) return;
+      const name = !target ? FALA_SEM_ALVO : target === mech ? 'VOCÊ' : this.round.scoreOf(target)?.name ?? 'ALVO';
+      this.killFeed.push(`◈ ${from}: ${FALA_TEXTO[fala]}`, name, false);
+    };
+    this.match.setCoordenacao(funcionalidadeVisivel('ia:time'));
+    aoMudarVisibilidade(() => this.match.setCoordenacao(funcionalidadeVisivel('ia:time')));
     // Foguete: o dano em área já foi aplicado pela partida; aqui, fogo, fumaça, tremor e som.
     this.match.onExplosion = (at, w) => {
       // O estouro é do tamanho da explosão da arma (o foguete, de 6 m, é a medida): um míssil leve de 2,2 m solta um terço das partículas e do tremor, e o som só de três em três

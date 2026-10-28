@@ -54,6 +54,24 @@ describe('a sala aplica as regras', () => {
   });
 });
 
+describe('a sala aplica o interruptor da IA de time (ia:time, P269)', () => {
+  it('sem exceção gravada vale o padrão do catálogo (restrito = desligado); o dono liberar liga e restringir de novo desliga, ao vivo', async () => {
+    const sala = await ArenaRoom.create('IATIME');
+    try {
+      const bots = (sala as unknown as { match: { bots: { coordenar: boolean } } }).match.bots;
+      expect(bots.coordenar).toBe(false);
+      sala.aplicarVisibilidade({ 'ia:time': 'publico' });
+      expect(bots.coordenar).toBe(true);
+      sala.aplicarVisibilidade({ 'ia:time': 'restrito' });
+      expect(bots.coordenar).toBe(false);
+      sala.aplicarVisibilidade({});
+      expect(bots.coordenar).toBe(false);
+    } finally {
+      sala.dispose();
+    }
+  });
+});
+
 describe('as rotas do dono', () => {
   it('GET e POST /admin/regras exigem a chave (401 sem ela); o POST puxa para os limites, grava e responde as regras que valem', async () => {
     rmSync(pasta, { recursive: true, force: true });

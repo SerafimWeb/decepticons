@@ -237,6 +237,7 @@ export async function startServer(
           };
           room.onRecusou = (peer, motivo: RejectReason) => contar(`recusa_${motivo}` as EventoServidor, peer.pais);
         }
+        room.aplicarVisibilidade(visibilidade.atual().itens);
         rooms.set(code, room);
         creating.delete(code);
         log(`sala ${code} aberta`);
@@ -1152,7 +1153,9 @@ export async function startServer(
     regras: { atual: () => regras.atual(), gravar: (x) => regras.gravar(x) },
     gravarVisibilidade: (itens) => {
       statusAt = 0; // o /status leva a visibilidade: a próxima resposta já traz a nova
-      return visibilidade.gravar(itens);
+      const gravada = visibilidade.gravar(itens);
+      if (gravada) for (const sala of rooms.values()) sala.aplicarVisibilidade(gravada.itens); // o interruptor `ia:time` vale ao vivo nas salas abertas
+      return gravada;
     },
     gravarTelao: (itens) => telao.gravar(itens),
     gravarOutdoors: (parametros) => outdoors.gravar(parametros),
