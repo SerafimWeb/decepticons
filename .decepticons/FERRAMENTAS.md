@@ -190,6 +190,12 @@ editado quadro a quadro**: corrigir é roteiro → exportar de novo.
 
 ---
 
+## 3.5b Mexer na planta da Cidade Neon (P268, `environment/ArenaMapa.ts` e `ArenaUrbana.test.ts`)
+
+**Quando:** vai pôr, tirar ou mover prédio, contêiner, barricada ou plataforma na Arena. **A planta em conta** (`ArenaMapa.ts`, dado puro) mede o que o olho não confere: **o alcance** (`fracaoQueSeEnxerga`: de pares de pontos sorteados com semente, quantos se enxergam em linha reta a olho de Mech, 4 m, ou de andróide, 1,2 m; `aberturaMedia`: a vista livre média em volta de um ponto), **a conexão** (`montarGrade` com o raio do corpo e a altura que ele pisa por cima + `componentes`: o Mech com 1,4 m, o Marauder com 1,7 m, o Colossus-01 com 3,8 m e 2,4 m) e **as frestas que prendem** (`frestasQuePrendem`: vão entre dois obstáculos que não é zero nem passa o Marauder, 3,8 m; vão preenchido por outra peça, como degrau, não conta).
+**O que mais depende da planta e falha se você mexer sem olhar** (cada um tem o teste dele; `ArenaUrbana.test.ts` confere os que se aplicam às peças novas): os **12 pontos de nascimento** (`SPAWN_POINTS`), os **pontos extras** de inimigos e aliados (cilindro de 5 m, `sim/nascimentos.ts`), os **4 pontos dos titãs** (10 m), os **pontos e os nascimentos do Domínio** (`sim/dominioMapa.ts`, 3,6 m), as **bases da bandeira** (`sim/CaptureTheFlag.ts`), as **zonas de cura e frio**, o **armário do transformador** e a **porta do banco**, a **frente dos telões** e — o que ninguém vê — **a pista do Colossus-01** do nascimento ao transformador: ele desvia de tudo que enxerga, até do que pisaria por cima, com um desvio simples sem caminho (uma jardineira de 1,5 m o deixou parado a 70 m do alvo por 120 s). Mexeu e um ponto extra caiu dentro de uma peça? Realoque-o para o vizinho válido mais próximo (a lista é de espalhamento, a ordem vale) e diga no comentário da lista.
+**Armadilhas medidas:** (1) degrau de **0,9 m** (o `stepHeight` do Mech) o prende por 2 s: faça **0,6 m**; (2) o `id` de uma barricada é a posição na lista e viaja pela rede: peça nova entra **no fim**; (3) mudou o chão que os dois lados simulam? **Suba o `PROTOCOL_VERSION`**; (4) as fotos do esquadrão padrão (`esquadraoPadrao.test.ts`) mudam — refaça-as e registre.
+
 ## 3.6 A mesa de anúncios da marca (`npm run anuncios`, P266)
 
 **O que é:** gera as imagens dos outdoors do jogo e a textura do holograma da logo a partir de páginas HTML: `scripts/anuncios/*.html` (os que começam com `_` são peças comuns) → o Chrome fotografa cada uma em 512×1024 →

@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A praça urbana: cobertura e combate de perto dentro da praça (Claude, P268, branch `claude/praca-urbana`)
+
+**O pedido (28/10), respondendo se os prédios iam dentro da praça ou fora dela:** "na praça, pra dar cobertura, e reduzir o alcance, fazer combate urbano com diferentes espaços de conflito e que permita diversas estratégias; não precisa lotar, só mais alguns prédios e elementos, tipo uma praça de playground porém urbana".
+**Entrega:** `environment/ArenaUrbana.ts` (dados puros): **9 prédios** de 8 a 16 m, **5 contêineres** de 5,2 m, **2 quiosques** que quebram, o **playground** (plataforma de 3 m, 4 degraus de 0,6 m, rampa de 23°, um cubo), em quatro espaços: Beco do Mercado (SE), Pátio (NE), Playground (NO), Contêineres (linhas).
+`environment/ArenaMapa.ts` mede a planta (alcance, conexão, frestas). **Alcance (a olho de Mech):** pares a 30–60 m que se enxergam **83% → 60%**, a 60–100 m **67% → 36%**; vista média nos 12 nascimentos **64 → 47 m**; 9,7% da praça coberta.
+**Mexe no jogo, não só no desenho:** colisores novos no servidor também; **protocolo 24**; 12 pontos extras de nascimento andaram (`sim/nascimentos.ts`); as fotos do esquadrão padrão foram refeitas; o quiosque tem os ids 6 e 7 (os das barricadas antigas não mudam).
+**Custo (Vega 11, janela do Comandante, rodadas alternadas main × branch, mediana de 3):** GPU p50 igual dentro do ruído (nascimento 12,7 → 12,8 ms; alto 16,9 → 17,0; avenida 11,4 → 11,1; Pátio 10,9 → 10,7; a vista do Mercado subiu 9,8 → 11,2 ms com o p95 igual, 21,1 → 20,9); chamadas de desenho +8 a +21 (nascimento 118 → 139); abertura do jogo 2114 → 2255 ms (ruído). CPU: nada por quadro; pacote de partida **480,7 KB/500 KB**. **Verificado:** **+23 testes** (`ArenaUrbana.test.ts`: não lota, nada em cima de nascimento/zona/ponto de Domínio/bandeira/titã/transformador, vão zero ou ≥ 3,8 m, todos os nascimentos ligados para o Mech e o Marauder, o Colossus cruza até o transformador e a pista dele fica livre, o alcance cai, o Mech sobe os degraus e a rampa e desce, os quiosques quebram); 8 mutações à mão, todas reprovadas (prédio sobre nascimento, fresta que prende, contêiner na pista do Colossus, prédio sobre o ponto do titã, degrau de 0,9 m, rampa e prédios sem colisor, quiosques antes das barricadas); bots nas partidas sem aumento de travamento (offline 2/48 janelas contra 3/45 da main; servidor 0/61 nos dois).
+**Falta:** o olho do Comandante (densidade, onde mexer); o playtest com gente nos becos (os de 7 m ficam fechados ao Colossus de propósito: refúgio); mais playground (balanço, passarela) e a Estação dos Cabos.
+**Próxima sessão começa com:** o que o Comandante estranhar na praça.
+
 ## Os outdoors alternam e ganham um painel do Comandante (Claude, P267, branch `claude/outdoors-painel`)
 
 **O pedido (28/10), depois de ver o P266 no ar ("absurdamente BOM!"):** "tá meio poluído": um painel para configurar **quantas imagens aparecem**; as imagens **trocam a cada 10 ou 15 s**; **mais prédios pequenos e médios** (a fase tem muito espaço vazio); **a Azonix nos banners da Serafim**.
