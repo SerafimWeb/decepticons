@@ -1,8 +1,23 @@
 # ESTADO ATUAL — CYBERMECH
 
-## publicar: PR que o dono mergeou antes não é mais "falha" (Claude, branch `claude/publicar-ja-mergeado`)
+## A marca da Serafim na Cidade Neon: outdoors dos produtos e o holograma da logo (Claude, P266, branch `claude/outdoors-da-marca`)
 
-**Achado (28/10, no #474 da Cidade Neon):** o dono mergeou o PR enquanto o `npm run publicar` esperava o CI; o script leu `MERGED` e saiu com **código 1 e "nada foi mergeado"**, embora o resultado fosse o
+**O pedido (28/10), depois de ver a cidade ("ficou tudo muito bom"):** a logo (`vetorserafim.png`) como o holograma principal, em 3D, sobre o Prédio Serafim, e plana mais 2 vezes no cenário; os outros outdoors divulgando os
+produtos dele — Olho do Pai (com `odp.serafimweb.com`) e o Serafim Web Software Bureau —, na vertical e com um que alterna; prédio com outdoor sem janela acesa; "mais qualidade nos prédios".
+**Entrega:** 10 imagens verticais (467 KB; `npm run anuncios` as gera de `scripts/anuncios/*.html`; o catálogo é `client/src/brand/anuncios.ts`); 40 outdoors no lugar dos telões inventados (`Outdoors.ts`: painéis de LED
+instanciados com brilho aditivo; as duas logos planas vêm de um layout em duas passadas, e ficam à vista de quem nasce); o holograma 3D da logo (`HologramaSerafim.ts`: 36 m, até 17 camadas, giro lento, anel e feixe no teto,
+aura) com o número de camadas caindo com a distância da câmera. Fatos que o texto pode afirmar e a pendência da Estação dos Cabos: `MARCA_E_ANUNCIOS.md`.
+**Custo (GPU real, AMD Vega 11, janela do Comandante 1549×925@1,25, rodadas alternadas main × branch, mediana de 3):** GPU por quadro: 13,0→12,5 ms no ponto de nascimento, 15,9→17,6 do alto do prédio Serafim, 10,6→12,0 rente à avenida, 8,6→9,7 de baixo do holograma, 8,6→9,5 de perto de uma logo plana — cerca de +1 ms (+8%), dentro do ruído de ±2 ms entre rodadas desta máquina; chamadas de desenho 125/144/69/57/55 contra 141/136/68/48/45 da main nas mesmas cinco vistas. Ligando e desligando uma camada de cada vez: os outdoors com o brilho em volta custam ~0,5 ms no nascimento e ≤ 0,3 ms nas outras vistas, o reflexo no chão 0 a 0,5 ms, o holograma ~0 (com 4 a 10 camadas) — mínimo e quartil baixo de 6 ciclos de 2,5 s com a máquina quieta. CPU: nada alocado por quadro
+(o relógio, o giro do holograma e uma distância); pacote de partida **478,7 KB/500 KB** (as imagens e a textura do holograma, 505 KB, baixam em segundo plano só para quem abre esse mapa; ~28 MB de textura na GPU).
+**Verificado:** 0/512 poses com NaN na GPU real (8 pontos × 16 guinadas × 4 inclinações, inclusive olhando para cima, onde estão o holograma e o topo dos outdoors). +21 testes (`anuncios.test.ts`, `HologramaSerafim.test.ts` e os da cidade); smoke OK; fotos `arte/cidade-neon-marca-*-claude.jpg`.
+**Falta (o Comandante escolhe a ordem):** os banners na **Estação dos Cabos**, em menor frequência (registrado em `MARCA_E_ANUNCIOS.md` § 5); **mais qualidade nos prédios** (pódios e recuos, passarelas entre as torres, o
+topo, o detalhe da fachada): o próximo PR. O ping mostra `< 5s` (o tutorial do produto documenta menos de 5 s; o exemplo dele dizia `< 3s`).
+**Decisão em aberto:** `Azonix.otf` (o título do jogo, P135) não consta em `client/public/fonts/LICENCAS.txt`: confirmar a licença de uso comercial (não é deste PR; os anúncios usam Chakra Petch e Barlow, ambas OFL).
+**Próxima sessão começa com:** o olho do Comandante na cidade; depois a qualidade dos prédios.
+
+## publicar: PR já mergeado antes não é mais "falha" (Claude, branch `claude/publicar-ja-mergeado`)
+
+**Achado (28/10, no #474 da Cidade Neon):** o PR foi mergeado por fora enquanto o `npm run publicar` esperava o CI; o script leu `MERGED` e saiu com **código 1 e "nada foi mergeado"**, embora o resultado fosse o
 desejado (quem lê "falhou" pode refazer o trabalho). **Conserto (`scripts/publicar.mjs`):** `MERGED` = sucesso (devolve o merge, não chama `pr merge`, e ainda apaga o branch, porque o `MERGED` está confirmado);
 não espera mais a mergeabilidade de um PR que não está aberto (voltava `UNKNOWN`, 60 s à toa); o branch que o merge do GitHub já apagou vira "já estava apagado" (antes: "apague à mão"). PR **fechado sem
 merge** continua falha. **Testes:** +4 em `server/publicar.test.ts` (3 falham contra o script antigo, conferido; o 4º guarda que o fechado não afrouxou).

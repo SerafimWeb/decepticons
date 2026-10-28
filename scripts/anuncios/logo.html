@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Serafim — a logo (painel plano)</title>
+<link rel="stylesheet" href="_comum.css">
+<style>
+  .painel { --luz: rgba(20, 150, 210, .34); --c: #19d3ff; }
+  .emblema { position: absolute; left: 36px; top: 170px; width: 440px; height: 440px; filter: drop-shadow(0 0 16px rgba(25, 211, 255, .9)) drop-shadow(0 0 48px rgba(25, 211, 255, .5)); }
+  .nome { position: absolute; left: 56px; top: 664px; width: 400px; filter: drop-shadow(0 0 10px rgba(255, 255, 255, .22)); }
+  .lema { position: absolute; left: 0; right: 0; top: 788px; text-align: center; font-family: 'Barlow', sans-serif; font-weight: 600; font-size: 21px; letter-spacing: 11px; color: #9fdcf0; text-shadow: 0 0 12px var(--c); padding-left: 11px; }
+</style>
+</head>
+<body>
+<div class="painel">
+  <img class="emblema" src="marca/vetorserafim.png" alt="SERAFIM">
+  <img class="nome" src="../../client/public/brand/serafim-web.webp" alt="SERAFIM WEB">
+  <div class="lema">SOFTWARE BUREAU</div>
+</div>
+<script src="_comum.js"></script>
+<script>
+  marca.moldura({ c1: '#19d3ff', c2: '#ff2547' });
+  const s = marca.camada();
+  // O halo em volta do emblema: anéis, marcas e pontos (o emblema fica no meio, em 256, 390).
+  const aneis = marca.el('g', { fill: 'none', stroke: '#19d3ff' }, s);
+  marca.el('circle', { cx: 256, cy: 390, r: 236, 'stroke-width': 1.4, opacity: 0.35 }, aneis);
+  marca.el('circle', { cx: 256, cy: 390, r: 250, 'stroke-width': 3, opacity: 0.5, 'stroke-dasharray': '2 14', 'stroke-linecap': 'round' }, aneis);
+  marca.el('circle', { cx: 256, cy: 390, r: 208, 'stroke-width': 1, opacity: 0.22 }, aneis);
+  for (let i = 0; i < 48; i++) {
+    const a = (i / 48) * Math.PI * 2;
+    const r0 = 236;
+    const r1 = i % 4 === 0 ? 252 : 244;
+    marca.el('path', { d: `M${256 + Math.cos(a) * r0},${390 + Math.sin(a) * r0} L${256 + Math.cos(a) * r1},${390 + Math.sin(a) * r1}`, stroke: '#19d3ff', 'stroke-width': 1.6, opacity: 0.5 }, s);
+  }
+  for (const [x, y] of [[84, 262], [430, 300], [96, 520], [420, 500], [256, 138]]) marca.el('circle', { cx: x, cy: y, r: 2.6, fill: '#bfefff', opacity: 0.8, style: 'filter: drop-shadow(0 0 5px #19d3ff);' }, s);
+</script>
+</body>
+</html>

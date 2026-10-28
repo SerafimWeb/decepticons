@@ -1,0 +1,48 @@
+/* A linguagem visual dos outdoors da marca (P266): fundo carbono escuro, moldura HUD chanfrada, texto neon. Cada anúncio define as suas cores em variáveis (--c1, --c2, --c3). */
+@font-face { font-family: 'Chakra'; font-weight: 700; src: url('../../client/public/fonts/chakra-petch-700.woff2') format('woff2'); }
+@font-face { font-family: 'Chakra'; font-weight: 600; src: url('../../client/public/fonts/chakra-petch-600.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow'; font-weight: 600; src: url('../../client/public/fonts/barlow-600.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow'; font-weight: 400; src: url('../../client/public/fonts/barlow-400.woff2') format('woff2'); }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 512px; height: 1024px; overflow: hidden; background: #03060c; }
+
+.painel {
+  position: relative; width: 512px; height: 1024px; overflow: hidden; color: #fff;
+  font-family: 'Chakra', sans-serif; font-weight: 700;
+  background:
+    radial-gradient(110% 60% at 50% 40%, var(--luz, rgba(20, 70, 110, .5)) 0%, rgba(3, 6, 12, 0) 72%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, .03) 0 2px, rgba(0, 0, 0, 0) 2px 5px),
+    #03060c;
+}
+/* Escurece as bordas e passa as linhas de varredura de um painel de LED. */
+.painel::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, .035) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
+    radial-gradient(130% 100% at 50% 50%, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, .55) 100%);
+}
+svg { position: absolute; left: 0; top: 0; overflow: visible; }
+
+/* Texto: cada linha é um bloco centrado, posicionado por `top`. */
+.t { position: absolute; left: 0; right: 0; text-align: center; line-height: 1; white-space: nowrap; }
+/* Neon cheio: o miolo quase branco e o brilho na cor. */
+.neon { color: #fff; text-shadow: 0 0 3px #fff, 0 0 9px var(--c), 0 0 20px var(--c), 0 0 42px var(--c), 0 0 76px var(--c); }
+/* Neon de uma cor só (sem o miolo branco). */
+.cor { color: var(--c); text-shadow: 0 0 7px var(--c), 0 0 22px var(--c), 0 0 48px var(--c); }
+/* Letra vazada: só o contorno e o brilho. */
+.vaza { color: rgba(0, 0, 0, .35); -webkit-text-stroke: 3px var(--c); text-shadow: 0 0 10px var(--c), 0 0 28px var(--c), 0 0 60px var(--c); }
+.fina { font-family: 'Barlow', sans-serif; font-weight: 600; }
+
+/* A pílula com a URL. */
+.url {
+  position: absolute; left: 50%; transform: translateX(-50%); height: 54px; padding: 0 30px; display: flex; align-items: center; gap: 12px;
+  border: 2.5px solid var(--c); border-radius: 27px; background: rgba(0, 0, 0, .55); color: var(--c); font-size: 25px; letter-spacing: 1px; white-space: nowrap;
+  box-shadow: 0 0 14px var(--c), inset 0 0 14px rgba(255, 255, 255, .06); text-shadow: 0 0 10px var(--c);
+}
+
+/* Letra de tubo de neon: o contorno grosso na cor, com um fio claro no miolo (duas camadas do mesmo texto). */
+.tubo { position: absolute; left: 0; right: 0; height: 1em; line-height: 1; text-align: center; white-space: nowrap; }
+.tubo > span { position: absolute; left: 0; right: 0; display: block; }
+.tubo .base { color: rgba(0, 0, 0, .5); -webkit-text-stroke: 5px var(--c); text-shadow: 0 0 10px var(--c), 0 0 30px var(--c), 0 0 66px var(--c); }
+.tubo .miolo { color: transparent; -webkit-text-stroke: 1.7px var(--miolo, #fff1d0); }

@@ -1,0 +1,5 @@
+/* O outdoor que alterna (Olho do Pai, "segurança para sua família"): os quatro slides dividem a paleta (ciano e âmbar) e o cabeçalho. */
+.painel { --luz: rgba(20, 140, 170, .28); --t: #19e3ff; --am: #ffb43a; --c: var(--t); --miolo: #fff1d0; }
+.cabeca { position: absolute; left: 0; right: 0; top: 50px; text-align: center; font-size: 22px; letter-spacing: 6px; line-height: 1; color: #fff; text-shadow: 0 0 10px var(--t); }
+.t.t1 { --c: var(--t); }
+.t.am { --c: var(--am); }

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Olho do Pai — Rastreamento de celulares Android com histórico (slide 2 de 4)</title>
+<link rel="stylesheet" href="_comum.css">
+<link rel="stylesheet" href="_familia.css">
+</head>
+<body>
+<div class="painel">
+  <div class="cabeca"><span style="margin-left: 34px">OLHO DO PAI</span></div>
+
+  <div class="t neon" style="top: 484px; font-size: 46px; letter-spacing: 4px">RASTREAMENTO</div>
+  <div class="t cor t1" style="top: 538px; font-size: 46px; letter-spacing: 6px">DE CELULARES</div>
+  <div class="tubo am" style="top: 592px; font-size: 96px; letter-spacing: 4px"><span class="base">ANDROID</span><span class="miolo">ANDROID</span></div>
+  <div class="t fina" style="top: 722px; font-size: 29px; letter-spacing: 1px; color: #fff; text-shadow: 0 0 12px var(--t)">com histórico de movimentação</div>
+  <div class="t fina" style="top: 768px; font-size: 22px; letter-spacing: 1px; color: var(--t)">trajetos, paradas e horários</div>
+  <div class="url" style="top: 932px"><span>odp.serafimweb.com</span></div>
+</div>
+<script src="_comum.js"></script>
+<script>
+  const T = '#19e3ff';
+  const AM = '#ffb43a';
+  marca.moldura({ c1: T, c2: AM });
+  const topo = marca.camada();
+  marca.olho(topo, 148, 61, 14, '#00d4ff');
+  const s = marca.camada();
+
+  // O celular com o mapa e o trajeto do dia.
+  const g = marca.el('g', { style: `filter: drop-shadow(0 0 9px ${T}) drop-shadow(0 0 24px ${T}77);` }, s);
+  marca.el('rect', { x: 166, y: 106, width: 180, height: 340, rx: 32, fill: 'rgba(2,24,38,.75)', stroke: T, 'stroke-width': 5 }, g);
+  marca.el('path', { d: 'M232,124 h48', stroke: T, 'stroke-width': 4, 'stroke-linecap': 'round' }, g);
+  const tela = marca.el('g', {}, s);
+  // As ruas do mapa (linhas finas).
+  const ruas = marca.el('g', { stroke: T, 'stroke-width': 1.2, opacity: 0.22 }, tela);
+  for (const x of [196, 226, 262, 300, 322]) marca.el('path', { d: `M${x},146 V420` }, ruas);
+  for (const y of [170, 214, 262, 310, 356, 398]) marca.el('path', { d: `M178,${y} H334` }, ruas);
+  marca.el('path', { d: 'M178,330 L334,236', 'stroke-width': 2 }, ruas);
+  // O trajeto (âmbar), com as paradas e os horários.
+  const pts = [[200, 408], [200, 358], [262, 358], [262, 292], [226, 292], [226, 214], [300, 214], [300, 170]];
+  marca.el('path', { d: 'M' + pts.map((p) => p.join(',')).join(' L'), fill: 'none', stroke: AM, 'stroke-width': 4, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', style: `filter: drop-shadow(0 0 6px ${AM});` }, tela);
+  for (const [x, y] of pts.slice(0, -1)) marca.el('circle', { cx: x, cy: y, r: 5, fill: '#03121c', stroke: AM, 'stroke-width': 2.4 }, tela);
+  const hora = (x, y, t, ancora = 'start') => { const e = marca.el('text', { x, y, fill: '#fff', 'font-family': 'Chakra', 'font-weight': 600, 'font-size': 13, 'text-anchor': ancora, 'letter-spacing': 1 }, tela); e.textContent = t; };
+  hora(212, 413, '08:14');
+  hora(272, 297, '12:40');
+  hora(236, 219, '15:05');
+  marca.alfinete(tela, 300, 168, 40, AM, 'rgba(255,180,58,.25)');
+  // A bateria e o sinal, no alto da tela.
+  marca.el('rect', { x: 296, y: 138, width: 26, height: 11, rx: 2.5, fill: 'none', stroke: '#fff', 'stroke-width': 1.5, opacity: 0.8 }, tela);
+  marca.el('rect', { x: 298, y: 140, width: 17, height: 7, rx: 1.5, fill: '#3dff7a' }, tela);
+  marca.dados(s, 56, 160, ['08:14', 'SAIU', '12:40', 'PARADO', '15:05', 'CHEGOU'], T, { passo: 18 });
+  marca.dados(s, 456, 160, ['HISTÓRICO', 'DE ROTAS'], AM, { ancora: 'end' });
+</script>
+</body>
+</html>

@@ -25,7 +25,7 @@ interface Cenario {
   /** Em qual chamada de `gh pr merge` o merge de fato sai (o GitHub às vezes só aceita na 2ª). */
   mergeNaTentativa?: number;
   apagarFalha?: boolean;
-  /** O estado do PR quando o script o lê, antes de mergear (padrão OPEN). MERGED = o dono mergeou enquanto o script esperava o CI (28/10, #474). */
+  /** O estado do PR quando o script o lê, antes de mergear (padrão OPEN). MERGED = o PR foi mergeado por fora enquanto o script esperava o CI (28/10, #474). */
   estadoDoPr?: 'OPEN' | 'MERGED' | 'CLOSED';
   /** O branch remoto já não existe quando o script tenta apagá-lo (o merge pelo botão do GitHub o apaga). */
   branchJaApagado?: boolean;
@@ -263,7 +263,7 @@ describe('publicar: o que ele recusa', () => {
   });
 });
 
-describe('publicar: o PR que o dono mergeou enquanto o script esperava o CI (28/10, #474)', () => {
+describe('publicar: o PR mergeado por fora enquanto o script esperava o CI (28/10, #474)', () => {
   it('não é falha: não chama `pr merge`, devolve o merge e, com o MERGED confirmado, ainda apaga o branch', async () => {
     const p = palco({ estadoDoPr: 'MERGED' });
     const r = await publicar(p.ops, OPC);

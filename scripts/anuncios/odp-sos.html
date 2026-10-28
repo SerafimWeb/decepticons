@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Olho do Pai — Botão SOS (magenta e vermelho)</title>
+<link rel="stylesheet" href="_comum.css">
+<style>
+  .painel { --luz: rgba(220, 20, 160, .22); --m: #ff2bd6; --m2: #ff8cec; --r: #ff2d3d; --c: var(--m); --miolo: #ffd6f6; }
+</style>
+</head>
+<body>
+<div class="painel">
+  <div class="tubo" style="--c: var(--m); top: 78px; font-size: 104px; letter-spacing: 6px"><span class="base">BOTÃO</span><span class="miolo">BOTÃO</span></div>
+  <div class="tubo" style="--c: var(--m); top: 192px; font-size: 218px; letter-spacing: 4px"><span class="base">SOS</span><span class="miolo">SOS</span></div>
+
+  <div class="t fina" style="top: 760px; font-size: 42px; letter-spacing: 1px; color: #fff; text-shadow: 0 0 14px var(--m)">Segurança imediata</div>
+  <div class="t fina" style="top: 818px; font-size: 21px; letter-spacing: 1px; color: var(--m2)">+ alerta automático por impacto</div>
+  <div class="url" style="top: 930px; --c: var(--m)"><span>odp.serafimweb.com</span></div>
+</div>
+<script src="_comum.js"></script>
+<script>
+  const M = '#ff2bd6';
+  const R = '#ff2d3d';
+  marca.moldura({ c1: M, c2: R, grossura: 7 });
+  const s = marca.camada();
+
+  // Parafusos nos cantos da placa.
+  for (const [x, y] of [[44, 44], [468, 44], [44, 980], [468, 980]]) {
+    marca.el('circle', { cx: x, cy: y, r: 6, fill: 'rgba(0,0,0,.6)', stroke: M, 'stroke-width': 2, style: `filter: drop-shadow(0 0 4px ${M});` }, s);
+    marca.el('path', { d: `M${x - 3},${y - 3} L${x + 3},${y + 3}`, stroke: M, 'stroke-width': 1.5 }, s);
+  }
+  // As setas vermelhas nas laterais (chamam o olho para o meio).
+  const setas = marca.el('g', { fill: 'none', stroke: R, 'stroke-width': 5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', style: `filter: drop-shadow(0 0 7px ${R});` }, s);
+  for (let i = 0; i < 4; i++) {
+    const y = 470 + i * 46;
+    marca.el('path', { d: `M46,${y} l16,12 l-16,12`, opacity: 1 - i * 0.18 }, setas);
+    marca.el('path', { d: `M466,${y} l-16,12 l16,12`, opacity: 1 - i * 0.18 }, setas);
+  }
+
+  // O triângulo de alerta, com anéis de pulso.
+  const tri = (cx, cy, k) => `M${cx},${cy - 106 * k} L${cx + 112 * k},${cy + 84 * k} L${cx - 112 * k},${cy + 84 * k} Z`;
+  const pulso = marca.el('g', { fill: 'none', stroke: R, 'stroke-linejoin': 'round' }, s);
+  for (const [k, o] of [[1.5, 0.18], [1.28, 0.3]]) marca.el('path', { d: tri(256, 620, k), 'stroke-width': 2.5, opacity: o }, pulso);
+  const t = marca.el('g', { style: `filter: drop-shadow(0 0 10px ${R}) drop-shadow(0 0 26px ${R}99);` }, s);
+  marca.el('path', { d: tri(256, 620, 1), fill: 'rgba(120,0,10,.35)', stroke: R, 'stroke-width': 12, 'stroke-linejoin': 'round' }, t);
+  marca.el('rect', { x: 245, y: 568, width: 22, height: 66, rx: 11, fill: '#ffe0e3' }, t);
+  marca.el('circle', { cx: 256, cy: 668, r: 12, fill: '#ffe0e3' }, t);
+
+</script>
+</body>
+</html>

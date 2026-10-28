@@ -190,6 +190,16 @@ editado quadro a quadro**: corrigir é roteiro → exportar de novo.
 
 ---
 
+## 3.6 A mesa de anúncios da marca (`npm run anuncios`, P266)
+
+**O que é:** gera as imagens dos outdoors do jogo e a textura do holograma da logo a partir de páginas HTML: `scripts/anuncios/*.html` (os que começam com `_` são peças comuns) → o Chrome fotografa cada uma em 512×1024 →
+WebP em `client/public/anuncios/` (e `client/public/brand/serafim-logo-holo.webp`, a logo mestre em RGB sobre preto). **Uso:** `npm run anuncios` (todos), `-- --so odp-sos` (um), `-- --folha` (folha de contato em
+`.tmp/anuncios/`), `-- --q 0.7` (qualidade do WebP), `-- --logo <caminho>` (troca a logo mestre `scripts/anuncios/marca/vetorserafim.png`). Falha se uma imagem passar de 140 KB. **Por que HTML e não shader:** texto
+nítido e arte de anúncio se fazem bem em HTML/CSS/SVG, a página é a fonte que o Comandante ou outro agente edita, e o jogo só lê a imagem. **O que cada texto pode dizer** (só o que o produto diz) e como acrescentar um
+anúncio: `.decepticons/MARCA_E_ANUNCIOS.md` §§ 2 e 3. Os temporários da mesa vão para `.tmp/anuncios/` (G15).
+
+---
+
 ## 4. Medir travadas com GPU real
 
 **Quando:** o dono diz que o jogo "está lento" ou "travando", ou antes de entregar efeito visual novo. **O CI e o SwiftShader não servem:** renderizam por software, a ~1 fps, e não mostram o custo de compilar shader (na Iris Xe, ~1,5 s por programa).
@@ -206,6 +216,7 @@ editado quadro a quadro**: corrigir é roteiro → exportar de novo.
 npm run build && node .decepticons/medicoes/varrer-nan.mjs                       # 10 pontos do mapa × 48 poses; sai com 1 se achar pixel não finito
 node .decepticons/medicoes/varrer-nan.mjs --w 1549 --h 925 --q alta --bloom      # a janela do Comandante; --bloom mede com o bloom LIGADO (prova a rede de segurança)
 node .decepticons/medicoes/varrer-nan.mjs --efeitos                               # P160: acende os efeitos de arma em volta do Mech (explosões, fitas, marcas, cartazes, feixes)
+node .decepticons/medicoes/varrer-nan.mjs --mapa arena --pitches -0.2,0.1,0.6,0.9   # P266: as inclinações da câmera (rad); acima de 0,5 olha para cima (o holograma da Cidade Neon, o topo dos outdoors)
 ```
 
 **Efeito de arma novo (P160):** shader que só aparece durante um tiro não entra na conta de uma varredura parada; use `--efeitos` (a cada 6 poses

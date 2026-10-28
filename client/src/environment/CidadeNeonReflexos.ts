@@ -3,7 +3,7 @@ import { PISCAR_DO_POSTE_GLSL, POCA_GLSL } from './CidadeNeonRua';
 import type { UniformesDaCidade } from './CidadeNeonTorres';
 
 /**
- * O CHÃO MOLHADO DA CIDADE NEON (P264, PR2): nas referências do Comandante a rua reflete cada telão e cada letreiro. Reflexo de verdade (a cena
+ * O CHÃO MOLHADO DA CIDADE NEON (P264, PR2): nas referências do Comandante a rua reflete cada outdoor e cada letreiro. Reflexo de verdade (a cena
  * desenhada de novo, espelhada) dobraria o custo do quadro na GPU integrada (G12); aqui é o truque barato de sempre, feito com cuidado:
  *
  *  - **O rastro de cada fonte de luz** é um quadrilátero deitado no chão, montado **no próprio vertex shader**, para a câmera da vez: num espelho,

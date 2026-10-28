@@ -11,7 +11,7 @@ import type { UniformesDaCidade } from './CidadeNeonTorres';
  *
  *  - **O piso** é o mesmo plano de antes com outro material: o desenho inteiro sai do shader, pela posição no mundo (sem textura, nítido de perto
  *    e de longe): o **calçadão** de lajotas no meio, a **calçada** com o **meio-fio**, a **avenida** em anel junto da parede (asfalto, faixa
- *    branca tracejada, faixa dupla amarela, as **faixas de pedestre**) e as **poças** — mais escuras e mais lisas (o reflexo dos telões nasce
+ *    branca tracejada, faixa dupla amarela, as **faixas de pedestre**) e as **poças** — mais escuras e mais lisas (o reflexo dos outdoors nasce
  *    mais forte nelas, `CidadeNeonReflexos.ts`, que usa a mesma conta).
  *  - **Os postes** têm a escala dos Mechs (10 m, coluna grossa, braço sobre a avenida, cabeça com a luz embaixo e uma faixa de neon na coluna),
  *    alinhados na calçada. Uns poucos têm defeito: piscam e falham. O piscar é conta do shader (zero CPU por quadro).
@@ -103,7 +103,7 @@ diffuseColor.rgb = corRua;
 /**
  * Um material de piso que desenha a rua: o mesmo tipo do de antes (a luz da cena o ilumina igual). **Dielétrico** (metal 0: pedra, asfalto e água não são metal) e a poça com
  * rugosidade 0,4, não um espelho: com 0,1 ela refletia a luz principal e o mapa de ambiente num borrão branco do tamanho da tela, em ângulo rasante. O brilho de chão molhado
- * vem do rastro dos telões (`CidadeNeonReflexos.ts`), que não depende da luz da cena.
+ * vem do rastro dos outdoors (`CidadeNeonReflexos.ts`), que não depende da luz da cena.
  */
 export function materialDaRua(): THREE.MeshStandardMaterial {
   const m = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0, roughness: 0.6 });

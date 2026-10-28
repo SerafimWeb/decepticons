@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Serafim Web — Software Bureau (ciano e vermelho)</title>
+<link rel="stylesheet" href="_comum.css">
+<style>
+  .painel { --luz: rgba(20, 150, 200, .26); --c: #19d3ff; --r: #ff2547; }
+  .emblema { position: absolute; left: 116px; top: 62px; width: 280px; height: 280px; filter: drop-shadow(0 0 12px rgba(25, 211, 255, .9)) drop-shadow(0 0 36px rgba(25, 211, 255, .45)); }
+  .nome { position: absolute; left: 66px; top: 350px; width: 380px; filter: drop-shadow(0 0 10px rgba(255, 255, 255, .25)); }
+  .bureau { position: absolute; left: 0; right: 0; top: 450px; text-align: center; font-size: 27px; letter-spacing: 9px; line-height: 1; color: #fff; text-shadow: 0 0 12px var(--c), 0 0 30px var(--c); padding-left: 9px; }
+  .lista { position: absolute; left: 54px; right: 54px; top: 548px; display: flex; flex-direction: column; gap: 11px; }
+  .lista div { display: flex; align-items: center; gap: 16px; height: 52px; padding: 0 18px; border: 2px solid var(--c); border-radius: 8px; background: rgba(2, 14, 24, .62); font-size: 23px; letter-spacing: 2px; color: #eaffff; text-shadow: 0 0 10px var(--c); box-shadow: 0 0 12px rgba(25, 211, 255, .45), inset 0 0 14px rgba(25, 211, 255, .12); }
+  .lista div:nth-child(even) { border-color: var(--r); box-shadow: 0 0 12px rgba(255, 37, 71, .5), inset 0 0 14px rgba(255, 37, 71, .12); text-shadow: 0 0 10px var(--r); }
+  .lista svg { position: static; flex: none; }
+  .mais { position: absolute; left: 0; right: 0; top: 884px; text-align: center; font-family: 'Barlow', sans-serif; font-weight: 600; font-size: 24px; letter-spacing: 9px; color: #ff5a73; text-shadow: 0 0 12px var(--r); padding-left: 9px; }
+</style>
+</head>
+<body>
+<div class="painel">
+  <img class="emblema" src="marca/vetorserafim.png" alt="">
+  <img class="nome" src="../../client/public/brand/serafim-web.webp" alt="SERAFIM WEB">
+  <div class="bureau">SOFTWARE BUREAU</div>
+  <div class="lista">
+    <div><svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#19d3ff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="14" height="26" rx="3"/><path d="M13 5h4M13 24h4"/></svg>APLICATIVOS</div>
+    <div><svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#ff2547" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="26" height="20" rx="3"/><path d="M2 11h26M6 8h.1M10 8h.1"/></svg>SITES</div>
+    <div><svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#19d3ff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9h16a5 5 0 0 1 5 5v3a3.5 3.5 0 0 1-6.3 2.1L20 17h-10l-1.7 2.1A3.5 3.5 0 0 1 2 17v-3a5 5 0 0 1 5-5Z"/><path d="M9 11.5v3M7.5 13h3M20.5 12.5h.1M23 14.5h.1"/></svg>JOGOS</div>
+    <div><svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#ff2547" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9l-6 6 6 6M20 9l6 6-6 6M17 6l-4 18"/></svg>CORREÇÃO DE CÓDIGO</div>
+    <div><svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#19d3ff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2l11 4v8c0 7-5 12-11 14C9 26 4 21 4 14V6Z"/><path d="M10 15l4 4 7-8"/></svg>SEGURANÇA DIGITAL</div>
+  </div>
+  <div class="mais">E MUITO MAIS</div>
+  <div class="url" style="top: 938px; --c: #19d3ff"><span>serafimweb.com</span></div>
+</div>
+<script src="_comum.js"></script>
+<script>
+  marca.moldura({ c1: '#19d3ff', c2: '#ff2547' });
+</script>
+</body>
+</html>

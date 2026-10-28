@@ -87,7 +87,8 @@ void main() {
   float uy = y - terreo;
   vec2 celula = vec2(floor(ux / passo), floor(uy / andar));
   vec2 dentro = vec2(fract(ux / passo), fract(uy / andar));
-  float naFace = step(0.0, ux) * step(ux, colunas * passo) * step(0.0, uy) * step(y, coroa) * (1.0 - teto) * step(tipo, 1.5);
+  float hospeda = step(0.5, vTorre.w); // o prédio com outdoor não acende janela: o outdoor é a luz dele (P266)
+  float naFace = step(0.0, ux) * step(ux, colunas * passo) * step(0.0, uy) * step(y, coroa) * (1.0 - teto) * step(tipo, 1.5) * (1.0 - hospeda);
   float janela = step(abs(dentro.x - 0.5), largJ * 0.5) * step(0.2, dentro.y) * step(dentro.y, 0.2 + altJ);
   float face = eixoX * 2.0 + sinal;
   vec2 id = celula + vec2(face * 97.0 + semente * 311.0, semente * 173.0);
@@ -136,7 +137,11 @@ void main() {
   float pisca = step(0.55, fract(uTempo * 0.6 + semente * 5.0));
   vec3 farol = vec3(1.0, 0.08, 0.06) * 3.0 * antena * step(altura - 0.9, y) * pisca;
 
-  vec3 luz = janelas + vCor * 1.6 * (faixa + faixaCoroa * 0.85) + lojas + farol;
+  // O vidro do prédio com outdoor fica escuro, só com as linhas das lajes bem fracas (escala e detalhe sem poluir o outdoor).
+  float distLaje = abs(fract(y / andar + 0.5) - 0.5) * andar;
+  float lajes = hospeda * (1.0 - teto) * (1.0 - smoothstep(0.03, 0.05 + aa * 1.5, distLaje)) * step(terreo, y) * step(y, coroa);
+
+  vec3 luz = janelas + vCor * 1.6 * (faixa + faixaCoroa * 0.85) + vCor * 0.09 * lajes + lojas + farol;
 
   // A névoa: o corpo some na cor do horizonte, mais acesa perto do chão (a luz da cidade presa no ar); a luz atravessa só em parte —
   // é o que separa as três filas em camadas, como nas referências.
@@ -165,7 +170,7 @@ export function criarTorres(torres: readonly TorreDaCidade[], u: UniformesDaCida
   const cor = new THREE.Color();
   for (let i = 0; i < ordem.length; i++) {
     const t = ordem[i]!;
-    dados.set([t.semente, t.tipo, t.ocupacao, t.anel], i * 4);
+    dados.set([t.semente, t.tipo, t.ocupacao, t.temBanner ? 1 : 0], i * 4);
     cor.setHex(t.cor);
     cores.set([cor.r, cor.g, cor.b], i * 3);
   }

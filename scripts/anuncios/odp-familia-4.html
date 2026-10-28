@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Olho do Pai — O endereço e a promessa (slide 4 de 4)</title>
+<link rel="stylesheet" href="_comum.css">
+<link rel="stylesheet" href="_familia.css">
+<style>
+  .url.grande { top: 520px; height: 72px; padding: 0 32px; font-size: 32px; border-width: 3.5px; border-radius: 38px; --c: var(--t); }
+  .produto { position: absolute; left: 0; right: 0; top: 866px; text-align: center; font-family: 'Barlow', sans-serif; font-weight: 600; font-size: 19px; letter-spacing: 4px; color: #a9c7d4; }
+  .produto img { display: block; margin: 10px auto 0; width: 230px; }
+</style>
+</head>
+<body>
+<div class="painel">
+  <div class="t neon" style="top: 414px; font-size: 52px; letter-spacing: 6px">OLHO DO PAI</div>
+  <div class="url grande"><span>odp.serafimweb.com</span></div>
+  <div class="t" style="top: 650px; font-size: 38px; letter-spacing: 1px; color: #fff; text-shadow: 0 0 14px var(--t)">Proteção com ciência.</div>
+  <div class="t am" style="top: 704px; font-size: 38px; letter-spacing: 1px; color: var(--am); text-shadow: 0 0 14px var(--am)">Sem modo oculto.</div>
+  <div class="t fina" style="top: 782px; font-size: 25px; letter-spacing: 3px; color: var(--t)">APP PARA ANDROID</div>
+  <div class="produto">UM PRODUTO<img src="../../client/public/brand/serafim-web.webp" alt=""></div>
+</div>
+<script src="_comum.js"></script>
+<script>
+  const T = '#19e3ff';
+  const AM = '#ffb43a';
+  marca.moldura({ c1: T, c2: AM });
+  const s = marca.camada();
+
+  // O olho grande do aplicativo, com ondas saindo dele.
+  const ondas = marca.el('g', { fill: 'none', stroke: T }, s);
+  for (const [r, o] of [[132, 0.34], [168, 0.22], [204, 0.12]]) marca.el('circle', { cx: 256, cy: 240, r, 'stroke-width': 1.6, opacity: o }, ondas);
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2;
+    marca.el('path', { d: `M${256 + Math.cos(a) * 116},${240 + Math.sin(a) * 116} L${256 + Math.cos(a) * (i % 3 ? 124 : 134)},${240 + Math.sin(a) * (i % 3 ? 124 : 134)}`, stroke: T, 'stroke-width': 2, opacity: 0.6 }, s);
+  }
+  marca.olho(s, 256, 240, 96, '#00d4ff', '#0a7ea4');
+</script>
+</body>
+</html>

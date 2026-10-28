@@ -2,9 +2,11 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { RUA } from './CidadeNeonLayout';
 import { GLSL_REFLEXOS } from './CidadeNeonReflexos';
+import { GLSL_LETREIROS } from './CidadeNeonLetreiros';
 import { GLSL_RUA, materialDaRua } from './CidadeNeonRua';
-import { GLSL_TELOES } from './CidadeNeonTeloes';
 import { GLSL_TORRES } from './CidadeNeonTorres';
+import { GLSL_HOLOGRAMA } from './HologramaSerafim';
+import { GLSL_OUTDOORS } from './Outdoors';
 
 /**
  * O que só a GPU enxerga, conferido sem GPU (o smoke e o CI rodam em SwiftShader, que também só acusa o erro no navegador): a interface entre o vértice e o fragmento de cada
@@ -19,9 +21,11 @@ interface Par {
 
 const PARES: Readonly<Record<string, Par>> = {
   torres: GLSL_TORRES,
-  telao: GLSL_TELOES.telao,
-  letreiro: GLSL_TELOES.letreiro,
-  neon: GLSL_TELOES.neon,
+  outdoor: GLSL_OUTDOORS.painel,
+  brilhoDoOutdoor: GLSL_OUTDOORS.brilho,
+  holograma: GLSL_HOLOGRAMA,
+  letreiro: GLSL_LETREIROS.letreiro,
+  neon: GLSL_LETREIROS.neon,
   rastro: GLSL_REFLEXOS.rastro,
   poca: GLSL_REFLEXOS.poca,
   luzDosPostes: GLSL_RUA.luz,
@@ -56,7 +60,7 @@ describe('os shaders da cidade em volta da Cidade Neon (P264, PR2)', () => {
       });
 
       it('as constantes por instância passam como flat (a semente alimenta hash caótico: 1 ulp de interpolação viraria ruído em algumas GPUs)', () => {
-        for (const n of ['vDados', 'vTorre']) {
+        for (const n of ['vDados', 'vTorre', 'vFase', 'vMedidas']) {
           const t = varyings(par.fragment).get(n);
           if (t) expect(t, n).toMatch(/^flat /);
         }

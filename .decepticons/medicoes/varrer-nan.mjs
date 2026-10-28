@@ -9,6 +9,7 @@
  *   npm run build && node .decepticons/medicoes/varrer-nan.mjs                  # o mapa da praia, 10 posições
  *   node .decepticons/medicoes/varrer-nan.mjs --mapa janeiro --extra "modo=survival&comandante=1" --posicoes "66,-12;-24,0;60,30;85,-30" --yaws 8
  *   node .decepticons/medicoes/varrer-nan.mjs --w 1549 --h 925 --q alta           # o tamanho da janela e a qualidade
+ *   node .decepticons/medicoes/varrer-nan.mjs --mapa arena --pitches -0.2,0.1,0.6,0.9   # as inclinações da câmera (rad): olha também para cima (P266: o holograma da Cidade Neon)
  *   node .decepticons/medicoes/varrer-nan.mjs --posicoes 0,20;-200,10;250,20      # x,z de cada ponto (separados por ;)
  *   node .decepticons/medicoes/varrer-nan.mjs --extra "multidao=1&cota=3000&t=9000"   # com a multidão do 8 DE JANEIRO na cena (P217)
  *   node .decepticons/medicoes/varrer-nan.mjs --dia 1                              # a hora do dia (P161): 0 = pôr do sol, 1 = noite (o céu das estrelas, as luzes acesas)
@@ -30,6 +31,7 @@ const altura = Number(opt('h', '925'));
 const qualidade = opt('q', 'alta');
 const mapa = opt('mapa', 'praia'); // permite verificar também os efeitos e materiais de mapas sob demanda
 const guinadas = Number(opt('yaws', '24'));
+const inclinacoes = opt('pitches', '-0.2,0.1').split(',').map(Number); // as inclinações da câmera (rad); acima de 0,5 olha para cima (o holograma e o topo dos outdoors da Cidade Neon, P266)
 const comBloom = args.includes('--bloom'); // mede com o bloom ligado: prova a rede de segurança (sem ela, um NaN toma a tela inteira)
 const comEfeitos = args.includes('--efeitos'); // acende os efeitos de arma em volta do Mech (P160): os shaders novos só entram na conta se estiverem na tela
 const dia = opt('dia', null); // `?dia=` do link: fixa a hora do dia da praia (P161)
@@ -80,7 +82,7 @@ for (let i = 0; i < 8; i++) {
 }
 await pagina.waitForTimeout(2500);
 
-const resultado = await pagina.evaluate(async ({ posicoes, guinadas, comBloom, comEfeitos }) => {
+const resultado = await pagina.evaluate(async ({ posicoes, guinadas, inclinacoes, comBloom, comEfeitos }) => {
   const g = window.__game;
   /**
    * Os efeitos de arma (P160) num anel em volta do Mech, para todo shader novo estar na tela em alguma pose: explosões no chão e no ar, a do Mech
@@ -134,7 +136,7 @@ const resultado = await pagina.evaluate(async ({ posicoes, guinadas, comBloom, c
     g.mech.respawn(new V3(x, 14, z));
     for (let i = 0; i < 70; i++) await quadro(); // o Mech cai e assenta
     let poses = 0, comNaN = 0, pior = 0, piorPose = null;
-    for (const pitch of [-0.2, 0.1]) {
+    for (const pitch of inclinacoes) {
       for (let k = 0; k < guinadas; k++) {
         if (comEfeitos && k % 6 === 0) efeitos();
         const yaw = (k / guinadas) * Math.PI * 2;
@@ -149,7 +151,7 @@ const resultado = await pagina.evaluate(async ({ posicoes, guinadas, comBloom, c
     saida.push({ x, z, poses, comNaN, pior, piorPose });
   }
   return saida;
-}, { posicoes, guinadas, comBloom, comEfeitos });
+}, { posicoes, guinadas, inclinacoes, comBloom, comEfeitos });
 
 await navegador.close();
 servidor.close();
