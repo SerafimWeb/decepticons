@@ -65,6 +65,33 @@ export function anuncioPorId(id: IdDoAnuncio): Anuncio {
   return POR_ID.get(id)!;
 }
 
+/** Uma imagem solta do catálogo: a unidade que o outdoor mostra e troca (P267: cada outdoor alterna entre as imagens, a cada 10–15 s). */
+export interface Slide {
+  readonly arquivo: string;
+  readonly anuncio: IdDoAnuncio;
+  /** O acento do anúncio a que esta imagem pertence (o brilho em volta do outdoor e o reflexo no chão seguem a imagem de agora). */
+  readonly cor: number;
+  /** O que esta imagem diz. */
+  readonly texto: string;
+}
+
+/**
+ * Todas as imagens, na ordem do catálogo: **as que alternam primeiro** (o anel da troca: o Olho do Pai, a família em quatro mensagens, o bureau) e **a logo plana por último** (fixa, sem troca).
+ * O índice aqui é o que o shader dos outdoors usa para escolher a textura e a cor (`Outdoors.ts`).
+ */
+export const SLIDES: readonly Slide[] = Object.freeze(ANUNCIOS.flatMap((a) => a.arquivos.map((arquivo, i): Slide => ({ arquivo, anuncio: a.id, cor: a.cor, texto: a.texto[i] ?? a.texto[0]! }))));
+/** O índice da logo plana (a última): é a imagem dos outdoors fixos. */
+export const SLIDE_DA_LOGO = SLIDES.length - 1;
+/** Quantas imagens entram no anel da troca (todas menos a logo). */
+export const SLIDES_QUE_ALTERNAM = SLIDE_DA_LOGO;
+
+/** Os índices das imagens de um anúncio, na ordem. */
+export function slidesDoAnuncio(id: IdDoAnuncio): number[] {
+  const r: number[] = [];
+  SLIDES.forEach((s, i) => s.anuncio === id && r.push(i));
+  return r;
+}
+
 /** Todos os arquivos de imagem do catálogo (para o teste e para quem precisar pré-carregar). */
 export function arquivosDosAnuncios(): readonly string[] {
   return ANUNCIOS.flatMap((a) => a.arquivos);

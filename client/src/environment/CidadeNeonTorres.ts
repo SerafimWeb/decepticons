@@ -161,9 +161,23 @@ export interface UniformesDaCidade {
   readonly luz: { value: THREE.Color };
 }
 
+/** As torres montadas: a malha e o jeito de dizer, depois, quais prédios hospedam um outdoor **no ar** (P267). */
+export interface TorresCriadas {
+  readonly malha: THREE.InstancedMesh;
+  /**
+   * Quais prédios (índices na lista dada a `criarTorres`) hospedam um outdoor que está no ar: só esses ficam sem janela acesa. Um prédio cujo outdoor saiu do ar (o Comandante pediu menos) volta a
+   * acender as janelas. A coroa e a antena de um prédio herdam o que o corpo dele faz (vêm logo depois dele na lista).
+   */
+  hospedar(corpos: ReadonlySet<number>): void;
+}
+
 /** Monta as torres. As da primeira fila vêm primeiro no buffer (ver o comentário do arquivo). */
-export function criarTorres(torres: readonly TorreDaCidade[], u: UniformesDaCidade): THREE.InstancedMesh {
-  const ordem = [...torres].sort((a, b) => a.anel - b.anel);
+export function criarTorres(torres: readonly TorreDaCidade[], u: UniformesDaCidade): TorresCriadas {
+  const indices = torres.map((_, i) => i).sort((a, b) => torres[a]!.anel - torres[b]!.anel);
+  const ordem = indices.map((i) => torres[i]!);
+  // O corpo de cada torre: a coroa (tipo 1) e a antena (tipo 2) vêm empilhadas logo depois do corpo (tipo 0) que as carrega.
+  const corpoDe: number[] = [];
+  torres.forEach((t, i) => corpoDe.push(t.tipo === 0 ? i : (corpoDe[i - 1] ?? i)));
   const geo = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
   const dados = new Float32Array(ordem.length * 4);
   const cores = new Float32Array(ordem.length * 3);
@@ -174,7 +188,9 @@ export function criarTorres(torres: readonly TorreDaCidade[], u: UniformesDaCida
     cor.setHex(t.cor);
     cores.set([cor.r, cor.g, cor.b], i * 3);
   }
-  geo.setAttribute('aTorre', new THREE.InstancedBufferAttribute(dados, 4));
+  const atributoDaTorre = new THREE.InstancedBufferAttribute(dados, 4);
+  atributoDaTorre.setUsage(THREE.DynamicDrawUsage);
+  geo.setAttribute('aTorre', atributoDaTorre);
   geo.setAttribute('aCor', new THREE.InstancedBufferAttribute(cores, 3));
 
   const material = new THREE.ShaderMaterial({
@@ -199,7 +215,13 @@ export function criarTorres(torres: readonly TorreDaCidade[], u: UniformesDaCida
   // A cidade inteira cerca a praça: está sempre em parte na tela, então o teste de visibilidade só custaria.
   malha.frustumCulled = false;
   malha.name = 'cidade-torres';
-  return malha;
+  return {
+    malha,
+    hospedar(corpos: ReadonlySet<number>): void {
+      for (let inst = 0; inst < indices.length; inst++) atributoDaTorre.setW(inst, corpos.has(corpoDe[indices[inst]!]!) ? 1 : 0);
+      atributoDaTorre.needsUpdate = true;
+    },
+  };
 }
 
 /** Os shaders das torres, como par (vértice, fragmento): o teste confere a interface entre eles (`CidadeNeonShaders.test.ts`). */

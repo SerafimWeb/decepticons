@@ -35,13 +35,13 @@ que o produto não documente. `client/src/brand/anuncios.test.ts` trava isso (o 
 
 1. Edite (ou crie) `scripts/anuncios/<id>.html` — a base visual é `_comum.css`/`_comum.js` (radar, olho, selos) e `_familia.css` (os 4 slides). Texto novo: confira o produto antes (§ 2).
 2. `npm run anuncios` (todos) ou `npm run anuncios -- --so <id>`; `--folha` monta uma folha de contato em `.tmp/anuncios/`; `--q 0.7` muda a qualidade do WebP; falha se um arquivo passar de 140 KB.
-3. Novo anúncio: uma linha em `ANUNCIOS` (`brand/anuncios.ts`) e o peso dele no baralho do layout (`BARALHO`, em `CidadeNeonLayout.ts`). Dois anúncios iguais nunca ficam lado a lado (o teste confere).
+3. Novo anúncio: uma linha em `ANUNCIOS` (`brand/anuncios.ts`), o peso dele no baralho do layout (`BARALHO`, em `CidadeNeonLayout.ts`) e, se ele alterna, o id em `ANUNCIOS_QUE_ALTERNAM` (`shared/outdoors.ts`: é a lista que o painel e o servidor conhecem; o teste `CidadeNeonCenario.test.ts` confere que andam juntas). Dois anúncios iguais nunca ficam lado a lado no começo (o teste confere). Cada imagem nova é um amostrador no shader: o WebGL2 garante 16.
 4. A **logo mestre** (`scripts/anuncios/marca/vetorserafim.png`, 500×500 com alfa) é a fonte; vem de `D:\SERAFIMHUB\serafim13\vetorserafim.png` (`npm run anuncios -- --logo <caminho>` troca). A textura do holograma
    (`brand/serafim-logo-holo.webp`) é regerada a cada rodada: RGB sobre preto, porque o WebP com alfa pesava 100 KB ou mais e este, 37 KB.
 
 ## 4. Onde aparece (o que o layout faz)
 
-- **Cidade Neon** (mapa `arena`, e o WARGAME): 40 outdoors verticais (1:2) nas fachadas da frente e da segunda fila; **o prédio que hospeda um outdoor não tem janela acesa** (o painel é o destaque, sem poluir).
+- **Cidade Neon** (mapa `arena`, e o WARGAME): 40 outdoors verticais (1:2) nas fachadas da frente e da segunda fila, dos quais **26 ficam no ar por padrão** (o painel OUTDOORS ▸ muda: § 4.2); **o prédio que hospeda um outdoor no ar não tem janela acesa** (o painel é o destaque, sem poluir; se o outdoor sai do ar, as janelas voltam).
   Dois desses 40 são as **logos planas de destaque** (uma no norte, perto do eixo e visível por inteiro de quem nasce; uma no oeste — escolhidas por um layout em duas passadas, e o teste confere que nenhum prédio
   da praça as esconde); os outros 38 saem do baralho, em que o Olho do Pai domina (peso 5 + 4 + 4 + 4 + 5 contra 3 do bureau). **O holograma da logo** flutua no Prédio Serafim.
 - **Baixam em segundo plano** (`TextureLoader`, com fade quando chegam) e só para quem abre esse mapa; se uma imagem não baixar, o painel fica apagado e o jogo segue (aviso no console).
@@ -55,6 +55,16 @@ que o produto não documente. `client/src/brand/anuncios.test.ts` trava isso (o 
 - **CPU:** nada alocado por quadro (o relógio, o giro do holograma e uma distância). **Pacote de partida:** 478,7 KB/500 KB (a cidade é um pedaço sob demanda).
 - **Rede e memória:** as 10 imagens (467 KB) e a textura do holograma (37 KB) baixam em segundo plano só para quem abre a Cidade Neon; ~28 MB de textura na GPU (512×1024 com mipmaps; 384×768 cairia para ~16 MB).
 - **Como medir de novo:** `npm run build`, uma cópia da `main` buildada em outra pasta e o A/B alternado (FERRAMENTAS § 4); `varrer-nan.mjs --mapa arena --pitches -0.2,0.1,0.6,0.9` para o NaN (0/512 poses).
+
+## 4.2 O painel OUTDOORS e a troca de imagem (P267, 28/10)
+
+- **Cada outdoor alterna** entre as 9 imagens que entram na troca (o catálogo na ordem: Olho do Pai ×4, a família em 4 mensagens, o bureau): todos andam num anel único, cada um começa num ponto (o anúncio que o layout deu a ele) e anda um passo a cada período, cada um no seu tempo (fase por outdoor) e com falha de sinal na
+  troca (os últimos 14% do período). **A logo plana é fixa** (a marca). O brilho em volta e o reflexo no chão têm a cor da imagem de agora.
+- **O painel** (chip **OUTDOORS ▸** no console, modo Comandante; `ui/OutdoorsPanel.ts`): **quantos aparecem** (0 a 40; as logos planas são as últimas a sair, depois os maiores), **de quanto em quanto tempo trocam** (5–30 s; atalhos 10 s e 15 s) e **quais anúncios entram** (pelo menos um fica). Cada mexida
+  aparece na hora na cidade; **SALVAR PARA TODOS** grava no servidor e vale para todo jogador; **FECHAR** desfaz o que não foi salvo. Padrão sem nada gravado (ou sem servidor): 26 outdoors, 12 s, todos os anúncios.
+- **Onde mora:** o contrato e o validador em `shared/outdoors.ts`; o armazém em `server/outdoors.ts` (arquivo `outdoors.json` na pasta de dados); `GET /outdoors` público; `POST /admin/outdoors` só com a chave do dono. A cidade busca a configuração uma vez ao montar (`carregarOutdoors`), e o painel a aplica na hora (`aplicarOutdoors`).
+- **Custo:** os painéis são uma malha só e o brilho outra (antes 7 + 1): menos chamadas de desenho; quem escolhe a imagem é o shader (um relógio); mudar a configuração mexe em uns poucos uniformes e em três atributos pequenos. Medido na Vega 11 (28/10): GPU por quadro igual à do P266 dentro do ruído, com 18 a 28 chamadas de desenho a menos; pacote de partida 479,4/500 KB (o painel e a ponte com o servidor pesam ~0,7 KB; o painel em si é um pedaço sob demanda).
+- **Fonte:** a **Azonix** (a do título do jogo) está no "SOFTWARE BUREAU" dos dois banners da Serafim. Ela **não tem acento nem cedilha**: texto em português com til ou cedilha fica na Chakra (a lista de serviços do bureau).
 
 ## 5. PENDENTE — a Estação dos Cabos (ordem do Comandante, 28/10)
 

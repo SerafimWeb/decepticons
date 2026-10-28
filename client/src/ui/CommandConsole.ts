@@ -451,6 +451,8 @@ export class CommandConsole {
     if (visibilidade) visibilidade.hidden = !this.comandante;
     const telao = this.root.querySelector<HTMLElement>('#cc-telao');
     if (telao) telao.hidden = !this.comandante;
+    const outdoors = this.root.querySelector<HTMLElement>('#cc-outdoors');
+    if (outdoors) outdoors.hidden = !this.comandante;
     const wargame = this.root.querySelector<HTMLElement>('#cc-wargame');
     if (wargame) wargame.hidden = !this.comandante;
   }

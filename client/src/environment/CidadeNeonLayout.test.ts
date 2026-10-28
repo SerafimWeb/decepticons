@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ANUNCIOS, type IdDoAnuncio } from '../brand/anuncios';
+import { ANUNCIOS, SLIDES, SLIDES_QUE_ALTERNAM, type IdDoAnuncio } from '../brand/anuncios';
 import { BARRICADES_DA_ARENA, BUILDINGS_DA_ARENA, PLATAFORMA_DA_ARENA, SPAWN_POINTS } from './Arena';
 import { BORDA_DA_PRACA, BRACO_DO_POSTE, COLUNAS_DE_GLIFOS, DESENHOS_DE_NEON, layoutDaCidade, pontosEscondidosDeQuemNasce, RUA, type TorreDaCidade } from './CidadeNeonLayout';
 import { SERAFIM_TOWER } from './SerafimTower';
@@ -122,6 +122,24 @@ describe('o entorno da Cidade Neon (P264, PR2)', () => {
     expect(Math.abs(norte!.x), 'perto do eixo, na frente de quem nasce').toBeLessThan(45);
     expect(Math.abs(oeste!.z)).toBeLessThan(45);
     expect(norte!.w).toBeGreaterThanOrEqual(10); // um prédio de destaque
+  });
+
+  it('cada outdoor sabe o prédio que o hospeda (um outdoor por prédio) e onde começa no anel da troca (P267)', () => {
+    for (const o of cidade.outdoors) {
+      const t = cidade.torres[o.torre]!;
+      expect(t, 'o prédio existe').toBeDefined();
+      expect(t.tipo, 'o corpo, não a coroa').toBe(0);
+      expect(t.temBanner, 'marcado como hospedeiro').toBe(true);
+      expect(o.fase).toBeGreaterThanOrEqual(0);
+      expect(o.fase).toBeLessThan(1);
+      if (o.anuncio === 'logo') expect(o.inicio, 'a logo é fixa').toBe(-1);
+      else {
+        expect(o.inicio).toBeGreaterThanOrEqual(0);
+        expect(o.inicio).toBeLessThan(SLIDES_QUE_ALTERNAM);
+        expect(SLIDES[o.inicio]!.anuncio, 'começa numa imagem do anúncio dele').toBe(o.anuncio);
+      }
+    }
+    expect(new Set(cidade.outdoors.map((o) => o.torre)).size, 'dois outdoors no mesmo prédio').toBe(cidade.outdoors.length);
   });
 
   it('as duas logos aparecem inteiras para quem nasce (nenhum prédio da praça esconde o painel)', () => {

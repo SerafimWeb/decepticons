@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLSL_ANUNCIO_ATUAL, type EstadoDoOutdoor, type UniformesDosAnuncios } from './Outdoors';
 import { PISCAR_DO_POSTE_GLSL, POCA_GLSL } from './CidadeNeonRua';
 import type { UniformesDaCidade } from './CidadeNeonTorres';
 
@@ -30,17 +31,28 @@ export interface FonteDeReflexo {
   /** A fase do piscar de um poste e se ele tem defeito; −1 = não pisca. */
   readonly fase: number;
   readonly defeito: number;
+  /** Quando a fonte é um outdoor (P267): a cor dela é a da imagem de agora (não a `cor` acima) e some quando o outdoor sai do ar. */
+  readonly outdoor?: { readonly indice: number; readonly inicio: number; readonly fixo: number; readonly fase: number };
+}
+
+/** Os reflexos montados e o jeito de dizer, depois, quais outdoors estão no ar e onde cada um começa no anel da troca (P267). */
+export interface ReflexosCriados {
+  readonly grupo: THREE.Group;
+  /** `estado[i]` é o do outdoor de índice `i` da lista dada ao criar (`FonteDeReflexo.outdoor.indice`). */
+  atualizarOutdoors(estado: readonly EstadoDoOutdoor[]): void;
 }
 
 const VERTEX_RASTRO = /* glsl */ `
 attribute vec4 aFonte;
 attribute vec3 aExtra;
 attribute vec3 aCor;
+attribute vec4 aAnuncio;
 uniform float uTempo;
 varying vec2 vQuad;
 varying vec3 vCor;
 varying vec3 vMundo;
 ${PISCAR_DO_POSTE_GLSL}
+${GLSL_ANUNCIO_ATUAL}
 void main() {
   vec2 c = cameraPosition.xz;
   vec2 ds = aFonte.xy - c;
@@ -54,7 +66,9 @@ void main() {
   vec2 p = c + ds * t + lado * (aExtra.x * max(t, 0.04) * position.x);
   vMundo = vec3(p.x, 0.035, p.y);
   vQuad = position.xy;
-  vCor = aCor * (aExtra.y < 0.0 ? 1.0 : brilhoDoPoste(uTempo, aExtra.y, aExtra.z));
+  // Um outdoor reflete a cor da imagem que está no ar agora (aAnuncio.y = −2 é "não é outdoor": a cor fixa da fonte) e nada reflete se ele saiu do ar (aAnuncio.w = 0).
+  vec3 base = aAnuncio.y < -1.5 ? aCor : corDoAnuncio(aAnuncio, uTempo) * 1.2;
+  vCor = base * (aExtra.y < 0.0 ? 1.0 : brilhoDoPoste(uTempo, aExtra.y, aExtra.z)) * step(0.5, aAnuncio.w);
   gl_Position = projectionMatrix * viewMatrix * vec4(vMundo, 1.0);
 }
 `;
@@ -120,7 +134,7 @@ void main() {
 }
 `;
 
-function geometria(fontes: readonly FonteDeReflexo[], vertices: number[], indices: number[], extraX: (f: FonteDeReflexo) => number): THREE.InstancedBufferGeometry {
+function geometria(fontes: readonly FonteDeReflexo[], vertices: number[], indices: number[], extraX: (f: FonteDeReflexo) => number, comAnuncio = false): THREE.InstancedBufferGeometry {
   const geo = new THREE.InstancedBufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
   geo.setIndex(indices);
@@ -135,11 +149,19 @@ function geometria(fontes: readonly FonteDeReflexo[], vertices: number[], indice
   geo.setAttribute('aFonte', new THREE.InstancedBufferAttribute(fonte, 4));
   geo.setAttribute('aExtra', new THREE.InstancedBufferAttribute(extra, 3));
   geo.setAttribute('aCor', new THREE.InstancedBufferAttribute(cor, 3));
+  if (comAnuncio) {
+    // (onde começa no anel, a imagem fixa ou −1, a fase, no ar?); −2 em y = a fonte não é um outdoor.
+    const anuncio = new Float32Array(fontes.length * 4);
+    fontes.forEach((f, i) => anuncio.set(f.outdoor ? [f.outdoor.inicio, f.outdoor.fixo, f.outdoor.fase, 1] : [0, -2, 0, 1], i * 4));
+    const atributo = new THREE.InstancedBufferAttribute(anuncio, 4);
+    atributo.setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('aAnuncio', atributo);
+  }
   geo.instanceCount = fontes.length;
   return geo;
 }
 
-function materialAditivo(vertex: string, fragment: string, u: UniformesDaCidade): THREE.ShaderMaterial {
+function materialAditivo(vertex: string, fragment: string, u: UniformesDaCidade, a?: UniformesDosAnuncios): THREE.ShaderMaterial {
   const m = new THREE.ShaderMaterial({
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uLuz: { value: new THREE.Color() }, uTempo: { value: 0 } }]),
     vertexShader: vertex,
@@ -153,18 +175,23 @@ function materialAditivo(vertex: string, fragment: string, u: UniformesDaCidade)
   });
   m.uniforms.uLuz = u.luz;
   m.uniforms.uTempo = u.tempo;
+  if (a) {
+    // O estado dos anúncios por referência: o mesmo dos painéis (qual imagem está no ar, o período, as cores).
+    m.uniforms.uCiclo = a.ciclo;
+    m.uniforms.uCicloN = a.cicloN;
+    m.uniforms.uPeriodo = a.periodo;
+    m.uniforms.uCores = a.cores;
+  }
   return m;
 }
 
-/** Os rastros de reflexo e as poças de luz. `pocas` são as fontes que ganham poça de luz (os postes); `raioDaPoca` em metros. */
-export function criarReflexos(fontes: readonly FonteDeReflexo[], pocas: readonly FonteDeReflexo[], u: UniformesDaCidade, raioDaPoca = 6): THREE.Group {
+/** Os rastros de reflexo e as poças de luz. `pocas` são as fontes que ganham poça de luz (os postes); `raioDaPoca` em metros. `anuncios` é o estado dos outdoors (qual imagem está no ar). */
+export function criarReflexos(fontes: readonly FonteDeReflexo[], pocas: readonly FonteDeReflexo[], u: UniformesDaCidade, anuncios: UniformesDosAnuncios, raioDaPoca = 6): ReflexosCriados {
   const grupo = new THREE.Group();
   grupo.name = 'cidade-chao-molhado';
   // O rastro: x de −0,5 a 0,5 (através), y de 0 (o reflexo da base, longe) a 1 (o do topo, perto da câmera).
-  const rastro = new THREE.Mesh(
-    geometria(fontes, [-0.5, 0, 0, 0.5, 0, 0, 0.5, 1, 0, -0.5, 1, 0], [0, 1, 2, 0, 2, 3], (f) => f.largura),
-    materialAditivo(VERTEX_RASTRO, FRAGMENT_RASTRO, u),
-  );
+  const geoDoRastro = geometria(fontes, [-0.5, 0, 0, 0.5, 0, 0, 0.5, 1, 0, -0.5, 1, 0], [0, 1, 2, 0, 2, 3], (f) => f.largura, true);
+  const rastro = new THREE.Mesh(geoDoRastro, materialAditivo(VERTEX_RASTRO, FRAGMENT_RASTRO, u, anuncios));
   // Um quadrado de lado 2 (o vertex shader escala pelo raio da poça; o fragmento o arredonda).
   const poca = new THREE.Mesh(
     geometria(pocas, [-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0], [0, 1, 2, 0, 2, 3], () => raioDaPoca),
@@ -175,7 +202,21 @@ export function criarReflexos(fontes: readonly FonteDeReflexo[], pocas: readonly
   // Depois do chão e das zonas (que também são transparentes): o reflexo soma por cima delas.
   rastro.renderOrder = poca.renderOrder = 1;
   grupo.add(rastro, poca);
-  return grupo;
+  const atributoDoAnuncio = geoDoRastro.getAttribute('aAnuncio') as THREE.InstancedBufferAttribute;
+  const doOutdoor: { fonte: number; indice: number }[] = [];
+  fontes.forEach((f, i) => f.outdoor && doOutdoor.push({ fonte: i, indice: f.outdoor.indice }));
+  return {
+    grupo,
+    atualizarOutdoors(estado: readonly EstadoDoOutdoor[]): void {
+      for (const { fonte, indice } of doOutdoor) {
+        const e = estado[indice];
+        if (!e) continue;
+        atributoDoAnuncio.setX(fonte, e.inicio);
+        atributoDoAnuncio.setW(fonte, e.visivel ? 1 : 0);
+      }
+      atributoDoAnuncio.needsUpdate = true;
+    },
+  };
 }
 
 /** Os shaders do chão molhado, como pares (vértice, fragmento): o teste confere a interface entre eles (`CidadeNeonShaders.test.ts`). */

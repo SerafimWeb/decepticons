@@ -1133,6 +1133,8 @@ export class Game {
     const adminCliente = new AdminCliente(enderecoDoServidor, tokenDoDono.ler);
     // Os telões da Cidade Neon (P246): busca uma vez o que o Comandante escolheu; sem rede ou fora dela, as telas ficam sem sinal.
     void this.match.arena.telao?.carregar(enderecoDoServidor);
+    // Os outdoors da marca (P267): busca uma vez o que o Comandante ajustou (quantos, o período, quais anúncios); sem rede, valem os padrões do código.
+    void this.cidade?.carregarOutdoors(enderecoDoServidor);
     // O painel de visibilidade (P191): só no modo Comandante (o chip aparece com ele); pedaço sob demanda.
     document.getElementById('cc-visibilidade')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1145,6 +1147,11 @@ export class Game {
     document.getElementById('cc-telao')?.addEventListener('click', (e) => {
       e.stopPropagation();
       void import('../ui/TelaoPanel').then((m) => void new m.TelaoPanel(adminCliente).abrir());
+    });
+    // O painel dos outdoors (P267): quantos aparecem, o período da troca e quais anúncios entram; só no modo Comandante, pedaço sob demanda.
+    document.getElementById('cc-outdoors')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      void import('../ui/OutdoorsPanel').then((m) => void new m.OutdoorsPanel(adminCliente, this.cidade).abrir());
     });
     // O painel WARGAME (P262): monta um episódio de IA contra IA; só no modo Comandante, pedaço sob demanda.
     document.getElementById('cc-wargame')?.addEventListener('click', (e) => {

@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P267 — Os outdoors alternam, um painel para ajustá-los, a Azonix nos banners; faltam os prédios (28/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P267 | 28/10 | "está ficando absurdamente BOM! porém, ta meio poluido... quero um painel de edição na interface pra configurar quantas imagens devem aparecer. tem que alternar, trocar elas a cada 10 ou 15 segundos, pra ficar mais dinamico. acho que precisamos de mais elementos, predios pequenos e médios, pra compor melhor essa fase, que tem muito espaço vazio. pode usar a azonix nos banners serafim." | 🟡 | **Feito:** o chip **OUTDOORS ▸** (modo Comandante) abre o painel: **quantos outdoors aparecem** (padrão 26 de 40; as duas logos são as últimas a sair, depois os maiores), **de quanto em quanto tempo trocam de imagem** (5–30 s, padrão 12, atalhos 10 s e 15 s) e **quais anúncios entram na troca**. Cada mexida aparece na hora; SALVAR PARA TODOS grava no servidor (`GET /outdoors` público, `POST /admin/outdoors` só com a chave do dono); FECHAR desfaz o que não foi salvo. **Cada outdoor alterna** entre as 9 imagens (a logo plana fica fixa), com falha de sinal na troca; o brilho e o reflexo no chão seguem a imagem de agora, e o prédio de um outdoor que sai do ar volta a acender as janelas. **Azonix** no "SOFTWARE BUREAU" dos banners da Serafim (a lista de serviços ficou na Chakra: a Azonix não tem acento nem cedilha). **Falta:** os **prédios pequenos e médios** (pergunta ao Comandante: dentro da praça jogável, com colisão, ou só enfeite?). | `shared/outdoors.ts`, `server/outdoors.ts`, `client/src/ui/OutdoorsPanel.ts`, `client/src/environment/{Outdoors,CidadeNeonCenario}.ts`, `scripts/anuncios/` | `?mapa=arena&comandante=1`: Esc para o console, chip OUTDOORS ▸; olhe para o norte e espere 12 s (as imagens trocam). Capturas `arte/cidade-neon-outdoors-*-claude.jpg`. |
+
 ## P266 — A marca da Serafim na Cidade Neon: outdoors dos nossos produtos e o holograma da logo (28/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
