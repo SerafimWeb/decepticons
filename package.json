@@ -23,6 +23,7 @@
     "mesa": "node scripts/mesa.mjs",
     "cutscene": "node scripts/cutscene.mjs",
     "telao": "node scripts/otimizar-video-telao.mjs",
+    "anuncios": "node scripts/anuncios.mjs",
     "gh": "node scripts/gh.mjs",
     "painel": "node scripts/painel.mjs",
     "site": "node scripts/site.mjs",

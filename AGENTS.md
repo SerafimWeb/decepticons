@@ -29,6 +29,7 @@ e o ritual de sessão abaixo (Passo Zero na entrada, Encerramento na saída).
 12. Vai escolher o que fazer a seguir, ou o dono perguntou "o que falta?" Leia `.decepticons/ORDENS_DO_COMANDO.md`: toda ordem dele, o estado de cada missão e o placar de resultado. **Leia também `.decepticons/LANCAMENTO.md` (18/10): a lista curta do que falta para lançar e o que está congelado até lá**; trabalho fora dela só com ordem expressa do dono.
 13. Vai mexer no chat de voz (microfone, ligação entre os jogadores, voz espacial)? Leia `.decepticons/VOICE_CHAT.md` antes: o que o código faz de diferente do plano original, o que foi medido e o que falta (a política de privacidade antes de liberar `tela:voz`).
 13. Vai guardar, medir ou enviar algo ligado a uma conta, a um IP ou a uma pessoa (métrica, log, tabela nova)? Leia `.decepticons/PRIVACIDADE.md` antes: o inventário do que já é guardado e o que falta para a política (LGPD). Dado pessoal novo entra no inventário no mesmo PR.
+14. Vai mexer em outdoor, banner, logo ou holograma de qualquer mapa, ou pôr um produto da Serafim Web (Olho do Pai, o bureau) no jogo? Leia `.decepticons/MARCA_E_ANUNCIOS.md` antes: o catálogo, o que o texto pode afirmar (só o que o produto afirma), como regerar as imagens (`npm run anuncios`) e o que falta (a Estação dos Cabos).
 
 ## O QUE É
 
@@ -92,6 +93,7 @@ client/src/
   sim/         Match.ts (a partida inteira sem tela: o que o servidor roda; o Game desenha por cima)
   net/         adapters.ts (ponte entre a simulação e os contratos de rede)
   voice/       VoiceChat.ts (voz P2P por WebRTC, ligada ao Game por callbacks), MicController.ts (aberto/PTT), VoiceSpatial.ts (voz espacial), VoiceHud.ts, opus.ts (DTX no SDP)
+  brand/       anuncios.ts (o catálogo dos anúncios da marca nos outdoors: imagem, cor e o que cada um diz; as imagens nascem em scripts/anuncios/)
   hangar/      loadout.ts (contrato da montagem: LoadoutSpec, validateLoadout), Hangar.ts (montagem salva, link ?build=, API da tela)
   tuning/      power.ts (potências: multiplicadores por arma e por clã, link, relatório de equilíbrio), PowerStore.ts (salvas, ?potencias=)
   player/      PlayerController.ts (input/câmera -> MechInput, tiro)
@@ -129,6 +131,7 @@ node scripts/gh.mjs pr list    # o gh, com fallback para a credencial do Git se 
 npm run smoke:dev  # boot headless contra o dev server
 npm run peso       # o que pesa nos 500 KB do pacote de partida (gzip estimado por arquivo-fonte; monta em .tmp/peso/)
 npm run estudio    # o Estúdio (sons hoje; depois vozes, tiros e armas, Mechs 3D: .decepticons/ESTUDIO.md): cortar na onda, efeitos, importar, escolher o som de cada arma (só neste PC; dois cliques em scripts\ligar-estudio.cmd)
+npm run anuncios   # gera as imagens dos outdoors da marca e a textura do holograma a partir de scripts/anuncios/*.html (.decepticons/MARCA_E_ANUNCIOS.md)
 npm run sons       # prepara os sons de arma (apara, normaliza, mp3) conforme scripts/sons-armas.json
 npm run vozes      # as falas do narrador no ElevenLabs (chave só em $env:ELEVENLABS_API_KEY; --custo antes de gastar); as falas que o Comandante GRAVOU no Estúdio nunca são regeradas
 npm run ouvir      # abre a página para ouvir os sons e as vozes

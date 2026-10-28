@@ -164,11 +164,12 @@ export interface ArenaDoCenario {
 /** O entorno da Cidade Neon montado (P264): só desenho. `luzes` são as cores que o transformador do banco escurece (`Arena.registraLuzes`). */
 export interface CenarioDaCidade {
   readonly luzes: readonly THREE.Color[];
-  update(dt: number): void;
+  /** `camera`: onde está a câmera (o holograma desenha menos camadas quando ela está perto: custo de preenchimento na GPU integrada). */
+  update(dt: number, camera?: THREE.Vector3): void;
   setDetalhe(alto: boolean): void;
 }
 
-/** A fábrica do entorno da Cidade Neon (`environment/CidadeNeonCenario.ts`): as torres, os telões, a rua e o chão molhado. */
+/** A fábrica do entorno da Cidade Neon (`environment/CidadeNeonCenario.ts`): as torres, os outdoors da marca, o holograma, a rua e o chão molhado. */
 export interface CenarioDaCidadeCarregado {
   construir(scene: THREE.Scene, arena: ArenaDoCenario, particles: ParticleSystem | null): CenarioDaCidade;
 }

@@ -1,7 +1,20 @@
-## [2026-10-28] publicar: o PR que o dono mergeou antes é sucesso, não falha
+## [2026-10-28] Cidade Neon: os telões viram outdoors da marca (os produtos do Comandante) e a logo ganha um holograma 3D (P266)
 
-O `npm run publicar` tratava "PR já MERGED" como falha (`o PR #n não está aberto (MERGED); nada foi mergeado`, código 1), mas o dono mergeia sozinho e rápido (#474: o PR abriu e entrou em ~1 min, com o script ainda
-esperando o CI). **Decisão:** o `MERGED` lido depois da espera do CI é o resultado desejado: o script não mergeia de novo, devolve o merge e mantém a trava de sempre ("só apaga o branch remoto depois de confirmar
+O Comandante, ao ver a cidade: "ficou tudo muito bom… use o vetorserafim.png como nossa LOGO e o principal holograma… vamos usar os nossos produtos, nosso branding, pra fortalecer nossa marca". Decisões de propósito:
+**(1) Marca real entra, só nos outdoors e no holograma** — inverte, **neste ponto**, o "nenhuma marca real" do P264; os letreiros de bandeira e os neons seguem com glifos inventados. **(2) O texto só afirma o que o produto
+afirma** (README, landing e tutorial do Olho do Pai): o exemplo do Comandante dizia "PING <3s", o tutorial documenta "menos de 5 s" (1 a 2 s com o app aberto), então o anúncio diz `< 5s`; sem preço nem oferta com prazo; o
+produto rastreia pessoas e se apresenta como "proteção com ciência, sem modo oculto", então nada que sugira vigilância escondida (o `anuncios.test.ts` trava). **(3) A arte é imagem, não shader:** 10 WebP verticais (512×1024, ~47 KB,
+467 KB no total) gerados por `npm run anuncios` (HTML/CSS → Chrome); texto nítido não se faz bem em shader, e a página HTML é a fonte editável; baixam em segundo plano, só para quem abre o mapa. **(4) Catálogo de dados + desenhista
+de painéis que não sabe de mapa** (`brand/anuncios.ts`, `Outdoors.ts`): a Estação dos Cabos (pendente, em menor frequência) reaproveita sem redesenhar. **(5) Prédio com outdoor não tem janela acesa** (ordem dele). **(6) As logos
+planas saem de um layout em duas passadas** (a 1ª acha os prédios de destaque que quem nasce vê por inteiro; a 2ª os força): o sorteio puro escondeu a logo do norte atrás de um prédio da praça; e cada família (torres, letreiros,
+outdoors, desenhos) tem o seu fluxo de sorteio, para a silhueta não mudar quando uma regra de outra muda. **(7) O holograma é a logo de verdade em volume** (até 17 camadas somadas em mistura aditiva, giro lento, anel, feixe e
+aura), sem malha; o custo dele é **de preenchimento** (de baixo dele custava +3 a +9 ms na Vega 11 com as 17 camadas), então o número de camadas cai com a distância da câmera (17 longe, 4 perto, brilho compensado) e a
+qualidade baixa desenha no máximo metade. **(8) A textura do holograma é RGB sobre preto** (37 KB): o WebP com alfa pesava 100 KB ou mais.
+
+## [2026-10-28] publicar: o PR já mergeado antes é sucesso, não falha
+
+O `npm run publicar` tratava "PR já MERGED" como falha (`o PR #n não está aberto (MERGED); nada foi mergeado`, código 1), mas o PR pode entrar por fora do script (#474: abriu e entrou em ~1 min, com o script ainda
+esperando o CI; a conta do GitHub é a mesma, então não dá para dizer quem mergeou). **Decisão:** o `MERGED` lido depois da espera do CI é o resultado desejado: o script não mergeia de novo, devolve o merge e mantém a trava de sempre ("só apaga o branch remoto depois de confirmar
 `MERGED`", agora confirmado pelo próprio estado). O PR **fechado sem merge** segue falha e nunca apaga branch. O branch já apagado pelo merge do GitHub é dito como tal (a API responde "Reference does not exist").
 
 ## [2026-10-28] Cidade Neon: a praça dentro de uma cidade, tudo em shader, e a rua no lugar do quadriculado (P264, PR2)

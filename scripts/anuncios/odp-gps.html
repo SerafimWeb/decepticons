@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Olho do Pai — GPS ao vivo 24h (azul)</title>
+<link rel="stylesheet" href="_comum.css">
+<style>
+  .painel { --luz: rgba(30, 90, 220, .30); --b: #2aa0ff; --b2: #8fd6ff; --c: var(--b); }
+  .marca { position: absolute; left: 0; right: 0; top: 50px; text-align: center; font-size: 25px; letter-spacing: 5px; line-height: 1; color: #fff; text-shadow: 0 0 10px var(--b); }
+  .marca small { display: inline-block; margin-left: 4px; }
+  .pilulas { position: absolute; left: 0; right: 0; top: 108px; display: flex; justify-content: center; gap: 9px; font-family: 'Barlow', sans-serif; font-weight: 600; font-size: 15px; letter-spacing: 2px; }
+  .pilulas span { display: flex; align-items: center; gap: 7px; padding: 5px 12px; border: 1px solid rgba(160, 210, 255, .35); border-radius: 15px; background: rgba(2, 10, 30, .6); color: #dff1ff; }
+  .pilulas i { width: 8px; height: 8px; border-radius: 50%; background: var(--p); box-shadow: 0 0 8px var(--p); }
+  .botao {
+    position: absolute; left: 50%; transform: translateX(-50%); top: 896px; width: 330px; height: 60px; display: flex; align-items: center; justify-content: center; gap: 14px;
+    border: 2.5px solid var(--b2); border-radius: 12px; background: linear-gradient(180deg, rgba(42, 160, 255, .38), rgba(20, 70, 160, .5)); font-size: 26px; letter-spacing: 3px; color: #fff;
+    box-shadow: 0 0 16px var(--b), 0 0 40px rgba(42, 160, 255, .5), inset 0 0 18px rgba(170, 220, 255, .3); text-shadow: 0 0 10px #fff;
+  }
+</style>
+</head>
+<body>
+<div class="painel">
+  <div class="marca">OLHO DO PAI</div>
+  <div class="pilulas"><span style="--p:#3dff7a"><i></i>ONLINE</span><span style="--p:#2aa0ff"><i></i>SYNCED</span><span style="--p:#ffffff"><i></i>SECURE</span></div>
+
+  <div class="t neon" style="top: 158px; font-size: 152px; letter-spacing: 10px">GPS</div>
+  <div class="t cor" style="--c: var(--b2); top: 312px; font-size: 88px; letter-spacing: 8px">AO VIVO</div>
+  <div class="t neon" style="top: 384px; font-size: 198px; letter-spacing: 6px">24H</div>
+
+  <div class="t fina" style="top: 846px; font-size: 31px; letter-spacing: 1px; color: #eaf6ff; text-shadow: 0 0 12px var(--b)">Rastreamento em tempo real</div>
+  <div class="botao"><svg style="position:static" width="28" height="28" viewBox="0 0 28 28"><path d="M14 3 v14 M7 11 l7 7 l7 -7 M4 24 h20" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>BAIXAR AGORA</div>
+  <div class="t fina" style="top: 972px; font-size: 22px; letter-spacing: 2px; color: var(--b2); text-shadow: 0 0 10px var(--b)">odp.serafimweb.com</div>
+</div>
+<script src="_comum.js"></script>
+<script>
+  const B = '#2aa0ff';
+  const B2 = '#8fd6ff';
+  marca.moldura({ c1: B, c2: '#00e5ff' });
+  marca.olho(marca.camada(), 78, 63, 15, '#00d4ff');
+  const s = marca.camada();
+
+  // O alfinete com os anéis de pulso, à esquerda, e o radar circular, à direita.
+  marca.radar(s, 150, 712, 92, B2, { aneis: 3, elipse: 0.34, varredura: false });
+  marca.alfinete(s, 150, 716, 92, B2, 'rgba(42,160,255,.22)');
+  const cx = 366, cy = 672, r = 64;
+  const radar = marca.el('g', { style: `filter: drop-shadow(0 0 7px ${B});` }, s);
+  for (const k of [1, 0.66, 0.33]) marca.el('circle', { cx, cy, r: r * k, fill: 'none', stroke: B2, 'stroke-width': 1.6, opacity: 0.55 + (1 - k) * 0.3 }, radar);
+  marca.el('path', { d: `M${cx - r},${cy} H${cx + r} M${cx},${cy - r} V${cy + r}`, stroke: B2, 'stroke-width': 1.2, opacity: 0.5 }, radar);
+  marca.el('path', { d: `M${cx},${cy} L${cx + r * Math.cos(-1.0)},${cy + r * Math.sin(-1.0)} A${r},${r} 0 0 1 ${cx + r},${cy} Z`, fill: B2, opacity: 0.3 }, radar);
+  marca.el('path', { d: `M${cx},${cy} L${cx + r * Math.cos(-0.55)},${cy + r * Math.sin(-0.55)}`, stroke: '#fff', 'stroke-width': 2.4 }, radar);
+  for (const [dx, dy] of [[-30, -22], [22, 24], [-12, 34]]) marca.el('circle', { cx: cx + dx, cy: cy + dy, r: 4, fill: '#fff' }, radar);
+  marca.dados(s, 366, 756, ['ATUALIZA A CADA 5 S'], B2, { ancora: 'middle' });
+
+  // O painel de coordenadas com a onda.
+  const p = marca.el('g', {}, s);
+  marca.el('rect', { x: 96, y: 772, width: 320, height: 62, rx: 6, fill: 'rgba(4,16,44,.7)', stroke: B, 'stroke-width': 1.6, opacity: 0.95 }, p);
+  const txt = (x, y, t, cor, tam) => { const e = marca.el('text', { x, y, fill: cor, 'font-family': 'Chakra', 'font-weight': 600, 'font-size': tam, 'letter-spacing': 1.5 }, p); e.textContent = t; };
+  txt(112, 797, 'LAT  -23.5505', '#dff1ff', 19);
+  txt(112, 823, 'LNG  -46.6333', '#dff1ff', 19);
+  const pts = [0, 0, 8, -10, 16, 6, 26, -16, 34, 10, 44, -6, 54, 14, 64, -12, 74, 8, 84, -4, 96, 0];
+  let d = '';
+  for (let i = 0; i < pts.length; i += 2) d += `${i ? 'L' : 'M'}${300 + pts[i]},${803 + pts[i + 1]}`;
+  marca.el('path', { d, fill: 'none', stroke: '#3dff7a', 'stroke-width': 2.2, 'stroke-linejoin': 'round', style: 'filter: drop-shadow(0 0 5px #3dff7a);' }, p);
+</script>
+</body>
+</html>

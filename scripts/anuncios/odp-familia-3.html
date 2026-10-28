@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Olho do Pai — Cercas virtuais (slide 3 de 4)</title>
+<link rel="stylesheet" href="_comum.css">
+<link rel="stylesheet" href="_familia.css">
+</head>
+<body>
+<div class="painel">
+  <div class="cabeca"><span style="margin-left: 34px">OLHO DO PAI</span></div>
+
+  <div class="t neon" style="top: 494px; font-size: 96px; letter-spacing: 6px">CERCAS</div>
+  <div class="tubo t1" style="top: 600px; font-size: 86px; letter-spacing: 4px; --c: var(--t); --miolo: #d9fbff"><span class="base">VIRTUAIS</span><span class="miolo">VIRTUAIS</span></div>
+  <div class="t fina" style="top: 726px; font-size: 30px; letter-spacing: 1px; color: #fff; text-shadow: 0 0 12px var(--t)">Alerta na hora quando</div>
+  <div class="t fina am" style="top: 770px; font-size: 38px; letter-spacing: 2px; color: var(--am); text-shadow: 0 0 14px var(--am)">entram ou saem</div>
+  <div class="url" style="top: 932px"><span>odp.serafimweb.com</span></div>
+</div>
+<script src="_comum.js"></script>
+<script>
+  const T = '#19e3ff';
+  const AM = '#ffb43a';
+  const Y = '#ffe14d';
+  const P = '#ff4fd8';
+  marca.moldura({ c1: T, c2: AM });
+  const topo = marca.camada();
+  marca.olho(topo, 148, 61, 14, '#00d4ff');
+  const s = marca.camada();
+
+  // O cartão do mapa.
+  marca.el('rect', { x: 56, y: 110, width: 400, height: 350, rx: 14, fill: 'rgba(3,22,34,.8)', stroke: T, 'stroke-width': 2.6, style: `filter: drop-shadow(0 0 9px ${T});` }, s);
+  const ruas = marca.el('g', { stroke: T, 'stroke-width': 1.1, opacity: 0.2 }, s);
+  for (const x of [100, 150, 210, 280, 340, 400]) marca.el('path', { d: `M${x},120 V450` }, ruas);
+  for (const y of [150, 200, 260, 320, 380, 430]) marca.el('path', { d: `M66,${y} H446` }, ruas);
+  marca.el('path', { d: 'M66,410 L446,170', 'stroke-width': 2 }, ruas);
+  marca.el('path', { d: 'M120,450 L360,120', 'stroke-width': 1.6 }, ruas);
+
+  // A cerca da escola (polígono amarelo) e a da casa (círculo rosa).
+  const escola = marca.el('g', { style: `filter: drop-shadow(0 0 8px ${Y});` }, s);
+  marca.el('path', { d: 'M96,214 L160,170 L232,196 L246,262 L186,304 L112,282 Z', fill: 'rgba(255,225,77,.10)', stroke: Y, 'stroke-width': 3, 'stroke-dasharray': '10 6', 'stroke-linejoin': 'round' }, escola);
+  const casa = marca.el('g', { style: `filter: drop-shadow(0 0 8px ${P});` }, s);
+  marca.el('circle', { cx: 350, cy: 366, r: 70, fill: 'rgba(255,79,216,.10)', stroke: P, 'stroke-width': 3, 'stroke-dasharray': '10 6' }, casa);
+  const rotulo = (x, y, t, cor) => { const e = marca.el('text', { x, y, fill: cor, 'font-family': 'Chakra', 'font-weight': 700, 'font-size': 18, 'text-anchor': 'middle', 'letter-spacing': 3 }, s); e.textContent = t; };
+  rotulo(170, 252, 'ESCOLA', Y);
+  rotulo(350, 372, 'CASA', P);
+  // Ícones simples: a escola (prédio com bandeira) e a casa.
+  marca.el('path', { d: 'M150,236 v-22 h40 v22 M170,214 v-14 h10 v8 h-10', fill: 'none', stroke: Y, 'stroke-width': 3, 'stroke-linejoin': 'round' }, s);
+  marca.el('path', { d: 'M326,344 l24,-20 l24,20 M334,340 v22 h32 v-22', fill: 'none', stroke: P, 'stroke-width': 3, 'stroke-linejoin': 'round' }, s);
+
+  // O trajeto de volta para casa, o alfinete cruzando a borda da cerca e o aviso.
+  marca.el('path', { d: 'M214,262 C240,300 270,320 310,350', fill: 'none', stroke: AM, 'stroke-width': 3.4, 'stroke-dasharray': '3 9', 'stroke-linecap': 'round', style: `filter: drop-shadow(0 0 5px ${AM});` }, s);
+  marca.radar(s, 250, 296, 36, AM, { aneis: 2, elipse: 0.45, varredura: false });
+  marca.alfinete(s, 250, 296, 56, AM, 'rgba(255,180,58,.28)');
+  const aviso = marca.el('g', { style: `filter: drop-shadow(0 0 8px ${AM});` }, s);
+  marca.el('rect', { x: 192, y: 118, width: 254, height: 40, rx: 20, fill: 'rgba(40,24,2,.85)', stroke: AM, 'stroke-width': 2.4 }, aviso);
+  marca.el('path', { d: 'M214,146 h16 M216,146 c0,-12 2,-18 6,-18 s6,6 6,18 M221,150 a2,2 0 0 0 4,0', fill: 'none', stroke: '#fff', 'stroke-width': 2.2, 'stroke-linecap': 'round' }, aviso);
+  const tx = marca.el('text', { x: 240, y: 144, fill: '#fff', 'font-family': 'Chakra', 'font-weight': 600, 'font-size': 15, 'letter-spacing': 1 }, aviso);
+  tx.textContent = 'SAIU DA ESCOLA · 14:12';
+</script>
+</body>
+</html>

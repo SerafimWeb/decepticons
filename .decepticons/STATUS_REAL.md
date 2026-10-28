@@ -3,6 +3,12 @@
 > Regra R13: o que existe de verdade, sem enfeite. Atualize quando algo mudar de estado.
 > **REAL** = funciona de ponta a ponta · **PARCIAL** = existe mas incompleto · **DEMO** = só visual/placeholder · **AUSENTE** = não existe.
 
+**P266 — a marca da Serafim na Cidade Neon (REAL no jogo, visto no Chrome na GPU real; PARCIAL: falta a Estação dos Cabos e o olho do Comandante):** 40 outdoors verticais com a arte dos nossos produtos (Olho do Pai ×5 —
+um deles alterna 4 mensagens —, Serafim Web Software Bureau, logo plana), prédios com outdoor sem janela acesa e o holograma 3D da logo (36 m, camadas somadas) sobre o Prédio Serafim. As imagens (467 KB) e a textura do
+holograma (37 KB) baixam em segundo plano só para quem abre a Cidade Neon. O texto só afirma o que o produto afirma (ping `< 5s`, sem preço). **Conferido:** AMD Vega 11, janela do Comandante, rodadas alternadas main × branch: ~+1 ms por quadro (13,0→12,5 ms no nascimento, 15,9→17,6 do alto, 10,6→12,0 na avenida); abertura sem diferença medível; 0/512 poses com NaN (inclusive olhando para cima); +21 testes. **AUSENTE:** os banners na Estação dos Cabos
+(ordem registrada, em menor frequência); mais qualidade nos prédios (próximo PR); o outdoor não é interativo (não há clique). **Onde conferir:** `?mapa=arena&comandante=1`, olhe ao norte (logo plana) e para o leste (o
+holograma sobre o prédio verde); `arte/cidade-neon-marca-*-claude.jpg`; `MARCA_E_ANUNCIOS.md`.
+
 **P265 — sair do WARGAME de verdade (REAL): trocar de mapa, ou qualquer dos 4 jeitos de soltar a câmera de
 espectador (tecla C, botão, ⎵/Esc, botão de câmera), volta ao jogo normal e jogável, preservando `comandante=1`.**
 Antes, o `?wargame=` sobrevivia a uma troca de mapa (`MapLinks.ts`) e nenhum dos 4 lugares que soltam a câmera sabia
@@ -10,12 +16,12 @@ que isso, no WARGAME, não devolve o controle (`wargameAtivo` o trava de propós
 Chrome:** depois de C, segurando W, o Mech andou 6,17 m (zero antes da correção). `MapLinks.test.ts` (+1).
 
 **P264 — a Cidade Neon virou uma cidade (REAL no jogo, visto no Chrome na GPU real; PARCIAL: falta o olho do Comandante e os itens abaixo):** a praça cercada por três filas de torres (uma chamada de
-desenho, janelas finas, neon nas quinas, lojas no térreo, névoa em camadas), 47 telões que passam anúncios (falha de sinal na troca, grafismos animados), letreiros de bandeira e desenhos em tubo de neon,
+desenho, janelas finas, neon nas quinas, lojas no térreo, névoa em camadas), 47 telões que passam anúncios (falha de sinal na troca; no P266 viraram os outdoors da marca), letreiros de bandeira e desenhos em tubo de neon,
 **a rua desenhada no lugar do quadriculado** (calçadão, avenida com faixas e faixas de pedestre, postes de 10 m, bueiros com vapor) e chão molhado com reflexo (truque de shader, sem desenhar a cena
 duas vezes). `CidadeNeon*.ts`, pedaço sob demanda de 15 KB gzip (partida 478,4/500 KB; a PR1, `ArenaAderecos.ts`, foi substituída). **Conferido:** AMD Vega 11, janela do Comandante, rodadas alternadas
-main × branch: GPU 12,5→12,1 ms parado, 16,1→16,3 do alto, 9,6→10,9 rente à avenida; abertura +~0,8 s; 0/672 poses com NaN; +40 testes. **AUSENTE:** pista elevada/passarelas, hologramas, tráfego voador,
-chuva, mobília de rua; os 3 prédios do meio seguem caixas; poste sem colisor (de propósito: o servidor não tem a cidade); só 8 anúncios (repetem); o reflexo do chão não sabe o que está na frente da
-fonte, e a cor do reflexo de um telão é a do primeiro anúncio dele (não acompanha a troca). **Onde conferir:** `?mapa=arena&comandante=1`, chip CÂMERAS DO LOCAL ▸; `arte/cidade-neon-*-claude.jpg`.
+main × branch: GPU 12,5→12,1 ms parado, 16,1→16,3 do alto, 9,6→10,9 rente à avenida; abertura +~0,8 s; 0/672 poses com NaN; +40 testes. **AUSENTE:** pista elevada/passarelas, tráfego voador,
+chuva, mobília de rua; os 3 prédios do meio seguem caixas; poste sem colisor (de propósito: o servidor não tem a cidade); o reflexo do chão não sabe o que está na frente da
+fonte, e a cor do reflexo de um outdoor é a do anúncio dele (no que alterna, a do primeiro slide). **Onde conferir:** `?mapa=arena&comandante=1`, chip CÂMERAS DO LOCAL ▸; `arte/cidade-neon-*-claude.jpg`.
 
 **P263 — o WARGAME (P262) corrigido: o Comandante não controla mais o Mech dele, e os dois esquadrões brigam no nível
 mais afiado (REAL, corrige uma lacuna real da verificação do P262 — "zero erro de página" não provava que o input

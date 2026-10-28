@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Olho do Pai — Segurança para sua família (slide 1 de 4)</title>
+<link rel="stylesheet" href="_comum.css">
+<link rel="stylesheet" href="_familia.css">
+</head>
+<body>
+<div class="painel">
+  <div class="cabeca"><span style="margin-left: 34px">OLHO DO PAI</span></div>
+
+  <div class="t neon" style="top: 506px; font-size: 60px; letter-spacing: 4px">SEGURANÇA</div>
+  <div class="t cor t1" style="top: 582px; font-size: 46px; letter-spacing: 10px">PARA SUA</div>
+  <div class="tubo am" style="top: 640px; font-size: 92px; letter-spacing: 6px"><span class="base">FAMÍLIA</span><span class="miolo">FAMÍLIA</span></div>
+  <div class="t fina" style="top: 770px; font-size: 32px; letter-spacing: 1px; color: #e9f6fa; text-shadow: 0 0 12px var(--t)">Proteção GPS 24h</div>
+  <div class="t fina am" style="top: 814px; font-size: 32px; letter-spacing: 1px; color: var(--am); text-shadow: 0 0 12px var(--am)">para quem você ama</div>
+  <div class="url" style="top: 932px"><span>odp.serafimweb.com</span></div>
+</div>
+<script src="_comum.js"></script>
+<script>
+  const T = '#19e3ff';
+  const AM = '#ffb43a';
+  marca.moldura({ c1: T, c2: AM });
+  const topo = marca.camada();
+  marca.olho(topo, 148, 61, 14, '#00d4ff');
+  const s = marca.camada();
+
+  // Anéis de radar ao fundo.
+  const fundo = marca.el('g', { fill: 'none', stroke: T }, s);
+  for (const r of [160, 210, 260]) marca.el('circle', { cx: 256, cy: 300, r, 'stroke-width': 1.3, opacity: 0.32 - r / 1000 }, fundo);
+
+  // O escudo: duas linhas e o brilho; o coração no meio.
+  const forma = 'M256,112 C298,140 340,152 384,152 V292 C384,372 332,430 256,468 C180,430 128,372 128,292 V152 C172,152 214,140 256,112 Z';
+  const interna = 'M256,134 C292,157 326,168 364,168 V290 C364,358 320,408 256,442 C192,408 148,358 148,290 V168 C186,168 220,157 256,134 Z';
+  const e = marca.el('g', { style: `filter: drop-shadow(0 0 9px ${T}) drop-shadow(0 0 26px ${T}88);` }, s);
+  marca.el('path', { d: forma, fill: 'rgba(4,60,84,.45)', stroke: T, 'stroke-width': 7, 'stroke-linejoin': 'round' }, e);
+  marca.el('path', { d: interna, fill: 'none', stroke: T, 'stroke-width': 1.6, opacity: 0.7 }, e);
+  const c = marca.el('g', { style: `filter: drop-shadow(0 0 10px ${AM}) drop-shadow(0 0 24px ${AM}aa);` }, s);
+  marca.el('path', { d: 'M256,372 C176,318 172,250 214,242 C236,238 250,250 256,264 C262,250 276,238 298,242 C340,250 336,318 256,372 Z', fill: AM, opacity: 0.95 }, c);
+  marca.el('path', { d: 'M256,372 C176,318 172,250 214,242 C236,238 250,250 256,264', fill: 'none', stroke: '#fff2cf', 'stroke-width': 2, opacity: 0.8 }, c);
+  // O alfinete pequeno cruzando o escudo: a localização é o que protege.
+  marca.alfinete(s, 256, 222, 36, '#fff', 'rgba(255,255,255,.12)');
+</script>
+</body>
+</html>

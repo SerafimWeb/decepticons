@@ -428,7 +428,7 @@ export class Game {
   private readonly multidaoQuer = multidaoFromSearch(location.search);
   private multidaoDemo: MultidaoDemo | null = null;
   private multidaoCarregando = false;
-  /** A cidade em volta da Cidade Neon (P264): as torres, os telões, a rua e o chão molhado. Só desenho, pedaço sob demanda; `null` nos outros mapas. */
+  /** A cidade em volta da Cidade Neon (P264, P266): as torres, os outdoors da marca, o holograma, a rua e o chão molhado. Só desenho, pedaço sob demanda; `null` nos outros mapas. */
   private cidade: CenarioDaCidade | null = null;
   /** A cutscene-piloto do 8 DE JANEIRO (`?cutscene=janeiro-abertura`, P245): câmera por trajetória, sem controle do jogador, para gravar em vídeo (`scripts/cutscene.mjs`). Carregada sob demanda. */
   private readonly cutsceneQuer = cutsceneFromSearch(location.search);
@@ -900,7 +900,7 @@ export class Game {
         this.bloomPass.enabled = enabled;
         this.refractWaves = enabled;
         this.match.arena.praia?.setDetalhe(enabled); // o último degrau do rebaixamento também tira as nuvens e o ruído do mar
-        this.cidade?.setDetalhe(enabled); // e, na Cidade Neon, o chão molhado e a grade de LEDs dos telões
+        this.cidade?.setDetalhe(enabled); // e, na Cidade Neon, o chão molhado, a grade de LEDs dos outdoors e metade das camadas do holograma
       },
     );
     // Hangar: enquanto está aberto, o desenho troca a arena pelo galpão (o jogo está pausado).
@@ -2279,7 +2279,7 @@ export class Game {
     this.dominioPontos?.update(dt);
     // O mapa que anima (o mar da praia, P126): nos outros, o `Arena.update` não faz nada.
     this.match.arena.update(dt);
-    this.cidade?.update(dt);
+    this.cidade?.update(dt, this.camera.position);
     // A Amazônia (P180, parte B): a câmera leva o céu e o detalhe da floresta junto.
     this.match.arena.observar(this.camera.position.x, this.camera.position.y, this.camera.position.z);
     // Os telões da Cidade Neon (P246): decide tocar/pausar pela distância da câmera e pelo degrau de qualidade (G12); nos outros mapas, `telao` é `null`.

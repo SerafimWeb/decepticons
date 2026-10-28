@@ -1,18 +1,15 @@
 import * as THREE from 'three';
 import type { ArteDaCidade } from './CidadeNeonArte';
-import type { LetreiroDaCidade, NeonDaCidade, TelaoDaCidade } from './CidadeNeonLayout';
+import type { LetreiroDaCidade, NeonDaCidade } from './CidadeNeonLayout';
 import type { UniformesDaCidade } from './CidadeNeonTorres';
 
 /**
- * OS TELÕES, OS LETREIROS DE BANDEIRA E OS DESENHOS EM NEON DO ENTORNO (P264, PR2): três `InstancedMesh` (**3 draw calls** para tudo), cada um
- * com um shader pequeno que lê o atlas de `CidadeNeonArte.ts`. Toda animação é função do relógio no próprio shader (zero trabalho de CPU por
- * quadro, G4/G5):
+ * OS LETREIROS DE BANDEIRA E OS DESENHOS EM NEON DO ENTORNO (P264, PR2): duas `InstancedMesh` (**2 draw calls** para tudo), cada uma com um shader pequeno que lê o atlas de
+ * `CidadeNeonArte.ts`. Toda animação é função do relógio no próprio shader (zero trabalho de CPU por quadro, G4/G5). **Os telões saíram daqui na P266: viraram os outdoors da marca**
+ * (`Outdoors.ts`, que lê o catálogo `brand/anuncios.ts`).
  *
- *  - o **telão** troca de anúncio a cada 6–13 s (cada um no seu tempo) e a troca chega com **falha de sinal** (faixas deslocadas e as cores
- *    separadas); de vez em quando soluça no meio. De perto é uma **grade de LEDs**, com uma faixa clara de varredura descendo — de longe a grade
- *    vira a média (sem moiré). Em qualidade baixa (`detalhe` 0), só a imagem;
- *  - o **letreiro de bandeira** é uma caixa fina com uma coluna de glifos e a moldura em tubo de neon nas duas faces; um glifo ou outro está
- *    **queimado** e outro **soluça** (o "neon falhando" que o Comandante pediu);
+ *  - o **letreiro de bandeira** é uma caixa fina com uma coluna de glifos e a moldura em tubo de neon nas duas faces; um glifo ou outro está **queimado** e outro **soluça**
+ *    (o "neon falhando" que o Comandante pediu);
  *  - o **desenho em neon** é só o traço, somado à fachada (mistura aditiva): metade deles pisca de vez em quando.
  *
  * Nenhuma luz dinâmica nova: o que brilha passa do limiar do bloom e acende "de mentirinha", como todo neon deste jogo (G12).
@@ -45,101 +42,6 @@ void main() {
   vec4 mundo = modelMatrix * instanceMatrix * vec4(position, 1.0);
   vMundo = mundo.xyz;
   gl_Position = projectionMatrix * viewMatrix * mundo;
-}
-`;
-
-/**
- * O telão: `aDados` = (grupo 0 em pé | 4 deitado, primeiro anúncio, fase, período). A cada três trocas, uma é **grafismo animado** (o
- * equalizador de LED ou os anéis pulsando em volta de um glifo), e metade dos telões mostra os anúncios **noutra paleta** (a matiz girada):
- * com só oito anúncios, é o que impede a mesma imagem de se repetir igual pela cidade inteira.
- */
-const FRAGMENT_TELAO = /* glsl */ `
-uniform sampler2D uAtlas;
-uniform sampler2D uLetreiros;
-uniform float uTempo;
-uniform vec3 uLuz;
-uniform float uDetalhe;
-varying vec2 vUv;
-flat varying vec4 vDados;
-varying vec3 vMundo;
-${NEVOA_GLSL}
-vec2 noAtlas(float anuncio, vec2 uv) {
-  uv = clamp(uv, 0.015, 0.985);
-  if (anuncio < 3.5) return vec2((anuncio + uv.x) * 0.25, 0.5 + uv.y * 0.5);
-  float j = anuncio - 4.0;
-  return vec2((mod(j, 2.0) + uv.x) * 0.5, (j < 1.5 ? 0.25 : 0.0) + uv.y * 0.25);
-}
-vec3 paletaNeon(float h) {
-  h = fract(h);
-  return h < 0.2 ? vec3(1.0, 0.17, 0.84) : (h < 0.4 ? vec3(0.0, 0.9, 1.0) : (h < 0.6 ? vec3(1.0, 0.82, 0.1) : (h < 0.8 ? vec3(0.62, 0.25, 1.0) : vec3(1.0, 0.25, 0.2))));
-}
-// A matiz girada em volta do eixo cinza (Rodrigues): a mesma imagem, outra paleta.
-vec3 girarMatiz(vec3 c, float a) {
-  vec3 k = vec3(0.57735);
-  float ca = cos(a);
-  return max(c * ca + cross(k, c) * sin(a) + k * dot(k, c) * (1.0 - ca), vec3(0.0));
-}
-vec3 grafismo(vec2 uv, float t, float k, float s, bool emPe) {
-  vec3 a = paletaNeon(s + k * 0.31);
-  vec3 b = paletaNeon(s + k * 0.31 + 0.4);
-  if (mod(k, 2.0) < 0.5) {
-    // O equalizador: barras de LED em segmentos, subindo e descendo cada uma no seu ritmo.
-    float barras = emPe ? 7.0 : 14.0;
-    float i = floor(uv.x * barras);
-    float alto = 0.12 + 0.72 * abs(sin(t * (1.3 + hashT(i + s * 10.0) * 2.4) + i * 1.7));
-    float coluna = step(0.14, fract(uv.x * barras)) * step(fract(uv.x * barras), 0.86);
-    float segmento = step(0.3, fract(uv.y * (emPe ? 30.0 : 15.0)));
-    vec3 fundo = mix(vec3(0.02, 0.0, 0.05), a * 0.12, uv.y);
-    return fundo + mix(a, b, uv.y) * step(uv.y, alto) * coluna * segmento * 1.15;
-  }
-  // Os anéis: ondas saindo do meio e um glifo aceso no centro.
-  vec2 c = (uv - 0.5) * (emPe ? vec2(1.0, 2.0) : vec2(2.0, 1.0));
-  float r = length(c);
-  float anel = (1.0 - smoothstep(0.03, 0.09, abs(fract(r * 4.0 - t * 0.7) - 0.5))) * (1.0 - smoothstep(0.25, 1.0, r));
-  vec2 g = clamp(c / 0.62 + 0.5, 0.0, 1.0);
-  float coluna = floor(fract(s * 7.3) * 5.0);
-  float celula = floor(fract(s * 3.1 + k * 0.5) * 4.0);
-  float glifo = texture2D(uLetreiros, vec2((coluna + 0.06 + g.x * 0.88) / 8.0, 0.5 + (celula + 0.06 + g.y * 0.88) / 8.0)).r;
-  glifo *= step(abs(c.x), 0.31) * step(abs(c.y), 0.31);
-  return vec3(0.03, 0.0, 0.04) + a * anel * 0.9 + b * glifo * 1.4;
-}
-void main() {
-  float t = uTempo + vDados.z;
-  float ciclo = t / vDados.w;
-  float k = floor(ciclo);
-  float anuncio = vDados.x + mod(vDados.y + k, 4.0);
-  float semente = fract(vDados.z * 0.6180339);
-  float desdeATroca = fract(ciclo) * vDados.w;
-  float falha = 1.0 - smoothstep(0.0, 0.4, desdeATroca);
-  falha = max(falha, 0.6 * step(0.985, hashT(floor(t * 6.0) + vDados.z * 3.0)));
-  vec2 uv = vUv;
-  float faixa = floor(uv.y * 28.0);
-  uv.x += (hashT(faixa + k * 7.0 + floor(t * 20.0)) - 0.5) * 0.14 * falha;
-  float sep = 0.012 * falha;
-  vec3 img;
-  if (mod(k + floor(semente * 3.0), 3.0) < 0.5) {
-    img = grafismo(clamp(uv, 0.0, 1.0), t, k, semente, vDados.x < 0.5);
-  } else {
-    img = vec3(
-      texture2D(uAtlas, noAtlas(anuncio, uv + vec2(sep, 0.0))).r,
-      texture2D(uAtlas, noAtlas(anuncio, uv)).g,
-      texture2D(uAtlas, noAtlas(anuncio, uv - vec2(sep, 0.0))).b);
-    float h = hashT(vDados.z * 7.1);
-    img = girarMatiz(img, step(0.5, h) * (h < 0.75 ? 2.094 : 4.189));
-  }
-  img *= 1.0 - 0.75 * falha * step(0.5, hashT(faixa + k));
-  vec2 leds = anuncio < 3.5 ? vec2(80.0, 160.0) : vec2(160.0, 80.0);
-  vec2 g = abs(fract(vUv * leds) - 0.5);
-  float led = 1.0 - smoothstep(0.3, 0.48, max(g.x, g.y));
-  float pegada = max(fwidth(vUv.x * leds.x), fwidth(vUv.y * leds.y));
-  float grade = mix(mix(0.5, 1.08, led), 0.86, smoothstep(0.25, 0.7, pegada));
-  float d = fract(vUv.y + t * 0.08) - 0.5;
-  float varre = 1.0 + 0.22 * exp(-d * d * 180.0);
-  vec3 luz = img * 1.35 * mix(1.0, grade * varre, uDetalhe);
-  float f = nevoa(vMundo);
-  gl_FragColor = vec4(luz * uLuz * (1.0 - 0.55 * f) + fogColor * f * 0.35, 1.0);
-  #include <tonemapping_fragment>
-  #include <colorspace_fragment>
 }
 `;
 
@@ -200,6 +102,7 @@ void main() {
 }
 `;
 
+
 function material(fragment: string, u: UniformesDaCidade, atlas: THREE.Texture, extra: Record<string, THREE.IUniform> = {}, aditivo = false): THREE.ShaderMaterial {
   const m = new THREE.ShaderMaterial({
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uLuz: { value: new THREE.Color() }, uTempo: { value: 0 } }]),
@@ -226,27 +129,6 @@ function instanciar(geo: THREE.BufferGeometry, mat: THREE.Material, n: number, d
 }
 
 const EIXO_Y = new THREE.Vector3(0, 1, 0);
-
-/** Os telões. `detalhe` é o uniforme da grade de LEDs e da varredura (1 alto, 0 baixo). */
-export function criarTeloes(teloes: readonly TelaoDaCidade[], arte: ArteDaCidade, u: UniformesDaCidade, detalhe: { value: number }): THREE.InstancedMesh {
-  const dados = new Float32Array(teloes.length * 4);
-  const cores = new Float32Array(teloes.length * 3);
-  teloes.forEach((t, i) => dados.set([t.vertical ? 0 : 4, t.primeiro, t.fase, t.periodo], i * 4));
-  const malha = instanciar(
-    new THREE.PlaneGeometry(1, 1),
-    material(FRAGMENT_TELAO, u, arte.anuncios, { uDetalhe: detalhe, uLetreiros: { value: arte.letreiros } }),
-    teloes.length,
-    dados,
-    cores,
-    'cidade-teloes',
-  );
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
-  const p = new THREE.Vector3();
-  const s = new THREE.Vector3();
-  teloes.forEach((t, i) => malha.setMatrixAt(i, m.compose(p.set(t.x, t.y, t.z), q.setFromAxisAngle(EIXO_Y, t.ry), s.set(t.w, t.h, 1))));
-  return malha;
-}
 
 /** Os letreiros de bandeira (caixas finas, glifos nas duas faces de ±x local). */
 export function criarLetreiros(letreiros: readonly LetreiroDaCidade[], arte: ArteDaCidade, u: UniformesDaCidade): THREE.InstancedMesh {
@@ -286,9 +168,8 @@ export function criarNeons(neons: readonly NeonDaCidade[], arte: ArteDaCidade, u
   return malha;
 }
 
-/** Os shaders dos telões, dos letreiros e dos desenhos em neon, como pares (vértice, fragmento): o teste confere a interface entre eles (`CidadeNeonShaders.test.ts`). */
-export const GLSL_TELOES = {
-  telao: { vertex: VERTEX_PLANO, fragment: FRAGMENT_TELAO },
+/** Os shaders dos letreiros e dos desenhos em neon, como pares (vértice, fragmento): o teste confere a interface entre eles (`CidadeNeonShaders.test.ts`). */
+export const GLSL_LETREIROS = {
   letreiro: { vertex: VERTEX_PLANO, fragment: FRAGMENT_LETREIRO },
   neon: { vertex: VERTEX_PLANO, fragment: FRAGMENT_NEON },
 } as const;
