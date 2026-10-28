@@ -25,6 +25,10 @@ interface Cenario {
   /** Em qual chamada de `gh pr merge` o merge de fato sai (o GitHub às vezes só aceita na 2ª). */
   mergeNaTentativa?: number;
   apagarFalha?: boolean;
+  /** O estado do PR quando o script o lê, antes de mergear (padrão OPEN). MERGED = o dono mergeou enquanto o script esperava o CI (28/10, #474). */
+  estadoDoPr?: 'OPEN' | 'MERGED' | 'CLOSED';
+  /** O branch remoto já não existe quando o script tenta apagá-lo (o merge pelo botão do GitHub o apaga). */
+  branchJaApagado?: boolean;
 }
 
 function palco(c: Cenario = {}) {
@@ -56,15 +60,18 @@ function palco(c: Cenario = {}) {
       if (c.ciSequencia?.length) ultimoCi = c.ciSequencia.length > 1 ? c.ciSequencia.shift()! : c.ciSequencia[0]!;
       return ok(checksNaoAparecem ? 'etiquetas\tpass\t6s\n' : ultimoCi === '' ? '' : `check\t${ultimoCi}\t3m40s\netiquetas\tpass\t6s\n`);
     }
-    if (a.startsWith('pr view') && a.includes('state,mergeStateStatus')) return ok(JSON.stringify({ state: 'OPEN', mergeStateStatus: estado }));
+    if (a.startsWith('pr view') && a.includes('state,mergeStateStatus')) return ok(JSON.stringify({ state: c.estadoDoPr ?? 'OPEN', mergeStateStatus: (c.estadoDoPr ?? 'OPEN') === 'OPEN' ? estado : 'UNKNOWN' }));
     if (a.startsWith('pr merge')) {
       mergeChamado = true;
       mergesChamados++;
       return ok();
     }
+    if (a.startsWith('pr view') && a.includes('state,mergeCommit') && c.estadoDoPr && c.estadoDoPr !== 'OPEN') {
+      return ok(JSON.stringify({ state: c.estadoDoPr, mergeCommit: c.estadoDoPr === 'MERGED' ? { oid: 'abcdef1234567' } : null }));
+    }
     if (a.startsWith('pr view') && a.includes('state,mergeCommit')) return ok(JSON.stringify({ state: mergeChamado && mergeou && mergesChamados >= (c.mergeNaTentativa ?? 1) ? 'MERGED' : 'OPEN', mergeCommit: { oid: 'abcdef1234567' } }));
     if (a.startsWith('repo view')) return ok('SerafimWeb/decepticons\n');
-    if (a.startsWith('api -X DELETE')) return apagarFalha ? erro('403') : ok();
+    if (a.startsWith('api -X DELETE')) return apagarFalha ? erro('403') : c.branchJaApagado ? erro('gh: Reference does not exist (HTTP 422)') : ok();
     if (a.startsWith('run list')) return ok(JSON.stringify([{ status: 'in_progress', conclusion: '', workflowName: 'CI' }]));
     throw new Error(`gh inesperado: ${a}`);
   };
@@ -253,6 +260,40 @@ describe('publicar: o que ele recusa', () => {
     const r = await publicar(p.ops, OPC);
     expect(r.ok).toBe(true);
     expect(p.log.join('\n')).toContain('não consegui apagar o branch remoto');
+  });
+});
+
+describe('publicar: o PR que o dono mergeou enquanto o script esperava o CI (28/10, #474)', () => {
+  it('não é falha: não chama `pr merge`, devolve o merge e, com o MERGED confirmado, ainda apaga o branch', async () => {
+    const p = palco({ estadoDoPr: 'MERGED' });
+    const r = await publicar(p.ops, OPC);
+    expect(r).toEqual({ ok: true, pr: 77, merge: 'abcdef1234567' });
+    expect(p.sem().some((c) => c.startsWith('gh pr merge'))).toBe(false);
+    expect(p.log.join('\n')).toContain('já estava mergeado');
+    expect(p.sem().some((c) => c.startsWith('gh api -X DELETE'))).toBe(true);
+  });
+
+  it('não espera a mergeabilidade de um PR que já não está aberto (ela volta UNKNOWN para sempre): sem dormir à toa', async () => {
+    const p = palco({ estadoDoPr: 'MERGED' });
+    await publicar(p.ops, OPC);
+    expect(p.chamadas.filter((c) => c === 'dormir')).toHaveLength(0);
+  });
+
+  it('PR fechado SEM merge continua sendo falha: não mergeia e não apaga o branch', async () => {
+    const p = palco({ estadoDoPr: 'CLOSED' });
+    const r = await publicar(p.ops, OPC);
+    expect(r.ok).toBe(false);
+    expect(r.motivo).toContain('não está aberto (CLOSED)');
+    expect(p.sem().some((c) => c.startsWith('gh pr merge') || c.startsWith('gh api -X'))).toBe(false);
+  });
+
+  it('o branch remoto que o merge do GitHub já apagou: diz que já estava apagado, sem mandar apagar à mão', async () => {
+    const p = palco({ estadoDoPr: 'MERGED', branchJaApagado: true });
+    const r = await publicar(p.ops, OPC);
+    expect(r.ok).toBe(true);
+    const saida = p.log.join('\n');
+    expect(saida).toContain('já estava apagado');
+    expect(saida).not.toContain('apague à mão');
   });
 });
 

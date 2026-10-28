@@ -1,3 +1,9 @@
+## [2026-10-28] publicar: o PR que o dono mergeou antes é sucesso, não falha
+
+O `npm run publicar` tratava "PR já MERGED" como falha (`o PR #n não está aberto (MERGED); nada foi mergeado`, código 1), mas o dono mergeia sozinho e rápido (#474: o PR abriu e entrou em ~1 min, com o script ainda
+esperando o CI). **Decisão:** o `MERGED` lido depois da espera do CI é o resultado desejado: o script não mergeia de novo, devolve o merge e mantém a trava de sempre ("só apaga o branch remoto depois de confirmar
+`MERGED`", agora confirmado pelo próprio estado). O PR **fechado sem merge** segue falha e nunca apaga branch. O branch já apagado pelo merge do GitHub é dito como tal (a API responde "Reference does not exist").
+
 ## [2026-10-28] Cidade Neon: a praça dentro de uma cidade, tudo em shader, e a rua no lugar do quadriculado (P264, PR2)
 
 O Comandante, ao ver a PR1: "ainda tá muito longe" dos quadros de referência; "os postes frágeis... só se tiver o desenho das ruas". Decisões de propósito, para não serem reabertas por engano:
