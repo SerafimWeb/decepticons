@@ -17,6 +17,8 @@ import { factorySpec, loadoutKey, parseLoadoutKey, validateLoadout } from '../cl
 import { netWeaponIndex, unitFromMech } from '../client/src/net/adapters';
 import { FIXED_DT, PhysicsWorld } from '../client/src/physics/PhysicsWorld';
 import { Match } from '../client/src/sim/Match';
+import type { EsquadraoSpec } from '../client/src/sim/esquadrao';
+import { esquadraoParaOnline, esquadraoValeNoMapa, montagemDoBot } from '../client/src/sim/esquadraoOnline';
 import type { AdminSala } from '../shared/net/admin';
 import type { MuralSala } from '../shared/net/mural';
 import { Writer } from '../shared/net/codec';
@@ -117,14 +119,16 @@ export class ArenaRoom {
   private disposed = false;
 
   /** O servidor sempre passa as regras do dono; quem chama sem elas (os testes e as bancadas) fica com a sala antiga, sem limite de atacantes. */
-  static async create(code: string, regras: RegrasOnline = REGRAS_SEM_LIMITE, mapa: MapaOnline = MAPA_PADRAO, modo: SalaModo = MODO_PADRAO): Promise<ArenaRoom> {
+  static async create(code: string, regras: RegrasOnline = REGRAS_SEM_LIMITE, mapa: MapaOnline = MAPA_PADRAO, modo: SalaModo = MODO_PADRAO, esquadrao: EsquadraoSpec | null = null): Promise<ArenaRoom> {
     // Um mapa grande (a Terras Raras) é de carga sob demanda também no servidor: o código dele baixa antes de a partida ser montada (P218).
     await carregarMapaSeFor(mapa);
-    return new ArenaRoom(code, await PhysicsWorld.create(), regras, mapa, modo);
+    return new ArenaRoom(code, await PhysicsWorld.create(), regras, mapa, modo, esquadrao);
   }
 
   /** As regras dos bots desta sala (P199): quantos Mechs a sala usa; a dificuldade e a pressão vão direto no `BotSystem`. */
   private regras: RegrasOnline;
+  /** O esquadrão do dono (P270), se a sala nasceu com um: quem são os bots (chassi, armas, nome, jeito) e quantos Mechs entram em campo (os que ele tem, menos as vagas de quem entra). */
+  private readonly esquadrao: EsquadraoSpec | null;
 
   private constructor(
     readonly code: string,
@@ -132,8 +136,11 @@ export class ArenaRoom {
     regras: RegrasOnline,
     readonly mapa: MapaOnline,
     modo: SalaModo = MODO_PADRAO,
+    esquadrao: EsquadraoSpec | null = null,
   ) {
     this.regras = regras;
+    // O esquadrão que o dono montou (P270) vale nos mapas do combate livre do lançamento (`esquadraoValeNoMapa`); sem ele, ou em outro mapa, os bots são os das regras, como sempre.
+    this.esquadrao = esquadrao && esquadraoValeNoMapa(mapa) ? esquadraoParaOnline(esquadrao) : null;
     // allies: false — o roster de rede ainda não sabe descrever um aliado pros outros jogadores
     // (AUSENTE no multiplayer, ver Match.ts e STATUS_REAL.md); a Arena offline já tem aliado.
     // O pool de Mechs é sempre o cheio (3): quantos entram em campo é a regra (`aplicarRegras`); os andróides são os da regra e valem a partir desta sala.
@@ -145,6 +152,7 @@ export class ArenaRoom {
       particles: NO_FX,
       map: mapa,
       foes: { ...DEFAULT_SETTINGS, enemyMechs: 3, enemyAndroids: regras.androides },
+      ...(this.esquadrao ? { squad: this.esquadrao } : {}),
       debris: false,
       allies: false,
       ...(sobrevivenciaJaneiro ? { mode: 'survival' as const } : {}),
@@ -172,7 +180,9 @@ export class ArenaRoom {
     const mechBuild = loadoutKey(factorySpec('vector09'));
     for (const mech of this.match.bots.mechs) {
       const kind: UnitKind = mech instanceof Vector09 ? 'mech' : this.match.bots.technicianOf(mech) ? 'technician' : this.match.bots.faxineiroOf(mech) ? 'faxineiro' : 'android';
-      this.units.push({ id: this.freeId(), mech, kind, name: this.match.bots.nameOf(mech), build: kind === 'mech' ? mechBuild : `bot.${kind}` });
+      // O Mech do esquadrão do dono (P270) é visto pelos outros jogadores com o chassi e as armas que ele deu; sem esquadrão, o Vector-09 de fábrica.
+      const kit = this.match.bots.kitOf(mech);
+      this.units.push({ id: this.freeId(), mech, kind, name: this.match.bots.nameOf(mech), build: kind !== 'mech' ? `bot.${kind}` : kit ? loadoutKey(montagemDoBot(kit)) : mechBuild });
     }
   }
 
@@ -480,7 +490,7 @@ export class ArenaRoom {
   }
 
   private broadcastRoster(): void {
-    this.match.bots.setMechCapacity(Math.min(ROOM_SIZE - this.humans.size, this.regras.mechs));
+    this.match.bots.setMechCapacity(Math.min(ROOM_SIZE - this.humans.size, this.esquadrao ? this.esquadrao.inimigos.filter((b) => b.papel === 'mech').length : this.regras.mechs));
     const entries: RosterEntry[] = this.units.filter(u => !this.match.bots.isReserved(u.mech)).map(({ id, kind, name, build }) => ({ id, kind, name, build }));
     const bytes = encodeRoster(this.w, entries);
     for (const h of this.humans.values()) h.peer.send(bytes);

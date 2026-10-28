@@ -37,4 +37,17 @@ describe('o robô de outra pessoa na sala online (P214): o chassi real, não o V
     expect(criarRemoto({ id: 2, kind: 'technician', name: 'T', build: '' }, semMalha, temMalha).mech instanceof Android).toBe(true);
     expect(criarRemoto({ id: 3, kind: 'mech', name: 'M', build: '' }, semMalha, temMalha).mech instanceof Vector09).toBe(true);
   });
+
+  it('o Mech de IA do esquadrão do dono (P270) chega com o chassi e as armas que ele deu; o de fábrica, a montagem ilegível e o andróide-piloto seguem como sempre', () => {
+    const ia = (build: string): RosterEntry => ({ id: 9, kind: 'mech', name: 'ALFA', build });
+    const fabrica = criarRemoto(ia(loadoutKey(factorySpec('vector09'))), semMalha, temMalha);
+    expect(fabrica.mech.stats).toBe(CHASSIS.vector09);
+    expect(fabrica.pendente).toBeNull();
+    const marauder = criarRemoto(ia(loadoutKey(factorySpec('marauder'))), semMalha, temMalha);
+    expect(marauder.mech.stats).toBe(CHASSIS.marauder); // os números e o tamanho do chassi que o servidor usa
+    expect(marauder.pendente).toBe('marauder'); // a malha importada ainda baixa: refaz quando chegar
+    expect(criarRemoto(ia(loadoutKey(factorySpec('marauder'))), (c) => (c === 'marauder' ? ({} as never) : null), () => false).pendente).toBeNull();
+    expect(criarRemoto(ia('lixo'), semMalha, temMalha).mech.stats).toBe(CHASSIS.vector09);
+    expect(criarRemoto(ia(loadoutKey(factorySpec('android'))), semMalha, temMalha).mech.stats).toBe(CHASSIS.vector09); // IA nunca vira o andróide-piloto
+  });
 });

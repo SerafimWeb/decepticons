@@ -1,3 +1,11 @@
+## [2026-10-28] O esquadrão das salas online é do Comandante, vale nas salas novas e cabe na sala que já se mede (P270)
+
+O Comandante quer montar os times online no botão ESQUADRÃO, que competia com o Ajustar. **Escolhas dele:** só o Comandante monta, valendo para todas as salas; uma porta só (o ESQUADRÃO). **Decisões de engenharia (PR 1, servidor):**
+**(1) O esquadrão é um dado do servidor** (`ArmazemDoEsquadraoOnline`, no molde das regras e dos outdoors; só o dono grava, `POST /admin/esquadrao/gravar`); **vale nas salas que abrirem depois** (os corpos nascem com a partida; uma sala vazia fecha em 30 s), e sem ele valem as regras de sempre.
+**(2) O teto é o da sala que já se mede (G11): 3 Mechs, 3 andróides, 1 técnico; sem aliados** (o roster de rede não os descreve) **e sem titãs** (estado a 20 Hz para cada jogador: mais robôs pedem homologação antes, `CAPACIDADE.md`). Subir é trocar `LIMITES_ONLINE`, mas só depois de medir.
+**(3) Só na Cidade Neon e na Estação dos Cabos** (`MAPAS_DO_ESQUADRAO_ONLINE`: o combate livre do lançamento); as outras salas seguem com as regras. **(4) Sem subir o `PROTOCOL_VERSION`:** o roster já levava `build` por unidade; o cliente antigo desenha o robô do esquadrão como o Vector-09 vermelho (só cosmético).
+**(5) O desenho do robô vem da montagem** (`montagemDoBot`): uma arma que o Hangar recusaria por carga perde a mão esquerda e, se preciso, volta à de fábrica (quem atira e fere é o servidor, com os números do chassi). **Em aberto para o PR 2:** a janela, e o que fazer com `REGRAS DAS SALAS` (os Mechs e andróides dela passam a ser ignorados quando há esquadrão salvo).
+
 ## [2026-10-28] O cérebro do time dos bots nasce restrito, porque a medida não mostrou ganho (P269)
 
 O Comandante pediu bots "mais estratégicos… que combinem ataques e defesas, como se se comunicassem". Entrou `CerebroDoTime` (pinça, reagrupar, rádio no feed) atrás do interruptor `ia:time`. **O Comandante escolheu liberar já; depois da bancada ele escolheu RESTRITO**, e a decisão segue os números:

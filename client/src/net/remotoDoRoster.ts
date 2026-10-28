@@ -5,7 +5,7 @@ import { CHASSIS, PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassi
 import { ImportedMech } from '../entities/ImportedMech';
 import type { MechBase, MechRig } from '../entities/MechBase';
 import { Vector09 } from '../entities/Vector09';
-import { parseLoadoutKey, validateLoadout } from '../hangar/loadout';
+import { factorySpec, loadoutKey, parseLoadoutKey, validateLoadout } from '../hangar/loadout';
 import type { RosterEntry } from '../../../shared/net/messages';
 
 /**
@@ -14,6 +14,9 @@ import type { RosterEntry } from '../../../shared/net/messages';
  *
  * `rigDe` devolve a malha importada do chassi **se já baixou** (o preload do boot é assíncrono) ou `null`: sem ela entra a silhueta do chassi (`BLUEPRINT_BY_CHASSIS`) e o chamador refaz o robô
  * quando a malha chegar (`pendente`). Só desenho: o servidor é quem decide posição, vida e dano (G13).
+ *
+ * O Mech de uma IA (P270) é o Vector-09 vermelho de sempre, **a não ser que o esquadrão do dono lhe tenha dado outro chassi ou outras armas**: o servidor então manda a montagem dele no roster
+ * e o robô aparece como ela, com o visor vermelho das IAs. Montagem ilegível ou a de fábrica = o desenho de sempre.
  */
 export interface RemotoDoRoster {
   mech: MechBase;
@@ -21,13 +24,17 @@ export interface RemotoDoRoster {
   pendente: ChassisId | null;
 }
 
+/** A montagem do Mech de IA sem esquadrão: o servidor a manda assim, e o desenho continua o de sempre. */
+const BUILD_DO_MECH_DE_FABRICA = loadoutKey(factorySpec('vector09'));
+
 export function criarRemoto(e: RosterEntry, rigDe: (chassi: ChassisId) => MechRig | null, temMalha: (chassi: ChassisId) => boolean): RemotoDoRoster {
   const pronto = (mech: MechBase): RemotoDoRoster => ({ mech, pendente: null });
-  if (e.kind === 'mech') return pronto(new Vector09({ paint: PALETTE.enemyPaint, visor: PALETTE.signal }));
+  const doEsquadrao = e.kind === 'mech' && e.build !== BUILD_DO_MECH_DE_FABRICA ? parseLoadoutKey(e.build) : null;
+  if (e.kind === 'mech' && (!doEsquadrao || doEsquadrao.chassis === 'android')) return pronto(new Vector09({ paint: PALETTE.enemyPaint, visor: PALETTE.signal }));
   if (e.kind === 'android') return pronto(new Android());
   if (e.kind === 'technician') return pronto(new Android({ visor: PALETTE.fluo, tool: 'repair' }));
   if (e.kind === 'faxineiro') return pronto(new Android({ visor: PALETTE.green, tool: 'repair' }));
-  const spec = parseLoadoutKey(e.build);
+  const spec = doEsquadrao ?? parseLoadoutKey(e.build);
   if (spec?.chassis === 'android') return pronto(new Android({ stats: PILOT_ANDROID_STATS, paint: PALETTE.playerPaint, visor: PALETTE.cyan, tool: 'pilot' }));
   const check = spec ? validateLoadout(spec) : null;
   const chassi: ChassisId = spec?.chassis ?? 'vector09';
@@ -35,5 +42,6 @@ export function criarRemoto(e: RosterEntry, rigDe: (chassi: ChassisId) => MechRi
   const loadout = check?.ok ? check.loadout : undefined;
   const rig = temMalha(chassi) ? rigDe(chassi) : null;
   if (rig) return pronto(new ImportedMech(stats, rig, loadout));
-  return { mech: new Vector09({ visor: PALETTE.cyan, stats, loadout, blueprint: BLUEPRINT_BY_CHASSIS[chassi] }), pendente: temMalha(chassi) ? chassi : null };
+  const ia = e.kind === 'mech';
+  return { mech: new Vector09({ ...(ia ? { paint: PALETTE.enemyPaint } : {}), visor: ia ? PALETTE.signal : PALETTE.cyan, stats, loadout, blueprint: BLUEPRINT_BY_CHASSIS[chassi] }), pendente: temMalha(chassi) ? chassi : null };
 }
