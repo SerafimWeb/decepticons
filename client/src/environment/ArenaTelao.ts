@@ -101,7 +101,8 @@ export class ArenaTelao {
     if (t.arquivo === arquivo) return;
     this.desligar(t);
     const video = document.createElement('video');
-    video.src = `/telao/${arquivo}`;
+    // Sai da base do jogo (`./`, que no site é `/jogar/`): com `/telao/` absoluto o vídeo dava 404 em cybermech.online (os clipes moram em `jogar/telao/`), só funcionava no dev.
+    video.src = `${import.meta.env.BASE_URL}telao/${arquivo}`;
     video.loop = true;
     video.muted = true;
     video.playsInline = true;
