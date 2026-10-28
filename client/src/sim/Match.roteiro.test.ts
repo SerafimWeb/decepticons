@@ -1,6 +1,7 @@
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { BOT_SKILLS } from '../combat/BotController';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import type { EsquadraoSpec } from './esquadrao';
@@ -71,6 +72,12 @@ describe('Match com um roteiro WARGAME (P262): dois esquadrões, sem jogador', (
 
     const cerebroAliado = match.allies!.brainOf(match.allies!.mechs[0]!)!;
     expect(cerebroAliado.order).toBe('follow');
+  });
+
+  it('os dois esquadrões brigam no nível mais afiado (dificil) — é espetáculo, sem jogador para proteger', async () => {
+    const { match } = await partida([]);
+    expect(match.bots.brainOf(match.bots.mechs[0]!)!.skill).toBe(BOT_SKILLS.dificil);
+    expect(match.allies!.brainOf(match.allies!.mechs[0]!)!.skill).toBe(BOT_SKILLS.dificil);
   });
 
   it('sem roteiro (o jogo de sempre), nada dispara e nenhum bot é tocado por ele', async () => {

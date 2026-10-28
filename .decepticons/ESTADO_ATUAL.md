@@ -1,5 +1,19 @@
 # ESTADO ATUAL — CYBERMECH
 
+## WARGAME: o Comandante ainda jogava, e os bots pareciam fracos (Claude, P263, branch `claude/pos-wargame`)
+
+**Jogou o P262 pela primeira vez e achou dois problemas:** "ele me colocou como player! quero nao precisar eu jogar,
+apenas eles... achei meio burros os npcs tambem!" **Achado:** `Game.ts:setPlaying()` religava `player.active` toda
+rodada, sem checar o modo WARGAME — a câmera de espectador escondia a visão, mas WASD/mira/tiro continuavam vivos
+por trás dela (a bancada anterior nunca simulou tecla nem clique, só UI). Corrigido com um `wargameAtivo` que trava
+`player.active = false` o episódio inteiro; **provado segurando W + clique por 1 s: deslocamento do Mech = 0**.
+Os dois esquadrões também saem do `BOT_SKILL_NORMAL` (calibrado para ser justo contra humano) para `BOT_SKILLS.dificil`
+(sem jogador para proteger, não há motivo pra segurar a IA). **Testes:** +1 em `Match.roteiro.test.ts`; `npm run
+typecheck` e os arquivos afetados verdes; `npm run check` completo no hook do push.
+**Falta:** o resto de "muito básico" — o Comandante não detalhou o quê; fica para quando ele apontar.
+**Em paralelo, o mesmo pedido trouxe a ordem P264 (atmosfera cyberpunk-distópica da Cidade Neon): ver `STATUS_REAL.md`
+e `ORDENS_DO_COMANDO.md` para o que está em andamento.**
+
 ## WARGAME completo — painel, mapa clicável, câmera e legenda (Claude, P262, PR 2/2, branch `claude/wargame-mapa`)
 
 **O PR1 (abaixo) já tinha a simulação; este PR entrega o resto, tudo de uma vez** — na prática, o que o plano

@@ -284,6 +284,8 @@ export class Game {
   private readonly btnCftv: HTMLButtonElement | null;
   /** O WARGAME (P262): a legenda das batidas do roteiro; `null` fora de uma sessão `?wargame=` (carrega sob demanda, G5). */
   private wargameLegenda: WargameCaptionOverlay | null = null;
+  /** O WARGAME (P262): verdadeiro durante uma sessão `?wargame=` — trava o Mech do Comandante fora do próprio `setPlaying`, que senão o religava a cada troca de pausa. */
+  private wargameAtivo = false;
   private readonly touch: TouchControls;
   private readonly assist: AimAssist;
   private readonly player: PlayerController;
@@ -763,6 +765,7 @@ export class Game {
     };
     if (roteiro && !online) {
       // Entra direto no modo espectador (o mesmo do botão CFTV): o Comandante nunca controla o Mech do WARGAME.
+      this.wargameAtivo = true;
       this.toggleSpectatorCam();
       // O HUD do jogador (vida, munição, ordens do esquadrão) não tem sentido numa cena que ninguém pilota — o
       // mesmo botão do F1 (sempre começa visível, então um toggle só já esconde).
@@ -2177,7 +2180,10 @@ export class Game {
     }
     if (!playing) this.hud.roundOverlay.parar();
     this.playing = playing;
-    this.player.active = playing;
+    // O WARGAME (P262) nunca entrega o Mech do Comandante: sem isto, o `active=true` de toda partida normal
+    // religava o movimento, a mira e o tiro por trás da câmera de espectador (achado jogando: "ele me colocou
+    // como player", 27/10).
+    this.player.active = playing && !this.wargameAtivo;
     this.hud.setPaused(!playing && !this.bankTerminal?.isOpen);
     this.touch.setVisible(playing && this.input.touchMode);
     this.updateCursor();
