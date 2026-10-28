@@ -6,6 +6,7 @@ import { MOUNTS, type MountId } from '../client/src/combat/mounts';
 import type { WeaponStats } from '../client/src/combat/weapons';
 import { BOT_SKILLS } from '../client/src/combat/BotController';
 import { DEFAULT_SETTINGS } from '../client/src/core/Settings';
+import { padraoDe } from '../client/src/core/funcionalidades';
 import { REGRAS_SEM_LIMITE, type RegrasOnline } from '../shared/regras';
 import { Android } from '../client/src/entities/Android';
 import { CHASSIS, PILOT_ANDROID_STATS } from '../client/src/entities/chassis';
@@ -149,6 +150,7 @@ export class ArenaRoom {
       ...(sobrevivenciaJaneiro ? { mode: 'survival' as const } : {}),
     });
     this.aplicarRegras(regras);
+    this.aplicarVisibilidade({}); // o padrão do catálogo; o servidor reaplica com o que o dono gravou
     // Eventos para os clientes desenharem o que o servidor decidiu: cada tiro (o cliente faz o projétil visual)
     // e cada abate (lista de abates).
     this.match.projectiles.onFired = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
@@ -467,6 +469,14 @@ export class ArenaRoom {
     this.match.bots.setSkill(BOT_SKILLS[r.dificuldade]);
     this.match.bots.maxAttackers = r.atacantes;
     if (!this.disposed && this.units.length > 0) this.broadcastRoster();
+  }
+
+  /**
+   * O que o dono liberou ou segurou no painel de visibilidade (P191) e vale na simulação: só o interruptor `ia:time` (P269), a coordenação dos bots em pinça e reagrupar. O servidor guarda só as
+   * exceções ao padrão do código, então sem exceção vale o padrão do catálogo. Restrito = os bots lutam como antes. Online não há modo Comandante: restrito vale para todos.
+   */
+  aplicarVisibilidade(itens: Readonly<Record<string, string>>): void {
+    this.match.setCoordenacao((itens['ia:time'] ?? padraoDe('ia:time')) === 'publico');
   }
 
   private broadcastRoster(): void {

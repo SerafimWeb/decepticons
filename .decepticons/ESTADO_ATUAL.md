@@ -1,5 +1,14 @@
 # ESTADO ATUAL — CYBERMECH
 
+## EM BRANCH — NÃO ESTÁ NO AR: o cérebro do time dos bots (Claude, P269, branch `claude/ia-time`)
+
+**O pedido (28/10):** bots mais estratégicos: "combinar" ataque e defesa, "como se se comunicassem". **Entrega:** `CerebroDoTime.ts` (um por lado): **pinça** (fixador de frente, 1–2 flanqueadores de lados opostos sem atirar, sinal "VAI!", golpe de 5 s com vaga extra), **reagrupar**
+(patrulha espalhada se junta) e as falas no feed; `BotController` ganhou `tarefa`/`segurarFogo`/`golpe`; o diretor ignora quem segura fogo e conta o flanco da pinça no cerco. Interruptor `ia:time` (`funcionalidades.ts`): **RESTRITO**, vale também no servidor (`ArenaRoom.aplicarVisibilidade`).
+**Medido (bancada bot×bot, 40 duelos 4×4):** o time com cérebro vence **45% / 38% / 45%** (fácil/normal/difícil): **sem ganho de força**; FOCO no mais fraco = 3% no normal (descartado). Dano no jogador parado: fácil 0,0%, normal +4,1%, difícil −19,5%. Por isso restrito: o Comandante julga jogando (como conferir: ORDENS P269).
+**Testes:** +12 (`CerebroDoTime.test.ts`: pinça forma e golpeia, vaga extra só no golpe, fácil não faz pinça, interruptor solta a tarefa, determinismo, reagrupar) e `regras.test.ts`; as fotos de `esquadraoPadrao.test.ts` foram refeitas e o interruptor desligado reproduz as antigas. **Falta:** cobertura mútua, recuar e curar, Bandeira, voz, falas online (`ORDENS P269`).
+**Próxima sessão começa com:** a opinião do Comandante depois de jogar com `ia:time` ligado; se confirmar "mais esperto", liberar no painel; se não, o próximo experimento da bancada (cobertura mútua, sem teto de atacantes).
+
+
 ## A praça urbana: cobertura e combate de perto dentro da praça (Claude, P268, branch `claude/praca-urbana`)
 
 **O pedido (28/10), respondendo se os prédios iam dentro da praça ou fora dela:** "na praça, pra dar cobertura, e reduzir o alcance, fazer combate urbano com diferentes espaços de conflito e que permita diversas estratégias; não precisa lotar, só mais alguns prédios e elementos, tipo uma praça de playground porém urbana".
