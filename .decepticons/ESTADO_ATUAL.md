@@ -1,5 +1,12 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O esquadrão das salas online — PR 1 de 2: o servidor (Claude, P270, branch `claude/esquadrao-online`)
+
+**O pedido (28/10):** "quando eu jogo online, queria poder configurar os times no botão ESQUADRÃO… esse botão compete com o Ajustar" (último item antes de lançar). **Respostas dele:** só o Comandante monta, para todas as salas; uma porta só, o ESQUADRÃO.
+**Entrega (PR 1, só servidor; a janela vem no PR 2):** `client/src/sim/esquadraoOnline.ts` (o contrato: teto da sala = 3 Mechs, 3 andróides, 1 técnico, sem aliados nem titãs; `esquadraoParaOnline`, `esquadraoDasRegras`, `montagemDoBot`), `server/esquadraoOnline.ts` (o armazém, `esquadrao-online.json`), as rotas `GET /admin/esquadrao` e `POST /admin/esquadrao/gravar` (chave do dono), `ArenaRoom` montando a partida com o esquadrão e dizendo no roster o chassi e a arma de cada robô (`BotSystem.kitOf`), e `remotoDoRoster.ts` desenhando o robô de IA com ele. **Vale nas salas novas** da Cidade Neon e da Estação dos Cabos; sem esquadrão salvo, as regras de sempre. **Sem subir o protocolo.**
+**Testes:** +20 (`esquadraoOnline.test.ts` nos dois lados: teto, armazém, rotas e 401, a sala monta e o roster descreve, sala nova de ponta a ponta por WebSocket) e **8 mutações à mão, todas reprovadas**. **Ainda não dá para ver:** sem a janela (PR 2) só o dono, por `POST`, grava um esquadrão.
+**Próxima sessão começa com:** o PR 2: a janela ESQUADRÃO abrindo online para o Comandante (SALVAR PARA TODOS, "recriar a minha sala"), INIMIGOS e NOMES saindo do Ajustar, e a pressão (quantos atacam juntos) indo para o ESQUADRÃO.
+
 ## EM BRANCH — NÃO ESTÁ NO AR: o cérebro do time dos bots (Claude, P269, branch `claude/ia-time`)
 
 **O pedido (28/10):** bots mais estratégicos: "combinar" ataque e defesa, "como se se comunicassem". **Entrega:** `CerebroDoTime.ts` (um por lado): **pinça** (fixador de frente, 1–2 flanqueadores de lados opostos sem atirar, sinal "VAI!", golpe de 5 s com vaga extra), **reagrupar**

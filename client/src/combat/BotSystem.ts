@@ -191,6 +191,8 @@ interface Bot {
   home: THREE.Vector3;
   /** A dificuldade é do robô (esquadrão): a das configurações não a troca. */
   ownSkill?: boolean;
+  /** O que o esquadrão pediu para ele (chassi e armas): o servidor descreve o robô aos clientes com isto (`kitOf`). */
+  kit?: BotKit;
   /** Feixe de conserto (só técnicos): 2 pontos atualizados no render, sem alocar. */
   beam?: THREE.Line;
   /** A defesa (P180 parte D2): segundos que ainda fica acordada (um alvo chegou perto ou ela levou dano); zero = dorme. */
@@ -300,7 +302,7 @@ export class BotSystem {
           brain.reset();
         });
       }
-      this.bots.push({ mech, brain, name, home, ...(ownSkill ? { ownSkill } : {}) });
+      this.bots.push({ mech, brain, name, home, ...(ownSkill ? { ownSkill } : {}), ...(kit ? { kit } : {}) });
     };
     // No placar e no nome sobre a cabeça, o nome e a personalidade (CLAUDE·BRABO): o jogador aprende quem é quem.
     const mechName = (i: number) => {
@@ -461,6 +463,11 @@ export class BotSystem {
 
   nameOf(mech: MechBase): string {
     return this.bots.find((b) => b.mech === mech)?.name ?? 'BOT';
+  }
+
+  /** O chassi e as armas que o esquadrão deu ao robô (`undefined` = o de fábrica, ou não é do esquadrão). */
+  kitOf(mech: MechBase): BotKit | undefined {
+    return this.bots.find((b) => b.mech === mech)?.kit;
   }
 
   /** Rodada nova: todos inteiros de volta ao ponto de nascimento, olhando o centro, cérebro zerado. */

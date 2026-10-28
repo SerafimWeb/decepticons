@@ -36,6 +36,8 @@ import { TELAO_PATH } from '../shared/telao';
 import { ArmazemDeOutdoors } from './outdoors';
 import { ArmazemDeTelao } from './telao';
 import { ArmazemDeRegras } from './regras';
+import { ArmazemDoEsquadraoOnline } from './esquadraoOnline';
+import { esquadraoDasRegras, type RespostaDoEsquadrao } from '../client/src/sim/esquadraoOnline';
 import { bancoDeContas, pastaDados } from './dados';
 import { carregarToken, DADOS_ARQUIVO, gravarJson, lerJson, TOKEN_ARQUIVO, tokenConfere } from './metricas';
 import { Telemetria } from './telemetria';
@@ -226,7 +228,7 @@ export async function startServer(
     if (open) return Promise.resolve(open);
     let p = creating.get(code);
     if (!p) {
-      p = ArenaRoom.create(code, regras.atual(), mapaDaChave(code), modoDaChave(code)).then((room) => {
+      p = ArenaRoom.create(code, regras.atual(), mapaDaChave(code), modoDaChave(code), esquadrao.atual()).then((room) => {
         // Quem entra na voz (P211; fase de testes, P241): o `PRONTO` traz o token da sessão e é aqui que ele vale ou não (`VOZ_SO_PARA_ADULTO_DECLARADO` em `shared/net/auth.ts`).
         room.definirAutorizacaoDeVoz(autorizarPorSessao((token) => contas.validarSessao(token)));
         // A sala de teste do painel (`TESTE-…`) fica fora dos números de produto.
@@ -390,6 +392,12 @@ export async function startServer(
   const telao = new ArmazemDeTelao(dirDados);
   const outdoors = new ArmazemDeOutdoors(dirDados);
   const regras = new ArmazemDeRegras(dirDados, opts.regrasIniciais);
+  /** O esquadrão que o dono montou para as salas online (P270): vale nas salas que abrirem depois; sem ele valem as regras. */
+  const esquadrao = new ArmazemDoEsquadraoOnline(dirDados);
+  const esquadraoDeAgora = (): RespostaDoEsquadrao => {
+    const salvo = esquadrao.atual();
+    return { salvo: salvo !== null, esquadrao: salvo ?? esquadraoDasRegras(regras.atual()) };
+  };
   regras.aoMudar((r) => {
     for (const sala of rooms.values()) sala.aplicarRegras(r);
     log(`regras das salas online: ${r.dificuldade}, ${r.mechs} Mech(s), ${r.androides} andróide(s), ${r.atacantes} atacante(s) ao mesmo tempo`);
@@ -1151,6 +1159,15 @@ export async function startServer(
     token: metricasToken,
     contaAdmin: sessaoDeAdmin,
     regras: { atual: () => regras.atual(), gravar: (x) => regras.gravar(x) },
+    esquadrao: {
+      atual: esquadraoDeAgora,
+      gravar: (corpo) => {
+        if (!esquadrao.gravar(corpo)) return null;
+        const agora = esquadraoDeAgora();
+        log(`esquadrão das salas online: ${agora.salvo ? 'gravado pelo dono' : 'apagado (valem as regras)'}; vale nas salas que abrirem agora`);
+        return agora;
+      },
+    },
     gravarVisibilidade: (itens) => {
       statusAt = 0; // o /status leva a visibilidade: a próxima resposta já traz a nova
       const gravada = visibilidade.gravar(itens);

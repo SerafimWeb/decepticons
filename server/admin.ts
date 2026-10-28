@@ -35,6 +35,7 @@ import {
   type Veredito,
 } from '../shared/net/admin';
 import { PROTOCOL_VERSION, ROOM_SIZE } from '../shared/net/constants';
+import { ADMIN_ESQUADRAO_GRAVAR_PATH, ADMIN_ESQUADRAO_PATH, type RespostaDoEsquadrao } from '../client/src/sim/esquadraoOnline';
 import { ADMIN_REGRAS_GRAVAR_PATH, ADMIN_REGRAS_PATH, type RegrasOnline } from '../shared/regras';
 import { ADMIN_VISIBILIDADE_PATH, type ConfigDeVisibilidade } from '../shared/visibilidade';
 import { ADMIN_OUTDOORS_PATH, type ConfigDeOutdoors } from '../shared/outdoors';
@@ -475,6 +476,8 @@ export interface AdminOpcoes {
   testar: () => Promise<AdminTeste>;
   /** As regras dos bots das salas online (P199): ler e gravar (o servidor valida e puxa para os limites). Sem isto, as rotas respondem 501. */
   regras?: { atual: () => RegrasOnline; gravar: (x: unknown) => RegrasOnline };
+  /** O esquadrão das salas online (P270): o que valeria numa sala nova agora e gravar o do dono (`null` = formato inválido; nada muda). Sem isto, as rotas respondem 501. */
+  esquadrao?: { atual: () => RespostaDoEsquadrao; gravar: (corpo: unknown) => RespostaDoEsquadrao | null };
   /** O que os jogadores veem (P191): grava as exceções ao padrão do código; `null` = formato inválido. Sem isto, `POST /admin/visibilidade` responde 501. */
   gravarVisibilidade?: (itens: unknown) => ConfigDeVisibilidade | null;
   /** Os telões da Cidade Neon (P246): grava qual arquivo toca em cada tela; `null` = formato inválido. Sem isto, `POST /admin/telao` responde 501. */
@@ -500,8 +503,8 @@ const CORS = {
   'access-control-allow-headers': `content-type, ${ADMIN_HEADER}`,
 } as const;
 
-const ROTAS_GET = new Set<string>([ADMIN_ESTADO_PATH, ADMIN_HISTORICO_PATH, ADMIN_LOG_PATH, ADMIN_AVALIAR_PATH, ADMIN_REGRAS_PATH]);
-const ROTAS_POST = new Set<string>([ADMIN_TESTAR_PATH, ADMIN_FECHAR_SALA_PATH, ADMIN_REINICIAR_PATH, ADMIN_VISIBILIDADE_PATH, ADMIN_REGRAS_GRAVAR_PATH, ADMIN_TELAO_PATH, ADMIN_OUTDOORS_PATH]);
+const ROTAS_GET = new Set<string>([ADMIN_ESTADO_PATH, ADMIN_HISTORICO_PATH, ADMIN_LOG_PATH, ADMIN_AVALIAR_PATH, ADMIN_REGRAS_PATH, ADMIN_ESQUADRAO_PATH]);
+const ROTAS_POST = new Set<string>([ADMIN_TESTAR_PATH, ADMIN_FECHAR_SALA_PATH, ADMIN_REINICIAR_PATH, ADMIN_VISIBILIDADE_PATH, ADMIN_REGRAS_GRAVAR_PATH, ADMIN_TELAO_PATH, ADMIN_OUTDOORS_PATH, ADMIN_ESQUADRAO_GRAVAR_PATH]);
 
 export class Admin {
   private reiniciando = false;
@@ -625,6 +628,20 @@ export class Admin {
         const novas = this.o.regras.gravar(corpo);
         this.o.anotar(`painel: regras das salas online gravadas (${novas.dificuldade}, ${novas.mechs} Mech(s), ${novas.androides} andróide(s), ${novas.atacantes} atacante(s))`);
         json(200, novas);
+        return true;
+      }
+      case ADMIN_ESQUADRAO_PATH:
+        if (!this.o.esquadrao) return recusar(501, { erro: 'o servidor não guarda o esquadrão' });
+        json(200, this.o.esquadrao.atual());
+        return true;
+      case ADMIN_ESQUADRAO_GRAVAR_PATH: {
+        if (!this.o.esquadrao) return recusar(501, { erro: 'o servidor não guarda o esquadrão' });
+        const corpo = await this.corpo(req, 65_536);
+        const nova = corpo ? this.o.esquadrao.gravar(corpo) : null;
+        if (!nova) return recusar(400, { erro: 'esquadrão inválido' });
+        const r = nova.esquadrao.inimigos;
+        this.o.anotar(`painel: esquadrão das salas online ${nova.salvo ? `gravado (${r.filter((b) => b.papel === 'mech').length} Mech(s), ${r.filter((b) => b.papel === 'android').length} andróide(s), ${r.filter((b) => b.papel === 'technician').length} técnico(s))` : 'apagado (valem as regras)'}`);
+        json(200, nova);
         return true;
       }
       case ADMIN_VISIBILIDADE_PATH: {

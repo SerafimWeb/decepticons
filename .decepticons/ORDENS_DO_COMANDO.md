@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P270 — O esquadrão das salas online: uma porta só, o ESQUADRÃO (28/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P270 | 28/10 | "PARA CONCLUIRMOS esse longo ciclo: quando eu jogo online, queria poder configurar os times no botão esquadrão, pra mudar os mechs, nomes, etc, porém, esse botão compete com o ajustar, que tem a aba inimigos mas não é igual... acho q só falta isso pra podermos lançar com segurança q o povo vai gostar." Às duas perguntas: quem monta online? **"Só o Comandante, valendo p/ todas as salas"**; o que fazer com o Ajustar? **"Uma porta só: ESQUADRÃO"** | 🟡 | **PR 1 de 2 (servidor, Claude, 28/10):** o servidor guarda o esquadrão que o dono monta (`esquadrao-online.json`, `/admin/esquadrao` com a chave do dono) e as salas **novas** da Cidade Neon e da Estação dos Cabos nascem com ele: cada robô com o nome, o chassi, a arma e o jeito dele, e os outros jogadores o veem assim (o roster já levava a montagem por unidade). Teto = o da sala que já se mede: 3 Mechs, 3 andróides, 1 técnico; sem aliados nem titãs online. Sem esquadrão salvo valem as regras, como hoje. **Falta (PR 2):** a janela ESQUADRÃO abrir online para o Comandante (SALVAR PARA TODOS) e INIMIGOS e NOMES saírem do Ajustar (a pressão, "quantos atacam juntos", vai para o ESQUADRÃO). | `server/esquadraoOnline.test.ts` e `client/src/sim/esquadraoOnline.test.ts` (20 testes; 8 mutações à mão); a janela só depois do PR 2 |
+
 ## P268 — A praça urbana: cobertura, combate de perto, espaços de conflito (28/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
