@@ -3,6 +3,8 @@
 @font-face { font-family: 'Chakra'; font-weight: 600; src: url('../../client/public/fonts/chakra-petch-600.woff2') format('woff2'); }
 @font-face { font-family: 'Barlow'; font-weight: 600; src: url('../../client/public/fonts/barlow-600.woff2') format('woff2'); }
 @font-face { font-family: 'Barlow'; font-weight: 400; src: url('../../client/public/fonts/barlow-400.woff2') format('woff2'); }
+/* A fonte do título do jogo (P135), agora também nos banners da Serafim (P267): marca de uma família só. */
+@font-face { font-family: 'Azonix'; src: url('../../client/public/fonts/Azonix.otf') format('opentype'); }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 512px; height: 1024px; overflow: hidden; background: #03060c; }

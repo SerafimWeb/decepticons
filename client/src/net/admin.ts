@@ -25,6 +25,7 @@ import { serverHttpUrl } from '../../../shared/net/serverUrl';
 import { chaveDoToken as chaveDaConta } from './sessao';
 import { ADMIN_REGRAS_GRAVAR_PATH, ADMIN_REGRAS_PATH, lerRegrasDaResposta, type RegrasOnline } from '../../../shared/regras';
 import { ADMIN_VISIBILIDADE_PATH, lerConfig, type ConfigDeVisibilidade, type EstadoDeVisibilidade } from '../../../shared/visibilidade';
+import { ADMIN_OUTDOORS_PATH, lerConfigDeOutdoors, normalizarParametros, OUTDOORS_PATH, type ConfigDeOutdoors, type ParametrosDeOutdoors } from '../../../shared/outdoors';
 import { ADMIN_TELAO_PATH, lerConfigDeTelao, TELAO_PATH, type ConfigDeTelao, type TelaoItem } from '../../../shared/telao';
 import { parseStatus, STATUS_PATH, type ServerStatus } from '../../../shared/net/status';
 
@@ -90,6 +91,9 @@ export class AdminCliente {
   /** Grava qual vídeo toca em cada telão da Cidade Neon (P246); `null` desliga a tela. Devolve a configuração nova do servidor. */
   gravarTelao = (itens: Record<string, TelaoItem | null>): Promise<Resposta<ConfigDeTelao>> =>
     this.chamar(ADMIN_TELAO_PATH, (r) => ((r as { itens?: unknown } | null)?.itens ? lerConfigDeTelao(r) : null), { metodo: 'POST', corpo: { itens } });
+  /** Grava os parâmetros dos outdoors da marca (P267): quantos aparecem, de quanto em quanto tempo trocam e quais anúncios entram. Devolve a configuração nova do servidor. */
+  gravarOutdoors = (parametros: ParametrosDeOutdoors): Promise<Resposta<ConfigDeOutdoors>> =>
+    this.chamar(ADMIN_OUTDOORS_PATH, (r) => (normalizarParametros(r) ? lerConfigDeOutdoors(r) : null), { metodo: 'POST', corpo: parametros });
   reiniciar = (confirmar: boolean): Promise<Resposta<AdminReiniciar>> =>
     this.chamar(ADMIN_REINICIAR_PATH, lerReinicio, { metodo: 'POST', corpo: { confirmar } });
 
@@ -100,6 +104,18 @@ export class AdminCliente {
     try {
       const res = await this.buscar(url, { cache: 'no-store', mode: 'cors', signal: AbortSignal.timeout(4000) });
       return res.ok ? lerConfigDeTelao(await res.json()) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Os outdoors da marca, públicos e sem token (o mesmo que `GET /outdoors` responde a qualquer jogador): para o painel mostrar o que já está gravado antes do Comandante mexer. */
+  async outdoorsPublico(): Promise<ConfigDeOutdoors | null> {
+    const url = this.base ? `${this.base}${OUTDOORS_PATH}` : null;
+    if (!url) return null;
+    try {
+      const res = await this.buscar(url, { cache: 'no-store', mode: 'cors', signal: AbortSignal.timeout(4000) });
+      return res.ok ? lerConfigDeOutdoors(await res.json()) : null;
     } catch {
       return null;
     }

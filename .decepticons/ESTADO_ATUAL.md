@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Os outdoors alternam e ganham um painel do Comandante (Claude, P267, branch `claude/outdoors-painel`)
+
+**O pedido (28/10), depois de ver o P266 no ar ("absurdamente BOM!"):** "tá meio poluído": um painel para configurar **quantas imagens aparecem**; as imagens **trocam a cada 10 ou 15 s**; **mais prédios pequenos e médios** (a fase tem muito espaço vazio); **a Azonix nos banners da Serafim**.
+**Entrega:** o chip **OUTDOORS ▸** (modo Comandante) abre `OutdoorsPanel.ts`: quantos aparecem (padrão **26 de 40**), o período (5–30 s, padrão **12**; atalhos 10 s e 15 s) e quais anúncios entram; cada mexida aparece na hora, **SALVAR PARA TODOS** grava no servidor
+(`shared/outdoors.ts`, `server/outdoors.ts`, `GET /outdoors` público, `POST /admin/outdoors` com a chave do dono), FECHAR desfaz o que não foi salvo. **Cada outdoor alterna** entre as 9 imagens num anel (a logo plana fica fixa), com falha de sinal na troca; o brilho e o reflexo no chão
+seguem a imagem de agora; o prédio de um outdoor que sai do ar volta a acender as janelas. `Outdoors.ts` passou a **uma malha só** de painéis (eram 7). **Azonix** no "SOFTWARE BUREAU" (a lista com acento ficou na Chakra: a Azonix não tem cedilha nem til).
+**Custo (Vega 11, janela do Comandante, rodadas alternadas main × branch, mediana de 3):** GPU por quadro igual dentro do ruído de ±2 ms desta máquina (13,0→13,2 ms no nascimento, 16,9→16,6 do alto do prédio Serafim, 11,3→11,2 rente à avenida, 10,2→9,9 de baixo do holograma, 10,7→9,9 de perto de uma logo plana); **18 a 28 chamadas de desenho a menos** (147→129 parado, 157→129 do alto, 79→62 na avenida); abertura do jogo 2,4→2,2 s. CPU: nada por quadro; pacote de partida **479,4 KB/500 KB**; **0/512 poses com NaN** na GPU real (8 pontos × 16 guinadas × 4 inclinações). **Testes:** +23 (`Outdoors.test.ts`, `OutdoorsPanel.test.ts`, `server/outdoors.test.ts` e os da cidade); 8 mutações à mão, todas reprovadas; prova no Chrome com o mouse de verdade (painel, salvar, desfazer, sem a chave).
+**Falta (precisa da resposta do Comandante):** os **prédios pequenos e médios** — dentro da praça jogável (com colisão no servidor, os bots e o WARGAME) ou só enfeite fora dela? **Também aberto:** os banners na Estação dos Cabos (`MARCA_E_ANUNCIOS.md` § 5); a licença da `Azonix.otf`.
+**Próxima sessão começa com:** a resposta sobre os prédios.
+
 ## Telões: o vídeo dava 404 no site publicado (Claude, branch `claude/telao-caminho-do-video`)
 
 **Achado (28/10, na prova ao vivo do P266, console do Chrome em cybermech.online):** `ArenaTelao.ts` montava o vídeo como `/telao/<arquivo>` (absoluto na raiz do site), mas o jogo vive em `/jogar/` e os clipes

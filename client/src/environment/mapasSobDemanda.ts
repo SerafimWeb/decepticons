@@ -5,6 +5,7 @@ import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { Destructibles } from './Destructibles';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { PowerSpec } from '../tuning/power';
+import type { ParametrosDeOutdoors } from '../../../shared/outdoors';
 import type { EstadoDosObjetivos } from './AmazoniaObjetivos';
 import type { MapId } from './Bunker';
 import type { QuadroDaPraia } from '../ui/PraiaHud';
@@ -167,6 +168,14 @@ export interface CenarioDaCidade {
   /** `camera`: onde está a câmera (o holograma desenha menos camadas quando ela está perto: custo de preenchimento na GPU integrada). */
   update(dt: number, camera?: THREE.Vector3): void;
   setDetalhe(alto: boolean): void;
+  /** Quantos outdoors o mapa tem (o teto do controle de quantidade do painel). */
+  readonly totalDeOutdoors: number;
+  /** Os outdoors da marca (P267): aplica quantos aparecem, o período da troca e os anúncios que entram. Leve: serve para acompanhar um controle deslizante. */
+  aplicarOutdoors(parametros: ParametrosDeOutdoors): void;
+  /** O que está valendo nos outdoors agora (o painel guarda para desfazer o que o Comandante não salvou). */
+  outdoorsDaVez(): ParametrosDeOutdoors;
+  /** Busca no servidor o que o Comandante gravou para os outdoors (uma vez; nunca lança). */
+  carregarOutdoors(gameServer: string | undefined | null): Promise<void>;
 }
 
 /** A fábrica do entorno da Cidade Neon (`environment/CidadeNeonCenario.ts`): as torres, os outdoors da marca, o holograma, a rua e o chão molhado. */

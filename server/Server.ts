@@ -31,7 +31,9 @@ import { FalhasPorConta, LIMITE_LOGIN_DEFAULTS, LimiteLogin } from './login';
 import { corsDoPedido, origemPermitida, origensExtras } from './origem';
 import { VISIBILIDADE_PATH } from '../shared/visibilidade';
 import { ArmazemDeVisibilidade } from './visibilidade';
+import { OUTDOORS_PATH } from '../shared/outdoors';
 import { TELAO_PATH } from '../shared/telao';
+import { ArmazemDeOutdoors } from './outdoors';
 import { ArmazemDeTelao } from './telao';
 import { ArmazemDeRegras } from './regras';
 import { bancoDeContas, pastaDados } from './dados';
@@ -385,6 +387,7 @@ export async function startServer(
   };
   const visibilidade = new ArmazemDeVisibilidade(dirDados);
   const telao = new ArmazemDeTelao(dirDados);
+  const outdoors = new ArmazemDeOutdoors(dirDados);
   const regras = new ArmazemDeRegras(dirDados, opts.regrasIniciais);
   regras.aoMudar((r) => {
     for (const sala of rooms.values()) sala.aplicarRegras(r);
@@ -479,6 +482,19 @@ export async function startServer(
       const corpoTelao = JSON.stringify(telao.atual());
       res.writeHead(200, { ...cabecalhos, 'content-type': 'application/json; charset=utf-8', 'content-length': Buffer.byteLength(corpoTelao) });
       res.end(corpoTelao);
+      return;
+    }
+    // Os outdoors da marca na Cidade Neon (P267): público e sem token (é o que a cidade pergunta ao montar a cena); só o dono grava, por `/admin/outdoors`.
+    if (path === OUTDOORS_PATH && (req.method === 'GET' || req.method === 'OPTIONS')) {
+      const cabecalhos = { 'access-control-allow-origin': '*', 'cache-control': 'no-store' };
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, { ...cabecalhos, 'access-control-allow-methods': 'GET, OPTIONS' });
+        res.end();
+        return;
+      }
+      const corpoOutdoors = JSON.stringify(outdoors.atual());
+      res.writeHead(200, { ...cabecalhos, 'content-type': 'application/json; charset=utf-8', 'content-length': Buffer.byteLength(corpoOutdoors) });
+      res.end(corpoOutdoors);
       return;
     }
     if (path === STATUS_PATH) {
@@ -1139,6 +1155,7 @@ export async function startServer(
       return visibilidade.gravar(itens);
     },
     gravarTelao: (itens) => telao.gravar(itens),
+    gravarOutdoors: (parametros) => outdoors.gravar(parametros),
     amostrador,
     estado: () =>
       montarEstado(

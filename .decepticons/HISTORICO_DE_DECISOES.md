@@ -1,3 +1,14 @@
+## [2026-10-28] Outdoors que alternam, ajustados num painel do Comandante e guardados no servidor (P267)
+
+O Comandante: "tá meio poluído… quero um painel pra configurar quantas imagens devem aparecer… trocar elas a cada 10 ou 15 segundos". Decisões de propósito:
+**(1) A configuração mora no servidor, no molde dos Telões e da Visibilidade** (`shared/outdoors.ts`, `GET /outdoors` público, `POST /admin/outdoors` só com a chave do dono): ele ajusta o visual **para todos**, não só no navegador dele; o servidor guarda só
+três coisas (quantidade, período, anúncios desligados), nunca imagem nem endereço, e recusa o que o painel não oferece. **(2) O padrão é menos que tudo:** 26 dos 40 outdoors e troca a cada 12 s (ele achou a cidade poluída com os 40); sem servidor, vale esse padrão.
+**(3) Todo outdoor alterna num anel único** (as 9 imagens que alternam, na ordem do catálogo; cada um começa num ponto e anda um passo por período, cada um no seu tempo): uma só malha de painéis e uma só de brilho (eram 7 + 1), um relógio, **zero conta de CPU por quadro**.
+A logo plana é a marca e não alterna. **(4) O brilho e o reflexo no chão seguem a imagem de agora** (o mesmo trecho de shader nos três): sem isso o chão refletiria laranja sob um outdoor que já mostra o ping verde. **(5) Menos outdoors = janelas de volta:**
+o prédio cujo outdoor saiu do ar volta a acender as janelas (um atributo por prédio, atualizado só quando a configuração muda). **(6) A leitura da textura usa `textureGrad`** com o gradiente calculado fora do `if` que escolhe a imagem (o D3D avisava que a derivada
+ficava indefinida). **(7) Azonix só onde não há acento:** "SOFTWARE BUREAU" nos banners da Serafim; a lista de serviços ("CORREÇÃO DE CÓDIGO", "SEGURANÇA DIGITAL") ficou na Chakra, porque a Azonix não tem cedilha nem til (saía "CORRECAO DE CODIGO"). A licença da Azonix segue
+em aberto (`ESTADO_ATUAL.md`). **(8) Os prédios pequenos e médios ficam para outro PR**, depois da resposta dele: dentro da praça jogável é mudança de jogo (colisão, servidor, bots); só enfeite fora da praça é cenário.
+
 ## [2026-10-28] Cidade Neon: os telões viram outdoors da marca (os produtos do Comandante) e a logo ganha um holograma 3D (P266)
 
 O Comandante, ao ver a cidade: "ficou tudo muito bom… use o vetorserafim.png como nossa LOGO e o principal holograma… vamos usar os nossos produtos, nosso branding, pra fortalecer nossa marca". Decisões de propósito:

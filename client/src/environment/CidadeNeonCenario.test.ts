@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { afterEach, describe, expect, it } from 'vitest';
+import { ANUNCIOS_QUE_ALTERNAM, PARAMETROS_PADRAO } from '../../../shared/outdoors';
+import { SLIDE_DA_LOGO, SLIDES, SLIDES_QUE_ALTERNAM } from '../brand/anuncios';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { Arena, PISO_DA_LUZ_DA_CIDADE } from './Arena';
 import { CidadeNeonCenario } from './CidadeNeonCenario';
@@ -44,7 +46,7 @@ describe('a cidade em volta da Cidade Neon (P264, PR2)', () => {
     expect((arena.chao!.material as THREE.Material).customProgramCacheKey()).toBe('cybermech-rua-v1');
     const nomes = new Set<string>();
     scene.traverse((o) => nomes.add(o.name));
-    for (const n of ['cidade-torres', 'cidade-outdoors', 'cidade-outdoors-brilho', 'cidade-letreiros', 'cidade-neons', 'cidade-postes', 'cidade-chao-molhado', 'cidade-holograma']) expect(nomes.has(n), n).toBe(true);
+    for (const n of ['cidade-torres', 'cidade-outdoors', 'cidade-outdoors-paineis', 'cidade-outdoors-brilho', 'cidade-letreiros', 'cidade-neons', 'cidade-postes', 'cidade-chao-molhado', 'cidade-holograma']) expect(nomes.has(n), n).toBe(true);
   });
 
   it('a luz da cidade inteira cai com o transformador do banco e volta com ele', async () => {
@@ -80,7 +82,7 @@ describe('a cidade em volta da Cidade Neon (P264, PR2)', () => {
     const { scene, cenario } = await cidade();
     const chao = scene.getObjectByName('cidade-chao-molhado')!;
     const brilho = scene.getObjectByName('cidade-outdoors-brilho')!;
-    const painel = (scene.getObjectByName('cidade-outdoor-odp-olho') as THREE.Mesh).material as THREE.ShaderMaterial;
+    const painel = (scene.getObjectByName('cidade-outdoors-paineis') as THREE.Mesh).material as THREE.ShaderMaterial;
     const fatias = scene.getObjectByName('cidade-holograma-fatias') as THREE.InstancedMesh;
     const total = fatias.count;
     cenario.setDetalhe(false);
@@ -95,21 +97,134 @@ describe('a cidade em volta da Cidade Neon (P264, PR2)', () => {
     expect(fatias.count).toBe(total);
   });
 
-  it('os outdoors: uma malha por anúncio do catálogo que aparece, com tantas instâncias quanto o layout manda, e o que alterna leva as quatro imagens', async () => {
+  it('os outdoors: os painéis são UMA malha só (todos alternam entre as mesmas dez imagens) e a configuração padrão deixa no ar só parte deles', async () => {
     const { scene } = await cidade();
     const layout = layoutDaCidade();
-    const porAnuncio = new Map<string, number>();
-    for (const o of layout.outdoors) porAnuncio.set(o.anuncio, (porAnuncio.get(o.anuncio) ?? 0) + 1);
-    for (const [id, n] of porAnuncio) {
-      const malha = scene.getObjectByName(`cidade-outdoor-${id}`) as THREE.InstancedMesh | undefined;
-      expect(malha, id).toBeDefined();
-      expect(malha!.count, id).toBe(n);
+    const painel = scene.getObjectByName('cidade-outdoors-paineis') as THREE.InstancedMesh;
+    const brilho = scene.getObjectByName('cidade-outdoors-brilho') as THREE.InstancedMesh;
+    expect(layout.outdoors.length).toBeGreaterThan(PARAMETROS_PADRAO.quantidade);
+    expect(painel.count).toBe(PARAMETROS_PADRAO.quantidade);
+    expect(brilho.count).toBe(PARAMETROS_PADRAO.quantidade);
+    const material = painel.material as THREE.ShaderMaterial;
+    const texturas = SLIDES.map((_, i) => material.uniforms[`uImagem${i}`]!.value);
+    expect(new Set(texturas).size, 'uma textura por imagem').toBe(SLIDES.length);
+    expect(material.uniforms.uPeriodo!.value).toBe(PARAMETROS_PADRAO.periodo);
+    expect(material.uniforms.uCicloN!.value).toBe(SLIDES_QUE_ALTERNAM);
+    expect(scene.getObjectByName('cidade-outdoor-odp-olho'), 'não há mais uma malha por anúncio').toBeUndefined();
+  });
+
+  it('a quantidade manda: as logos planas são as últimas a sair do ar, depois os maiores; com 0 não sobra nenhum, e o prédio de um outdoor que saiu volta a acender as janelas', async () => {
+    const { scene, cenario } = await cidade();
+    const layout = layoutDaCidade();
+    const painel = scene.getObjectByName('cidade-outdoors-paineis') as THREE.InstancedMesh;
+    const torres = scene.getObjectByName('cidade-torres') as THREE.InstancedMesh;
+    const hospedeirosNoAr = (): number => {
+      const dados = torres.geometry.getAttribute('aTorre') as THREE.InstancedBufferAttribute;
+      let n = 0;
+      for (let i = 0; i < dados.count; i++) if (dados.getY(i) === 0 && dados.getW(i) === 1) n++; // só os corpos (tipo 0)
+      return n;
+    };
+    const fixas = (n: number): number => {
+      const a = painel.geometry.getAttribute('aAnuncio') as THREE.InstancedBufferAttribute;
+      let c = 0;
+      for (let i = 0; i < n; i++) if (a.getY(i) === SLIDE_DA_LOGO) c++;
+      return c;
+    };
+    for (const q of [0, 1, 2, 10, layout.outdoors.length]) {
+      cenario.aplicarOutdoors({ ...PARAMETROS_PADRAO, quantidade: q });
+      expect(painel.count, `quantidade ${q}`).toBe(q);
+      expect(hospedeirosNoAr(), `prédios sem janela com ${q} outdoors`).toBe(q);
     }
-    const familia = (scene.getObjectByName('cidade-outdoor-odp-familia') as THREE.Mesh).material as THREE.ShaderMaterial;
-    expect(familia.uniforms.uSlides!.value).toBe(4);
-    expect(new Set([0, 1, 2, 3].map((i) => familia.uniforms[`uImagem${i}`]!.value)).size, 'quatro texturas distintas').toBe(4);
-    const fixo = (scene.getObjectByName('cidade-outdoor-odp-gps') as THREE.Mesh).material as THREE.ShaderMaterial;
-    expect(fixo.uniforms.uSlides!.value).toBe(1);
+    cenario.aplicarOutdoors({ ...PARAMETROS_PADRAO, quantidade: 2 });
+    expect(fixas(2), 'as duas logos são as duas últimas a sair').toBe(2);
+    cenario.aplicarOutdoors({ ...PARAMETROS_PADRAO, quantidade: 999 });
+    expect(painel.count, 'não passa do que o layout tem').toBe(layout.outdoors.length);
+  });
+
+  it('a coroa e a antena herdam o que o corpo do prédio faz: com o outdoor no ar, sem janelas; com ele fora, janelas acesas de novo', async () => {
+    const { scene, cenario } = await cidade();
+    const layout = layoutDaCidade();
+    const torres = scene.getObjectByName('cidade-torres') as THREE.InstancedMesh;
+    const dados = torres.geometry.getAttribute('aTorre') as THREE.InstancedBufferAttribute;
+    // A ordem das instâncias é a da lista por anel (estável); recalcula-a aqui para achar a instância de cada torre.
+    const instancia = layout.torres.map((_, i) => i).sort((x, y) => layout.torres[x]!.anel - layout.torres[y]!.anel);
+    const corpoDe: number[] = [];
+    layout.torres.forEach((t, i) => corpoDe.push(t.tipo === 0 ? i : corpoDe[i - 1]!));
+    const semJanela = (i: number): boolean => dados.getW(instancia.indexOf(i)) === 1;
+    const coroas = layout.torres.map((_, i) => i).filter((i) => layout.torres[i]!.tipo !== 0 && layout.torres[corpoDe[i]!]!.temBanner);
+    expect(coroas.length, 'há coroas ou antenas sobre prédios com outdoor').toBeGreaterThan(0);
+    cenario.aplicarOutdoors({ ...PARAMETROS_PADRAO, quantidade: 999 });
+    for (const i of coroas) expect(semJanela(i), `a coroa/antena ${i} sobre um prédio com outdoor no ar`).toBe(true);
+    cenario.aplicarOutdoors({ ...PARAMETROS_PADRAO, quantidade: 0 });
+    for (const i of coroas) expect(semJanela(i), `a coroa/antena ${i} depois que o outdoor saiu`).toBe(false);
+    // E o que nunca teve outdoor nunca fica sem janela.
+    cenario.aplicarOutdoors({ ...PARAMETROS_PADRAO, quantidade: 999 });
+    layout.torres.forEach((_, i) => {
+      if (!layout.torres[corpoDe[i]!]!.temBanner) expect(semJanela(i), `torre ${i} sem outdoor`).toBe(false);
+    });
+  });
+
+  it('o período e os anúncios desligados chegam ao shader: o anel só tem as imagens dos anúncios que ficaram, e cada outdoor começa numa delas', async () => {
+    const { scene, cenario } = await cidade();
+    const painel = scene.getObjectByName('cidade-outdoors-paineis') as THREE.InstancedMesh;
+    const u = (painel.material as THREE.ShaderMaterial).uniforms;
+    cenario.aplicarOutdoors({ quantidade: 30, periodo: 15, desligados: ['odp-ping', 'swb'] });
+    expect(u.uPeriodo!.value).toBe(15);
+    const n = u.uCicloN!.value as number;
+    const anel = (u.uCiclo!.value as number[]).slice(0, n);
+    expect(n).toBe(SLIDES_QUE_ALTERNAM - 2);
+    expect(anel.every((i) => i >= 0 && i < SLIDES_QUE_ALTERNAM), 'só imagens que alternam (a logo fica de fora)').toBe(true);
+    expect(anel.map((i) => SLIDES[i]!.anuncio).filter((a) => a === 'odp-ping' || a === 'swb')).toHaveLength(0);
+    expect(new Set(anel).size, 'sem repetir imagem').toBe(n);
+    const a = painel.geometry.getAttribute('aAnuncio') as THREE.InstancedBufferAttribute;
+    for (let i = 0; i < painel.count; i++) if (a.getY(i) < 0) expect(a.getX(i), 'começa dentro do anel').toBeLessThan(n);
+  });
+
+  it('o reflexo no chão acompanha: um outdoor que saiu do ar deixa de refletir, e a cor segue a imagem de agora (o mesmo anel dos painéis)', async () => {
+    const { scene, cenario } = await cidade();
+    const chao = scene.getObjectByName('cidade-chao-molhado')!;
+    const rastro = chao.children[0] as THREE.Mesh;
+    const a = rastro.geometry.getAttribute('aAnuncio') as THREE.InstancedBufferAttribute;
+    const doOutdoor = (): number[] => {
+      const r: number[] = [];
+      for (let i = 0; i < a.count; i++) if (a.getY(i) > -1.5) r.push(i); // −2 = não é outdoor
+      return r;
+    };
+    const fontes = doOutdoor();
+    expect(fontes.length).toBeGreaterThan(0);
+    cenario.aplicarOutdoors({ ...PARAMETROS_PADRAO, quantidade: 0 });
+    expect(fontes.every((i) => a.getW(i) === 0), 'nenhum outdoor no ar, nenhum reflexo').toBe(true);
+    cenario.aplicarOutdoors({ ...PARAMETROS_PADRAO, quantidade: 999 });
+    expect(fontes.every((i) => a.getW(i) === 1)).toBe(true);
+    const uRastro = (rastro.material as THREE.ShaderMaterial).uniforms;
+    const uPainel = ((scene.getObjectByName('cidade-outdoors-paineis') as THREE.Mesh).material as THREE.ShaderMaterial).uniforms;
+    for (const nome of ['uCiclo', 'uCicloN', 'uPeriodo', 'uCores']) expect(uRastro[nome], `${nome}: o mesmo objeto nos dois`).toBe(uPainel[nome]);
+  });
+
+  it('carregarOutdoors aplica o que o servidor devolve, ignora lixo e não lança sem rede', async () => {
+    const { scene, cenario } = await cidade();
+    const painel = scene.getObjectByName('cidade-outdoors-paineis') as THREE.InstancedMesh;
+    const resposta = (corpo: unknown, ok = true) => (async () => ({ ok, json: async () => corpo }) as unknown as Response) as typeof fetch;
+    await cenario.carregarOutdoors('ws://127.0.0.1:0', resposta({ versao: 3, quantidade: 7, periodo: 20, desligados: ['odp-sos'] }));
+    expect(painel.count).toBe(7);
+    expect(cenario.outdoorsDaVez()).toEqual({ quantidade: 7, periodo: 20, desligados: ['odp-sos'] });
+    await cenario.carregarOutdoors('ws://127.0.0.1:0', resposta('lixo')); // formato torto: o padrão do código
+    expect(cenario.outdoorsDaVez().quantidade).toBe(PARAMETROS_PADRAO.quantidade);
+    await cenario.carregarOutdoors('ws://127.0.0.1:0', resposta({ quantidade: 3 }, false)); // servidor com erro: não mexe
+    expect(cenario.outdoorsDaVez().quantidade).toBe(PARAMETROS_PADRAO.quantidade);
+    await expect(
+      cenario.carregarOutdoors('ws://127.0.0.1:0', (async () => {
+        throw new Error('sem rede');
+      }) as typeof fetch),
+    ).resolves.toBeUndefined();
+    await expect(cenario.carregarOutdoors(undefined)).resolves.toBeUndefined();
+  });
+
+  it('o catálogo e o contrato dos outdoors andam juntos: os anúncios que o painel liga e desliga são exatamente os do catálogo que alternam', () => {
+    const doCatalogo = [...new Set(SLIDES.slice(0, SLIDES_QUE_ALTERNAM).map((s) => s.anuncio))];
+    expect([...ANUNCIOS_QUE_ALTERNAM].sort()).toEqual([...doCatalogo].sort());
+    expect(SLIDES[SLIDE_DA_LOGO]!.anuncio).toBe('logo');
+    expect(SLIDES.length, 'cada imagem é um amostrador no shader: o WebGL2 garante 16').toBeLessThanOrEqual(16);
   });
 
   it('o holograma flutua sobre o prédio Serafim (no ar, acima do teto, centrado nele), gira e balança sozinho', async () => {

@@ -1,4 +1,4 @@
-import type { IdDoAnuncio } from '../brand/anuncios';
+import { slidesDoAnuncio, type IdDoAnuncio } from '../brand/anuncios';
 import { CITY_NEON, PALETTE } from '../core/palette';
 import { BUILDINGS_DA_ARENA, PLATAFORMA_DA_ARENA } from './Arena';
 import { mulberry32 } from '../core/rng';
@@ -52,9 +52,13 @@ export interface OutdoorDaCidade {
   readonly ry: number;
   readonly w: number;
   readonly h: number;
-  /** O anúncio que ele mostra (catálogo da marca). */
+  /** O anúncio com que ele **começa** (catálogo da marca); a logo plana é fixa, os demais alternam entre todas as imagens (P267). */
   readonly anuncio: IdDoAnuncio;
-  /** Deslocamento do tempo (s): os outdoors que alternam não trocam todos juntos. */
+  /** Onde ele começa no anel da troca (o índice da imagem do anúncio dele, entre as que alternam); `-1` na logo plana, que não alterna. */
+  readonly inicio: number;
+  /** O índice (em `LayoutDaCidade.torres`) do prédio que o hospeda: se o outdoor sair do ar, as janelas dele voltam a acender. */
+  readonly torre: number;
+  /** O deslocamento do tempo, em fração do período (0 a 1): os outdoors não trocam todos juntos. */
   readonly fase: number;
 }
 
@@ -505,7 +509,7 @@ function montar(forcar: ReadonlyMap<number, PlanoDeBanner>): { layout: LayoutDaC
     const p = naFachada(lado, fachada, ao + plano!.deslocamento, 0.25);
     const vizinho: IdDoAnuncio | null = anterior && anterior.lado === lado && anterior.anel === torre.anel ? anterior.id : null;
     const id: IdDoAnuncio = forcar.has(c.indice) ? 'logo' : darCarta(vizinho);
-    outdoors.push({ x: p.x, y: plano!.y, z: p.z, ry: lado.ry, w: plano!.w, h: plano!.h, anuncio: id, fase: randB() * 30 });
+    outdoors.push({ x: p.x, y: plano!.y, z: p.z, ry: lado.ry, w: plano!.w, h: plano!.h, anuncio: id, inicio: id === 'logo' ? -1 : slidesDoAnuncio(id)[0]!, torre: torres.indexOf(torre), fase: randB() });
     anterior = { id, lado, anel: torre.anel };
   }
 

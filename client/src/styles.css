@@ -4538,9 +4538,9 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .vis-rodape { flex-wrap: wrap; justify-content: center; }
 
 /* O painel dos telões (P246, `TelaoPanel.ts`): mesmo molde do painel de visibilidade (`vis-*`), mais simples (só duas telas fixas). */
-.cc-telao { border-color: var(--warn); color: var(--warn); background: rgba(255, 225, 77, 0.1); }
-.cc-telao:hover { background: var(--warn); color: var(--bg); }
-.cc-telao[hidden] { display: none; }
+.cc-telao, .cc-outdoors { border-color: var(--warn); color: var(--warn); background: rgba(255, 225, 77, 0.1); }
+.cc-telao:hover, .cc-outdoors:hover { background: var(--warn); color: var(--bg); }
+.cc-telao[hidden], .cc-outdoors[hidden] { display: none; }
 .telao-placa { width: min(560px, 94vw); max-height: 88vh; display: flex; flex-direction: column; gap: 8px; }
 .telao-titulo { margin: 0; text-align: center; font-size: 14px; letter-spacing: 3px; color: var(--warn); }
 .telao-lista { display: flex; flex-direction: column; gap: 6px; }
@@ -4549,6 +4549,18 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .telao-vazio { font-size: 11px; color: var(--muted); }
 .telao-mensagem { margin: 0; font-size: 11px; line-height: 1.4; color: var(--muted); min-height: 30px; }
 .telao-rodape { flex-wrap: wrap; justify-content: center; }
+/* O painel dos outdoors (P267, `OutdoorsPanel.ts`): mesma placa dos telões, com controles deslizantes e a lista de anúncios. */
+.outdoors-modal { background: none; align-items: flex-end; padding-right: 28px; }
+.outdoors-modal .telao-placa { width: min(420px, 94vw); }
+.outdoors-linha { gap: 4px 12px; flex-wrap: wrap; }
+.outdoors-linha .telao-nome { flex: 1 0 100%; }
+.outdoors-controle { flex: 1; accent-color: var(--warn); min-width: 0; }
+.outdoors-valor { flex: 0 0 64px; text-align: right; color: var(--warn); font-variant-numeric: tabular-nums; }
+.outdoors-atalhos { display: flex; gap: 8px; justify-content: flex-end; padding: 0 6px; }
+.outdoors-atalho { padding: 2px 12px; }
+.outdoors-anuncios { display: flex; flex-direction: column; gap: 4px; padding: 4px 6px; font-size: 12px; color: var(--ink); }
+.outdoors-anuncio { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.outdoors-anuncio input { accent-color: var(--warn); }
 
 /* O painel WARGAME (P262): elenco + mapa clicável + lista de batidas, no mesmo molde de placa do seletor de lado. */
 .wargame-modal { z-index: 2100; }
