@@ -96,36 +96,51 @@ export async function publicar(ops, opcoes) {
   let estado = null;
   for (let i = 0; i < TENTATIVAS_ESTADO; i++) {
     estado = json(gh(['pr', 'view', String(n), '--json', 'state,mergeStateStatus']));
-    if (estado && estado.mergeStateStatus !== 'UNKNOWN' && estado.mergeStateStatus !== 'BLOCKED') break;
+    // Um PR que já não está aberto (mergeado ou fechado) não terá `mergeStateStatus` útil (volta `UNKNOWN`): não adianta esperar a mergeabilidade, o estado já é o final.
+    if (estado && (estado.state !== 'OPEN' || (estado.mergeStateStatus !== 'UNKNOWN' && estado.mergeStateStatus !== 'BLOCKED'))) break;
     await dormir(6000);
   }
-  if (!estado || estado.state !== 'OPEN') return falha(`o PR #${n} não está aberto (${estado?.state ?? 'estado ilegível'}); nada foi mergeado`);
-  // Com o CI, só `CLEAN`. Sem o CI (--sem-ci) o PR nasce `UNSTABLE` (checks falhando por cobrança) e tudo bem: o que não pode é conflito ou estar fora de dia.
-  const aceitos = opcoes.semCi ? ['CLEAN', 'UNSTABLE'] : ['CLEAN'];
-  if (!aceitos.includes(estado.mergeStateStatus)) {
-    return falha(`o PR #${n} está ${estado.mergeStateStatus} (conflito ou fora de dia com a main): junte a main, resolva e rode de novo; branch preservado`);
-  }
-
-  log('mergeando…');
-  let depois = null;
-  for (let i = 0; i < TENTATIVAS_MERGE; i++) {
-    if (i > 0) {
-      log(`o merge ainda não saiu (o GitHub calcula a mergeabilidade com atraso); tentando de novo (${i + 1}/${TENTATIVAS_MERGE})`);
-      await dormir(10_000);
+  // O dono (ou outro agente) pode ter mergeado o PR enquanto a espera do CI rodava (28/10, #474: o script dizia "nada foi mergeado" e saía com 1, e o PR já estava MERGED). O resultado é o que se queria:
+  // não há o que mergear, e a confirmação de `MERGED` (a que a trava do branch exige) já está na mão.
+  const jaMergeado = estado?.state === 'MERGED';
+  if (!jaMergeado) {
+    if (!estado || estado.state !== 'OPEN') return falha(`o PR #${n} não está aberto (${estado?.state ?? 'estado ilegível'}); nada foi mergeado`);
+    // Com o CI, só `CLEAN`. Sem o CI (--sem-ci) o PR nasce `UNSTABLE` (checks falhando por cobrança) e tudo bem: o que não pode é conflito ou estar fora de dia.
+    const aceitos = opcoes.semCi ? ['CLEAN', 'UNSTABLE'] : ['CLEAN'];
+    if (!aceitos.includes(estado.mergeStateStatus)) {
+      return falha(`o PR #${n} está ${estado.mergeStateStatus} (conflito ou fora de dia com a main): junte a main, resolva e rode de novo; branch preservado`);
     }
-    gh(['pr', 'merge', String(n), '--merge']);
-    depois = json(gh(['pr', 'view', String(n), '--json', 'state,mergeCommit']));
-    if (depois?.state !== 'OPEN') break; // MERGED, ou fechado de outro jeito: não insiste
   }
-  if (depois?.state !== 'MERGED') return falha(`o merge do PR #${n} NÃO aconteceu (estado: ${depois?.state ?? 'ilegível'}); branch preservado`);
-  const oid = depois.mergeCommit?.oid ?? '';
-  log(`✓ PR #${n} mergeado (${oid.slice(0, 7)})`);
 
-  // Só agora apaga o branch remoto.
+  let oid = '';
+  if (jaMergeado) {
+    oid = json(gh(['pr', 'view', String(n), '--json', 'state,mergeCommit']))?.mergeCommit?.oid ?? '';
+    log(`✓ PR #${n} já estava mergeado (${oid.slice(0, 7)}), por outra pessoa, enquanto eu esperava: nada a mergear`);
+  } else {
+    log('mergeando…');
+    let depois = null;
+    for (let i = 0; i < TENTATIVAS_MERGE; i++) {
+      if (i > 0) {
+        log(`o merge ainda não saiu (o GitHub calcula a mergeabilidade com atraso); tentando de novo (${i + 1}/${TENTATIVAS_MERGE})`);
+        await dormir(10_000);
+      }
+      gh(['pr', 'merge', String(n), '--merge']);
+      depois = json(gh(['pr', 'view', String(n), '--json', 'state,mergeCommit']));
+      if (depois?.state !== 'OPEN') break; // MERGED, ou fechado de outro jeito: não insiste
+    }
+    if (depois?.state !== 'MERGED') return falha(`o merge do PR #${n} NÃO aconteceu (estado: ${depois?.state ?? 'ilegível'}); branch preservado`);
+    oid = depois.mergeCommit?.oid ?? '';
+    log(`✓ PR #${n} mergeado (${oid.slice(0, 7)})`);
+  }
+
+  // Só agora apaga o branch remoto. O merge pelo botão do GitHub (ou a opção "apagar o branch" do repositório) já o apaga: nesse caso a API responde "Reference does not exist" e não há nada a fazer à mão.
   const repo = gh(['repo', 'view', '--json', 'nameWithOwner', '--jq', '.nameWithOwner']).stdout.trim();
   if (repo) {
     const d = gh(['api', '-X', 'DELETE', `repos/${repo}/git/refs/heads/${branch}`]);
-    log(d.status === 0 ? `branch remoto ${branch} apagado` : `não consegui apagar o branch remoto (${(d.stderr || d.stdout).trim()}); apague à mão`);
+    const resposta = (d.stderr || d.stdout).trim();
+    if (d.status === 0) log(`branch remoto ${branch} apagado`);
+    else if (/Reference does not exist/i.test(resposta)) log(`branch remoto ${branch} já estava apagado`);
+    else log(`não consegui apagar o branch remoto (${resposta}); apague à mão`);
   }
   if (opcoes.semCi) log('o site: o atualizador do PC (CYBERMECH atualizar, a cada 10 min) monta e publica sozinho, de graça; ou rode: npm run publicar-site');
   else {

@@ -1,5 +1,12 @@
 # ESTADO ATUAL — CYBERMECH
 
+## publicar: PR que o dono mergeou antes não é mais "falha" (Claude, branch `claude/publicar-ja-mergeado`)
+
+**Achado (28/10, no #474 da Cidade Neon):** o dono mergeou o PR enquanto o `npm run publicar` esperava o CI; o script leu `MERGED` e saiu com **código 1 e "nada foi mergeado"**, embora o resultado fosse o
+desejado (quem lê "falhou" pode refazer o trabalho). **Conserto (`scripts/publicar.mjs`):** `MERGED` = sucesso (devolve o merge, não chama `pr merge`, e ainda apaga o branch, porque o `MERGED` está confirmado);
+não espera mais a mergeabilidade de um PR que não está aberto (voltava `UNKNOWN`, 60 s à toa); o branch que o merge do GitHub já apagou vira "já estava apagado" (antes: "apague à mão"). PR **fechado sem
+merge** continua falha. **Testes:** +4 em `server/publicar.test.ts` (3 falham contra o script antigo, conferido; o 4º guarda que o fechado não afrouxou).
+
 ## A Cidade Neon vira uma cidade — PR2: torres, telões, ruas e chão molhado (Claude, P264, branch `claude/cidade-neon-cidade`)
 
 **O pedido (28/10), depois de ver a PR1:** "eu quero que o cenário fique nesse nível dos exemplos que enviei. ainda tá muito longe disso" (os 4 quadros de uma cidade cyberpunk à
