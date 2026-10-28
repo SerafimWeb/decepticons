@@ -110,7 +110,8 @@ export class TacticalCamera implements CameraMode {
     }
   }
 
-  private setFaded(mat: THREE.MeshStandardMaterial, faded: boolean): void {
+  private setFaded(mat: THREE.MeshStandardMaterial | null, faded: boolean): void {
+    if (!mat) return; // só entra na planta (o mobiliário da praça urbana): não some quando tapa a câmera
     mat.opacity = faded ? OCCLUDED_OPACITY : 1;
     mat.depthWrite = !faded;
   }

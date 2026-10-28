@@ -28,7 +28,7 @@ async function arena(transformador: boolean) {
   return { ...m, arena: new Arena(m.scene, m.physics, m.destructibles, 'arena', { transformador }) };
 }
 
-const janelasDoPrimeiroPredio = (a: Arena): JanelasDoPredio => a.occluders[0]!.material.userData.janelas as JanelasDoPredio;
+const janelasDoPrimeiroPredio = (a: Arena): JanelasDoPredio => a.occluders[0]!.material!.userData.janelas as JanelasDoPredio;
 
 describe('o desenho do transformador do Banco Vorcaris (P164, parte E)', () => {
   it('a cabine fica no lugar do layout, com o tamanho do volume, e tem colisor (bloqueia como as barricadas)', async () => {
@@ -155,11 +155,12 @@ describe('a Arena com o transformador: a cidade escurece com a energia (P164, pa
     const antesArestas = arestas.map((m) => brilho(m.color));
     const antesHorizonte = horizonte.map((m) => brilho(m.color));
     a.setEnergia(0);
-    // as arestas dos três prédios, da plataforma e da rampa baixaram (a torre Serafim, a grade e o contorno ficam como são), e as faixas e o horizonte também
-    expect(arestas.filter((m, i) => brilho(m.color) < antesArestas[i]! - 1e-6)).toHaveLength(5);
-    // as faixas dos três prédios caem até o piso; os LEDs da torre Serafim (a base do time, com os modos próprios) não são da cidade
+    // as arestas dos três prédios, da plataforma e da rampa baixaram (a torre Serafim, a grade e o contorno ficam como são), e as faixas e o horizonte também;
+    // mais as arestas da praça urbana (P268), que vão em duas malhas de linhas: as dos nove prédios novos e as do mobiliário
+    expect(arestas.filter((m, i) => brilho(m.color) < antesArestas[i]! - 1e-6)).toHaveLength(5 + 2);
+    // as faixas dos três prédios e a malha de faixas dos nove da praça urbana caem até o piso; os LEDs da torre Serafim (a base do time, com os modos próprios) não são da cidade
     const escurecidas = horizonte.map((m, i) => [m, i] as const).filter(([m, i]) => brilho(m.color) < antesHorizonte[i]! - 1e-6);
-    expect(escurecidas).toHaveLength(3);
+    expect(escurecidas).toHaveLength(3 + 1);
     for (const [m, i] of escurecidas) expect(brilho(m.color)).toBeCloseTo(antesHorizonte[i]! * PISO_DA_LUZ_DA_CIDADE, 6);
     for (const d of discos) expect(d.visible, 'sem energia as zonas somem').toBe(false);
     a.setEnergia(0.3);

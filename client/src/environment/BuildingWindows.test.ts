@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { PALETTE } from '../core/palette';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { Arena } from './Arena';
+import { MOBILIARIO_URBANO, PREDIOS_URBANOS, RAMPAS_URBANAS } from './ArenaUrbana';
 import { corDaJanela, patchWindowShader, WINDOWS, windowedBuildingMaterial } from './BuildingWindows';
 import { Destructibles } from './Destructibles';
 
@@ -94,20 +95,23 @@ describe('windowedBuildingMaterial', () => {
 });
 
 describe('os prédios da Arena', () => {
-  it('os três prédios têm janelas e continuam translúcidos para a câmera; o resto da arena não muda', async () => {
+  it('os prédios da praça (os três de sempre e os nove da praça urbana, P268) têm janelas e continuam translúcidos para a câmera; o resto da arena não muda', async () => {
     const physics = await PhysicsWorld.create();
     const scene = new THREE.Scene();
     const particles = { burst: () => {} } as never;
     const debris = { shatter: () => {} } as never;
     const arena = new Arena(scene, physics, new Destructibles(scene, physics, debris, particles));
-    const windowed = arena.occluders.filter((o) => o.material.customProgramCacheKey() === 'cybermech-building-windows-v1');
-    expect(windowed).toHaveLength(3); // os três prédios; o Prédio Serafim tem material próprio
+    const comMaterial = arena.occluders.filter((o) => o.material !== null);
+    const windowed = comMaterial.filter((o) => o.material!.customProgramCacheKey() === 'cybermech-building-windows-v1');
+    expect(windowed).toHaveLength(3 + PREDIOS_URBANOS.length); // os de sempre e os da praça urbana; o Prédio Serafim tem material próprio
     for (const o of windowed) {
-      expect(o.material.transparent).toBe(true); // a câmera tática ainda o apaga atrás do Mech
-      expect(o.material.opacity).toBe(1);
+      expect(o.material!.transparent).toBe(true); // a câmera tática ainda o apaga atrás do Mech
+      expect(o.material!.opacity).toBe(1);
     }
-    const others = arena.occluders.filter((o) => !windowed.includes(o));
+    const others = comMaterial.filter((o) => !windowed.includes(o));
     expect(others.length).toBeGreaterThanOrEqual(1);
-    for (const o of others) expect(o.material.customProgramCacheKey()).not.toBe('cybermech-building-windows-v1');
+    for (const o of others) expect(o.material!.customProgramCacheKey()).not.toBe('cybermech-building-windows-v1');
+    // O mobiliário fixo (contêineres, degraus, cubo, rampa) só entra na planta: sem material, não some quando tapa a câmera.
+    expect(arena.occluders.filter((o) => o.material === null)).toHaveLength(MOBILIARIO_URBANO.length + RAMPAS_URBANAS.length);
   });
 });

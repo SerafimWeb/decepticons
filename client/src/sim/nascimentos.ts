@@ -39,12 +39,13 @@ export const PONTOS_DOS_TITAS: readonly Ponto[] = [[-85, -85], [85, 85], [-85, 8
  * zonas de cura e de resfriamento (ninguém nasce de graça numa vantagem). Na ordem de espalhamento: o primeiro é o mais longe de todos
  * os pontos fixos, o segundo o mais longe dos dois, e assim por diante, então qualquer quantidade fica bem distribuída pela arena.
  * `nascimentos.test.ts` confere cada um contra a arena de verdade (física), então mover um prédio sem refazer a lista falha lá.
+ * **P268 (28/10, a praça urbana):** 12 pontos andaram de 1 a 21 m para o vizinho válido mais próximo (os que caíam dentro dos prédios, contêineres e quiosques novos, `ArenaUrbana.ts`); a ordem de espalhamento e as regras valem como antes.
  */
 export const EXTRAS_INIMIGOS: readonly Ponto[] = [
-  [-85, -20], [85, -20], [-15, -70], [-30, 85], [30, 85], [-85, 25], [45, -10], [10, -50], [0, 85],
-  [-80, 85], [-55, -30], [-55, 20], [30, -70], [50, 50], [-35, -50], [85, 10], [-70, 0], [-55, 85],
-  [70, -45], [-10, -35], [-75, -40], [-40, 65], [25, -35], [55, 85], [60, -25], [70, -5], [85, 55],
-  [-85, 65], [-50, 50], [40, 65], [65, 40], [80, 85], [-85, 5], [-70, -25], [-55, -10], [-50, -45],
+  [-85, -20], [85, -20], [-15, -70], [-30, 85], [30, 85], [-85, 25], [49.5, -0.5], [10, -50], [0, 85],
+  [-80, 85], [-55, -30], [-55, 20], [30, -70], [53.5, 50], [-35, -50], [85, 10], [-74.5, -5], [-55, 85],
+  [70, -45], [-10, -35], [-75, -41.5], [-40, 65], [25, -35], [55, 85], [64.5, -25], [70, -5], [85, 55],
+  [-85, 65], [-50, 50], [49.5, 65], [65, 40], [80, 85], [-85, 5], [-88, -35], [-55, -10], [-58.5, -44],
 ];
 
 /**
@@ -52,8 +53,8 @@ export const EXTRAS_INIMIGOS: readonly Ponto[] = [
  * com as mesmas folgas de obstáculo. Também na ordem de espalhamento.
  */
 export const EXTRAS_ALIADOS: readonly Ponto[] = [
-  [-15, 70], [30, 60], [-45, 20], [15, -20], [-40, 50], [45, 35], [-15, 45], [-20, 15],
-  [5, 0], [10, 45], [10, 70], [45, 10], [-5, -20], [-40, 5], [15, 30], [20, -5],
+  [-15, 70], [15.5, 57], [-45, 20], [15, -20], [-40, 50], [45, 35], [-15, 45], [-20, 10.5],
+  [5, 0], [10, 45], [10, 71], [45, 13.5], [-5, -20], [-40, 5], [15, 30], [20, -5],
 ];
 
 /** Quantos corpos de cada papel a partida pede. */
