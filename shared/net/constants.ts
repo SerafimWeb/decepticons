@@ -29,7 +29,10 @@
 // 23 (23/10): a sala online aceita o modo Sobrevivência (`&modo=survival`, P243): o 8 de Janeiro em coop. Dois eventos novos (figurante morreu/fugiu da multidão, nunca a posição dela: G11) e a unidade `faxineiro`
 // entram no catálogo (`UNIT_KINDS`); um cliente da versão 22 recusaria o evento como ruim e desenharia o faxineiro como andróide de combate. Mensagem nova `JANEIRO_MULTIDAO`: quem entra no meio da missão recebe o
 // estado compacto da multidão (mortos e fugas); um servidor da versão 22 não a manda, e o jogador vê quem já morreu ou fugiu ainda de pé até o próximo evento dele.
-export const PROTOCOL_VERSION = 23;
+// 24 (28/10): a Cidade Neon ganha a praça urbana (P268, `environment/ArenaUrbana.ts`): nove prédios, cinco contêineres, o playground e dois quiosques que quebram (ids 6 e 7 depois das seis barricadas de sempre).
+// Não muda mensagem nenhuma, mas muda o chão que os dois lados simulam: um cliente da versão 23 preveria o Mech atravessando um prédio que o servidor da 24 trata como sólido (o jogador "puxado de volta"
+// a cada passo) e não entenderia o `PROP_BROKEN` de um quiosque. Recusar a conexão e pedir para recarregar é o que o contador de versão existe para fazer.
+export const PROTOCOL_VERSION = 24;
 
 /** Tick fixo da simulação, igual no cliente e no servidor (G1). */
 export const SIM_HZ = 60;

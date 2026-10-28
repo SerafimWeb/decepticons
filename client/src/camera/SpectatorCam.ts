@@ -397,9 +397,11 @@ export class SpectatorCam {
   }
 
   private setOccluded(occluder: Occluder, faded: boolean): void {
+    const material = occluder.material;
+    if (!material) return; // só entra na planta (o mobiliário da praça urbana): não some quando tapa a câmera
     const opacity = faded ? OCCLUDED_OPACITY : 1;
-    if (occluder.material.opacity === opacity) return;
-    occluder.material.opacity = opacity;
-    occluder.material.depthWrite = !faded;
+    if (material.opacity === opacity) return;
+    material.opacity = opacity;
+    material.depthWrite = !faded;
   }
 }

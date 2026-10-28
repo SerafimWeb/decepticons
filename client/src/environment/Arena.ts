@@ -1,10 +1,12 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { ARENA_ZONES } from '../combat/Zone';
 import { PALETTE } from '../core/palette';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { buildFloorTexture, buildSkyTexture, FLOOR_TILE_METERS } from './Atmosphere';
 import { WINDOWS, windowedBuildingMaterial, type JanelasDoPredio } from './BuildingWindows';
 import { ArenaQuadro } from './ArenaQuadro';
+import { caixaDaRampa, MOBILIARIO_URBANO, PREDIOS_URBANOS, QUIOSQUES_URBANOS, RAMPAS_URBANAS, type BlocoUrbano, type RampaUrbana } from './ArenaUrbana';
 import { ArenaTelao } from './ArenaTelao';
 import { buildingBands } from './BuildingBands';
 import type { DestructibleDef, Destructibles } from './Destructibles';
@@ -21,10 +23,11 @@ export interface BlockDef {
   accent: number;
 }
 
-/** Algo que pode tapar a visão da câmera tática (fica translúcido). */
+/** Algo que pode tapar a visão da câmera tática (fica translúcido) e que o radar desenha na planta. */
 export interface Occluder {
   box: THREE.Box3;
-  material: THREE.MeshStandardMaterial;
+  /** O material que fica translúcido; `null` = só entra na planta do radar e não some (o mobiliário fixo da praça urbana: contêineres, degraus, jardineiras). */
+  material: THREE.MeshStandardMaterial | null;
 }
 
 const BUILDINGS: BlockDef[] = [
@@ -48,9 +51,14 @@ const PLATFORM = { x: -50, z: 35, w: 16, d: 16, h: 6 };
 const RAMP_RUN = 14;
 const RAMP_WIDTH = 8;
 
-/** Os obstáculos da Cidade Neon, só para ler (o layout e os testes conferem as folgas: o armário do transformador do banco não pode encostar em nenhum). */
-export const BUILDINGS_DA_ARENA: readonly BlockDef[] = BUILDINGS;
-export const BARRICADES_DA_ARENA: readonly DestructibleDef[] = BARRICADES;
+/**
+ * Os obstáculos da Cidade Neon, só para ler (o layout e os testes conferem as folgas: o armário do transformador do banco não pode encostar em nenhum). **Incluem a praça urbana** (P268,
+ * `ArenaUrbana.ts`): os prédios pequenos e médios depois dos três de sempre, os quiosques que quebram depois das seis barricadas (**os ids das barricadas antigas não mudam**: o id é a posição
+ * na lista, e viaja pela rede) e o mobiliário fixo (contêineres, playground, jardineiras).
+ */
+export const BUILDINGS_DA_ARENA: readonly BlockDef[] = [...BUILDINGS, ...PREDIOS_URBANOS];
+export const BARRICADES_DA_ARENA: readonly DestructibleDef[] = [...BARRICADES, ...QUIOSQUES_URBANOS];
+export const MOBILIARIO_DA_ARENA: readonly BlocoUrbano[] = MOBILIARIO_URBANO;
 export const PLATAFORMA_DA_ARENA = PLATFORM;
 
 /** O mínimo de luz que a cidade mantém sem energia (o jogador ainda lê os prédios e as arestas; a ordem é "no escuro", não "cego"). */
@@ -166,9 +174,11 @@ export class Arena implements ArenaDoCenario {
     this.chao = piso.chao;
     this.grade = piso.grade;
     for (const b of BUILDINGS) this.addBuilding(b);
+    this.addPrediosUrbanos(PREDIOS_URBANOS);
+    this.addMobiliario(MOBILIARIO_URBANO, RAMPAS_URBANAS);
     this.serafim = new SerafimTower(scene, physics);
     this.occluders.push({ box: this.serafim.bounds, material: this.serafim.material });
-    for (const b of BARRICADES) destructibles.add(b);
+    for (const b of BARRICADES_DA_ARENA) destructibles.add(b);
     this.buildPlatform();
     this.buildZones();
     // O transformador do banco (P164, parte E): só quem joga a missão em ondas o tem (no Deathmatch, na Bandeira e no Domínio a Arena é a de sempre).
@@ -339,6 +349,109 @@ export class Arena implements ArenaDoCenario {
       ),
       material,
     });
+  }
+
+  /**
+   * Os prédios pequenos e médios da praça urbana (P268). Cada um tem o corpo e o material **próprios** (a câmera tática o torna translúcido atrás do Mech, como os de sempre), mas as **arestas
+   * neon e as faixas de todos vão numa malha só cada** (uma de linhas e uma instanciada): 9 prédios custam 11 chamadas de desenho, não 27.
+   */
+  private addPrediosUrbanos(defs: readonly BlocoUrbano[]): void {
+    if (!defs.length) return;
+    const arestas: THREE.BufferGeometry[] = [];
+    const faixas: { x: number; y: number; z: number; w: number; d: number; accent: number }[] = [];
+    for (const b of defs) {
+      const material = windowedBuildingMaterial(this.solidMat.clone(), b.accent);
+      material.transparent = true;
+      const janelas = material.userData.janelas as JanelasDoPredio;
+      this.registraLuz(janelas.windowColor.value);
+      this.registraLuz(janelas.windowSodium.value);
+      const corpo = new THREE.Mesh(this.boxGeo, material);
+      corpo.scale.set(b.w, b.h, b.d);
+      corpo.position.set(b.x, b.h / 2, b.z);
+      corpo.name = `praca-predio-${b.nome}`;
+      this.scene.add(corpo);
+      this.physics.addStaticBox(new THREE.Vector3(b.x, b.h / 2, b.z), new THREE.Vector3(b.w, b.h, b.d));
+      arestas.push(this.arestasColoridas(b));
+      // O andar das janelas é o intervalo entre duas faixas: a mesma medida (`WINDOWS.floor`), para as duas não saírem de compasso.
+      for (let y = WINDOWS.floor; y < b.h - 1; y += WINDOWS.floor) faixas.push({ x: b.x, y, z: b.z, w: b.w + 0.12, d: b.d + 0.12, accent: b.accent });
+      this.occluders.push({ box: this.caixaDe(b), material });
+    }
+    this.scene.add(this.linhasNeon(arestas, 'praca-predios-arestas', 3));
+    if (faixas.length) {
+      const material = new THREE.MeshBasicMaterial({ color: new THREE.Color(2, 2, 2) });
+      this.registraLuz(material.color);
+      const malha = new THREE.InstancedMesh(this.boxGeo, material, faixas.length);
+      const m = new THREE.Matrix4();
+      const cor = new THREE.Color();
+      faixas.forEach((f, i) => {
+        malha.setMatrixAt(i, m.makeScale(f.w, 0.18, f.d).setPosition(f.x, f.y, f.z));
+        malha.setColorAt(i, cor.setHex(f.accent));
+      });
+      malha.name = 'praca-predios-faixas';
+      malha.computeBoundingBox();
+      malha.computeBoundingSphere();
+      this.scene.add(malha);
+    }
+  }
+
+  /**
+   * O mobiliário fixo da praça urbana (P268: contêineres, o playground, jardineiras): **uma malha de corpos e uma de arestas** para todos, um colisor por peça. Entram na planta do radar mas
+   * não ficam translúcidos (`material: null`): são baixos demais para tapar a câmera.
+   */
+  private addMobiliario(defs: readonly BlocoUrbano[], rampas: readonly RampaUrbana[] = []): void {
+    if (!defs.length && !rampas.length) return;
+    const corpos: THREE.BufferGeometry[] = [];
+    const arestas: THREE.BufferGeometry[] = [];
+    for (const b of defs) {
+      corpos.push(new THREE.BoxGeometry(b.w, b.h, b.d).translate(b.x, b.h / 2, b.z));
+      arestas.push(this.arestasColoridas(b));
+      this.physics.addStaticBox(new THREE.Vector3(b.x, b.h / 2, b.z), new THREE.Vector3(b.w, b.h, b.d));
+      this.occluders.push({ box: this.caixaDe(b), material: null });
+    }
+    for (const r of rampas) {
+      const c = caixaDaRampa(r);
+      const giro = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), c.angulo);
+      const caixa = new THREE.BoxGeometry(c.tamanho.x, c.tamanho.y, c.tamanho.z).applyQuaternion(giro).translate(c.centro.x, c.centro.y, c.centro.z);
+      corpos.push(caixa);
+      // As arestas da rampa: o mesmo corpo inclinado, com a cor dela.
+      arestas.push(this.colorirArestas(new THREE.EdgesGeometry(caixa), r.accent));
+      this.physics.addStaticBox(new THREE.Vector3(c.centro.x, c.centro.y, c.centro.z), new THREE.Vector3(c.tamanho.x, c.tamanho.y, c.tamanho.z), giro);
+      this.occluders.push({ box: new THREE.Box3(new THREE.Vector3(r.x, 0, r.z - r.largura / 2), new THREE.Vector3(r.x + r.run, r.h, r.z + r.largura / 2)), material: null });
+    }
+    const malha = new THREE.Mesh(mergeGeometries(corpos, false), this.solidMat);
+    malha.name = 'praca-mobiliario';
+    this.scene.add(malha, this.linhasNeon(arestas, 'praca-mobiliario-arestas', 3));
+    for (const g of corpos) g.dispose();
+  }
+
+  /** A caixa de oclusão de um bloco (do chão ao topo). */
+  private caixaDe(b: BlocoUrbano): THREE.Box3 {
+    return new THREE.Box3(new THREE.Vector3(b.x - b.w / 2, 0, b.z - b.d / 2), new THREE.Vector3(b.x + b.w / 2, b.h, b.z + b.d / 2));
+  }
+
+  /** As arestas de um bloco, já no lugar dele, com a cor do neon dele em cada vértice (para juntar caixas de cores diferentes numa malha de linhas só). */
+  private arestasColoridas(b: BlocoUrbano): THREE.BufferGeometry {
+    return this.colorirArestas(new THREE.EdgesGeometry(new THREE.BoxGeometry(b.w, b.h, b.d)).translate(b.x, b.h / 2, b.z), b.accent);
+  }
+
+  /** Põe a cor do neon em cada vértice de uma geometria de arestas (já no lugar dela). */
+  private colorirArestas(g: THREE.BufferGeometry, accent: number): THREE.BufferGeometry {
+    const n = g.getAttribute('position').count;
+    const cor = new THREE.Color(accent);
+    const cores = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) cores.set([cor.r, cor.g, cor.b], i * 3);
+    g.setAttribute('color', new THREE.BufferAttribute(cores, 3));
+    return g;
+  }
+
+  /** Junta as arestas coloridas numa malha de linhas só; o material branco com a intensidade do neon (>1: passa do limiar do bloom) é o que a energia do transformador escurece. */
+  private linhasNeon(partes: THREE.BufferGeometry[], nome: string, intensidade: number): THREE.LineSegments {
+    const material = new THREE.LineBasicMaterial({ color: new THREE.Color(intensidade, intensidade, intensidade), vertexColors: true });
+    this.registraLuz(material.color);
+    const linhas = new THREE.LineSegments(mergeGeometries(partes, false), material);
+    linhas.name = nome;
+    for (const g of partes) g.dispose();
+    return linhas;
   }
 
   private buildPlatform(): void {

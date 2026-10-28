@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P268 — A praça urbana: cobertura, combate de perto, espaços de conflito (28/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P268 | 28/10 | (à pergunta "prédios pequenos e médios: dentro da praça jogável, com colisão, ou só enfeite fora dela?") "queria na praça, pra dar cobertura, e reduzir o alcance, fazer combate urbano com diferentes espaços de conflito e q permita diversas estratégias. nao precisa lotar a cidade nao, só adiciona mais alguns predios e elementos, tipo uma praça de playground porem urbana." | 🟡 | **Feito:** nove prédios pequenos e médios (8 a 16 m), cinco contêineres (pilhas de dois, 5,2 m), dois quiosques que quebram e um **playground** (plataforma de 3 m com quatro degraus de 0,6 m e uma rampa, e um cubo), em quatro espaços de conflito: o **Beco do Mercado** (sudeste, T de becos de 7 e 8 m: combate de esquina), o **Pátio** (nordeste, beco de 7 m com as duas pontas abertas), o **Playground** (noroeste, vertical) e os **Contêineres** (linhas que se segura ou se flanqueia). **Medido (a planta em conta):** a olho de Mech, os pares de pontos a 30–60 m que se enxergam caem de 83% para 60% (60–100 m: 67% → 36%), a vista livre média nos 12 nascimentos de 64 para 47 m; 9,7% da praça coberta. Tudo igual no servidor (G14). **Falta:** o olho do Comandante (densidade, onde mexer) e o playtest dos bots nos becos. | `client/src/environment/ArenaUrbana.ts` (os dados), `ArenaMapa.ts` (a planta em conta), `Arena.ts`, `sim/nascimentos.ts` (12 pontos extras andaram), `shared/net/constants.ts` (protocolo 24) | `?mapa=arena&comandante=1` (ou o Deathmatch, o Domínio e a Sobrevivência na Cidade Neon): o Mercado a sudeste, o Pátio a nordeste, o Playground a noroeste (sobe-se pela escada ao sul ou pela rampa a leste); capturas `arte/cidade-neon-praca-*-claude.jpg`. |
+
 ## P267 — Os outdoors alternam, um painel para ajustá-los, a Azonix nos banners; faltam os prédios (28/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

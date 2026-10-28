@@ -1,6 +1,6 @@
 import { slidesDoAnuncio, type IdDoAnuncio } from '../brand/anuncios';
 import { CITY_NEON, PALETTE } from '../core/palette';
-import { BUILDINGS_DA_ARENA, PLATAFORMA_DA_ARENA } from './Arena';
+import { BUILDINGS_DA_ARENA, MOBILIARIO_DA_ARENA, PLATAFORMA_DA_ARENA } from './Arena';
 import { mulberry32 } from '../core/rng';
 
 /**
@@ -257,7 +257,7 @@ export interface Caixa {
 
 /** Os prédios e a plataforma da praça, como caixas: o que pode esconder a cidade de quem está na praça. */
 export function caixasDaPraca(): readonly Caixa[] {
-  return [...BUILDINGS_DA_ARENA, PLATAFORMA_DA_ARENA].map((b) => ({ x0: b.x - b.w / 2, x1: b.x + b.w / 2, y0: 0, y1: b.h, z0: b.z - b.d / 2, z1: b.z + b.d / 2 }));
+  return [...BUILDINGS_DA_ARENA, ...MOBILIARIO_DA_ARENA, PLATAFORMA_DA_ARENA].map((b) => ({ x0: b.x - b.w / 2, x1: b.x + b.w / 2, y0: 0, y1: b.h, z0: b.z - b.d / 2, z1: b.z + b.d / 2 }));
 }
 
 /** O segmento de `o` até `p` atravessa a caixa? (o método das lajes: o intervalo de t em que o segmento está dentro de cada par de planos tem de se sobrepor.) */
