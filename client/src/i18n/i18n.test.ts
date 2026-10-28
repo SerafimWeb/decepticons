@@ -259,7 +259,7 @@ describe('a cobertura: o que o jogo mostra e o dicionário traduz', () => {
     const SO_EM_PORTUGUES = new Set([
       'CYBERMECH', 'SHIFT', 'Shift', 'WASD', 'Esc', '[ Shift ]', '[ Ctrl ]',
     ]);
-    const FERRAMENTA_DO_DONO = /npm run|ligar-mesa|A mesa é local|Na pasta do projeto|ou dê dois cliques|token do dono|campanha de fábrica|Estado do servidor|Todas as armas e todos os chassis|Chassi, arma, personalidade|VISIBILIDADE ▸|O que os jogadores veem: liberar|TELÕES ▸|Qual vídeo toca em cada telão|WARGAME ▸|Monta um episódio de IA contra IA/;
+    const FERRAMENTA_DO_DONO = /npm run|ligar-mesa|A mesa é local|Na pasta do projeto|ou dê dois cliques|token do dono|campanha de fábrica|Estado do servidor|Todas as armas e todos os chassis|Chassi, arma, personalidade|VISIBILIDADE ▸|O que os jogadores veem: liberar|TELÕES ▸|Qual vídeo toca em cada telão|WARGAME ▸|Monta um episódio de IA contra IA|OUTDOORS ▸|Quantos outdoors da marca aparecem/;
     const faltam = [...textos].filter((x) => /\p{L}{3,}/u.test(x) && !SO_EM_PORTUGUES.has(x) && !FERRAMENTA_DO_DONO.test(x) && !coberto(x));
     expect(faltam).toEqual([]);
   });
