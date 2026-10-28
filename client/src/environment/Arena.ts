@@ -2,14 +2,17 @@ import * as THREE from 'three';
 import { ARENA_ZONES } from '../combat/Zone';
 import { CITY_NEON, PALETTE } from '../core/palette';
 import { mulberry32 } from '../core/rng';
+import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { buildFloorTexture, buildSkyTexture, FLOOR_TILE_METERS } from './Atmosphere';
+import { ArenaAderecos, type Obstaculo } from './ArenaAderecos';
 import { WINDOWS, windowedBuildingMaterial, type JanelasDoPredio } from './BuildingWindows';
 import { ArenaQuadro } from './ArenaQuadro';
+import { ARENA_QUADRO_DE_LUZ } from './ArenaLayout';
 import { ArenaTelao } from './ArenaTelao';
 import { buildingBands } from './BuildingBands';
 import type { DestructibleDef, Destructibles } from './Destructibles';
-import { SerafimTower } from './SerafimTower';
+import { SERAFIM_TOWER, SerafimTower } from './SerafimTower';
 import { Bunker, type MapId } from './Bunker';
 import { exigirMapa, exigirPraia, type InstanciaDaPraia, type InstanciaDoMapa } from './mapasSobDemanda';
 
@@ -104,6 +107,8 @@ export class Arena {
   readonly transformador: ArenaQuadro | null = null;
   /** Os telões diegéticos (P246): só na Cidade Neon, em qualquer modo. */
   readonly telao: ArenaTelao | null = null;
+  /** A atmosfera cyberpunk (P264): letreiros, postes piscando, vapor do underground. Só na Cidade Neon, em qualquer modo. */
+  readonly aderecos: ArenaAderecos | null = null;
   private relogioDoTransformador = 0;
   private estadoDoTransformador = 0;
   private vidaDoTransformador = 1;
@@ -121,7 +126,7 @@ export class Arena {
     private readonly physics: PhysicsWorld,
     destructibles: Destructibles,
     map: MapId = 'arena',
-    opcoes: { transformador?: boolean } = {},
+    opcoes: { transformador?: boolean; particles?: ParticleSystem } = {},
   ) {
     this.mapa = map;
     if (map === 'praia') {
@@ -172,6 +177,17 @@ export class Arena {
     if (opcoes.transformador) this.transformador = new ArenaQuadro(scene, physics);
     // Os telões diegéticos (P246): este ramo já é exclusivo da Cidade Neon (os outros mapas retornam antes); sem checagem de mapa extra.
     this.telao = new ArenaTelao(scene);
+    // A atmosfera cyberpunk (P264): letreiros, postes e bueiros espalhados pelo chão livre, evitando prédio, barricada,
+    // plataforma, o armário do transformador, a torre Serafim e todo ponto de nascimento (ninguém nasce dentro de um poste).
+    const obstaculos: Obstaculo[] = [
+      ...BUILDINGS.map((b): Obstaculo => ({ x: b.x, z: b.z, raio: Math.hypot(b.w, b.d) / 2 + 2 })),
+      ...BARRICADES.map((b): Obstaculo => ({ x: b.x, z: b.z, raio: Math.hypot(b.w, b.d) / 2 + 2 })),
+      { x: PLATFORM.x, z: PLATFORM.z, raio: Math.hypot(PLATFORM.w, PLATFORM.d) / 2 + 2 },
+      { x: ARENA_QUADRO_DE_LUZ.x, z: ARENA_QUADRO_DE_LUZ.z, raio: 4 },
+      { x: SERAFIM_TOWER.x, z: SERAFIM_TOWER.z, raio: 16 },
+      ...SPAWN_POINTS.map(([x, z]): Obstaculo => ({ x, z, raio: 5 })),
+    ];
+    this.aderecos = new ArenaAderecos(scene, obstaculos, this.halfSize, opcoes.particles ?? null);
   }
 
   /** O relógio visual do mapa (s, desde que foi montado): só a praia o conta. É o que o ciclo do dia usa quando a partida não traz outro (`CicloDoDia.progressoDaPartida`). */
@@ -222,8 +238,9 @@ export class Arena {
     for (const c of cores) this.registraLuz(c);
   }
 
-  /** Por quadro: só o mapa que anima faz algo (o mar da praia, o painel do transformador); os outros são estáticos e não custam nada. */
+  /** Por quadro: a Cidade Neon sempre anima a atmosfera (postes piscando, vapor do underground — P264); o mar da praia e o painel do transformador também; os outros mapas são estáticos e não custam nada aqui. */
   update(dt: number): void {
+    this.aderecos?.update(dt);
     if (this.transformador) {
       this.relogioDoTransformador += dt;
       this.transformador.atualiza(this.relogioDoTransformador, this.estadoDoTransformador, this.vidaDoTransformador);

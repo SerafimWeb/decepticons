@@ -9,10 +9,16 @@ Antes, o `?wargame=` sobrevivia a uma troca de mapa (`MapLinks.ts`) e nenhum dos
 que isso, no WARGAME, não devolve o controle (`wargameAtivo` o trava de propósito desde o P263). **Conferido no
 Chrome:** depois de C, segurando W, o Mech andou 6,17 m (zero antes da correção). `MapLinks.test.ts` (+1).
 
-**P264 — atmosfera cyberpunk-distópica da Cidade Neon (🔧 EM ANDAMENTO):** o Comandante confirmou a escala que o P255
-tinha deixado em aberto ("mapa vazio... pede decisão de escopo") e deu a direção: mais densidade de props/letreiros
-de rua (estilo Chinatown/gueto), vapor do underground, postes piscando/falhando, mais telões — dentro do estilo
-baixo-poli neon já decidido (`REFERENCIA_VISUAL.md`). Nada construído ainda nesta linha; ver `ORDENS_DO_COMANDO.md` P264.
+**P264 — atmosfera cyberpunk-distópica da Cidade Neon (PR1 REAL; v2 listada em AUSENTE):** `ArenaAderecos.ts` povoa
+a Arena (antes ~12 objetos) com 26 letreiros verticais (barras/blocos de cor neon, sem texto nem glifo real — o
+clima Chinatown/gueto é densidade e paleta, nunca idioma ou marca copiados), 13 postes de rua com bulbo que pisca/
+falha (respiração + "mau contato" raro, função pura do tempo, sem alocação por quadro) e 6 bueiros soltando vapor
+pelo `ParticleSystem` já existente (nenhum sistema novo). Zero luz dinâmica nova, zero colisor, custo medido:
+~1 KB gzip (pacote em 481,5/500 KB). **Conferido:** contagem de instâncias por script (26/13/13/6, nada rejeitado
+pelo espalhamento que evita prédio/barricada/ponto de nascimento), `npm run check` verde. **AUSENTE (v2, não
+bloqueia, já planejado):** mais telões; letreiros/postes ainda não escurecem com o transformador do banco (só
+afeta a missão em ondas); o motoboy kamikaze do P255 segue à parte. **Onde conferir:** `?mapa=arena&comandante=1`,
+chip CÂMERAS DO LOCAL ▸; captura `arte/cidade-neon-atmosfera-claude.jpg`.
 
 **P263 — o WARGAME (P262) corrigido: o Comandante não controla mais o Mech dele, e os dois esquadrões brigam no nível
 mais afiado (REAL, corrige uma lacuna real da verificação do P262 — "zero erro de página" não provava que o input

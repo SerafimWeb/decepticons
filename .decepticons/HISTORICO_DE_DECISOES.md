@@ -1,3 +1,21 @@
+## [2026-10-27] Atmosfera cyberpunk da Cidade Neon: sem texto real, sem luz nova, e a cor instanciada não escurece com o transformador (P264)
+
+Três decisões de propósito ao povoar a Arena (letreiros, postes, bueiros), para não ficarem reabertas por engano
+numa sessão futura. **(1) Sem glifo ou texto de verdade nos letreiros:** a referência do Comandante (Chinatown/
+gueto) pede densidade visual, não um idioma específico — desenhar kanji, hangul ou qualquer escrita real seria
+arte de um lugar que não é o nosso, sem necessidade (barras e blocos de cor já leem como "letreiro" à distância
+de jogo, no mesmo espírito baixo-poli de `ESTILO_ROBOS.md`). **(2) Sem `THREE.PointLight` nova para os postes:**
+pareceria mais "de verdade", mas custaria uma luz dinâmica por instância (13 delas) — todo neon deste jogo até
+hoje ilumina "de mentirinha" (emissivo + bloom, zero luz real), e quebrar esse padrão por um detalhe de cenário
+não se paga em G12 (GPU integrada como piso). **(3) Os letreiros/postes não escurecem com `Arena.setEnergia`
+(o transformador do Banco Vorcaris, missão em ondas):** esse mecanismo funciona porque o `THREE.Color` de um
+*material* é o mesmo objeto que o renderizador lê a cada quadro — mutá-lo in loco já muda a cor na tela. Cor
+*instanciada* (`InstancedMesh.setColorAt`) não funciona assim: é uma cópia gravada num buffer, não uma referência
+viva; `registraLuz()` não tem efeito nenhum sobre ela a menos que algo chame `setColorAt` de novo a cada mudança
+de energia. Cheguei a escrever esse registro (inerte, sem erro, só sem efeito) antes de perceber — removido, com
+o limite anotado no código em vez de deixar a aparência de "funciona" sem funcionar. Resolver direito pede um
+`setEnergia` próprio em `ArenaAderecos`, falta para quando/se importar na missão em ondas especificamente.
+
 ## [2026-10-27] WARGAME: quatro cópias do mesmo "solta a câmera" — corrigir uma não bastava (P265)
 
 Depois do P263 (travar `player.active` durante o WARGAME), o Comandante ainda ficava preso: soltar a câmera de
