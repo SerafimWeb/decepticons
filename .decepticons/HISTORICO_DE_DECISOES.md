@@ -1,3 +1,18 @@
+## [2026-10-27] WARGAME: "zero erro de página" não prova que o jogador está travado (P263)
+
+O PR do P262 foi verificado com um script de Playwright que montava o episódio inteiro pelo painel e só observava
+(cliques de UI, screenshots, contagem de erros de página) — nunca apertou uma tecla nem clicou no jogo em si. O
+Comandante jogou e descobriu na hora: WASD e o tiro continuavam vivos por trás da câmera de espectador, porque
+`Game.ts:setPlaying()` é o **único lugar** que escreve `player.active`, e escrevia incondicionalmente (`= playing`)
+toda vez que uma rodada começava — a câmera de espectador (`SpectatorCam.overridesRig`) só troca o que a tela
+mostra, nunca tocou em input. **Lição para qualquer modo "espectador" futuro:** câmera e controle são dois
+interruptores independentes neste código; desligar um não desliga o outro, e só um teste que **simula o input de
+verdade** (não só clique de UI) prova que os dois foram desligados juntos. Corrigido com um campo `wargameAtivo`
+que `setPlaying` consulta. Na mesma ordem, os dois esquadrões do WARGAME saíram do `BOT_SKILL_NORMAL` para
+`BOT_SKILLS.dificil`: aquele padrão foi calibrado e aprovado (24/09) para ser **justo contra um humano** jogando
+sozinho contra bots — não existe razão para segurar a IA quando são dois esquadrões de IA se enfrentando para
+um público assistir.
+
 ## [2026-10-27] WARGAME, PR2: um PR só em vez de dois (mapa + painel) (P262)
 
 O plano original separava o mapa clicável (PR2) do painel/link/câmera (PR3), seguindo a regra do menor PR que

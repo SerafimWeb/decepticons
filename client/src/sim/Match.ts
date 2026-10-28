@@ -584,6 +584,10 @@ export class Match {
       ...(janeiro ? { androidPaint: 0x15171a } : {}), // os androides rebeldes da Praça de preto, no meio do verde e amarelo
       // O 8 de Janeiro é para o jogador sozinho: reação, mira e giro mais lentos (achado 24/10: "muito agressivos e rapidos pra eu combater sozinho").
       ...(janeiro ? { skill: BOT_SKILLS.facil } : {}),
+      // O WARGAME (P262) é espetáculo entre dois esquadrões de IA, sem jogador para proteger: o nível mais afiado
+      // de propósito (achado jogando: "achei meio burros os NPCs", 27/10 — o padrão de sempre é calibrado para
+      // ser justo contra um humano, não para parecer competente assistindo).
+      ...(o.roteiro ? { skill: BOT_SKILLS.dificil } : {}),
       ...(o.bossMask === undefined ? {} : { mascaraDoChefe: o.bossMask }),
       respawn: !survival,
       respawnAtHome: ctf,
@@ -616,6 +620,8 @@ export class Match {
             names: { mechs: nomes(escolta.mechs), androids: nomes(escolta.androids) },
             kits: escolta.mechs.map(kitDe),
             androidKits: escolta.androids.map(kitDe),
+            // O WARGAME (P262): o esquadrão aliado briga no mesmo nível afiado do inimigo (ver o comentário acima, `this.bots`).
+            ...(o.roteiro ? { skill: BOT_SKILLS.dificil } : {}),
             waypoints: this.spawnPoints,
             power: o.power,
           })
