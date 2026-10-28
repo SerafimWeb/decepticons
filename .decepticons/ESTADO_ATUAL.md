@@ -1,5 +1,11 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Telões: o vídeo dava 404 no site publicado (Claude, branch `claude/telao-caminho-do-video`)
+
+**Achado (28/10, na prova ao vivo do P266, console do Chrome em cybermech.online):** `ArenaTelao.ts` montava o vídeo como `/telao/<arquivo>` (absoluto na raiz do site), mas o jogo vive em `/jogar/` e os clipes
+estão em `jogar/telao/` (200 lá, 404 na raiz): quando o Comandante escolhia um vídeo para um telão da Cidade Neon, ele nunca tocava no site (só no dev). **Conserto:** `${import.meta.env.BASE_URL}telao/<arquivo>`, o mesmo que os
+outdoors já usam. **Teste:** +1 em `ArenaTelao.test.ts` (base `/jogar/`; falha contra o caminho antigo, conferido por mutação). Não confirmei com o vídeo tocando no site: a prova é o 404 sumir do console depois do deploy.
+
 ## A marca da Serafim na Cidade Neon: outdoors dos produtos e o holograma da logo (Claude, P266, branch `claude/outdoors-da-marca`)
 
 **O pedido (28/10), depois de ver a cidade ("ficou tudo muito bom"):** a logo (`vetorserafim.png`) como o holograma principal, em 3D, sobre o Prédio Serafim, e plana mais 2 vezes no cenário; os outros outdoors divulgando os

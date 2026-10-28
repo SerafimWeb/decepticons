@@ -111,6 +111,30 @@ describe('os telões diegéticos da Cidade Neon (P246/P254)', () => {
   });
 });
 
+describe('o vídeo do telão sai da base do jogo, não da raiz do site (achado no site publicado em 28/10: 404 em /telao/)', () => {
+  it('o endereço do clipe começa na base do jogo (BASE_URL), nunca em "/telao/" absoluto', async () => {
+    vi.stubEnv('BASE_URL', '/jogar/'); // a base do site publicado: o jogo vive em /jogar/, os clipes em /jogar/telao/
+    const criados: { src: string }[] = [];
+    vi.stubGlobal('document', {
+      createElement: () => {
+        const v = { src: '', addEventListener: () => {}, readyState: 4, pause: () => {}, removeAttribute: () => {}, load: () => {} };
+        criados.push(v);
+        return v;
+      },
+    });
+    try {
+      const { arena: a } = await arena('arena');
+      const config = { versao: 1, itens: { 'arena:telao-1': { tipo: 'video', arquivo: 'arena-clip2.mp4' } } };
+      await a.telao!.carregar('ws://127.0.0.1:0', async () => ({ ok: true, json: async () => config }) as unknown as Response);
+      expect(criados).toHaveLength(1);
+      expect(criados[0]!.src).toBe('/jogar/telao/arena-clip2.mp4');
+    } finally {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    }
+  });
+});
+
 describe('deveAtualizarTela: a decisão pura de tocar vídeo ou redesenhar a câmera (distância + degrau de qualidade, G12)', () => {
   it('atualiza perto e com qualidade cheia; não atualiza longe, nem a partir do degrau que corta vídeo/câmera', () => {
     expect(deveAtualizarTela(0, 0)).toBe(true);
