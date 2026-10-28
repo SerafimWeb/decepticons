@@ -1,5 +1,27 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A Cidade Neon ganha atmosfera cyberpunk — PR1: letreiros, postes e vapor (Claude, P264, branch `claude/cidade-neon-atmosfera`)
+
+**O pedido, depois de jogar o WARGAME na Arena quase vazia:** "torne-a um universo cyberpunk futurista distópico
+e de ruptura cybermech" (com referências de vídeo) + "gases saindo do underground... poste piscando falhando...
+neons, mais teloes.... chinatown.... getto... scifi" — exatamente a decisão de escopo que o P255 (24/10) tinha
+deixado em aberto ("mapa vazio... pede decisão do Comandante").
+**Esta entrega (PR1 de uma sequência pequena, a ordem que mais ataca "feio/vazio" primeiro):** `ArenaAderecos.ts`
+(novo) — 26 letreiros verticais (barras/blocos de cor, **sem texto nem glifo real** — o clima Chinatown/gueto é
+densidade e paleta, nunca idioma ou marca copiados, de propósito), 13 postes de rua com bulbo que pisca e falha
+("mau contato" raro, defasado por poste, função pura do tempo — zero `Math.random` por quadro), 6 grelhas de
+bueiro soltando vapor pelo `ParticleSystem` **já existente** (nenhum sistema novo). **Decisões de custo:** zero luz
+dinâmica nova (emissivo com bloom, como todo neon do jogo já ilumina), zero colisor, `InstancedMesh` (só a cor do
+bulbo escreve por quadro) — medido: a feature inteira custou **~1 KB gzip** (pacote em 481,5/500 KB).
+**Verificado:** contagem de instâncias por script (26/13/13/6, nada rejeitado pelo espalhamento que evita prédio/
+barricada/plataforma/torre/ponto de nascimento), captura real no Chrome (`arte/cidade-neon-atmosfera-claude.jpg`,
+um poste e um letreiro visíveis perto da porta do Banco Vorcaris), `npm run check` verde.
+**Falta (v2, já planejado, não bloqueia):** mais telões (extensão de dado em `shared/telao.ts`/`ArenaLayout.ts`,
+mecânica); letreiros/postes ainda não escurecem com o transformador do banco (só afeta a missão em ondas — não dá
+para reescrever a cor de uma instância só registrando um `THREE.Color`, como funciona para material comum).
+**Próxima sessão começa com:** o olho do Comandante jogando (densidade, brilho, se quer mais ou menos) antes de
+engatar o PR2 (mais telões).
+
 ## WARGAME: não tinha como sair (Claude, P265, branch `claude/wargame-sair`)
 
 **Testou o P263 (o conserto de não jogar sem querer) e achou que ainda ficava "travado":** trocar de mapa pelo
