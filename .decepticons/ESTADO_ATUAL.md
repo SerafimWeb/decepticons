@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## WARGAME: não tinha como sair (Claude, P265, branch `claude/wargame-sair`)
+
+**Testou o P263 (o conserto de não jogar sem querer) e achou que ainda ficava "travado":** trocar de mapa pelo
+seletor normal não escapava do WARGAME (`MapLinks.ts:mapHref()` carregava o `?wargame=` antigo junto com o mapa
+novo — corrigido, sempre tira o parâmetro) e os quatro lugares que soltam a câmera de espectador (tecla C, botão
+"voltar ao mech", ⎵/Esc, botão de câmera) eram cópias quase iguais que não sabiam que, no WARGAME, isso não basta
+(`wargameAtivo` trava o controle de propósito) — unificados num `sairDoWargame()` só, que recarrega sem o link.
+**Provado no Chrome:** depois de C, segurando W, o Mech andou 6,17 m (zero antes). **Testes:** +1 em `MapLinks.test.ts`.
+**Em paralelo no mesmo pedido, nasceu o P264** (atmosfera cyberpunk da Cidade Neon) — branch separada, ver abaixo.
+
 ## WARGAME: o Comandante ainda jogava, e os bots pareciam fracos (Claude, P263, branch `claude/pos-wargame`)
 
 **Jogou o P262 pela primeira vez e achou dois problemas:** "ele me colocou como player! quero nao precisar eu jogar,

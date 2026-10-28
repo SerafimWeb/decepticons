@@ -63,6 +63,14 @@ describe('mapHref: o link do seletor de mapa', () => {
     expect(abre(href, true)).toBe('janeiro');
   });
 
+  it('sempre sai do WARGAME (P264): qualquer mapa escolhido aqui tira o `?wargame=` do link, mesmo online', () => {
+    const offline = mapHref('https://exemplo.test/jogar/?mapa=arena&comandante=1&wargame=w1~a~x', 'praia');
+    expect(new URL(offline).searchParams.has('wargame'), 'achado jogando: escolher outro mapa não tirava o roteiro, e o jogo sempre prioriza o roteiro').toBe(false);
+    expect(new URL(offline).searchParams.get('comandante'), 'o resto do link, incluindo o Modo Comandante, continua').toBe('1');
+    const online = 'https://exemplo.test/jogar/?sala=ARENA&servidor=wss://jogo.test&wargame=w1~a~x';
+    expect(new URL(mapHref(online, 'bunker')).searchParams.has('wargame')).toBe(false);
+  });
+
   it('o link da Arena tira o mapa e preserva o resto do endereço', () => {
     const href = mapHref('https://exemplo.test/jogar/?mapa=bunker&build=abc', 'arena');
     const u = new URL(href);

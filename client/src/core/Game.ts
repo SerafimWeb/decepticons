@@ -131,7 +131,7 @@ import { CampaignRunHud } from '../ui/CampaignRunHud';
 import { CampanhaStore } from './CampanhaStore';
 import { EtapaEmCurso } from './EtapaEmCurso';
 import { linkDaEtapa, PARAM_DA_CAMPANHA, PARAM_DA_ETAPA } from '../sim/campanha';
-import { roteiroDoLink, type CameraDoRoteiro } from '../sim/Roteiro';
+import { PARAM_DO_ROTEIRO, roteiroDoLink, type CameraDoRoteiro } from '../sim/Roteiro';
 import { RoteiroStore } from './RoteiroStore';
 import type { WargameCaptionOverlay } from '../ui/WargameCaptionOverlay';
 import type { CameraWall } from '../ui/CameraWall';
@@ -758,11 +758,7 @@ export class Game {
     });
     this.spectatorHud.onPrev = () => this.spectatorCam.prevTarget();
     this.spectatorHud.onNext = () => this.spectatorCam.nextTarget();
-    this.spectatorHud.onExit = () => {
-      this.spectatorCam.release();
-      this.spectatorHud.setVisible(false);
-      this.btnCftv?.classList.remove('active');
-    };
+    this.spectatorHud.onExit = () => this.toggleSpectatorCam();
     if (roteiro && !online) {
       // Entra direto no modo espectador (o mesmo do botão CFTV): o Comandante nunca controla o Mech do WARGAME.
       this.wargameAtivo = true;
@@ -1943,9 +1939,9 @@ export class Game {
           return;
         }
         if (code === 'KeyC' || code === 'KeyV' || code === 'Space' || code === 'Escape') {
-          this.spectatorCam.release();
-          this.spectatorHud.setVisible(false);
-          this.btnCftv?.classList.remove('active');
+          // `toggleSpectatorCam()` (não a chamada direta que havia aqui antes) porque ela sozinha sabe sair do
+          // WARGAME de verdade quando é o caso (P264) — duplicar a lógica aqui a deixaria para trás de novo.
+          this.toggleSpectatorCam();
           return;
         }
       }
@@ -2116,6 +2112,10 @@ export class Game {
   /** Chamado dentro do keydown ou do toque em CAM (gesto do usuário), exigência do Pointer Lock. */
   private switchCamera(): void {
     if (this.spectatorCam.active) {
+      if (this.wargameAtivo) {
+        this.sairDoWargame();
+        return;
+      }
       this.spectatorCam.release();
       this.spectatorHud.setVisible(false);
       this.btnCftv?.classList.remove('active');
@@ -2134,8 +2134,22 @@ export class Game {
   }
 
   /** Alterna entre visão do jogador e o modo de câmeras de vigilância/espectador. */
+  /**
+   * Sai do WARGAME de verdade (P264, achado jogando: "como faço pra sair, ta meio travado"): só soltar a câmera de
+   * espectador não devolve o controle (`wargameAtivo` o trava de propósito em `setPlaying`) — o Comandante ficaria
+   * vendo o próprio Mech parado, sem conseguir jogar. Recarrega sem o `?wargame=`, que é link de uma sessão só, e
+   * cai direto no jogo normal e jogável. Chamado de todo gesto que, fora do WARGAME, só soltaria a câmera.
+   */
+  private sairDoWargame(): void {
+    reloadWithout(PARAM_DO_ROTEIRO);
+  }
+
   private toggleSpectatorCam(): void {
     if (this.spectatorCam.isSpectating) {
+      if (this.wargameAtivo) {
+        this.sairDoWargame();
+        return;
+      }
       this.spectatorCam.release();
       this.spectatorHud.setVisible(false);
       this.btnCftv?.classList.remove('active');

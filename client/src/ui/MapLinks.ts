@@ -1,4 +1,5 @@
 import type { MapId } from '../environment/Bunker';
+import { PARAM_DO_ROTEIRO } from '../sim/Roteiro';
 
 /** Os mapas que o seletor oferece, na ordem em que aparecem. */
 export const MAPS: readonly { id: MapId; label: string; hint: string }[] = [
@@ -16,6 +17,11 @@ export const MAPS: readonly { id: MapId; label: string; hint: string }[] = [
  */
 export function mapHref(href: string, destino: MapId): string {
   const url = new URL(href);
+  // Sempre sai do WARGAME (P264): `?wargame=` é um link de uma sessão só — sem isto, escolher outro mapa aqui
+  // carregava o mapa novo junto com o roteiro antigo, e o `Game.ts` sempre prioriza o roteiro (achado jogando:
+  // "o link ficou gravado na url... não mudou"). Escolher qualquer mapa por este seletor já é, por definição, a
+  // intenção de voltar ao jogo normal.
+  url.searchParams.delete(PARAM_DO_ROTEIRO);
   const online = url.searchParams.has('sala');
   if (destino === 'arena') url.searchParams.delete('mapa');
   else url.searchParams.set('mapa', destino);
