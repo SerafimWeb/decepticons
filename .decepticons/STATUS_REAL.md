@@ -3,6 +3,12 @@
 > Regra R13: o que existe de verdade, sem enfeite. Atualize quando algo mudar de estado.
 > **REAL** = funciona de ponta a ponta · **PARCIAL** = existe mas incompleto · **DEMO** = só visual/placeholder · **AUSENTE** = não existe.
 
+**P265 — sair do WARGAME de verdade (REAL): trocar de mapa, ou qualquer dos 4 jeitos de soltar a câmera de
+espectador (tecla C, botão, ⎵/Esc, botão de câmera), volta ao jogo normal e jogável, preservando `comandante=1`.**
+Antes, o `?wargame=` sobrevivia a uma troca de mapa (`MapLinks.ts`) e nenhum dos 4 lugares que soltam a câmera sabia
+que isso, no WARGAME, não devolve o controle (`wargameAtivo` o trava de propósito desde o P263). **Conferido no
+Chrome:** depois de C, segurando W, o Mech andou 6,17 m (zero antes da correção). `MapLinks.test.ts` (+1).
+
 **P264 — atmosfera cyberpunk-distópica da Cidade Neon (🔧 EM ANDAMENTO):** o Comandante confirmou a escala que o P255
 tinha deixado em aberto ("mapa vazio... pede decisão de escopo") e deu a direção: mais densidade de props/letreiros
 de rua (estilo Chinatown/gueto), vapor do underground, postes piscando/falhando, mais telões — dentro do estilo

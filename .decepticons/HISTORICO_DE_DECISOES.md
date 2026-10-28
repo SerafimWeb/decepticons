@@ -1,3 +1,18 @@
+## [2026-10-27] WARGAME: quatro cópias do mesmo "solta a câmera" — corrigir uma não bastava (P265)
+
+Depois do P263 (travar `player.active` durante o WARGAME), o Comandante ainda ficava preso: soltar a câmera de
+espectador por qualquer caminho deixava o controle desligado para sempre (correto, de propósito), mas **nenhum
+desses caminhos sabia disso** — `Game.ts` tinha a mesma lógica de `spectatorCam.release()` copiada em **quatro
+lugares** (o callback `onExit` do HUD, o método `toggleSpectatorCam()`, o bloco de teclas C/V/Espaço/Esc enquanto
+espectando, e `switchCamera()`), nenhum chamando o outro. Consertar só um (o óbvio, `toggleSpectatorCam`) deixaria
+os outros três quebrados — foi exatamente o que aconteceu na primeira rodada desta correção: a tecla C é
+interceptada pelo bloco de teclas, que nunca chega a `toggleSpectatorCam`. **Decisão:** em vez de corrigir as quatro
+cópias, um método novo (`sairDoWargame()`, só `reloadWithout(PARAM_DO_ROTEIRO)`) e os quatro lugares passam a
+chamá-lo (ou chamar `toggleSpectatorCam()`, que já o chama) em vez de repetir `release()`/`setVisible`/`classList`
+— a próxima mudança de comportamento do "soltar câmera" só precisa de um lugar. **Lição:** antes de declarar um
+conserto de UI pronto, procurar por `grep` todo outro lugar que chama a mesma API de baixo nível (`.release()`),
+não só o botão mais óbvio.
+
 ## [2026-10-27] WARGAME: "zero erro de página" não prova que o jogador está travado (P263)
 
 O PR do P262 foi verificado com um script de Playwright que montava o episódio inteiro pelo painel e só observava

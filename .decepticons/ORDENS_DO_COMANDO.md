@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P265 — WARGAME: não tinha como sair, o link ficava preso na URL (27/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P265 | 27/10 | "depois se eu quiser jogar, como faz pra sair do modo wargame? ta meio travado, o link ficou gravado na url quando tentei mudar de cenario, nao mudou! tive que apagar na mao. melhore e prossiga" | ✅ | **Achado, dois bugs do mesmo tamanho:** (1) `?wargame=` é um link de sessão única, mas `MapLinks.ts:mapHref()` — a função atrás de todo clique num pino de mapa — só mexia em `mapa`/`modo`; escolher outro cenário carregava o mapa novo **junto** com o roteiro antigo, e o `Game.ts` sempre prioriza o roteiro quando presente — por isso "não mudou". (2) mesmo saindo da tela de espectador (tecla C, botão "voltar ao mech", ⎵/Esc, ou o botão de câmera), o Comandante continuava sem controlar nada: `wargameAtivo` (do P263) trava `player.active` **de propósito**, e nenhum desses quatro lugares (achados: eram 4 cópias quase iguais do mesmo "solta a câmera") sabia que, no WARGAME, soltar a câmera não basta. **Corrigido:** `mapHref()` sempre tira o `wargame` do link, não importa o destino; os quatro lugares agora chamam um `sairDoWargame()` só, que recarrega sem o `?wargame=` (preserva `comandante=1` e o resto) quando `wargameAtivo` está ligado — e devolve o jogo completamente normal. | `client/src/core/Game.ts`, `client/src/ui/MapLinks.ts` (+1 teste em `MapLinks.test.ts`) | **No Chrome de verdade**, segurando W depois de apertar C: o Mech andou 6,17 m (`player.active` e deslocamento, zero antes da correção); a URL perde o `wargame=` e mantém `comandante=1`. `?mapa=arena&comandante=1` → WARGAME ▸ → EXECUTAR → tecla **C** (ou o botão "voltar ao mech", ou escolher outro mapa no seletor). |
+
 ## P264 — A Cidade Neon vira "um universo cyberpunk futurista distópico e de ruptura" (27/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
