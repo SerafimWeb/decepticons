@@ -1,3 +1,18 @@
+## [2026-10-28] Cidade Neon: a praça dentro de uma cidade, tudo em shader, e a rua no lugar do quadriculado (P264, PR2)
+
+O Comandante, ao ver a PR1: "ainda tá muito longe" dos quadros de referência; "os postes frágeis... só se tiver o desenho das ruas". Decisões de propósito, para não serem reabertas por engano:
+**(1) A cidade é um pedaço sob demanda, só desenho, sem colisor e fora do servidor** (`CidadeNeonCenario.ts`, baixado por `carregarCenarioDaCidade`; se não baixar, o jogo abre sem ela). O servidor e os testes
+de regra montam a Arena sem ela, então nada de gameplay depende de enfeite — **por isso os postes não têm colisor**: um colisor só do cliente empurraria o Mech do jogador onde o servidor não empurra.
+**(2) Janela, fachada, anúncio e rua são conta de shader pela posição no mundo, não malha nem imagem de arquivo:** 11 chamadas de desenho para a cidade toda, nada de CPU por quadro (o relógio é um
+uniforme), zero byte de imagem (a arte dos anúncios e dos glifos é desenhada em canvas na montagem). **(3) Os glifos continuam inventados** (a decisão da PR1 vale): nenhum idioma nem marca real; as
+marcas dos anúncios são do universo do jogo. **(4) O reflexo do chão molhado não desenha a cena duas vezes (G12):** cada telão e poste vira um quadrilátero deitado no chão, posto no vertex shader pela
+fórmula do espelho (um ponto à altura y, a distância D, aparece a D·hc/(hc+y) da câmera), mais forte nas poças e de raspão. **Limites conhecidos:** não sabe o que está na frente da fonte, e a cor é a do
+primeiro anúncio do telão. **(5) O limite (3) da PR1 caiu:** a luz da cidade nova é **um uniforme compartilhado** que o `Arena.registraLuzes` já escurece com o transformador do banco — o que a cor
+instanciada da PR1 não conseguia; por isso a `ArenaAderecos.ts` foi apagada, não remendada. **(6)** O horizonte antigo (80 caixas, 900 estrelas) saiu; névoa e horizonte ficaram mais turquesa (`palette.ts`),
+a cor dos quadros. **(7) Achado de método:** a "mancha branca" do chão não era o meu reflexo (continuava com ele escondido), era o brilho do próprio piso — poça de rugosidade 0,1 refletindo a luz
+principal em ângulo rasante; a causa se acha escondendo uma camada por vez, não adivinhando. **(8) Constantes por instância passam como `flat`:** a semente de cada torre alimenta hash caótico, e 1 ulp
+de interpolação perspectiva viraria ruído nas janelas em GPUs que não interpolam constante com exatidão (o teste `CidadeNeonShaders.test.ts` confere a interface vértice/fragmento).
+
 ## [2026-10-27] Atmosfera cyberpunk da Cidade Neon: sem texto real, sem luz nova, e a cor instanciada não escurece com o transformador (P264)
 
 Três decisões de propósito ao povoar a Arena (letreiros, postes, bueiros), para não ficarem reabertas por engano

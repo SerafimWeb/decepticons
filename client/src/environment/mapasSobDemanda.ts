@@ -1,6 +1,7 @@
 import type * as THREE from 'three';
 import type { CerebroDoChefe } from '../combat/CerebroDoChefe';
 import type { MechBase } from '../entities/MechBase';
+import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { Destructibles } from './Destructibles';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { PowerSpec } from '../tuning/power';
@@ -154,7 +155,26 @@ export interface HudDaMissaoCarregado {
  */
 export type MissaoJaneiroCarregada = typeof import('../sim/MissaoJaneiroPedaco');
 
+/** O que o entorno da Cidade Neon troca na Arena: o piso (vira a rua desenhada) e a grade Tron (some). */
+export interface ArenaDoCenario {
+  readonly chao: THREE.Mesh | null;
+  readonly grade: THREE.Object3D | null;
+}
+
+/** O entorno da Cidade Neon montado (P264): só desenho. `luzes` são as cores que o transformador do banco escurece (`Arena.registraLuzes`). */
+export interface CenarioDaCidade {
+  readonly luzes: readonly THREE.Color[];
+  update(dt: number): void;
+  setDetalhe(alto: boolean): void;
+}
+
+/** A fábrica do entorno da Cidade Neon (`environment/CidadeNeonCenario.ts`): as torres, os telões, a rua e o chão molhado. */
+export interface CenarioDaCidadeCarregado {
+  construir(scene: THREE.Scene, arena: ArenaDoCenario, particles: ParticleSystem | null): CenarioDaCidade;
+}
+
 const carregados = new Map<MapId, MapaCarregado>();
+let cidadeCarregada: CenarioDaCidadeCarregado | undefined;
 let janeiroCarregado: MissaoJaneiroCarregada | undefined;
 let praiaCarregada: PraiaCarregada | undefined;
 let hudCarregado: HudDaMissaoCarregado | undefined;
@@ -230,4 +250,14 @@ export async function carregarMapaSeFor(id: MapId): Promise<void> {
   }
   // A missão da Praça (a multidão e a regra, P217 passo 5): o mesmo pedaço serve o cliente, o servidor e os testes.
   if (id === 'janeiro' && !janeiroCarregado) janeiroCarregado = await import('../sim/MissaoJaneiroPedaco');
+}
+
+/** O entorno da Cidade Neon, se já foi baixado (`undefined`: a Arena fica sem ele, jogável igual). */
+export function cenarioDaCidadeCarregado(): CenarioDaCidadeCarregado | undefined {
+  return cidadeCarregada;
+}
+
+/** Baixa o entorno da Cidade Neon (P264, PR2): só desenho, um pedaço próprio que só baixa quem joga nela. Idempotente. */
+export async function carregarCenarioDaCidade(): Promise<void> {
+  if (!cidadeCarregada) cidadeCarregada = (await import('./CidadeNeonCenario')).cenarioDaCidade;
 }

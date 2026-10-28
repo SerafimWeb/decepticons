@@ -415,7 +415,7 @@ export class Match {
     // Na missão da Amazônia (TERRAS RARAS) o jogador nasce e renasce no posto avançado (um ponto só); o Deathmatch usa os pontos ao longo da margem.
     this.spawnPoints = bunker ? BUNKER_SPAWNS : praia ? PRAIA_SPAWNS : amazonia ? (survival ? [[AMAZONIA_POSTO_AVANCADO.x, AMAZONIA_POSTO_AVANCADO.z]] : AMAZONIA_SPAWNS) : janeiro ? PRACA_SPAWNS : SPAWN_POINTS;
     this.zones = bunker || amazonia || janeiro ? new ZoneSystem([]) : praia ? new ZoneSystem(PRAIA_ZONES) : new ZoneSystem();
-    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : amazonia ? 'amazonia' : janeiro ? 'janeiro' : 'arena', { transformador: survival && !praia && !janeiro, particles: o.particles });
+    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : amazonia ? 'amazonia' : janeiro ? 'janeiro' : 'arena', { transformador: survival && !praia && !janeiro });
     // A água da praia (P126): o mar freia e afoga quem entra nele. Nos outros mapas não há água.
     this.agua = praia ? PRAIA_AGUA : null;
     // A missão em ondas da praia defende a estação: os rebeldes que entram nos muros drenam o núcleo; a estação cair é perder a missão.

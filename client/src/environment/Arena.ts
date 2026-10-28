@@ -1,20 +1,16 @@
 import * as THREE from 'three';
 import { ARENA_ZONES } from '../combat/Zone';
-import { CITY_NEON, PALETTE } from '../core/palette';
-import { mulberry32 } from '../core/rng';
-import type { ParticleSystem } from '../fx/ParticleSystem';
+import { PALETTE } from '../core/palette';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { buildFloorTexture, buildSkyTexture, FLOOR_TILE_METERS } from './Atmosphere';
-import { ArenaAderecos, type Obstaculo } from './ArenaAderecos';
 import { WINDOWS, windowedBuildingMaterial, type JanelasDoPredio } from './BuildingWindows';
 import { ArenaQuadro } from './ArenaQuadro';
-import { ARENA_QUADRO_DE_LUZ } from './ArenaLayout';
 import { ArenaTelao } from './ArenaTelao';
 import { buildingBands } from './BuildingBands';
 import type { DestructibleDef, Destructibles } from './Destructibles';
-import { SERAFIM_TOWER, SerafimTower } from './SerafimTower';
+import { SerafimTower } from './SerafimTower';
 import { Bunker, type MapId } from './Bunker';
-import { exigirMapa, exigirPraia, type InstanciaDaPraia, type InstanciaDoMapa } from './mapasSobDemanda';
+import { exigirMapa, exigirPraia, type ArenaDoCenario, type InstanciaDaPraia, type InstanciaDoMapa } from './mapasSobDemanda';
 
 export interface BlockDef {
   x: number;
@@ -88,8 +84,11 @@ export const SPAWN_POINTS: readonly (readonly [number, number])[] = [
   [-75, 15],
 ];
 
-export class Arena {
+export class Arena implements ArenaDoCenario {
   readonly halfSize = 100;
+  /** O piso e a grade Tron da Cidade Neon (`null` nos outros mapas): o entorno da cidade (P264, `CidadeNeonCenario.ts`) troca o piso pela rua desenhada e esconde a grade. */
+  readonly chao: THREE.Mesh | null = null;
+  readonly grade: THREE.Object3D | null = null;
   readonly occluders: Occluder[] = [];
   /** Prédio Serafim: a base do time, no canto oposto ao Banco VORCARIS. */
   readonly serafim: SerafimTower | null;
@@ -107,8 +106,6 @@ export class Arena {
   readonly transformador: ArenaQuadro | null = null;
   /** Os telões diegéticos (P246): só na Cidade Neon, em qualquer modo. */
   readonly telao: ArenaTelao | null = null;
-  /** A atmosfera cyberpunk (P264): letreiros, postes piscando, vapor do underground. Só na Cidade Neon, em qualquer modo. */
-  readonly aderecos: ArenaAderecos | null = null;
   private relogioDoTransformador = 0;
   private estadoDoTransformador = 0;
   private vidaDoTransformador = 1;
@@ -126,7 +123,7 @@ export class Arena {
     private readonly physics: PhysicsWorld,
     destructibles: Destructibles,
     map: MapId = 'arena',
-    opcoes: { transformador?: boolean; particles?: ParticleSystem } = {},
+    opcoes: { transformador?: boolean } = {},
   ) {
     this.mapa = map;
     if (map === 'praia') {
@@ -165,29 +162,21 @@ export class Arena {
       new Bunker(scene, physics);
       return;
     }
-    this.buildFloorAndBounds();
+    const piso = this.buildFloorAndBounds();
+    this.chao = piso.chao;
+    this.grade = piso.grade;
     for (const b of BUILDINGS) this.addBuilding(b);
     this.serafim = new SerafimTower(scene, physics);
     this.occluders.push({ box: this.serafim.bounds, material: this.serafim.material });
     for (const b of BARRICADES) destructibles.add(b);
     this.buildPlatform();
-    this.buildSkyline();
     this.buildZones();
     // O transformador do banco (P164, parte E): só quem joga a missão em ondas o tem (no Deathmatch, na Bandeira e no Domínio a Arena é a de sempre).
     if (opcoes.transformador) this.transformador = new ArenaQuadro(scene, physics);
     // Os telões diegéticos (P246): este ramo já é exclusivo da Cidade Neon (os outros mapas retornam antes); sem checagem de mapa extra.
     this.telao = new ArenaTelao(scene);
-    // A atmosfera cyberpunk (P264): letreiros, postes e bueiros espalhados pelo chão livre, evitando prédio, barricada,
-    // plataforma, o armário do transformador, a torre Serafim e todo ponto de nascimento (ninguém nasce dentro de um poste).
-    const obstaculos: Obstaculo[] = [
-      ...BUILDINGS.map((b): Obstaculo => ({ x: b.x, z: b.z, raio: Math.hypot(b.w, b.d) / 2 + 2 })),
-      ...BARRICADES.map((b): Obstaculo => ({ x: b.x, z: b.z, raio: Math.hypot(b.w, b.d) / 2 + 2 })),
-      { x: PLATFORM.x, z: PLATFORM.z, raio: Math.hypot(PLATFORM.w, PLATFORM.d) / 2 + 2 },
-      { x: ARENA_QUADRO_DE_LUZ.x, z: ARENA_QUADRO_DE_LUZ.z, raio: 4 },
-      { x: SERAFIM_TOWER.x, z: SERAFIM_TOWER.z, raio: 16 },
-      ...SPAWN_POINTS.map(([x, z]): Obstaculo => ({ x, z, raio: 5 })),
-    ];
-    this.aderecos = new ArenaAderecos(scene, obstaculos, this.halfSize, opcoes.particles ?? null);
+    // A cidade em volta (as torres, os telões de propaganda, a rua, os postes e o chão molhado, P264) é só desenho: o jogo a monta por cima,
+    // num pedaço sob demanda (`CidadeNeonCenario.ts`). O servidor e os testes de regra ficam só com o que conta para a partida.
   }
 
   /** O relógio visual do mapa (s, desde que foi montado): só a praia o conta. É o que o ciclo do dia usa quando a partida não traz outro (`CicloDoDia.progressoDaPartida`). */
@@ -238,9 +227,8 @@ export class Arena {
     for (const c of cores) this.registraLuz(c);
   }
 
-  /** Por quadro: a Cidade Neon sempre anima a atmosfera (postes piscando, vapor do underground — P264); o mar da praia e o painel do transformador também; os outros mapas são estáticos e não custam nada aqui. */
+  /** Por quadro: o mar da praia e o painel do transformador; os outros mapas são estáticos e não custam nada aqui (a cidade em volta da Cidade Neon anda sozinha, `CidadeNeonCenario.update`). */
   update(dt: number): void {
-    this.aderecos?.update(dt);
     if (this.transformador) {
       this.relogioDoTransformador += dt;
       this.transformador.atualiza(this.relogioDoTransformador, this.estadoDoTransformador, this.vidaDoTransformador);
@@ -284,7 +272,8 @@ export class Arena {
     }
   }
 
-  private buildFloorAndBounds(): void {
+  /** O piso, a grade, o contorno da praça e as paredes invisíveis. Devolve o piso e a grade (o entorno da cidade os troca, P264). */
+  private buildFloorAndBounds(): { chao: THREE.Mesh; grade: THREE.Object3D } {
     // 704 m = 88 ladrilhos de 8 m: a origem cai numa junta e as placas casam com as células de 4 m da grade.
     const FLOOR_SIZE = 704;
     const map = buildFloorTexture();
@@ -325,6 +314,7 @@ export class Arena {
     ]) {
       this.physics.addStaticBox(new THREE.Vector3(x, wallH / 2, z), new THREE.Vector3(w, wallH, d));
     }
+    return { chao: floor, grade: grid };
   }
 
   /** Prédio sólido com arestas neon, faixas emissivas a cada 5 m e janelas acesas entre elas (`BuildingWindows.ts`). */
@@ -389,71 +379,5 @@ export class Arena {
     this.scene.add(g);
     this.physics.addStaticBox(center, size, rotation);
     return g;
-  }
-
-  /**
-   * Horizonte fora da arena, sem colisão: torres escuras com uma faixa neon cada e uma luz no topo,
-   * em cores sorteadas da cidade (semente fixa), mais um céu de estrelas. 4 draw calls no total
-   * (instâncias + pontos), estático: nada por quadro.
-   */
-  /** Céu estrelado (espacial): pontos numa casca bem longe, na metade de cima. 1 draw call, estático. */
-  private buildStars(rand: () => number): THREE.Points {
-    const n = 900;
-    const pos = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) {
-      const a = rand() * Math.PI * 2;
-      const up = 0.08 + rand() * 0.92; // só acima do horizonte
-      const r = 600;
-      const flat = Math.sqrt(1 - up * up);
-      pos.set([Math.cos(a) * flat * r, up * r, Math.sin(a) * flat * r], i * 3);
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const stars = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.6, sizeAttenuation: false, fog: false }));
-    stars.frustumCulled = false;
-    return stars;
-  }
-
-  private buildSkyline(): void {
-    const rand = mulberry32(1337);
-    const count = 80;
-    const geo = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
-    const towers = new THREE.InstancedMesh(
-      geo,
-      new THREE.MeshStandardMaterial({ color: PALETTE.steelDark, metalness: 0.2, roughness: 0.9 }),
-      count,
-    );
-    // Cor por instância (HDR, para o bloom): a luz do topo e a faixa de cada torre.
-    const beacons = new THREE.InstancedMesh(new THREE.SphereGeometry(0.8, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }), count);
-    const bands = new THREE.InstancedMesh(geo, new THREE.MeshBasicMaterial({ color: 0xffffff }), count);
-    const tint = new THREE.Color();
-
-    const m = new THREE.Matrix4();
-    const q = new THREE.Quaternion();
-    const p = new THREE.Vector3();
-    const s = new THREE.Vector3();
-    const bandPos = new THREE.Vector3();
-    const bandSize = new THREE.Vector3();
-    for (let i = 0; i < count; i++) {
-      const angle = rand() * Math.PI * 2;
-      const radius = 140 + rand() * 140;
-      const w = 12 + rand() * 22;
-      const h = 30 + rand() * 130;
-      p.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
-      s.set(w, h, 10 + rand() * 22);
-      towers.setMatrixAt(i, m.compose(p, q, s));
-      const color = CITY_NEON[Math.floor(rand() * CITY_NEON.length)]!;
-      // Faixa luminosa numa altura sorteada, um pouco maior que a torre (aparece por fora).
-      const bandY = h * (0.35 + rand() * 0.55);
-      bands.setMatrixAt(i, m.compose(bandPos.set(p.x, bandY, p.z), q, bandSize.set(s.x + 0.3, 0.6, s.z + 0.3)));
-      bands.setColorAt(i, tint.setHex(color).multiplyScalar(2.2));
-      p.y = h + 1;
-      beacons.setMatrixAt(i, m.compose(p, q, s.set(1, 1, 1)));
-      beacons.setColorAt(i, tint.setHex(color).multiplyScalar(4));
-    }
-    // A faixa e a luz do topo das torres do horizonte: o material é branco e a cor de cada torre vem da instância, então escalar o material escurece todas de uma vez.
-    this.registraLuz((bands.material as THREE.MeshBasicMaterial).color);
-    this.registraLuz((beacons.material as THREE.MeshBasicMaterial).color);
-    this.scene.add(towers, bands, beacons, this.buildStars(rand));
   }
 }

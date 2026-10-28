@@ -207,3 +207,33 @@ Proposta de execução para concretizar a meta, sem alterar `VISAO.md` ou assumi
 | 4 | a **placa** no console e na pausa | plano |
 
 **O que o Comandante confere:** o seletor de lado. Se a "pele" agradar, os itens 2 a 4 seguem na ordem; se ele quiser mais perto da chapa dos jogos antigos (rebites, relevo), é **só CSS** e se ajusta com a captura na mão.
+
+## 9. Quatro quadros de uma cidade cyberpunk: o alvo da Cidade Neon (27–28/10, P264)
+
+> O Comandante mandou quatro quadros de um vídeo curto de cidade cyberpunk à noite (**não são capturas de jogo**: ele os dá como o "nível" que quer) e,
+> depois da primeira entrega de atmosfera (letreiros e postes soltos no chão), disse: *"eu quero que o cenário fique nesse nível dos exemplos que enviei.
+> ainda tá muito longe disso"*. Sobre os postes: *"achei meio frágeis, não sei se estão fazendo sentido... só se tiver o desenho das ruas, pois nesse
+> quadriculado não achei bom não"*. **As imagens ficam só nesta máquina** (`.tmp/referencias/cidade-cyberpunk/2026-10-28-01.png` a `04.png`): são arte de
+> terceiros e não entram no git (como as das §§ 1 e 8). Aqui ficam a leitura e o que levamos. **Mesmo limite das outras:** quatro quadros parados, sem movimento.
+
+### 9.1 O que os quadros mostram, e onde a Cidade Neon estava
+
+| Quadro | O que se vê | A Cidade Neon antes (P264 PR1) |
+|---|---|---|
+| 1 — a cidade de cima | torres altas em **camadas** que somem numa névoa verde-azulada; **telões verticais** ao longo das torres (rosa, azul, laranja); janelas como grade fina; passarelas ligando prédios | ~12 objetos no meio de um chão quadriculado; o horizonte eram 80 caixas sem janela |
+| 2 — o beco de letreiros | um telão enorme na lateral; **letreiros de bandeira** em escrita inventada/oriental pendurados sobre a rua; coluna de tubo vermelho; tudo saturado em rosa, ciano e vermelho | letreiros soltos no chão, sem nenhum prédio atrás |
+| 3 — a praça | **desenhos em tubo de neon** nas fachadas (figuras, caveira de gato); um peixe holográfico no ar; pista elevada; **chão molhado** com reflexo rosa e vermelho | sem reflexo; chão de grade |
+| 4 — a avenida ao longe | três ou quatro filas de torres, faixas horizontais de letreiros, anúncios grandes claros no meio do escuro | uma fila só, e sem profundidade |
+
+### 9.2 O que levamos (entregue na PR2) e o que NÃO levamos
+
+**Levamos a estrutura, não a pele nem a marca.** A direção de arte continua a de 07/10 (neon baixo-poli sobre escuro, § 1). **Entregue:** (1) **a praça dentro de uma cidade** —
+três filas de torres em volta (`CidadeNeonLayout.ts` é o dado; `CidadeNeonTorres.ts` as desenha numa chamada só), com janelas finas, quinas e coroas em neon, lojas no
+térreo e névoa que as separa em camadas; (2) **telões que passam anúncios** (a cada 6–13 s, com falha de sinal na troca), **letreiros de bandeira** com glifos
+inventados e um aqui e ali queimado, **desenhos em tubo de neon** nas fachadas; (3) **o desenho da rua**: calçadão de lajotas, avenida em anel com faixas, meio-fio e faixas de
+pedestre, postes robustos de verdade na calçada e tampas de bueiro soltando vapor (o "quadriculado" saiu); (4) **o chão molhado** (poças e o rastro de cada telão e poste refletido
+no asfalto, por um truque barato de shader, sem desenhar a cena duas vezes).
+**NÃO levamos:** nenhuma marca, logotipo ou escrita de verdade (as marcas dos anúncios são do universo do jogo: CYBERMECH, SERAFIM, VORCARIS, SINAPSE, BOTO; os glifos são inventados);
+fotorrealismo (volumetria de verdade, reflexo de verdade, raio traçado).
+**Ainda não (próximos cortes, se o Comandante quiser):** pista elevada e passarelas entre as torres; hologramas flutuando; tráfego de veículos voadores; chuva e
+névoa de chão mais densa; mobília de rua (toldos, barracas, máquinas) ao longo da avenida; os três prédios do meio da praça, que ainda são caixas.
