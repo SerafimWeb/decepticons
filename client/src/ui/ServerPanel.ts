@@ -1,9 +1,10 @@
-import type { AdminAvaliacao, AdminEstado, AdminHistorico, AdminLog, AdminSala, AdminTeste, Checagem } from '../../../shared/net/admin';
+import type { AdminAvaliacao, AdminEstado, AdminHistorico, AdminLog, AdminPresenca, AdminSala, AdminTeste, AdminVisita, Checagem } from '../../../shared/net/admin';
 import type { AdminCliente, MotivoDeFalha, Resposta, TokenDoDono } from '../net/admin';
 import {
   caminhoDoGrafico,
   duracao,
   linhaDaSala,
+  linhaDaVisita,
   nivelContraMeta,
   nomeDoMapa,
   num,
@@ -73,6 +74,7 @@ export class ServerPanel {
   private estado: AdminEstado | null = null;
   private historico: AdminHistorico | null = null;
   private log: AdminLog | null = null;
+  private presenca: AdminPresenca | null = null;
   private autenticado = false;
   private msg = '';
   private erroDeRede: MotivoDeFalha | null = null;
@@ -97,6 +99,9 @@ export class ServerPanel {
   private readonly salasCaixa = el('div', 'srv-salas');
   private readonly salasLista = el('ul');
   private readonly salasTitulo = el('h3');
+  private readonly presencaCaixa = el('div', 'srv-presenca');
+  private readonly presencaTitulo = el('h3');
+  private readonly presencaLista = el('ul');
   private readonly logCaixa = el('div', 'srv-log');
   private readonly logTitulo = el('h3');
   private readonly logTexto = el('pre');
@@ -165,6 +170,7 @@ export class ServerPanel {
       quando(CADA_ESTADO_MS, () => void this.pedirEstado()),
       quando(CADA_HISTORICO_MS, () => void this.pedirHistorico()),
       quando(CADA_LOG_MS, () => void this.pedirLog()),
+      quando(CADA_LOG_MS, () => void this.pedirPresenca()),
     ];
   }
 
@@ -176,7 +182,7 @@ export class ServerPanel {
       this.desenhar();
       return;
     }
-    await Promise.all([this.pedirEstado(), this.pedirHistorico(), this.pedirLog()]);
+    await Promise.all([this.pedirEstado(), this.pedirHistorico(), this.pedirLog(), this.pedirPresenca()]);
   }
 
   /** Trata a falha de uma chamada: token ruim volta à tela do token; o resto vira aviso e a janela segue com o que tinha. */
@@ -219,6 +225,13 @@ export class ServerPanel {
     if (this.aberta) this.desenharGraficos();
   }
 
+  /** Quem entrou nas salas (P275). Uma falha aqui (servidor sem a rota ainda) só deixa a lista vazia: o resto da janela segue. */
+  private async pedirPresenca(): Promise<void> {
+    const r = await this.o.cliente.presenca();
+    if (r.ok) this.presenca = r.dados;
+    if (this.aberta) this.desenharPresenca();
+  }
+
   private async pedirLog(): Promise<void> {
     const r = await this.o.cliente.log();
     if (!this.falhou(r) && r.ok) this.log = r.dados;
@@ -237,7 +250,8 @@ export class ServerPanel {
     this.cab.append(titulo, this.chip, this.sub, botao('[X]', 'btn-close srv-fechar', 'fechar', 'Fechar (Esc)'));
     this.salasCaixa.append(this.salasTitulo, this.salasLista);
     this.logCaixa.append(this.logTitulo, this.logTexto);
-    this.lateral.append(this.salasCaixa, this.logCaixa);
+    this.presencaCaixa.append(this.presencaTitulo, this.presencaLista);
+    this.lateral.append(this.salasCaixa, this.presencaCaixa, this.logCaixa);
     this.montarToken();
     this.corpo.append(this.cartoes, this.graficos, this.lateral);
     const pe = el('footer', 'srv-pe');
@@ -343,7 +357,26 @@ export class ServerPanel {
 
   private desenharLateral(): void {
     this.desenharSalas();
+    this.desenharPresenca();
     this.desenharLog();
+  }
+
+  /** Quem entrou nas salas, as mais novas primeiro (P275). Só o dono vê isto, e o servidor guarda 30 dias. */
+  private desenharPresenca(): void {
+    const p = this.presenca;
+    this.presencaTitulo.textContent = p ? `QUEM ENTROU (${p.dentroAgora} dentro agora · guarda ${p.retencaoDias} dias)` : 'QUEM ENTROU';
+    const itens = p && p.visitas.length ? p.visitas.slice(0, 40).map((v) => this.linhaDePresenca(v)) : [el('li', 'srv-vazio', p ? 'Ninguém entrou ainda.' : '—')];
+    this.presencaLista.replaceChildren(...itens);
+  }
+
+  private linhaDePresenca(v: AdminVisita): HTMLElement {
+    const l = linhaDaVisita(v, this.agora);
+    const li = el('li');
+    if (v.saiuEm === null) li.classList.add('dentro');
+    li.append(el('small', '', `${l.quando} `), el('b', '', l.quem));
+    if (l.conta) li.append(el('small', 'srv-conta', ` ${l.conta}`));
+    li.append(el('small', '', ` · ${l.onde} · ${l.ficou}`));
+    return li;
   }
 
   private desenharSalas(): void {

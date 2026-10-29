@@ -3,6 +3,8 @@
 > Regra R13: o que existe de verdade, sem enfeite. Atualize quando algo mudar de estado.
 > **REAL** = funciona de ponta a ponta · **PARCIAL** = existe mas incompleto · **DEMO** = só visual/placeholder · **AUSENTE** = não existe.
 
+**P275 — quem entrou nas salas (REAL de ponta a ponta no servidor, na janela SERVIDOR e na política; visto no Chrome na GPU real; falta o olho do Comandante):** diário de 30 dias sem IP, só o dono lê, apagar a conta apaga as entradas. **PARCIAL:** o painel lista as 40 mais novas, sem busca; só nas salas (o site e o lobby não entram); a conta só aparece se o jogador estava logado ao entrar.
+
 **P277 — o halo que andava nas caixas e contêineres (REAL, visto no Chrome na GPU real, antes e depois; falta o olho do Comandante):** o contorno de 1 px a ×3 de HDR passava do limiar do bloom a cada passo da câmera; agora ×1,5 nas máquinas e ×1,8 nos contêineres. **PARCIAL:** os prédios da praça seguem a ×3; não há número de "tremor" por pixel (a bancada ficou ruidosa com os telões animados), a prova é visual.
 
 **P273 — o teto de robôs da sala online: 3/3/1 → 6/6/1 (REAL no servidor e na janela, medido; o limite que sobra é a banda):** o servidor e a Vega 11 aguentam muito mais (`CAPACIDADE.md`); a sala cheia tem no máximo 15 unidades = a meta de 8 KB/s. **PARCIAL/AUSENTE:** mais que 15 unidades (24 = 11,9 KB/s) pede subir a meta ou o delta; o aliado online (P280) ainda não existe.

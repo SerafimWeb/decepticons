@@ -340,6 +340,17 @@ export class Contas {
    * Apaga a conta e **tudo** que está ligado a ela (LGPD art. 18 VI): a atividade, o progresso, as sessões e a própria conta, numa transação só (ou vai tudo ou não vai nada).
    * As cópias de segurança do banco (`backupContas.ts`) levam até 14 dias para esquecer a conta: a política de privacidade diz isso. `false` = a conta não existia.
    */
+  /**
+   * Como o painel do dono reconhece uma conta sem ver o e-mail inteiro (P275): a primeira letra, `***` e o domínio (`p***@x.com`). `null` se a conta não existe (apagada).
+   * O e-mail inteiro nunca sai daqui para o diário de presença nem para o painel.
+   */
+  rotuloDaConta(contaId: number): string | null {
+    const l = this.db.prepare('SELECT email FROM contas WHERE id = ?').get(contaId) as { email: string } | undefined;
+    if (!l) return null;
+    const [nome = '', dominio = ''] = l.email.split('@');
+    return `${nome.slice(0, 1)}***@${dominio}`;
+  }
+
   apagarConta(contaId: number): boolean {
     this.db.exec('BEGIN');
     try {
@@ -360,7 +371,7 @@ export class Contas {
    * Tudo que o servidor guarda desta conta (LGPD art. 18 II e V: acesso e portabilidade), num JSON que a pessoa baixa. **Sem** o hash da senha, o sal nem os hashes das sessões (são
    * segredos do servidor, não dados da pessoa). `null` = a conta não existe.
    */
-  exportarDados(contaId: number, now = Date.now()): DadosDaConta | null {
+  exportarDados(contaId: number, now = Date.now()): Omit<DadosDaConta, 'entradasEmSalas'> | null {
     const c = this.db.prepare('SELECT email, criada_em, is_admin, medir, aceite_em, aceite_versao, nascimento FROM contas WHERE id = ?').get(contaId) as
       | { email: string; criada_em: string; is_admin: number; medir: number; aceite_em: string | null; aceite_versao: string | null; nascimento: string | null }
       | undefined;

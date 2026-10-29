@@ -44,9 +44,10 @@ import { Telemetria } from './telemetria';
 import { ehPedidoDeMural, Mural } from './mural';
 import { Admin, Amostrador, LimiteDeFalhas, lerFimDoLog, LogEmMemoria, montarEstado, type Trafego } from './admin';
 import { ehSalaDeTeste, executarTeste } from './autoteste';
+import { DiarioDePresenca, PRESENCA_RETENCAO_DIAS } from './presenca';
 import { ADMIN_PREFIXO } from '../shared/net/admin';
 import { ehMensagemDeVoz, VOZ_SDP_MAX } from '../shared/net/voz';
-import { chaveDaSala, mapaDaChave, mapaDoLink, modoDaChave, modoDoLink, type MapaOnline, type SalaModo } from '../shared/net/mapa';
+import { chaveDaSala, codigoDaChave, mapaDaChave, mapaDoLink, modoDaChave, modoDoLink, type MapaOnline, type SalaModo } from '../shared/net/mapa';
 
 /** Maior mensagem de jogo aceita de um cliente (a maior é o JOIN, ~90 bytes). Acima disso, a conexão cai (G7). */
 const MAX_MESSAGE = 1024;
@@ -233,9 +234,10 @@ export async function startServer(
         room.definirAutorizacaoDeVoz(autorizarPorSessao((token) => contas.validarSessao(token)));
         // A sala de teste do painel (`TESTE-…`) fica fora dos números de produto.
         if (!ehSalaDeTeste(code)) {
-          room.onEntrou = (peer) => {
+          room.onEntrou = (peer, apelido) => {
             contar('entrou_na_sala', peer.pais);
             telemetria.pico(jogadoresAgora());
+            presenca.entrou(peer, { apelido, conta: contaDaConexao.get(peer) ?? null, sala: codigoDaChave(code), mapa: mapaDaChave(code) });
           };
           room.onRecusou = (peer, motivo: RejectReason) => contar(`recusa_${motivo}` as EventoServidor, peer.pais);
         }
@@ -391,6 +393,9 @@ export async function startServer(
   const visibilidade = new ArmazemDeVisibilidade(dirDados);
   const telao = new ArmazemDeTelao(dirDados);
   const outdoors = new ArmazemDeOutdoors(dirDados);
+  /** Quem entrou nas salas e quando (P275): só o dono lê (`GET /admin/presenca`); 30 dias; sem IP. A conta de cada conexão sai do token que o cliente logado manda antes do JOIN. */
+  const presenca = new DiarioDePresenca(dirDados);
+  const contaDaConexao = new WeakMap<Peer, number>();
   const regras = new ArmazemDeRegras(dirDados, opts.regrasIniciais);
   /** O esquadrão que o dono montou para as salas online (P270): vale nas salas que abrirem depois; sem ele valem as regras. */
   const esquadrao = new ArmazemDoEsquadraoOnline(dirDados);
@@ -830,11 +835,13 @@ export async function startServer(
       }
       const pais = clientCountry(req.socket.remoteAddress, req.headers['cf-ipcountry']);
       if (path === CONTA_DADOS_PATH) {
-        const dados = contas.exportarDados(conta.id);
-        if (!dados) {
+        const base = contas.exportarDados(conta.id);
+        if (!base) {
           enviarJson(404, { erro: 'conta não encontrada' });
           return;
         }
+        // O diário de presença (P275) também é dado desta conta (LGPD art. 18, II e V): vai no arquivo que ela baixa.
+        const dados = { ...base, entradasEmSalas: presenca.daConta(conta.id).map((v) => ({ apelido: v.apelido, sala: v.sala, mapa: v.mapa, entrouEm: new Date(v.entrou).toISOString(), saiuEm: v.saiu === null ? null : new Date(v.saiu).toISOString() })) };
         contar('dados_baixados', pais);
         auditar({ ator: `conta:${conta.id}`, acao: 'dados_baixados', alvo: `conta:${conta.id}` });
         enviarJson(200, dados, { 'content-disposition': 'attachment; filename="cybermech-meus-dados.json"' });
@@ -898,6 +905,7 @@ export async function startServer(
       falhasPorConta.acertou(conta.email);
       auditar({ ator: `conta:${conta.id}`, acao: 'conta_apagada', alvo: `conta:${conta.id}` });
       contas.apagarConta(conta.id);
+      presenca.apagarDaConta(conta.id);
       log(`conta apagada a pedido do titular (número ${conta.id})`);
       contar('conta_apagada', pais);
       enviarJson(200, { apagada: true });
@@ -1105,12 +1113,18 @@ export async function startServer(
         return;
       }
       trafego.entradaBytes += bytes.length;
-      // A credencial é do servidor: nunca chega à sala. Num mapa restrito é a prova de quem entra (token de uma conta de administrador); num público, é descartada.
+      // A credencial é do servidor: nunca chega à sala. Num mapa restrito é a prova de quem entra (token de uma conta de administrador); num público, só diz de qual conta é a conexão (para o diário de presença, P275).
       if (ehCredencial(bytes)) {
+        if (!exigeAdmin) {
+          const token = lerCredencial(bytes);
+          const conta = token !== null ? contas.validarSessao(token) : null;
+          if (conta) contaDaConexao.set(peer, conta.id);
+        }
         if (exigeAdmin && !credenciado && !recusada) {
           const token = lerCredencial(bytes);
           const conta = token !== null && sessaoDeAdmin(token) ? contas.validarSessao(token) : null;
           if (conta) {
+            contaDaConexao.set(peer, conta.id);
             credenciado = true;
             limparEspera();
             auditar({ ator: `conta:${conta.id}`, acao: 'admin_acesso', alvo: `mapa:${mapaPedido}`, ok: true }, 10 * 60_000);
@@ -1129,6 +1143,7 @@ export async function startServer(
     ws.on('close', () => {
       limparEspera();
       release();
+      presenca.saiu(peer);
       void sala.then((r) => r?.leave(peer));
     });
     ws.on('error', () => {
@@ -1159,6 +1174,21 @@ export async function startServer(
     token: metricasToken,
     contaAdmin: sessaoDeAdmin,
     regras: { atual: () => regras.atual(), gravar: (x) => regras.gravar(x) },
+    presenca: () => ({
+      visitas: presenca.recentes(300).map((v) => {
+        const rotulo = v.conta === null ? null : contas.rotuloDaConta(v.conta);
+        return {
+          apelido: v.apelido,
+          conta: v.conta !== null && rotulo !== null ? { id: v.conta, rotulo } : null,
+          sala: v.sala,
+          mapa: v.mapa,
+          entrouEm: new Date(v.entrou).toISOString(),
+          saiuEm: v.saiu === null ? null : new Date(v.saiu).toISOString(),
+        };
+      }),
+      retencaoDias: PRESENCA_RETENCAO_DIAS,
+      dentroAgora: presenca.dentroAgora(),
+    }),
     esquadrao: {
       atual: esquadraoDeAgora,
       gravar: (corpo) => {
@@ -1307,6 +1337,7 @@ export async function startServer(
         if (backupTimer) clearInterval(backupTimer);
         clearInterval(faxinaTimer);
         gravarDados();
+        presenca.encerrar();
         for (const c of wss.clients) c.terminate();
         wss.close(() => http.close(() => resolve()));
         for (const r of rooms.values()) r.dispose();

@@ -1,5 +1,10 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Quem entrou nas salas (Claude, P275, branch `claude/quem-entrou`)
+
+**O pedido (29/10):** "temos q registrar o login ou nick deles pra eu saber de fato quem e quando estava nas salas". **Entrega:** o diário de presença (`server/presenca.ts`, `presenca.json`, 30 dias, sem IP): apelido, conta (número; o painel mostra `c***@exemplo.com`), sala, mapa, entrou, saiu; a seção **QUEM ENTROU** na janela SERVIDOR e `GET /admin/presenca` (só o dono). LGPD: apagar a conta apaga as entradas; baixar os dados as leva; política e inventário atualizados, **`POLITICA_VERSAO` = 2026-10-29.1**. **Provas:** +25 testes, 6 mutações derrubadas, Chrome (GPU) com 4 jogadores e uma conta. **Falta:** o olho do Comandante; busca por apelido ou conta.
+**Próxima sessão começa com:** P280 (o meu time online: aliados na sala, dividem os 15 do P273) e P281 (apagão e visão noturna).
+
 ## As luzes das caixas sem o halo que andava (Claude, P277, branch `claude/luzes-sem-tremor`)
 
 **O pedido (29/10):** "as luzes e os detalhes nos containers e boxes ficam borradas, brilhando e se movendo conforme eu ando". **Causa (fotografada na Vega 11):** o contorno de 1 px de cada caixa a ×3 de HDR: passa do limiar do bloom a cada passo da câmera, vira um halo largo que lava o corpo da máquina e anda de pixel em pixel. **Conserto:** contorno ×1,5 nas máquinas (`BRILHO_DO_CONTORNO_DE_MAQUINA`) e ×1,8 nas arestas dos contêineres (`BRILHO_DAS_ARESTAS_DO_MOBILIARIO`); +4 testes; antes e depois em `.decepticons/arte/luzes-*`. **Falta:** o olho do Comandante; os prédios da praça seguem a ×3 (se o halo deles também incomodar, a mesma constante).

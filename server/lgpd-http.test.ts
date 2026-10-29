@@ -101,6 +101,7 @@ describe('LGPD: aceite, baixar os dados, apagar a conta e oposição à mediçã
     expect(d.atividade).toHaveLength(1);
     expect(d.atividade[0]).toMatchObject({ segundos: 120, partidas: 1, abates: 3, mortes: 1 });
     expect(d.sessoes).toHaveLength(1);
+    expect(d.entradasEmSalas).toEqual([]); // sem ter entrado numa sala, o diário de presença (P275) vai vazio no arquivo
     const texto = JSON.stringify(d);
     const [linha] = lerBanco<{ hash: string; sal: string }>('SELECT hash, sal FROM contas WHERE email = ?', 'dados@x.com');
     expect(texto).not.toContain(linha!.hash);

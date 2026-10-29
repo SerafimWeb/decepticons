@@ -179,3 +179,7 @@ O Comandante pediu fases maiores ("as próximas fases devem ser maiores que as a
 - **A tela** (`ui/RegrasPanel.ts`, sob demanda): botão **[ REGRAS DAS SALAS ]** na janela do servidor (modo Comandante → SERVIDOR). Mostra as regras de agora, as três receitas e os ajustes; **APLICAR** grava.
 
 **Falta:** a escala por jogador (menos bots quando há mais gente, mais quando há um só), o dano dos bots e a lista de bots por sala individual; ajustar **por sala** em vez de para todas.
+
+## Quem entrou nas salas (P275, 29/10)
+
+A janela **SERVIDOR** (modo Comandante → SERVIDOR, com a chave do dono) tem a seção **QUEM ENTROU**: as 40 entradas mais novas, cada uma com a hora (só "10:21" se foi hoje, "28/10 21:40" se não), o **apelido**, a **conta** se o jogador estava logado (`c***@exemplo.com (conta 1)`: o e-mail mascarado e o número), a sala e o mapa, e quanto ficou (ou "na sala agora"). O título diz quantos estão dentro e que o servidor guarda 30 dias. Por trás: `GET /admin/presenca` (a chave de métricas; devolve até 300 entradas), o arquivo `presenca.json` da pasta de dados (30 dias, no máximo 3.000 entradas, **sem IP nem país nem e-mail**) e o código em `server/presenca.ts`. **Apagar a conta apaga as entradas dela**; o inventário e a política estão em `PRIVACIDADE.md` e na página /privacidade/ (versão 2026-10-29.1).

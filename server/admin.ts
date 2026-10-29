@@ -17,6 +17,7 @@ import {
   ADMIN_HEADER,
   ADMIN_HISTORICO_PATH,
   ADMIN_LOG_PATH,
+  ADMIN_PRESENCA_PATH,
   ADMIN_REINICIAR_PATH,
   ADMIN_TESTAR_PATH,
   AMOSTRA_CADA_S,
@@ -27,6 +28,7 @@ import {
   type AdminErro,
   type AdminHistorico,
   type AdminLog,
+  type AdminPresenca,
   type AdminReiniciar,
   type AdminSala,
   type AdminTeste,
@@ -476,6 +478,8 @@ export interface AdminOpcoes {
   testar: () => Promise<AdminTeste>;
   /** As regras dos bots das salas online (P199): ler e gravar (o servidor valida e puxa para os limites). Sem isto, as rotas respondem 501. */
   regras?: { atual: () => RegrasOnline; gravar: (x: unknown) => RegrasOnline };
+  /** Quem entrou nas salas e quando (P275): o diário de presença. Sem isto, a rota responde 501. */
+  presenca?: () => AdminPresenca;
   /** O esquadrão das salas online (P270): o que valeria numa sala nova agora e gravar o do dono (`null` = formato inválido; nada muda). Sem isto, as rotas respondem 501. */
   esquadrao?: { atual: () => RespostaDoEsquadrao; gravar: (corpo: unknown) => RespostaDoEsquadrao | null };
   /** O que os jogadores veem (P191): grava as exceções ao padrão do código; `null` = formato inválido. Sem isto, `POST /admin/visibilidade` responde 501. */
@@ -503,7 +507,7 @@ const CORS = {
   'access-control-allow-headers': `content-type, ${ADMIN_HEADER}`,
 } as const;
 
-const ROTAS_GET = new Set<string>([ADMIN_ESTADO_PATH, ADMIN_HISTORICO_PATH, ADMIN_LOG_PATH, ADMIN_AVALIAR_PATH, ADMIN_REGRAS_PATH, ADMIN_ESQUADRAO_PATH]);
+const ROTAS_GET = new Set<string>([ADMIN_ESTADO_PATH, ADMIN_HISTORICO_PATH, ADMIN_LOG_PATH, ADMIN_AVALIAR_PATH, ADMIN_REGRAS_PATH, ADMIN_ESQUADRAO_PATH, ADMIN_PRESENCA_PATH]);
 const ROTAS_POST = new Set<string>([ADMIN_TESTAR_PATH, ADMIN_FECHAR_SALA_PATH, ADMIN_REINICIAR_PATH, ADMIN_VISIBILIDADE_PATH, ADMIN_REGRAS_GRAVAR_PATH, ADMIN_TELAO_PATH, ADMIN_OUTDOORS_PATH, ADMIN_ESQUADRAO_GRAVAR_PATH]);
 
 export class Admin {
@@ -630,6 +634,10 @@ export class Admin {
         json(200, novas);
         return true;
       }
+      case ADMIN_PRESENCA_PATH:
+        if (!this.o.presenca) return recusar(501, { erro: 'o servidor não guarda a presença' });
+        json(200, this.o.presenca());
+        return true;
       case ADMIN_ESQUADRAO_PATH:
         if (!this.o.esquadrao) return recusar(501, { erro: 'o servidor não guarda o esquadrão' });
         json(200, this.o.esquadrao.atual());
