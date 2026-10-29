@@ -147,6 +147,7 @@ import { PALETTE } from './palette';
 import { PilotLabels } from '../ui/PilotLabels';
 import { PowerSettings } from '../ui/PowerSettings';
 import { defaultServer, modoEmSala, onlineConfig, urlComMapa, urlComModo } from '../net/onlineConfig';
+import { rotuloDoBuild } from './buildInfo';
 import { OnlineSwitch } from '../ui/OnlineSwitch';
 import { ServerStatus } from '../ui/ServerStatus';
 import { type FabricaDeCadeiaDeVoz, GameRecorder } from './GameRecorder';
@@ -855,8 +856,7 @@ export class Game {
         // Wanted to go online but missing name
         this.lobby.show(online.room);
       } else if (net && 'error' in net) {
-        this.netStatus.textContent = `ONLINE: ${net.error} · jogando offline`;
-        this.netStatus.classList.add('bad');
+        this.escreverStatusOnline(`ONLINE: ${net.error} · jogando offline`, true);
         document.body.append(this.netStatus);
       }
     }
@@ -895,7 +895,7 @@ export class Game {
     else if (this.gameMode === 'ctf') this.hud.setCtfMode(true);
     else if (this.gameMode === 'dominio') this.dominioHud.mostrar(true);
     else this.hud.setMissionMode(false);
-    this.hud.setBuild(`CYBERMECH ${import.meta.env.VITE_BUILD ?? 'dev'} · © ${new Date().getFullYear()} SERAFIM WEB`);
+    this.hud.setBuild(rotuloDoBuild(import.meta.env.VITE_BUILD, import.meta.env.VITE_BUILD_EM, new Date().getFullYear()));
 
     this.quality = new Quality(
       (ratio) => this.setPixelRatio(ratio),
@@ -1449,13 +1449,23 @@ export class Game {
             : s.state === 'recusado'
             ? `ONLINE · RECUSADO (${s.reason === 'cheia' ? 'sala cheia' : s.reason === 'versao' ? 'versão diferente: recarregue' : s.reason === 'montagem' ? 'montagem inválida' : 'erro'})`
             : 'ONLINE · CONEXÃO CAIU: recarregue a página';
-    this.netStatus.textContent = text;
-    this.netStatus.classList.toggle('bad', s.state === 'recusado' || s.state === 'caiu' || s.state === 'reconectando');
+    this.escreverStatusOnline(text, s.state === 'recusado' || s.state === 'caiu' || s.state === 'reconectando');
     // Nem chegou a entrar (servidor desligado, PC do servidor fora do ar): avisa e volta ao jogo offline.
     if (s.state === 'caiu' && !this.online?.joined) {
-      this.netStatus.textContent = 'SERVIDOR ONLINE FORA DO AR · voltando ao jogo offline…';
+      this.escreverStatusOnline('SERVIDOR ONLINE FORA DO AR · voltando ao jogo offline…', true);
       setTimeout(() => reloadWithout('sala'), 3000);
     }
+  }
+
+  /** O selo da sala online (P279): o do HUD (no jogo) e o do cabeçalho do console (com a tela de início ou a pausa aberta) mostram o mesmo texto; o do HUD some com o console aberto (CSS). */
+  private escreverStatusOnline(texto: string, ruim: boolean): void {
+    this.netStatus.textContent = texto;
+    this.netStatus.classList.toggle('bad', ruim);
+    const selo = document.getElementById('cc-online');
+    if (!selo) return;
+    selo.hidden = false;
+    selo.textContent = texto;
+    selo.classList.toggle('bad', ruim);
   }
 
   /** 1 perto do jogador, 0 a 70 m ou mais: o volume dos sons de um bot. */

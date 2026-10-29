@@ -1,5 +1,9 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O cabeçalho do console e a data do build (Claude, P278 e P279, branch `claude/cabecalho-e-build`)
+
+**Os pedidos (29/10):** "adicione no rodapé a data e hora do último build" e "o online · sala arena… está por cima do cabeçalho; os botões do cabeçalho, mais intuitivos e coesos". **Entrega:** o rodapé mostra o instante do build (`buildInfo.ts`, o `site.mjs` grava `VITE_BUILD_EM`); o selo online mora no cabeçalho (`#cc-online`, `Game.escreverStatusOnline`) e o do HUD some com o console aberto; os botões em dois grupos (piloto, azul; Comandante, amarelo, com SAIR vermelho); a 1280 px os grupos descem para duas linhas. **Provas:** +6 testes, Chrome (GPU) a 1280 e 1920, online contra um servidor local, 0 erros de console; capturas em `.decepticons/arte/`. **Em fila, uma por PR:** teto de robôs e o meu time online (P273, P280); quem entrou na sala (P275); o borrão das luzes (P277); o apagão com visão noturna (P281). (O P276, o tiro que não acertava online, já está na `main`.)
+
 ## Os tiros que não acertavam online: o modo da sala (Claude, P276, branch `claude/modo-da-sala`)
 
 **O pedido (29/10):** "meus tiros parecem que não estão pegando nos inimigos… também não consigo pisar neles". **Causa:** o link dele tinha `modo=survival` (o JOGAR ONLINE só acrescenta `sala` e `nome`) e o cliente montava a Sobrevivência local por cima da sala: as ondas "ALVOS 0/2" eram robôs fantasma (sem dano nem pisão), e o servidor jogava Deathmatch. **Conserto:** `modoDaSala` (`shared/net/mapa.ts`) é a conta única do servidor e do cliente; online, a Sobrevivência só vale no 8 de Janeiro; o mesmo código com ou sem `modo=survival` é a MESMA sala; o seletor de modo mostra o que roda. **Provas:** +3 testes (contrato, cliente, servidor de verdade), 3 mutações à mão derrubadas, e no Chrome (GPU) contra um servidor local: HUD "RODADA", 0 robôs locais, um tiro do jogador tirou 13 de vida do andróide da sala.

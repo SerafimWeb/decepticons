@@ -74,7 +74,7 @@ export function gravarLado(memoria: Memoria | null, lado: LadoId): void {
 
 /** O texto do selo do console. */
 export function rotuloDoSelo(lado: LadoId | null): string {
-  return lado === null ? SELO_SEM_LADO : `LADO: ${LADOS.find((l) => l.id === lado)!.nome}`;
+  return lado === null ? SELO_SEM_LADO : `LADO: ${LADOS.find((l) => l.id === lado)!.nome} ▸`;
 }
 
 export class LadoSelector {

@@ -760,7 +760,7 @@ html, body {
 /* Online (M4): sala, ping e pessoas, embaixo do relógio da rodada */
 .net-status {
   position: fixed;
-  top: 36px;
+  top: 52px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
@@ -4831,3 +4831,27 @@ html.touch #touch-controls.editing ~ .voz-mic { display: none; }
   #hangar-modal.hg-modo-visita .hg-chassis, #hangar-modal.hg-modo-visita .hg-console, #hangar-modal.hg-modo-visita .hg-readout { display: none; }
   .hg-visita { grid-area: sheet; max-height: 44vh; }
 }
+
+/* O cabeçalho do console (P279). O selo da sala online (ONLINE · SALA · ms · pilotos) mora aqui, embaixo do nome da sala de comando: o do HUD (`.net-status`) ficava por cima do cabeçalho
+   com o console aberto. Os botões têm duas famílias, cada uma de uma cor só: do piloto (azul de aço: ARQUIVO, LADO, RELATÓRIO) e do Comandante (amarelo, com o nome do grupo e o SAIR em vermelho). */
+.cc-info { display: flex; flex-direction: column; align-items: center; gap: calc(6px * var(--k)); min-width: 0; }
+.cc-online { margin: 0; padding: calc(4px * var(--k)) calc(10px * var(--k)); border: 1px solid rgba(57, 255, 106, 0.45); background: rgba(57, 255, 106, 0.08); color: var(--accent); font: 700 calc(10px * var(--k))/1 'Consolas', 'Courier New', monospace; letter-spacing: 1px; white-space: nowrap; }
+.cc-online.bad { border-color: var(--alert); background: rgba(255, 45, 61, 0.1); color: var(--alert); }
+.cc-online[hidden] { display: none; }
+.cc-flags { align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: calc(6px * var(--k)) calc(14px * var(--k)); }
+/* No modo Comandante os atalhos de idioma e conta somem: o recuo que lhes era reservado também. */
+#overlay.console:has(#cc-chip-comandante:not([hidden])) .cc-flags { padding-right: 0; }
+.cc-grupo { display: flex; align-items: center; gap: 6px; }
+.cc-grupo .cc-chip { white-space: nowrap; }
+.cc-grupo + .cc-grupo { padding-left: calc(14px * var(--k)); border-left: 1px solid rgba(143, 161, 150, 0.35); }
+.cc-grupo:not(:has(.cc-chip:not([hidden]))) { display: none; }
+.cc-grupo-nome { color: #8b97a0; font: 700 calc(9px * var(--k))/1 'Consolas', 'Courier New', monospace; letter-spacing: 3px; }
+@media (max-width: 1500px) { .cc-grupo-nome { display: none; } }
+.cc-grupo-piloto .cc-chip { border-color: #8fb6d6; color: #bcd3e6; background: rgba(143, 182, 214, 0.1); }
+.cc-grupo-piloto .cc-chip:hover { background: #8fb6d6; color: var(--bg); }
+.cc-grupo-comando .cc-chip { border-color: var(--warn); color: var(--warn); background: rgba(255, 225, 77, 0.1); }
+.cc-grupo-comando .cc-chip:hover { background: var(--warn); color: var(--bg); }
+.cc-grupo-comando .cc-sair { border-color: var(--alert); color: var(--alert); background: rgba(255, 45, 61, 0.1); }
+.cc-grupo-comando .cc-sair:hover { background: var(--alert); color: var(--bg); }
+/* Com o console aberto o selo do HUD some (o do cabeçalho o substitui); no jogo ele desce para não ficar sobre o quadro da missão ("ONDA 1/6 · ALVOS"). */
+body:has(#overlay.console:not(.hidden)) .net-status { display: none; }

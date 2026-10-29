@@ -174,7 +174,7 @@ const MOVED = `<!doctype html>
 async function build() {
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
-  run('npx', ['vite', 'build', '--outDir', GAME, '--emptyOutDir', '--logLevel', 'warn'], { VITE_BUILD: buildId() });
+  run('npx', ['vite', 'build', '--outDir', GAME, '--emptyOutDir', '--logLevel', 'warn'], { VITE_BUILD: buildId(), VITE_BUILD_EM: new Date().toISOString() });
   // As capturas vêm antes das páginas: a landing só mostra as imagens que existirem.
   // `CYBERMECH_CAPTURAS_CACHE` (a publicação pelo PC, `publicar-site.mjs`): as fotos feitas com --capturas ficam guardadas e voltam nas montagens sem Chrome (a landing não perde as imagens).
   const cache = process.env.CYBERMECH_CAPTURAS_CACHE;
