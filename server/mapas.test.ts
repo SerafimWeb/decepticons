@@ -4,12 +4,12 @@ import { ADMIN_HEADER } from '../shared/net/admin';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION } from '../shared/net/constants';
 import { ADMIN_VISIBILIDADE_PATH } from '../shared/visibilidade';
-import { chaveDaSala, MAPAS_ONLINE, mapaDaChave, mapaDoLink } from '../shared/net/mapa';
+import { chaveDaSala, MAPAS_ONLINE, mapaDaChave, mapaDoLink, modoDaChave, modoDaSala } from '../shared/net/mapa';
 import { decodeRoster, encodeJoin, messageType, MSG } from '../shared/net/messages';
 import { TODOS_OS_MAPAS } from '../client/src/core/Lancamento';
 import { mapFromSearch } from '../client/src/environment/Bunker';
 import { mapHref } from '../client/src/ui/MapLinks';
-import { urlComMapa } from '../client/src/net/onlineConfig';
+import { modoEmSala, urlComMapa } from '../client/src/net/onlineConfig';
 import { roomMapa, startServer, type GameServer } from './Server';
 
 const TOKEN_DO_DONO = 'token-do-dono-so-para-o-teste-0123456789';
@@ -74,6 +74,28 @@ describe('o mapa da sala online (P218, etapa O1): o contrato', () => {
   });
 });
 
+describe('o modo da sala online (P276): a Sobrevivência só existe onde o servidor a roda', () => {
+  it('modo=survival fora do 8 de Janeiro é Deathmatch: a mesma sala, a mesma chave, o mesmo modo', () => {
+    expect(modoDaSala('arena', 'survival')).toBe('deathmatch');
+    expect(modoDaSala('praia', 'survival')).toBe('deathmatch');
+    expect(modoDaSala('amazonia', 'survival')).toBe('deathmatch');
+    expect(modoDaSala('janeiro', 'survival')).toBe('survival');
+    expect(modoDaSala('janeiro', 'deathmatch')).toBe('deathmatch');
+    expect(chaveDaSala('ARENA', 'arena', 'survival')).toBe('ARENA'); // o código sozinho: a sala de sempre
+    expect(chaveDaSala('ARENA', 'praia', 'survival')).toBe('ARENA@praia');
+    expect(chaveDaSala('ARENA', 'janeiro', 'survival')).toBe('ARENA@janeiro:survival'); // onde ela existe, é sala própria
+    expect(modoDaChave(chaveDaSala('ARENA', 'arena', 'survival'))).toBe('deathmatch');
+  });
+
+  it('o cliente joga o que o servidor roda: online na Cidade Neon o link com modo=survival é Deathmatch; no 8 de Janeiro segue a Sobrevivência; CTF e Domínio online são Deathmatch', () => {
+    expect(modoEmSala('survival', 'arena')).toBe('deathmatch');
+    expect(modoEmSala('survival', 'janeiro')).toBe('survival');
+    expect(modoEmSala('deathmatch', 'janeiro')).toBe('deathmatch');
+    expect(modoEmSala('ctf', 'arena')).toBe('deathmatch');
+    expect(modoEmSala('dominio', 'janeiro')).toBe('deathmatch');
+  });
+});
+
 // 120 s: criar três salas de uma vez (a Praia e o Bunker são pesados) passava dos 30 s com a máquina ocupada e o atualizador de produção revertia a atualização por tempo, não por erro (19/10).
 describe('a sala do servidor por mapa, com o servidor de verdade', { timeout: 120_000 }, () => {
   let server: GameServer;
@@ -104,6 +126,19 @@ describe('a sala do servidor por mapa, com o servidor de verdade', { timeout: 12
       for (const s of server.rooms.values()) expect(s.humanCount).toBe(1); // ninguém caiu na sala de outro mapa
     } finally {
       for (const c of [neon, praia, bunker]) c.ws.close();
+    }
+  });
+
+  it('quem chega com modo=survival na Cidade Neon cai na MESMA sala de quem chegou sem ele (o lobby só acrescenta a sala à URL de quem tinha escolhido a missão): nada de sala fantasma ":survival"', async () => {
+    const sem = await entrar(server.port, 'sala=MODO', 'Alfa');
+    const com = await entrar(server.port, 'sala=MODO&modo=survival', 'Bravo');
+    try {
+      await until(() => sem.bemVindo && com.bemVindo);
+      expect([...server.rooms.keys()].filter((k) => k.startsWith('MODO'))).toEqual(['MODO']);
+      expect(server.rooms.get('MODO')!.humanCount).toBe(2);
+    } finally {
+      sem.ws.close();
+      com.ws.close();
     }
   });
 

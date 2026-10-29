@@ -146,7 +146,7 @@ import { AdminCliente, TokenDoDono } from '../net/admin';
 import { PALETTE } from './palette';
 import { PilotLabels } from '../ui/PilotLabels';
 import { PowerSettings } from '../ui/PowerSettings';
-import { defaultServer, onlineConfig, urlComMapa, urlComModo } from '../net/onlineConfig';
+import { defaultServer, modoEmSala, onlineConfig, urlComMapa, urlComModo } from '../net/onlineConfig';
 import { OnlineSwitch } from '../ui/OnlineSwitch';
 import { ServerStatus } from '../ui/ServerStatus';
 import { type FabricaDeCadeiaDeVoz, GameRecorder } from './GameRecorder';
@@ -588,14 +588,16 @@ export class Game {
     // O modo pedido (`?modo=`): online, só a Sobrevivência tem sala própria hoje (P243, o 8 de Janeiro); CTF e Domínio continuam só no Deathmatch online.
     const modoPedido = gameModeFromSearch(location.search);
     // O mapa da sala (P218, etapa O1): o mesmo que a partida local monta (`mapFromSearch` já aplica o lançamento: mapa restrito cai na Cidade Neon), para o servidor e o cliente jogarem no mesmo chão.
-    const online =
-      net && !('error' in net)
-        ? { ...net, url: urlComModo(urlComMapa(net.url, mapFromSearch(location.search, true, 'deathmatch')), modoPedido === 'survival' ? 'survival' : 'deathmatch') }
-        : null;
+    // O modo da sala é o que o servidor roda (`modoEmSala`): um `modo=survival` esquecido na URL (o lobby só acrescenta `sala` e `nome`) não monta a missão local por cima da sala (P276).
+    const mapaDaSala = mapFromSearch(location.search, true, 'deathmatch');
+    const modoDaSalaOnline = modoEmSala(modoPedido, mapaDaSala);
+    const online = net && !('error' in net) ? { ...net, url: urlComModo(urlComMapa(net.url, mapaDaSala), modoDaSalaOnline === 'survival' ? 'survival' : 'deathmatch') } : null;
     // O WARGAME (P262): o link `?wargame=` carrega um roteiro (os dois esquadrões, o mapa e as batidas) e vira um Deathmatch
     // espectador — o Comandante nunca controla o Mech, só troca de câmera (como o CFTV já faz); ver `espectador` abaixo.
     const roteiro = roteiroDoLink(location.search);
-    this.gameMode = online ? (modoPedido === 'survival' ? 'survival' : 'deathmatch') : roteiro ? 'deathmatch' : modoPedido;
+    this.gameMode = online ? modoDaSalaOnline : roteiro ? 'deathmatch' : modoPedido;
+    // O seletor de modo do menu mostra o que de fato roda (online na Cidade Neon é Deathmatch, mesmo com `modo=survival` na URL).
+    this.modeSelector.mostrarModo(this.gameMode);
     const foes = online
       ? { ...this.settings.value, enemyMechs: 0, enemyAndroids: 0, technician: false }
       : this.gameMode === 'survival'
