@@ -60,6 +60,12 @@ export class ModeSelector {
     return this.activeMode;
   }
 
+  /** Mostra o modo que de fato roda, sem trocar de partida (o link pode pedir um que a sala não roda: P276). */
+  mostrarModo(mode: GameModeId): void {
+    this.activeMode = mode;
+    this._updateUiState();
+  }
+
   /** Registra um listener para quando o modo de jogo for alterado pelo usuário. */
   onModeChange(fn: (mode: GameModeId) => void): void {
     this.onChangeCallbacks.push(fn);

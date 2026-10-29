@@ -34,10 +34,23 @@ export function modoDoLink(bruto: string | null | undefined): SalaModo {
   return m === 'survival' || m === 'sobrevivencia' ? 'survival' : MODO_PADRAO;
 }
 
-/** A chave interna da sala: o código sozinho na Cidade Neon em Deathmatch (as salas e os painéis de sempre), `CODIGO@mapa` com outro mapa, `CODIGO@mapa:survival` na Sobrevivência. */
+/** Os mapas em que a Sobrevivência existe online: só o 8 de Janeiro (P243); nos outros o servidor roda Deathmatch (o pool de ondas deles não tem a configuração de bots daqui). */
+export const MAPAS_COM_SOBREVIVENCIA_ONLINE: readonly MapaOnline[] = ['janeiro'];
+
+/**
+ * O modo que a sala online **de fato roda** (P276): `modo=survival` num mapa sem Sobrevivência online é um Deathmatch, e a sala é a mesma do Deathmatch.
+ * O cliente e o servidor usam esta mesma conta: um `modo=survival` esquecido na URL (o lobby só acrescenta `sala` e `nome` ao endereço de quem tinha escolhido a missão)
+ * deixava o cliente com uma Sobrevivência local por cima da sala (waves fantasma que nada ferem), enquanto o servidor jogava Deathmatch: os tiros e o pisão não acertavam ninguém.
+ */
+export function modoDaSala(mapa: MapaOnline, modo: SalaModo): SalaModo {
+  return modo === 'survival' && MAPAS_COM_SOBREVIVENCIA_ONLINE.includes(mapa) ? 'survival' : MODO_PADRAO;
+}
+
+/** A chave interna da sala: o código sozinho na Cidade Neon em Deathmatch (as salas e os painéis de sempre), `CODIGO@mapa` com outro mapa, `CODIGO@mapa:survival` na Sobrevivência (só onde ela existe online: `modoDaSala`). */
 export function chaveDaSala(codigo: string, mapa: MapaOnline, modo: SalaModo = MODO_PADRAO): string {
-  if (mapa === MAPA_PADRAO && modo === MODO_PADRAO) return codigo;
-  const sufixo = modo === MODO_PADRAO ? mapa : `${mapa}:${modo}`;
+  const real = modoDaSala(mapa, modo);
+  if (mapa === MAPA_PADRAO && real === MODO_PADRAO) return codigo;
+  const sufixo = real === MODO_PADRAO ? mapa : `${mapa}:${real}`;
   return `${codigo}@${sufixo}`;
 }
 

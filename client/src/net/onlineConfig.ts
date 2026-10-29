@@ -1,4 +1,5 @@
-import { MAPA_PADRAO, MODO_PADRAO, type MapaOnline, type SalaModo } from '../../../shared/net/mapa';
+import { MAPA_PADRAO, MODO_PADRAO, modoDaSala, type MapaOnline, type SalaModo } from '../../../shared/net/mapa';
+import type { GameMode } from '../sim/gameMode';
 
 /** Porta padrão do servidor de jogo (`npm run server`). */
 export const DEFAULT_SERVER_PORT = 2567;
@@ -39,6 +40,14 @@ export function urlComModo(url: string, modo: SalaModo): string {
   if (modo === MODO_PADRAO) u.searchParams.delete('modo');
   else u.searchParams.set('modo', modo);
   return u.toString();
+}
+
+/**
+ * O modo que a partida roda quando o jogo está numa sala (P276): o que o servidor roda (`modoDaSala`), nunca o que sobrou na URL.
+ * Online só existem o Deathmatch e a Sobrevivência do 8 de Janeiro; CTF, Domínio e a Sobrevivência dos outros mapas são Deathmatch na sala.
+ */
+export function modoEmSala(pedido: GameMode, mapa: MapaOnline): GameMode {
+  return modoDaSala(mapa, pedido === 'survival' ? 'survival' : MODO_PADRAO);
 }
 
 /**

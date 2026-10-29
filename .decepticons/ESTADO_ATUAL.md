@@ -1,5 +1,10 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Os tiros que não acertavam online: o modo da sala (Claude, P276, branch `claude/modo-da-sala`)
+
+**O pedido (29/10):** "meus tiros parecem que não estão pegando nos inimigos… também não consigo pisar neles". **Causa:** o link dele tinha `modo=survival` (o JOGAR ONLINE só acrescenta `sala` e `nome`) e o cliente montava a Sobrevivência local por cima da sala: as ondas "ALVOS 0/2" eram robôs fantasma (sem dano nem pisão), e o servidor jogava Deathmatch. **Conserto:** `modoDaSala` (`shared/net/mapa.ts`) é a conta única do servidor e do cliente; online, a Sobrevivência só vale no 8 de Janeiro; o mesmo código com ou sem `modo=survival` é a MESMA sala; o seletor de modo mostra o que roda. **Provas:** +3 testes (contrato, cliente, servidor de verdade), 3 mutações à mão derrubadas, e no Chrome (GPU) contra um servidor local: HUD "RODADA", 0 robôs locais, um tiro do jogador tirou 13 de vida do andróide da sala.
+**Junto neste PR:** as nove ordens da mensagem de 29/10 registradas (P273 a P281) e a resposta da publicidade (P274, `MARCA_E_ANUNCIOS.md` § 7.1). **Em fila, uma por PR:** rodapé com a data do build (P278) e cabeçalho (P279); teto de robôs e o meu time online (P273, P280); quem entrou na sala (P275); o borrão das luzes (P277); o apagão com visão noturna (P281).
+
 ## Os supercomputadores da praça (Claude, P272, branch `claude/supercomputadores`)
 
 **O pedido (28/10):** "essas caixas do centro do cenário… supercomputadores… macminis gigantes… servidores blindados… que chame atenção pela beleza".
