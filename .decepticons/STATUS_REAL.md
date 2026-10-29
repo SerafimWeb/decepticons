@@ -3,6 +3,8 @@
 > Regra R13: o que existe de verdade, sem enfeite. Atualize quando algo mudar de estado.
 > **REAL** = funciona de ponta a ponta · **PARCIAL** = existe mas incompleto · **DEMO** = só visual/placeholder · **AUSENTE** = não existe.
 
+**P277 — o halo que andava nas caixas e contêineres (REAL, visto no Chrome na GPU real, antes e depois; falta o olho do Comandante):** o contorno de 1 px a ×3 de HDR passava do limiar do bloom a cada passo da câmera; agora ×1,5 nas máquinas e ×1,8 nos contêineres. **PARCIAL:** os prédios da praça seguem a ×3; não há número de "tremor" por pixel (a bancada ficou ruidosa com os telões animados), a prova é visual.
+
 **P273 — o teto de robôs da sala online: 3/3/1 → 6/6/1 (REAL no servidor e na janela, medido; o limite que sobra é a banda):** o servidor e a Vega 11 aguentam muito mais (`CAPACIDADE.md`); a sala cheia tem no máximo 15 unidades = a meta de 8 KB/s. **PARCIAL/AUSENTE:** mais que 15 unidades (24 = 11,9 KB/s) pede subir a meta ou o delta; o aliado online (P280) ainda não existe.
 
 **P278 e P279 — o rodapé com a data do build e o cabeçalho do console (REAL no navegador, visto no Chrome na GPU real; falta o olho do Comandante):** o rodapé diz o instante do build no fuso de quem olha (só nos builds do `site.mjs`; o de desenvolvimento não tem data); o selo ONLINE · SALA · ms · pilotos tem lugar no cabeçalho e os botões ficaram em dois grupos.

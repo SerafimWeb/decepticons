@@ -1,5 +1,10 @@
 # ESTADO ATUAL — CYBERMECH
 
+## As luzes das caixas sem o halo que andava (Claude, P277, branch `claude/luzes-sem-tremor`)
+
+**O pedido (29/10):** "as luzes e os detalhes nos containers e boxes ficam borradas, brilhando e se movendo conforme eu ando". **Causa (fotografada na Vega 11):** o contorno de 1 px de cada caixa a ×3 de HDR: passa do limiar do bloom a cada passo da câmera, vira um halo largo que lava o corpo da máquina e anda de pixel em pixel. **Conserto:** contorno ×1,5 nas máquinas (`BRILHO_DO_CONTORNO_DE_MAQUINA`) e ×1,8 nas arestas dos contêineres (`BRILHO_DAS_ARESTAS_DO_MOBILIARIO`); +4 testes; antes e depois em `.decepticons/arte/luzes-*`. **Falta:** o olho do Comandante; os prédios da praça seguem a ×3 (se o halo deles também incomodar, a mesma constante).
+**Próxima sessão começa com:** a opinião dele sobre as caixas; P275 (quem entrou nas salas), P280 (o meu time online), P281 (apagão e visão noturna).
+
 ## O teto de robôs online sobe para 6/6/1 (Claude, P273, branch `claude/teto-de-robos`)
 
 **O pedido (29/10):** "será q precisamos manter o limite de 3 mechs e 3 androides? … mais bots, pra mais emoção". **Medido** (`CAPACIDADE.md`): CPU do servidor < 1 ms/tick com 26 robôs; Vega 11 desenha 13 robôs como 7 (p50 10,4 × 10,6 ms); **a banda (8 KB/s por jogador) é o limite: 15 unidades.** **Entrega:** o esquadrão online vai a **6 Mechs, 6 andróides, 1 técnico** (`ROOM_BOT_*`, `ROOM_UNITS` 15); +1 teste (1 a 8 humanos nunca passam de 15), 3 mutações derrubadas. **Decisão do dono em aberto:** para mais que 15 unidades, subir a meta de banda (24 unidades = 11,9 KB/s) ou o delta (protocolo novo). **Falta:** o aliado online ("o meu time", P280) divide esta mesma conta de 15 unidades.

@@ -73,6 +73,9 @@ interface LuzDaCidade {
 /** Cor HDR (>1) para as linhas neon passarem do limiar do bloom. */
 const neon = (hex: number, intensity = 2.5) => new THREE.Color(hex).multiplyScalar(intensity);
 
+/** O brilho (HDR) das arestas dos contêineres e do playground (P277): eram ×3, e uma linha de 1 px a ×3 forma um halo que lava o corpo e anda de pixel em pixel com a câmera (ver `BRILHO_DO_CONTORNO`). */
+export const BRILHO_DAS_ARESTAS_DO_MOBILIARIO = 1.8;
+
 /**
  * Pontos de nascimento e de patrulha: chão livre, longe de prédios, barricadas e da plataforma.
  * O primeiro é o nascimento do jogador. Os bots também usam a lista como rota de patrulha.
@@ -425,7 +428,7 @@ export class Arena implements ArenaDoCenario {
     }
     const malha = new THREE.Mesh(mergeGeometries(corpos, false), this.solidMat);
     malha.name = 'praca-mobiliario';
-    this.scene.add(malha, this.linhasNeon(arestas, 'praca-mobiliario-arestas', 3));
+    this.scene.add(malha, this.linhasNeon(arestas, 'praca-mobiliario-arestas', BRILHO_DAS_ARESTAS_DO_MOBILIARIO));
     for (const g of corpos) g.dispose();
   }
 

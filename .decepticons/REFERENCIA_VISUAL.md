@@ -240,3 +240,7 @@ névoa de chão mais densa; mobília de rua (toldos, barracas, máquinas) ao lon
 **Atualização (P272, 28/10):** as caixas escuras do centro da praça (as barricadas que quebram e os quiosques) viraram **supercomputadores** (mini-Mac gigante, rack blindado, banco de servidores, nó quântico; `Supercomputadores.ts`): a "mobília de rua" da praça agora é tecnologia, no tom do que o Comandante pediu ("vanguardista, que chame atenção pela beleza").
 **Atualização (P266, 28/10):** os telões com anúncios inventados deram lugar aos **outdoors da marca** (a arte dos produtos do Comandante, na vertical; `MARCA_E_ANUNCIOS.md`): "nenhuma marca real" passa a valer só para os
 letreiros de bandeira e os neons. O **holograma** que os quadros mostram flutuando virou a logo da Serafim em 3D sobre o Prédio Serafim.
+
+## 10. Linha de 1 px a ×3 de HDR é halo e tremor, não neon (29/10, P277)
+
+O render é HDR **sem MSAA** (FXAA só depois do bloom): uma aresta de 1 px com brilho acima do limiar do bloom (1,05) acende e apaga a cada passo da câmera, e o halo largo que ela forma lava o que está por baixo e anda de pixel em pixel. **O brilho de uma linha fina é o do halo que ela vai ter:** contorno de máquina ×1,5, aresta de contêiner ×1,8 (`Destructibles.BRILHO_DO_CONTORNO_DE_MAQUINA`, `Arena.BRILHO_DAS_ARESTAS_DO_MOBILIARIO`); só superfície larga (janela, letreiro, faixa grossa) merece ×3 ou mais. Para conferir: fotografar com a câmera andando em passos de fração de pixel e ampliar 4× quadros vizinhos (`.tmp/zoom-luzes.mjs`, não versionado; o método está no HISTORICO de 29/10).
