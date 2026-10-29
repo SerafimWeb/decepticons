@@ -72,8 +72,8 @@ describe('o lado guardado (P179)', () => {
 describe('o selo do console', () => {
   it('sem lado, o convite; com lado, o nome dele', () => {
     expect(rotuloDoSelo(null)).toBe(SELO_SEM_LADO);
-    expect(rotuloDoSelo('alianca')).toBe('LADO: ALIANÇA');
-    expect(rotuloDoSelo('consorcio')).toBe('LADO: CONSÓRCIO');
+    expect(rotuloDoSelo('alianca')).toBe('LADO: ALIANÇA ▸');
+    expect(rotuloDoSelo('consorcio')).toBe('LADO: CONSÓRCIO ▸');
   });
 });
 

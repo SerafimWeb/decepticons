@@ -97,16 +97,24 @@
         <div class="cc-brand">
           <h1>CYBERMECH</h1>
         </div>
-        <p class="cc-sala">SALA DE COMANDO <b>CYBERMECH</b><span class="cc-relogio" id="cc-relogio"></span></p>
+        <div class="cc-info">
+          <p class="cc-sala">SALA DE COMANDO <b>CYBERMECH</b><span class="cc-relogio" id="cc-relogio"></span></p>
+          <p class="cc-online" id="cc-online" role="status" hidden></p>
+        </div>
         <div class="cc-flags">
-          <button type="button" class="cc-chip cc-arquivo" id="cc-arquivo" data-func="tela:arquivo" title="O que o jogo ensina: o fascismo, a rede de mentiras, quem lucra, o medo, a mídia">ARQUIVO ▸</button>
-          <button type="button" class="cc-chip cc-lado" id="cc-lado" data-func="tela:lado" title="De que lado você joga?" hidden>ESCOLHA O LADO ▸</button>
-          <button type="button" class="cc-chip cc-relatorio" id="cc-relatorio" data-func="tela:relatorio" title="O que a missão deixou no rio e o que isso tem de real" hidden>RELATÓRIO ▸</button>
-          <button type="button" class="cc-chip cc-visibilidade" id="cc-visibilidade" hidden title="O que os jogadores veem: liberar ou segurar fases, modos, robôs, armas, botões e telas">VISIBILIDADE ▸</button>
-          <button type="button" class="cc-chip cc-telao" id="cc-telao" hidden title="Qual vídeo toca em cada telão da Cidade Neon">TELÕES ▸</button>
-          <button type="button" class="cc-chip cc-outdoors" id="cc-outdoors" hidden title="Quantos outdoors da marca aparecem na Cidade Neon, de quanto em quanto tempo trocam de imagem e quais anúncios entram">OUTDOORS ▸</button>
-          <button type="button" class="cc-chip cc-wargame" id="cc-wargame" hidden title="Monta um episódio de IA contra IA: elenco, mapa clicável, legenda e câmera">WARGAME ▸</button>
-          <button type="button" class="cc-chip" id="cc-chip-comandante" hidden title="Sair do modo Comandante (os monitores de ajuste somem)">MODO COMANDANTE ✕</button>
+          <div class="cc-grupo cc-grupo-piloto" role="group" aria-label="Para o piloto">
+            <button type="button" class="cc-chip cc-arquivo" id="cc-arquivo" data-func="tela:arquivo" title="O que o jogo ensina: o fascismo, a rede de mentiras, quem lucra, o medo, a mídia">ARQUIVO ▸</button>
+            <button type="button" class="cc-chip cc-lado" id="cc-lado" data-func="tela:lado" title="De que lado você joga?" hidden>ESCOLHA O LADO ▸</button>
+            <button type="button" class="cc-chip cc-relatorio" id="cc-relatorio" data-func="tela:relatorio" title="O que a missão deixou no rio e o que isso tem de real" hidden>RELATÓRIO ▸</button>
+          </div>
+          <div class="cc-grupo cc-grupo-comando" role="group" aria-label="Ferramentas do Comandante">
+            <span class="cc-grupo-nome" aria-hidden="true">COMANDANTE</span>
+            <button type="button" class="cc-chip cc-visibilidade" id="cc-visibilidade" hidden title="O que os jogadores veem: liberar ou segurar fases, modos, robôs, armas, botões e telas">VISIBILIDADE ▸</button>
+            <button type="button" class="cc-chip cc-telao" id="cc-telao" hidden title="Qual vídeo toca em cada telão da Cidade Neon">TELÕES ▸</button>
+            <button type="button" class="cc-chip cc-outdoors" id="cc-outdoors" hidden title="Quantos outdoors da marca aparecem na Cidade Neon, de quanto em quanto tempo trocam de imagem e quais anúncios entram">OUTDOORS ▸</button>
+            <button type="button" class="cc-chip cc-wargame" id="cc-wargame" hidden title="Monta um episódio de IA contra IA: elenco, mapa clicável, legenda e câmera">WARGAME ▸</button>
+            <button type="button" class="cc-chip cc-sair" id="cc-chip-comandante" hidden title="Sair do modo Comandante (os monitores de ajuste somem)">SAIR ✕</button>
+          </div>
         </div>
       </header>
 
