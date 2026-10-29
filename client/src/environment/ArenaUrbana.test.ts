@@ -8,7 +8,7 @@ import { MECH_GRAVITY } from '../entities/MechBase';
 import { VECTOR09_STATS, Vector09 } from '../entities/Vector09';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { COLOSSUS_SPAWN } from '../sim/nascimentos';
-import { Arena, BARRICADES_DA_ARENA, BUILDINGS_DA_ARENA, MOBILIARIO_DA_ARENA, PLATAFORMA_DA_ARENA, SPAWN_POINTS } from './Arena';
+import { Arena, BARRICADES_DA_ARENA, BRILHO_DAS_ARESTAS_DO_MOBILIARIO, BUILDINGS_DA_ARENA, MOBILIARIO_DA_ARENA, PLATAFORMA_DA_ARENA, SPAWN_POINTS } from './Arena';
 import { ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VOLUME, ARENA_TELAO_1, ARENA_TELAO_2 } from './ArenaLayout';
 import {
   aberturaMedia,
@@ -257,6 +257,20 @@ describe('a praça urbana na arena de verdade (física e desenho)', () => {
     expect(nomes('praca-predios-arestas')).toBe(1);
     expect(nomes('praca-predios-faixas')).toBe(1);
     expect(nomes('praca-mobiliario')).toBe(2); // corpos e arestas
+  });
+
+  it('as arestas dos contêineres levam o brilho do P277 (×1,8, não os ×3 que formavam o halo que lavava o corpo), e os prédios seguem a ×3', async () => {
+    const { scene } = await montar();
+    const cor = (nome: string): number => {
+      let r = 0;
+      scene.traverse((o) => {
+        if (o.name === nome) r = ((o as THREE.LineSegments).material as THREE.LineBasicMaterial).color.r;
+      });
+      return r;
+    };
+    expect(cor('praca-mobiliario-arestas')).toBeCloseTo(BRILHO_DAS_ARESTAS_DO_MOBILIARIO, 5);
+    expect(BRILHO_DAS_ARESTAS_DO_MOBILIARIO).toBeLessThan(3);
+    expect(cor('praca-predios-arestas')).toBeCloseTo(3, 5);
   });
 
   it('o Mech sobe a rampa do playground (23°) e chega na plataforma de 3 m, e desce por ela até o chão', async () => {

@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { DebrisSystem } from './DebrisSystem';
-import { Destructibles } from './Destructibles';
+import { BRILHO_DO_CONTORNO, BRILHO_DO_CONTORNO_DE_MAQUINA, Destructibles } from './Destructibles';
 
 const particles = { burst: () => {} } as unknown as ParticleSystem;
 const debris = { shatter: () => {} } as unknown as DebrisSystem;
@@ -165,5 +165,35 @@ describe('Destructibles: alvos externos (os coqueiros da praia, P138)', () => {
     expect(d.standingIds()).toEqual([0, 1]);
     d.breakById(0);
     expect(d.standingIds()).toEqual([1]);
+  });
+});
+
+describe('Destructibles: o brilho do contorno (P277)', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  const contorno = (d: Destructibles, id: number): number => (d as unknown as { byId: Map<number, { edgeMat: THREE.LineBasicMaterial }> }).byId.get(id)!.edgeMat.color.g;
+
+  it('a caixa de sempre leva o contorno a ×3; a máquina estilizada, a ×1,5 (o halo de uma linha de 1 px a ×3 lavava o corpo e andava com a câmera), e volta ao ×3 se o estilo sai', async () => {
+    const physics = await PhysicsWorld.create();
+    const d = new Destructibles(new THREE.Scene(), physics, debris, particles);
+    d.add({ x: 0, z: -10, w: 4, d: 1, h: 2, accent: 0x00ff00, hp: 100 });
+    expect(contorno(d, 0)).toBeCloseTo(BRILHO_DO_CONTORNO, 5);
+    d.estilizar(() => new THREE.Group());
+    expect(contorno(d, 0)).toBeCloseTo(BRILHO_DO_CONTORNO_DE_MAQUINA, 5);
+    d.estilizar(null);
+    expect(contorno(d, 0)).toBeCloseTo(BRILHO_DO_CONTORNO, 5);
+    expect(BRILHO_DO_CONTORNO_DE_MAQUINA).toBeLessThan(BRILHO_DO_CONTORNO);
+  });
+
+  it('a barricada que quebra e volta na rodada nova volta com o contorno da máquina, não com o ×3 de antes', async () => {
+    const physics = await PhysicsWorld.create();
+    const d = new Destructibles(new THREE.Scene(), physics, debris, particles);
+    d.add({ x: 0, z: -10, w: 4, d: 1, h: 2, accent: 0x00ff00, hp: 100 });
+    d.estilizar(() => new THREE.Group());
+    d.breakById(0);
+    d.restoreAll();
+    expect(contorno(d, 0)).toBeCloseTo(BRILHO_DO_CONTORNO_DE_MAQUINA, 5);
   });
 });

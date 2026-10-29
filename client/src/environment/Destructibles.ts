@@ -72,6 +72,14 @@ interface Prop {
   maxHp: number;
 }
 
+/**
+ * O brilho (HDR, o que o bloom pega) do contorno de 1 px de cada barricada (P277). A caixa de sempre leva ×3. A **máquina estilizada** (P272) leva só ×1,5: o contorno dela fica sobre a silhueta do corpo,
+ * e uma linha de 1 px a ×3 passa do limiar do bloom a cada passo da câmera: o halo lavava o corpo ("as luzes e os detalhes ficam borrados, brilhando e se movendo conforme eu ando") e as linhas
+ * andavam de pixel em pixel dentro dele. A ×1,5 o contorno segue aceso e legível, e o corpo e os LEDs voltam a aparecer.
+ */
+export const BRILHO_DO_CONTORNO = 3;
+export const BRILHO_DO_CONTORNO_DE_MAQUINA = 1.5;
+
 const REMOTE_DIR = new THREE.Vector3(0, 1, 0);
 
 const DAMAGED = new THREE.Color(3, 0.15, 0.1);
@@ -151,7 +159,14 @@ export class Destructibles {
       prop.group.remove(prop.corpo);
       prop.corpo = this.corpoDe(def, prop.size);
       prop.group.add(prop.corpo);
+      // O contorno acompanha o corpo: o da máquina é mais fraco (`BRILHO_DO_CONTORNO_DE_MAQUINA`).
+      prop.accent!.set(def.accent).multiplyScalar(this.brilhoDoContorno());
+      prop.edgeMat?.color.copy(prop.accent!);
     }
+  }
+
+  private brilhoDoContorno(): number {
+    return this.estilo ? BRILHO_DO_CONTORNO_DE_MAQUINA : BRILHO_DO_CONTORNO;
   }
 
   /** O corpo de uma barricada: o do estilo, ou a caixa de sempre na escala do colisor. */
@@ -219,7 +234,7 @@ export class Destructibles {
     const def = entrada;
     const center = new THREE.Vector3(def.x, def.h / 2, def.z);
     const size = new THREE.Vector3(def.w, def.h, def.d);
-    const accent = new THREE.Color(def.accent).multiplyScalar(3);
+    const accent = new THREE.Color(def.accent).multiplyScalar(this.brilhoDoContorno());
 
     const group = new THREE.Group();
     group.position.copy(center);
