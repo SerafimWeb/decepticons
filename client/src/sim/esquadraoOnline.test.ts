@@ -3,7 +3,7 @@ import { ROOM_SIZE, ROOM_UNITS } from '../../../shared/net/constants';
 import { REGRAS_PADRAO } from '../../../shared/regras';
 import { WEAPON_IDS } from '../combat/weapons';
 import { armasDoBot, ESQUADRAO_VERSAO, type BotSpec, type EsquadraoSpec } from './esquadrao';
-import { esquadraoDasRegras, esquadraoParaOnline, esquadraoValeNoMapa, lerRespostaDoEsquadrao, LIMITES_ONLINE, montagemDoBot, pareceEsquadrao } from './esquadraoOnline';
+import { chaveDoEsquadraoOnline, esquadraoDasRegras, esquadraoParaOnline, esquadraoValeNoMapa, lerRespostaDoEsquadrao, LIMITES_ONLINE, limitesOnline, montagemDoBot, pareceEsquadrao } from './esquadraoOnline';
 import { factorySpec, loadoutKey, parseLoadoutKey, validateLoadout } from '../hangar/loadout';
 
 const esquadrao = (inimigos: BotSpec[], aliados: BotSpec[] = []): EsquadraoSpec => ({ v: ESQUADRAO_VERSAO, inimigos, aliados });
@@ -108,5 +108,25 @@ describe('a montagem com que os outros jogadores veem o robô do esquadrão', ()
     expect(torta).toEqual(factorySpec('marauder'));
     expect(validateLoadout(torta).ok).toBe(true);
     expect(parseLoadoutKey(loadoutKey(torta))).not.toBeNull();
+  });
+});
+
+describe('a chave do esquadrão de uma sala e os limites do editor online', () => {
+  it('a chave é a do esquadrão que vale no mapa; sem esquadrão, ou num mapa onde ele não vale, é vazia (valem as regras)', () => {
+    const a = esquadrao([mech({ nome: 'A' })]);
+    const b = esquadrao([mech({ nome: 'B' })]);
+    expect(chaveDoEsquadraoOnline(null, 'arena')).toBe('');
+    expect(chaveDoEsquadraoOnline(a, 'janeiro')).toBe('');
+    expect(chaveDoEsquadraoOnline(a, 'arena')).not.toBe('');
+    expect(chaveDoEsquadraoOnline(a, 'arena')).not.toBe(chaveDoEsquadraoOnline(b, 'arena'));
+    expect(chaveDoEsquadraoOnline(a, 'praia')).toBe(chaveDoEsquadraoOnline(a, 'arena'));
+    // O que o servidor guarda já é o limpo, e a sala o limpa de novo: as duas chaves são a mesma.
+    expect(chaveDoEsquadraoOnline(esquadraoParaOnline(a), 'arena')).toBe(chaveDoEsquadraoOnline(a, 'arena'));
+  });
+
+  it('os limites do editor online são o teto da sala (sem aliados nem titãs) e batem com o que o servidor corta', () => {
+    const l = limitesOnline();
+    expect(l.porPapel).toEqual(LIMITES_ONLINE);
+    expect(l).toMatchObject({ aliados: 0, titas: 0, tecnicos: 1, inimigos: 7, total: 7 });
   });
 });

@@ -1,5 +1,5 @@
 import { TIERS, weapon, type Tier, type WeaponId } from '../combat/weapons';
-import { DIFFICULTY_LABELS, PERSONA_LABELS, type Difficulty, type EnemyNames, type Persona } from '../core/Settings';
+import { DEFAULT_SETTINGS, DIFFICULTY_LABELS, PERSONA_LABELS, type Difficulty, type EnemyNames, type Persona } from '../core/Settings';
 import { withoutParam } from '../core/url';
 import { armaDoBot, statsDoBot } from '../combat/titaBot';
 import { CHASSIS, CHASSIS_PAPEL, ehTita, type ChassisId } from '../entities/chassis';
@@ -8,17 +8,21 @@ import {
   armasDoBot,
   armasSecundariasDoBot,
   CHASSIS_DOS_BOTS,
+  ESQUADRAO_VERSAO,
   type EsquadraoSpec,
   nomePadraoDoBot,
   PARAM_DO_ESQUADRAO,
   type PapelDoBot,
   PAPEIS_DO_LADO,
 } from '../sim/esquadrao';
-import { EsquadraoEditor, indicesNoPapel, LADOS, nomeDaArma, PREDEFINIDOS, rotuloDoPapel, type Lado } from './esquadraoEditor';
+import { EsquadraoEditor, indicesNoPapel, LADOS, nomeDaArma, PREDEFINIDOS, PREDEFINIDOS_ONLINE, rotuloDoPapel, type Lado } from './esquadraoEditor';
+import { criarSquadOnline, type ClienteDoEsquadrao, type SquadOnline, type SquadOnlineEstado } from './squadOnline';
 
 const PERSONAS: readonly Persona[] = ['soldado', 'brabo', 'manso', 'fujao'];
 const DIFICULDADES: readonly Difficulty[] = ['facil', 'normal', 'dificil'];
 const NIVEIS: readonly Tier[] = [0, 1, 2];
+/** Quantos atacam ao mesmo tempo (o Mech conta 1, o andróide ½); o valor de agora entra na lista se não for um destes (as regras do servidor andam de meio em meio). */
+const PRESSOES = [1, 1.5, 2, 3, 4];
 const LADO_ROTULO: Readonly<Record<Lado, string>> = { inimigo: 'INIMIGOS', aliado: 'ALIADOS' };
 const NIVEL_ROTULO = { leve: 'LEVE', media: 'MÉDIA', alta: 'ALTA', extrema: 'EXTREMA' } as const;
 const NIVEL_DICA: Readonly<Record<keyof typeof NIVEL_ROTULO, string>> = {
@@ -40,8 +44,15 @@ export interface SquadPanelOptions {
   mapa: MapId;
   /** `null` = a janela abre; senão o motivo em palavras (online: o servidor manda; missões: o pool delas). */
   indisponivel: () => string | null;
-  /** Abre as Configurações na aba do jogo (dificuldade, quantos atacam ao mesmo tempo). */
+  /** Abre as Configurações na aba do jogo (a dificuldade dos bots e o resto dos ajustes). */
   abrirAjustes: () => void;
+  /** Quantos atacam ao mesmo tempo (a pressão): o valor de agora e como mudá-lo. Offline vale na hora (Configurações); online é gravado no servidor junto do esquadrão. */
+  atacantes: { atual: () => number; mudar: (n: number) => void };
+  /**
+   * O esquadrão das **salas online** (P270): com isto a janela edita o que o servidor guarda, em vez do que fica neste aparelho. É o cliente do painel do servidor (a chave do dono é a da janela SERVIDOR); só o
+   * Comandante o recebe. Ausente = o esquadrão deste aparelho, como sempre.
+   */
+  online?: ClienteDoEsquadrao;
   /** Recarrega a partida com o que acabou de ser salvo. */
   reiniciar: () => void;
 }
@@ -88,8 +99,19 @@ export class SquadPanel {
   private carga = el('div', 'squad-carga');
   private aviso = el('p', 'squad-msg');
   private acoes = el('div', 'squad-acoes');
+  private pressao = el('label', 'squad-pressao');
+  private titulo = el('h2', '', 'ESQUADRÃO');
+  private sub = el('span', 'squad-sub', 'quem luta contra você e quem luta ao seu lado');
+  private readonly secoes: Record<Lado, HTMLElement> = { inimigo: el('section'), aliado: el('section') };
+  /** As salas online (P270): o que o servidor disse, e o que a janela está fazendo com ele. */
+  private readonly servidor: SquadOnline | null;
+  private estadoOnline: SquadOnlineEstado | null = null;
+  private pressaoOnline = 1;
+  private ocupado = false;
+  private salvouAgora = false;
 
   constructor(private readonly o: SquadPanelOptions, root: HTMLElement | null = document.getElementById('squad-modal')) {
+    this.servidor = o.online ? criarSquadOnline(o.online) : null;
     this.editor = this.novoEditor();
     if (!root) {
       this.root = el('div');
@@ -107,7 +129,24 @@ export class SquadPanel {
     return this.aberta;
   }
 
+  private get online(): boolean {
+    return this.servidor !== null;
+  }
+
+  /** Os apelidos de fábrica que o servidor usa nas salas online são os de fábrica do jogo, não os deste aparelho. */
+  private nomes(): EnemyNames {
+    return this.online ? DEFAULT_SETTINGS.names : this.o.nomes();
+  }
+
+  private dificuldade(): Difficulty {
+    return this.estadoOnline?.dificuldade ?? this.o.dificuldade();
+  }
+
   private novoEditor(): EsquadraoEditor {
+    if (this.online) {
+      const vazio: EsquadraoSpec = { v: ESQUADRAO_VERSAO, inimigos: [], aliados: [] };
+      return new EsquadraoEditor(this.estadoOnline?.esquadrao ?? vazio, this.o.mapa, () => this.estadoOnline?.padrao ?? vazio, true);
+    }
     return new EsquadraoEditor(this.o.store.current ?? this.o.padrao(), this.o.mapa, this.o.padrao);
   }
 
@@ -117,6 +156,10 @@ export class SquadPanel {
    */
   abrir(): boolean {
     if (!this.root.id || this.o.indisponivel() !== null) return false;
+    if (this.online) {
+      void this.abrirOnline();
+      return true;
+    }
     if (!this.editor.mudou) {
       this.editor = this.novoEditor();
       this.sel = this.primeiro();
@@ -127,6 +170,46 @@ export class SquadPanel {
     this.desenhar();
     this.root.querySelector<HTMLElement>('.squad-fechar')?.focus();
     return true;
+  }
+
+  /**
+   * A janela das salas online: abre já, diz que está conferindo, e só então mostra o que o servidor guarda (com o rascunho que ficou aberto, se a pessoa mexeu e fechou sem salvar). Sem a chave
+   * do dono, ou com o servidor fora do ar, a janela fica aberta com o motivo e sem o botão de gravar: nada é inventado.
+   */
+  private async abrirOnline(): Promise<void> {
+    this.salvouAgora = false;
+    this.aberta = true;
+    this.root.classList.remove('hidden');
+    const rascunho = this.estadoOnline !== null && this.mudouOnline();
+    if (!rascunho) this.msg = 'Conferindo o servidor…';
+    this.desenhar();
+    this.root.querySelector<HTMLElement>('.squad-fechar')?.focus();
+    if (rascunho) return;
+    this.ocupado = true;
+    const r = await this.servidor!.carregar();
+    this.ocupado = false;
+    if (r.ok) this.usarEstado(r.estado, '');
+    else {
+      this.estadoOnline = null;
+      this.editor = this.novoEditor();
+      this.sel = null;
+      this.msg = r.motivo;
+    }
+    if (this.aberta) this.desenhar();
+  }
+
+  /** O estado que o servidor devolveu vira o esquadrão da janela (sem mudança pendente). */
+  private usarEstado(estado: SquadOnlineEstado, msg: string): void {
+    this.estadoOnline = estado;
+    this.pressaoOnline = estado.atacantes;
+    this.editor = this.novoEditor();
+    this.sel = this.primeiro();
+    this.msg = msg;
+  }
+
+  /** Online: há algo que o servidor ainda não tem (o esquadrão ou a pressão)? */
+  private mudouOnline(): boolean {
+    return this.editor.mudou || (this.estadoOnline !== null && this.pressaoOnline !== this.estadoOnline.atacantes);
   }
 
   /** O primeiro robô da lista (inimigos antes), ou nenhum: de onde a ficha parte quando a janela abre. */
@@ -147,14 +230,14 @@ export class SquadPanel {
     box.setAttribute('aria-modal', 'true');
     box.setAttribute('aria-labelledby', 'squad-titulo');
     const cab = el('header', 'squad-head');
-    const titulo = el('h2', '', 'ESQUADRÃO');
-    titulo.id = 'squad-titulo';
-    cab.append(titulo, el('span', 'squad-sub', 'quem luta contra você e quem luta ao seu lado'), botao('[X]', 'btn-close squad-fechar', { acao: 'fechar' }, { titulo: 'Fechar (Esc)' }));
+    this.titulo.id = 'squad-titulo';
+    cab.append(this.titulo, this.sub, botao('[X]', 'btn-close squad-fechar', { acao: 'fechar' }, { titulo: 'Fechar (Esc)' }));
     box.append(cab, this.presets);
 
     const corpo = el('div', 'squad-corpo');
     for (const lado of LADOS) {
-      const sec = el('section', `squad-lado squad-${lado}s`);
+      const sec = this.secoes[lado];
+      sec.className = `squad-lado squad-${lado}s`;
       sec.setAttribute('aria-label', LADO_ROTULO[lado]);
       const topo = el('header', 'squad-lado-topo');
       const h = el('h3', '', LADO_ROTULO[lado] + ' ');
@@ -170,7 +253,7 @@ export class SquadPanel {
 
     const pe = el('footer', 'squad-pe');
     this.aviso.setAttribute('role', 'status');
-    pe.append(this.carga, this.aviso, this.acoes);
+    pe.append(this.carga, this.pressao, this.aviso, this.acoes);
     box.append(pe);
     this.root.replaceChildren(box);
   }
@@ -178,6 +261,11 @@ export class SquadPanel {
   // ─── Desenho ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
   private desenhar(): void {
+    // Online o título muda e não há aliados (a sala não os descreve na rede): a seção deles sai.
+    this.titulo.textContent = this.online ? 'ESQUADRÃO DAS SALAS ONLINE' : 'ESQUADRÃO';
+    this.sub.textContent = this.online ? 'quem enfrenta todos os jogadores, em cada sala nova' : 'quem luta contra você e quem luta ao seu lado';
+    this.secoes.aliado.style.display = this.online ? 'none' : '';
+    this.root.classList.toggle('squad-online', this.online);
     this.desenharPresets();
     for (const lado of LADOS) {
       this.desenharAdicionar(lado);
@@ -197,7 +285,7 @@ export class SquadPanel {
     this.presets.setAttribute('aria-label', 'Esquadrões prontos');
     this.presets.replaceChildren(
       el('span', 'squad-presets-rot', 'PRONTOS'),
-      ...PREDEFINIDOS.map((p) => botao(p.nome, 'squad-preset', { acao: 'preset', id: p.id }, { titulo: p.descricao })),
+      ...PREDEFINIDOS.filter((p) => !this.online || PREDEFINIDOS_ONLINE.includes(p.id)).map((p) => botao(p.nome, 'squad-preset', { acao: 'preset', id: p.id }, { titulo: p.descricao })),
     );
   }
 
@@ -214,7 +302,7 @@ export class SquadPanel {
 
   private desenharLista(lado: Lado): void {
     const l = this.editor.lista(lado);
-    const nomes = this.editor.descricoes(lado, this.o.nomes());
+    const nomes = this.editor.descricoes(lado, this.nomes());
     this.contagem[lado].textContent = `${l.length}`;
     const itens = l.map((b, i) => {
       const li = el('li', `squad-bot squad-papel-${b.papel}${this.sel?.lado === lado && this.sel.i === i ? ' sel' : ''}`);
@@ -237,7 +325,7 @@ export class SquadPanel {
       this.ficha.replaceChildren(el('h3', '', 'FICHA DO ROBÔ'), el('p', 'squad-dica', 'Escolha um robô nas listas para ver e mudar o chassi, a arma, a personalidade e o apelido dele, ou ponha um novo com os botões + de cada lado.'));
       return;
     }
-    const nomes = this.editor.descricoes(s.lado, this.o.nomes());
+    const nomes = this.editor.descricoes(s.lado, this.nomes());
     const d = nomes[s.i]!;
     const campo = (rotulo: string, controle: HTMLElement, ajuda?: string): HTMLElement => {
       const linha = el('div', 'squad-campo');
@@ -271,11 +359,11 @@ export class SquadPanel {
     apelido.spellcheck = false;
     apelido.value = bot.nome ?? '';
     // O nome que ele teria sem apelido próprio (o da lista de Configurações): aparece apagado dentro do campo.
-    apelido.placeholder = nomePadraoDoBot(s.lado, bot.papel, indicesNoPapel(this.editor.lista(s.lado))[s.i]!, this.o.nomes());
+    apelido.placeholder = nomePadraoDoBot(s.lado, bot.papel, indicesNoPapel(this.editor.lista(s.lado))[s.i]!, this.nomes());
 
     const topo = el('div', 'squad-ficha-topo');
     topo.append(el('h3', '', 'FICHA DO ROBÔ'), el('span', `squad-ficha-quem squad-${s.lado}`, `${s.lado === 'inimigo' ? 'INIMIGO' : 'ALIADO'} · ${rotuloDoPapel(bot.papel)}`));
-    const campos: HTMLElement[] = [campo('Apelido', apelido, 'Aparece sobre o robô e no placar; vazio usa o da lista (Configurações → Nomes na tela).')];
+    const campos: HTMLElement[] = [campo('Apelido', apelido, 'Aparece sobre o robô e no placar; vazio usa o nome de fábrica.')];
 
     if (bot.papel === 'mech') {
       const persona = bot.persona ?? 'soldado';
@@ -318,7 +406,7 @@ export class SquadPanel {
     if (bot.papel !== 'technician') {
       const dif = bot.dificuldade ?? '';
       campos.push(
-        campo('Dificuldade', selecao('squad-campo-dificuldade', 'dificuldade', [opcao('', `Da partida (${DIFFICULTY_LABELS[this.o.dificuldade()]})`, dif), ...DIFICULDADES.map((x) => opcao(x, DIFFICULTY_LABELS[x], dif))]), 'Reação, mira e rajada. Vale só para este robô; as outras seguem a da partida.'),
+        campo('Dificuldade', selecao('squad-campo-dificuldade', 'dificuldade', [opcao('', `Da ${this.online ? 'sala' : 'partida'} (${DIFFICULTY_LABELS[this.dificuldade()]})`, dif), ...DIFICULDADES.map((x) => opcao(x, DIFFICULTY_LABELS[x], dif))]), 'Reação, mira e rajada. Vale só para este robô; as outras seguem a da partida.'),
       );
     } else {
       campos.push(el('p', 'squad-dica', 'O técnico conserta os Mechs rebeldes e não atira: fica perto de quem está avariado.'));
@@ -330,6 +418,8 @@ export class SquadPanel {
   }
 
   private desenharPe(): void {
+    this.desenharPressao();
+    if (this.online) return this.desenharPeOnline();
     const r = this.editor.resumo;
     const c = this.editor.carga;
     const lim = this.editor.limites;
@@ -352,7 +442,7 @@ export class SquadPanel {
     const salvar = botao('[ SALVAR E REINICIAR ]', 'btn-terminal squad-salvar', { acao: 'salvar' }, { titulo: this.editor.mudou ? 'Guarda no aparelho e recarrega a partida com este esquadrão' : 'Nada mudou', desligado: !this.editor.mudou });
     this.acoes.replaceChildren(
       ...(this.editor.mudou ? [botao('[ DESFAZER ]', 'btn-terminal', { acao: 'desfazer' }, { titulo: 'Joga fora as mudanças e volta ao esquadrão salvo' })] : []),
-      botao('[ AJUSTES DO JOGO ]', 'btn-terminal', { acao: 'ajustes' }, { titulo: 'Dificuldade e quantos atacam ao mesmo tempo' }),
+      botao('[ AJUSTES DO JOGO ]', 'btn-terminal', { acao: 'ajustes' }, { titulo: 'Dificuldade dos bots' }),
       botao('[ COPIAR LINK ]', 'btn-terminal', { acao: 'link' }, { titulo: 'O link leva este esquadrão a outro aparelho' }),
       salvar,
     );
@@ -400,6 +490,7 @@ export class SquadPanel {
         break;
       }
       case 'desfazer':
+        if (this.estadoOnline) this.pressaoOnline = this.estadoOnline.atacantes;
         this.editor = this.novoEditor();
         this.sel = this.primeiro();
         this.msg = 'Voltou ao esquadrão salvo.';
@@ -413,6 +504,12 @@ export class SquadPanel {
         return;
       case 'salvar':
         this.salvar();
+        return;
+      case 'regras':
+        void this.salvarOnline(true);
+        return;
+      case 'entrar':
+        this.o.reiniciar();
         return;
       default:
         return;
@@ -441,6 +538,15 @@ export class SquadPanel {
 
   private mudanca(e: Event): void {
     const t = e.target as HTMLSelectElement;
+    if (t instanceof HTMLSelectElement && t.dataset.campo === 'pressao') {
+      const n = Number(t.value);
+      if (this.online) this.pressaoOnline = n;
+      else this.o.atacantes.mudar(n);
+      this.msg = '';
+      this.desenharPe();
+      this.root.querySelector<HTMLElement>('#squad-campo-pressao')?.focus();
+      return;
+    }
     const s = this.sel;
     if (!s || !(t instanceof HTMLSelectElement)) return;
     const v = t.value;
@@ -512,12 +618,81 @@ export class SquadPanel {
   }
 
   private salvar(): void {
+    if (this.online) return void this.salvarOnline(false);
     if (!this.editor.mudou) return;
     // O que as Configurações já mandam não precisa de esquadrão à parte: guardar `null` deixa a contagem e as personalidades das Configurações valerem.
     this.o.store.save(this.editor.ehOPadrao ? null : this.editor.esquadrao);
     this.msg = 'Salvo. Reiniciando a partida…';
     this.desenharPe();
     this.o.reiniciar();
+  }
+
+  /** "Atacam ao mesmo tempo": a pressão que o jogo faz sobre quem joga (o Mech conta 1, o andróide ½). Offline vale na hora; online vai ao servidor junto do esquadrão. */
+  private desenharPressao(): void {
+    const atual = this.online ? this.pressaoOnline : this.o.atacantes.atual();
+    const seletor = el('select');
+    seletor.id = 'squad-campo-pressao';
+    seletor.dataset.campo = 'pressao';
+    seletor.disabled = this.online && this.estadoOnline === null;
+    for (const n of [...new Set([...PRESSOES, atual])].sort((a, b) => a - b)) {
+      const op = el('option', '', n < 1 ? '½' : n % 1 ? `${Math.floor(n)} e ½` : String(n));
+      op.value = String(n);
+      op.selected = n === atual;
+      seletor.append(op);
+    }
+    this.pressao.replaceChildren(el('span', 'squad-pressao-rot', 'Atacam ao mesmo tempo'), seletor, el('small', 'squad-ajuda', 'Mech conta 1, andróide ½; os outros esperam a vez, afastados'));
+  }
+
+  /** O pé da janela das salas online (P270): a carga da sala, o que vale, e gravar para todos. */
+  private desenharPeOnline(): void {
+    const r = this.editor.resumo;
+    const c = this.editor.carga;
+    const lim = this.editor.limites;
+    const barra = el('i', 'squad-barra');
+    const enche = el('b', `n-${c.nivel}`);
+    enche.style.transform = `scaleX(${Math.max(0.02, Math.min(1, c.peso / Math.max(1, c.teto))).toFixed(3)})`;
+    barra.append(enche);
+    this.carga.replaceChildren(
+      el('span', 'squad-carga-rot', 'CARGA'),
+      barra,
+      el('strong', `n-${c.nivel}`, NIVEL_ROTULO[c.nivel]),
+      el('small', '', `${r.inimigos} de ${lim.inimigos} robôs por sala · no máximo ${lim.porPapel?.mech ?? 0} Mechs, ${lim.porPapel?.android ?? 0} andróides e ${lim.tecnicos} técnico`),
+    );
+    this.carga.title = NIVEL_DICA[c.nivel];
+
+    const pronto = this.estadoOnline !== null;
+    const mudou = pronto && this.mudouOnline();
+    this.aviso.textContent =
+      this.msg ||
+      (!pronto ? '' : mudou ? 'Vale nas salas que abrirem depois de salvar.' : this.estadoOnline!.salvo ? 'Este é o esquadrão salvo: toda sala nova nasce com ele.' : 'Nenhum esquadrão salvo: valem as regras do servidor (REGRAS DAS SALAS).');
+    this.aviso.classList.toggle('aviso', !pronto && !this.ocupado && this.msg !== '');
+
+    const salvar = botao('[ SALVAR PARA TODOS ]', 'btn-terminal squad-salvar', { acao: 'salvar' }, { titulo: mudou ? 'Grava no servidor: toda sala que abrir depois nasce com este esquadrão' : 'Nada mudou', desligado: !mudou || this.ocupado });
+    this.acoes.replaceChildren(
+      ...(mudou ? [botao('[ DESFAZER ]', 'btn-terminal', { acao: 'desfazer' }, { titulo: 'Joga fora as mudanças e volta ao que o servidor guarda' })] : []),
+      ...(pronto && this.estadoOnline!.salvo ? [botao('[ VOLTAR ÀS REGRAS ]', 'btn-terminal', { acao: 'regras' }, { titulo: 'Apaga o esquadrão salvo: as salas novas voltam às regras do servidor', desligado: this.ocupado })] : []),
+      ...(this.salvouAgora ? [botao('[ ENTRAR NUMA SALA NOVA ]', 'btn-terminal squad-salvar', { acao: 'entrar' }, { titulo: 'Recarrega o jogo: a sala de agora fecha quando esvazia e você cai numa nova, com este esquadrão' })] : []),
+      salvar,
+    );
+  }
+
+  /** Grava para todas as salas novas (ou, com `voltarAsRegras`, apaga o salvo). O servidor corta no teto da sala; a janela mostra o que ficou. */
+  private async salvarOnline(voltarAsRegras: boolean): Promise<void> {
+    if (this.ocupado || !this.estadoOnline || (!voltarAsRegras && !this.mudouOnline())) return;
+    this.ocupado = true;
+    this.msg = 'Gravando no servidor…';
+    this.desenharPe();
+    const r = await this.servidor!.gravar(voltarAsRegras ? null : this.editor.esquadrao, this.pressaoOnline);
+    this.ocupado = false;
+    if (!r.ok) {
+      this.msg = r.motivo;
+      this.desenhar();
+      this.aviso.classList.add('aviso');
+      return;
+    }
+    this.salvouAgora = true;
+    this.usarEstado(r.estado, `${voltarAsRegras ? 'Voltaram as regras do servidor.' : 'Salvo para todos.'} Vale nas salas que abrirem depois: entre numa sala nova para ver.`);
+    this.desenhar();
   }
 
   private async copiarLink(): Promise<void> {

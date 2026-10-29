@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ADMIN_HEADER, type AdminEstado } from '../../../shared/net/admin';
 import { ADMIN_TOKEN_KEY, AdminCliente, chaveDoToken, sessaoDeAdminGuardada, TokenDoDono } from './admin';
 import { chaveDoToken as chaveDaConta } from './sessao';
+import { ESQUADRAO_VERSAO, type EsquadraoSpec } from '../sim/esquadrao';
 
 const SERVIDOR = 'wss://jogo.selvamkt.com.br';
 const estado = (): AdminEstado => ({
@@ -173,5 +174,35 @@ describe('o token do dono, guardado só neste aparelho', () => {
     expect(q.ler()).toBe('xyz');
     expect(() => q.apagar()).not.toThrow();
     expect(q.ler()).toBeNull();
+  });
+});
+
+describe('o esquadrão das salas online no cliente do painel (P270)', () => {
+  const esquadrao: EsquadraoSpec = { v: ESQUADRAO_VERSAO, inimigos: [{ papel: 'mech', nome: 'ALFA' }], aliados: [] };
+
+  it('lê o esquadrão no caminho certo, com a chave, e o que passa do teto da sala volta cortado', async () => {
+    const muito = { v: ESQUADRAO_VERSAO, inimigos: Array.from({ length: 6 }, () => ({ papel: 'mech' as const })), aliados: [{ papel: 'mech' as const }] };
+    const buscar = resposta({ salvo: true, esquadrao: muito });
+    const r = await cliente(buscar).esquadrao();
+    expect(r.ok && r.dados.salvo).toBe(true);
+    expect(r.ok && r.dados.esquadrao.inimigos).toHaveLength(3);
+    expect(r.ok && r.dados.esquadrao.aliados).toEqual([]);
+    const [url, init] = (buscar as unknown as { mock: { calls: [string, RequestInit][] } }).mock.calls[0]!;
+    expect(url).toBe('https://jogo.selvamkt.com.br/admin/esquadrao');
+    expect((init.headers as Record<string, string>)[ADMIN_HEADER]).toBe('T0KEN');
+  });
+
+  it('grava por POST com o esquadrão (ou null para voltar às regras) e lê a resposta; uma resposta fora do contrato é "resposta"', async () => {
+    const buscar = resposta({ salvo: true, esquadrao });
+    expect((await cliente(buscar).gravarEsquadrao(esquadrao)).ok).toBe(true);
+    const [url, init] = (buscar as unknown as { mock: { calls: [string, RequestInit][] } }).mock.calls[0]!;
+    expect(url).toBe('https://jogo.selvamkt.com.br/admin/esquadrao/gravar');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(String(init.body))).toEqual({ esquadrao });
+    const apagar = resposta({ salvo: false, esquadrao });
+    await cliente(apagar).gravarEsquadrao(null);
+    expect(JSON.parse(String((apagar as unknown as { mock: { calls: [string, RequestInit][] } }).mock.calls[0]![1].body))).toEqual({ esquadrao: null });
+    expect(await cliente(resposta({ salvo: 'sim' })).esquadrao()).toMatchObject({ ok: false, motivo: 'resposta' });
+    expect(await cliente(resposta({}, 401)).gravarEsquadrao(esquadrao)).toMatchObject({ ok: false, motivo: 'token' });
   });
 });

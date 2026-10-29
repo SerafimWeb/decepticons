@@ -18,7 +18,7 @@ import { netWeaponIndex, unitFromMech } from '../client/src/net/adapters';
 import { FIXED_DT, PhysicsWorld } from '../client/src/physics/PhysicsWorld';
 import { Match } from '../client/src/sim/Match';
 import type { EsquadraoSpec } from '../client/src/sim/esquadrao';
-import { esquadraoParaOnline, esquadraoValeNoMapa, montagemDoBot } from '../client/src/sim/esquadraoOnline';
+import { chaveDoEsquadraoOnline, esquadraoParaOnline, esquadraoValeNoMapa, montagemDoBot } from '../client/src/sim/esquadraoOnline';
 import type { AdminSala } from '../shared/net/admin';
 import type { MuralSala } from '../shared/net/mural';
 import { Writer } from '../shared/net/codec';
@@ -129,6 +129,8 @@ export class ArenaRoom {
   private regras: RegrasOnline;
   /** O esquadrão do dono (P270), se a sala nasceu com um: quem são os bots (chassi, armas, nome, jeito) e quantos Mechs entram em campo (os que ele tem, menos as vagas de quem entra). */
   private readonly esquadrao: EsquadraoSpec | null;
+  /** A chave do esquadrão com que a sala nasceu (`''` = as regras): o servidor fecha na hora a sala vazia cuja chave não é mais a do esquadrão salvo. */
+  readonly chaveDoEsquadrao: string;
 
   private constructor(
     readonly code: string,
@@ -141,6 +143,7 @@ export class ArenaRoom {
     this.regras = regras;
     // O esquadrão que o dono montou (P270) vale nos mapas do combate livre do lançamento (`esquadraoValeNoMapa`); sem ele, ou em outro mapa, os bots são os das regras, como sempre.
     this.esquadrao = esquadrao && esquadraoValeNoMapa(mapa) ? esquadraoParaOnline(esquadrao) : null;
+    this.chaveDoEsquadrao = chaveDoEsquadraoOnline(esquadrao, mapa);
     // allies: false — o roster de rede ainda não sabe descrever um aliado pros outros jogadores
     // (AUSENTE no multiplayer, ver Match.ts e STATUS_REAL.md); a Arena offline já tem aliado.
     // O pool de Mechs é sempre o cheio (3): quantos entram em campo é a regra (`aplicarRegras`); os andróides são os da regra e valem a partir desta sala.

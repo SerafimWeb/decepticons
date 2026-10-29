@@ -1256,11 +1256,13 @@ export async function startServer(
       }
       const since = emptyFor.get(code) ?? now;
       emptyFor.set(code, since);
-      if (now - since > EMPTY_ROOM_S * 1000) {
+      // A sala que nasceu com outro esquadrão (o dono gravou um depois, P270) fecha assim que esvazia: quem entra de novo cai numa sala com o esquadrão novo, sem esperar os 30 s.
+      const desatualizada = r.chaveDoEsquadrao !== esquadrao.chavePara(mapaDaChave(code));
+      if (desatualizada || now - since > EMPTY_ROOM_S * 1000) {
         rooms.delete(code);
         emptyFor.delete(code);
         r.dispose();
-        log(`sala ${code} fechada (vazia)`);
+        log(`sala ${code} fechada (${desatualizada ? 'vazia e com o esquadrão de antes' : 'vazia'})`);
       }
     }
   }, 4);

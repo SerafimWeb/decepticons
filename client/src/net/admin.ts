@@ -24,6 +24,8 @@ import {
 import { serverHttpUrl } from '../../../shared/net/serverUrl';
 import { chaveDoToken as chaveDaConta } from './sessao';
 import { ADMIN_REGRAS_GRAVAR_PATH, ADMIN_REGRAS_PATH, lerRegrasDaResposta, type RegrasOnline } from '../../../shared/regras';
+import type { EsquadraoSpec } from '../sim/esquadrao';
+import { ADMIN_ESQUADRAO_GRAVAR_PATH, ADMIN_ESQUADRAO_PATH, lerRespostaDoEsquadrao, type RespostaDoEsquadrao } from '../sim/esquadraoOnline';
 import { ADMIN_VISIBILIDADE_PATH, lerConfig, type ConfigDeVisibilidade, type EstadoDeVisibilidade } from '../../../shared/visibilidade';
 import { ADMIN_OUTDOORS_PATH, lerConfigDeOutdoors, normalizarParametros, OUTDOORS_PATH, type ConfigDeOutdoors, type ParametrosDeOutdoors } from '../../../shared/outdoors';
 import { ADMIN_TELAO_PATH, lerConfigDeTelao, TELAO_PATH, type ConfigDeTelao, type TelaoItem } from '../../../shared/telao';
@@ -85,6 +87,11 @@ export class AdminCliente {
   regras = (): Promise<Resposta<RegrasOnline>> => this.chamar(ADMIN_REGRAS_PATH, lerRegrasDaResposta);
   /** Grava as regras (o servidor puxa o que passar dos limites) e devolve as que valem. Salas de pé recebem na hora. */
   gravarRegras = (r: RegrasOnline): Promise<Resposta<RegrasOnline>> => this.chamar(ADMIN_REGRAS_GRAVAR_PATH, lerRegrasDaResposta, { metodo: 'POST', corpo: r });
+  /** O esquadrão das salas online (P270): o que valeria numa sala nova agora, e se é um salvo pelo dono. */
+  esquadrao = (): Promise<Resposta<RespostaDoEsquadrao>> => this.chamar(ADMIN_ESQUADRAO_PATH, lerRespostaDoEsquadrao);
+  /** Grava o esquadrão (o servidor corta no teto da sala) ou apaga o salvo com `null` (voltam as regras). Vale nas salas que abrirem depois. */
+  gravarEsquadrao = (esquadrao: EsquadraoSpec | null): Promise<Resposta<RespostaDoEsquadrao>> =>
+    this.chamar(ADMIN_ESQUADRAO_GRAVAR_PATH, lerRespostaDoEsquadrao, { metodo: 'POST', corpo: { esquadrao } });
   /** Grava o que os jogadores veem (P191): só as exceções ao padrão do código. Devolve a configuração nova do servidor. */
   gravarVisibilidade = (itens: Record<string, EstadoDeVisibilidade>): Promise<Resposta<ConfigDeVisibilidade>> =>
     this.chamar(ADMIN_VISIBILIDADE_PATH, (r) => ((r as { itens?: unknown } | null)?.itens ? lerConfig(r) : null), { metodo: 'POST', corpo: { itens } });

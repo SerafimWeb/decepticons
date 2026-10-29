@@ -3,7 +3,7 @@ import { LIMITES_DAS_REGRAS, type RegrasOnline } from '../../../shared/regras';
 import { DEFAULT_SETTINGS } from '../core/Settings';
 import { ehTita, type ChassisId } from '../entities/chassis';
 import { factorySpec, validateLoadout, type LoadoutSpec } from '../hangar/loadout';
-import { ESQUADRAO_VERSAO, esquadraoDeFoes, sanearEsquadrao, type ArmaDoBot, type EsquadraoSpec, type PapelDoBot } from './esquadrao';
+import { chaveDoEsquadrao, ESQUADRAO_VERSAO, esquadraoDeFoes, sanearEsquadrao, type ArmaDoBot, type EsquadraoSpec, type Limites, type PapelDoBot } from './esquadrao';
 
 /**
  * O ESQUADRÃO DAS SALAS ONLINE (P270, ordem do Comandante em 28/10: "quando eu jogo online, queria poder configurar os times no botão ESQUADRÃO, pra mudar os mechs, nomes, etc").
@@ -32,6 +32,12 @@ export const LIMITES_ONLINE: Readonly<Record<PapelDoBot, number>> = Object.freez
   technician: 1,
 });
 
+/** Os limites que o editor da janela usa online: o teto por papel acima, sem aliados e sem titãs. */
+export function limitesOnline(): Limites {
+  const total = LIMITES_ONLINE.mech + LIMITES_ONLINE.android + LIMITES_ONLINE.technician;
+  return { inimigos: total, aliados: 0, tecnicos: LIMITES_ONLINE.technician, titas: 0, total, porPapel: LIMITES_ONLINE };
+}
+
 /** O formato de um esquadrão que vem de fora (o corpo do `POST`): a versão certa e a lista de inimigos. O que é lixo não vira "o padrão" em silêncio, é recusado. */
 export function pareceEsquadrao(raw: unknown): raw is { v: number; inimigos: unknown[] } {
   const r = raw as { v?: unknown; inimigos?: unknown } | null;
@@ -51,6 +57,14 @@ export function esquadraoParaOnline(raw: unknown): EsquadraoSpec {
     return true;
   });
   return { v: ESQUADRAO_VERSAO, inimigos, aliados: [] };
+}
+
+/**
+ * A chave do esquadrão com que uma sala de `mapa` nasce: o texto curto do link (`chaveDoEsquadrao`) do que vale ali, ou `''` (sem esquadrão: valem as regras). A sala a guarda e o servidor a compara
+ * com a do esquadrão salvo agora: **a sala vazia que nasceu com outro esquadrão fecha na hora** (não espera os 30 s), e quem entra de novo cai numa sala com o esquadrão novo.
+ */
+export function chaveDoEsquadraoOnline(salvo: EsquadraoSpec | null, mapa: MapaOnline): string {
+  return salvo && esquadraoValeNoMapa(mapa) ? chaveDoEsquadrao(esquadraoParaOnline(salvo)) : '';
 }
 
 /** O que a sala online monta enquanto o dono não salvou um esquadrão: os Mechs e andróides das regras, o técnico e as personalidades de fábrica (o jogo online de sempre). */

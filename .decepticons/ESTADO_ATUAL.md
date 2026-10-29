@@ -1,11 +1,12 @@
 # ESTADO ATUAL — CYBERMECH
 
-## O esquadrão das salas online — PR 1 de 2: o servidor (Claude, P270, branch `claude/esquadrao-online`)
+## O esquadrão das salas online e o Ajustar sem INIMIGOS/NOMES (Claude, P270, PRs 1 e 2)
 
 **O pedido (28/10):** "quando eu jogo online, queria poder configurar os times no botão ESQUADRÃO… esse botão compete com o Ajustar" (último item antes de lançar). **Respostas dele:** só o Comandante monta, para todas as salas; uma porta só, o ESQUADRÃO.
 **Entrega (PR 1, só servidor; a janela vem no PR 2):** `client/src/sim/esquadraoOnline.ts` (o contrato: teto da sala = 3 Mechs, 3 andróides, 1 técnico, sem aliados nem titãs; `esquadraoParaOnline`, `esquadraoDasRegras`, `montagemDoBot`), `server/esquadraoOnline.ts` (o armazém, `esquadrao-online.json`), as rotas `GET /admin/esquadrao` e `POST /admin/esquadrao/gravar` (chave do dono), `ArenaRoom` montando a partida com o esquadrão e dizendo no roster o chassi e a arma de cada robô (`BotSystem.kitOf`), e `remotoDoRoster.ts` desenhando o robô de IA com ele. **Vale nas salas novas** da Cidade Neon e da Estação dos Cabos; sem esquadrão salvo, as regras de sempre. **Sem subir o protocolo.**
-**Testes:** +20 (`esquadraoOnline.test.ts` nos dois lados: teto, armazém, rotas e 401, a sala monta e o roster descreve, sala nova de ponta a ponta por WebSocket) e **8 mutações à mão, todas reprovadas**. **Ainda não dá para ver:** sem a janela (PR 2) só o dono, por `POST`, grava um esquadrão.
-**Próxima sessão começa com:** o PR 2: a janela ESQUADRÃO abrindo online para o Comandante (SALVAR PARA TODOS, "recriar a minha sala"), INIMIGOS e NOMES saindo do Ajustar, e a pressão (quantos atacam juntos) indo para o ESQUADRÃO.
+**PR 2 (a janela):** no modo Comandante e online, o botão **ESQUADRÃO** abre o **ESQUADRÃO DAS SALAS ONLINE** (`SquadPanel` em modo online, `squadOnline.ts` liga ao servidor; inimigos e ficha, sem aliados, 3 prontos, o teto no pé); **SALVAR PARA TODOS** grava (a chave é a da janela SERVIDOR); a sala vazia com o esquadrão de antes **fecha na hora**. **INIMIGOS e NOMES saíram do Ajustar** (cabe sem rolagem) e **"Atacam ao mesmo tempo"** foi para o pé da janela, offline e online.
+**Testes:** +35 nos dois PRs (21 e 14) e **8 mutações à mão (PR 1), todas reprovadas**; **bancada no Chrome (GPU real) contra um servidor local de verdade:** sem a chave a janela abre com o motivo e sem gravar; com ela, monta um Marauder brabo (ALFA), grava, o servidor guarda, a sala nova nasce com ele (o cliente vê o chassi na montagem) e o Ajustar não tem mais as duas seções; 0 erros de console. **Falta:** o olho e a mão do Comandante, jogando online com um esquadrão dele.
+**Próxima sessão começa com:** o que o Comandante estranhar na janela; as outras duas ordens do dia (P271 e P272, em `ORDENS_DO_COMANDO.md`): as caixas do centro viram supercomputadores (em campo) e a publicidade dinâmica nos outdoors (aguarda a decisão dele).
 
 ## EM BRANCH — NÃO ESTÁ NO AR: o cérebro do time dos bots (Claude, P269, branch `claude/ia-time`)
 

@@ -22,6 +22,7 @@ import {
   sanearBot,
   sanearEsquadrao,
 } from '../sim/esquadrao';
+import { esquadraoParaOnline, limitesOnline } from '../sim/esquadraoOnline';
 
 /**
  * O modelo do editor do esquadrão (P91, fase 1C): o que a janela do console faz com a lista de robôs, sem DOM. Cada operação passa pelo
@@ -83,6 +84,9 @@ export const PREDEFINIDOS: readonly Predefinido[] = [
   { id: 'aliados', nome: 'SÓ ALIADOS', descricao: 'sem inimigos: você e 6 aliados, para ver o jogo andar', esquadrao: () => spec([], n(6, { papel: 'mech' })) },
 ];
 
+/** Os prontos que servem a uma sala online (os outros pedem aliados, titãs ou mais robôs do que a sala comporta). */
+export const PREDEFINIDOS_ONLINE: readonly string[] = ['padrao', 'pesados', 'duelo'];
+
 /** O que impede de pôr mais um robô, em palavras (ou `null`: pode). Serve de dica no botão apagado. */
 export type Motivo = string | null;
 
@@ -136,8 +140,10 @@ export class EsquadraoEditor {
     private mapa: MapId = 'arena',
     /** O esquadrão que as Configurações mandam: o que o preset PADRÃO monta e o que "voltar ao padrão" devolve. */
     private readonly padrao: () => EsquadraoSpec = esquadraoPadrao,
+    /** O esquadrão das salas online (P270): o teto da sala (3 Mechs, 3 andróides, 1 técnico), sem aliados nem titãs. */
+    private readonly online = false,
   ) {
-    const limpo = sanearEsquadrao(inicial, 'arena');
+    const limpo = online ? esquadraoParaOnline(inicial) : sanearEsquadrao(inicial, 'arena');
     this.inimigos = limpo.inimigos;
     this.aliados = limpo.aliados;
     this.chaveInicial = this.chave();
@@ -161,7 +167,7 @@ export class EsquadraoEditor {
   }
 
   get limites(): Limites {
-    return limitesDoMapa(this.mapa);
+    return this.online ? limitesOnline() : limitesDoMapa(this.mapa);
   }
 
   get resumo(): Resumo {
@@ -178,7 +184,7 @@ export class EsquadraoEditor {
 
   /** O esquadrão passa do que o mapa comporta? (O que o editor deixa montar nunca passa; o do link ou do aparelho, em outro mapa, pode.) */
   get excessos(): string[] {
-    return excessosDoEsquadrao(this.esquadrao, this.mapa);
+    return this.online ? [] : excessosDoEsquadrao(this.esquadrao, this.mapa); // online o editor e o servidor cortam no mesmo teto
   }
 
   chave(): string {
@@ -197,8 +203,11 @@ export class EsquadraoEditor {
 
   podeAdicionar(lado: Lado, papel: PapelDoBot): Motivo {
     if (!PAPEIS_DO_LADO[lado].includes(papel)) return 'o aliado não tem técnico';
+    if (this.online && lado === 'aliado') return 'online não há aliados';
     const lim = this.limites;
     const r = this.resumo;
+    const dePapel = lim.porPapel?.[papel];
+    if (dePapel !== undefined && this.ref(lado).filter((b) => b.papel === papel).length >= dePapel) return `no máximo ${dePapel} ${rotuloDoPapel(papel).toLowerCase()}${dePapel === 1 ? '' : 's'} nas salas online`;
     if (papel === 'technician' && r.tecnicos >= lim.tecnicos) return `no máximo ${lim.tecnicos} técnicos`;
     const doLado = lado === 'inimigo' ? r.inimigos : r.aliados;
     const teto = lado === 'inimigo' ? lim.inimigos : lim.aliados;
@@ -245,6 +254,7 @@ export class EsquadraoEditor {
     if (virouTita && lado === 'inimigo') {
       const lim = this.limites.titas;
       const jaTem = l.filter((b) => b.papel === 'mech' && !!b.chassi && ehTita(b.chassi)).length;
+      if (this.online) return 'Nas salas online não há titãs: o estado de um corpo desse tamanho não cabe na rede da sala.';
       if (lim === 0) return 'Este mapa não comporta titãs (o Bunker é apertado demais): escolha a Cidade Neon.';
       if (jaTem >= lim) return `Já há ${jaTem} titã${jaTem === 1 ? '' : 's'}: o teto é ${lim}. Troque um deles antes.`;
     }
@@ -275,8 +285,9 @@ export class EsquadraoEditor {
   usarPredefinido(id: string): number | null {
     const p = PREDEFINIDOS.find((x) => x.id === id);
     if (!p) return null;
+    if (this.online && !PREDEFINIDOS_ONLINE.includes(id)) return null;
     const pronto = p.esquadrao(this.padrao);
-    const limpo = sanearEsquadrao(pronto, this.mapa);
+    const limpo = this.online ? esquadraoParaOnline(pronto) : sanearEsquadrao(pronto, this.mapa);
     this.inimigos = limpo.inimigos;
     this.aliados = limpo.aliados;
     return pronto.inimigos.length + pronto.aliados.length - limpo.inimigos.length - limpo.aliados.length;

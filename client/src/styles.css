@@ -3974,6 +3974,14 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .squad-carga strong.n-media { color: var(--warn); }
 .squad-carga strong.n-alta { color: var(--hot); }
 .squad-carga strong.n-extrema { color: var(--alert); }
+/* "Atacam ao mesmo tempo": a pressão da partida, no pé da janela (offline na hora; online vai ao servidor com o esquadrão, P270). */
+.squad-pressao { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; min-width: 0; font-size: 11px; letter-spacing: 1px; color: #ccc; }
+.squad-pressao-rot { color: var(--muted); letter-spacing: 3px; text-transform: uppercase; }
+.squad-pressao select { min-width: 64px; padding: 3px 8px; font: inherit; color: var(--accent); background: #06080a; border: 1px solid var(--accent); }
+.squad-pressao select:disabled { opacity: 0.4; }
+.squad-pressao .squad-ajuda { grid-column: auto; color: #9aa5ad; letter-spacing: 0.5px; }
+/* As salas online (P270) não têm aliados: a janela fica com duas colunas, os inimigos e a ficha. */
+.squad-online .squad-corpo { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
 .squad-msg { grid-column: 1 / -1; min-height: 14px; margin: 0; font-size: 11px; line-height: 1.4; color: var(--muted); overflow-wrap: anywhere; }
 .squad-msg.aviso { color: var(--warn); }
 .squad-acoes { grid-row: 1; grid-column: 2; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }

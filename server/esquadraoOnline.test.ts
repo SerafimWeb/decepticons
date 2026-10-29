@@ -234,3 +234,80 @@ describe('as rotas do dono para o esquadrão das salas online', () => {
     }
   });
 });
+
+describe('a sala vazia com o esquadrão de antes fecha na hora (P270)', () => {
+  /** Abre uma sala pela rede, entra, e devolve o jeito de sair. */
+  async function abrirSala(porta: number, sala: string): Promise<{ sair: () => Promise<void> }> {
+    const ws = new WebSocket(`ws://127.0.0.1:${porta}/?sala=${sala}`);
+    ws.binaryType = 'arraybuffer';
+    const got: Uint8Array[] = [];
+    ws.onmessage = (e) => got.push(new Uint8Array(e.data as ArrayBuffer));
+    await new Promise<void>((ok, erro) => {
+      ws.onopen = () => ok();
+      ws.onerror = () => erro(new Error('sem conexão'));
+    });
+    ws.send(entrar('Dan'));
+    const t0 = Date.now();
+    while (!got.some((b) => messageType(b) === MSG.WELCOME)) {
+      if (Date.now() - t0 > 25_000) throw new Error('tempo esgotado');
+      await new Promise((r) => setTimeout(r, 10));
+    }
+    return {
+      sair: () =>
+        new Promise<void>((ok) => {
+          ws.onclose = () => ok();
+          ws.close();
+        }),
+    };
+  }
+  // O /status guarda a resposta por 1 s: o painel do dono (sem cache) diz quantas salas há de verdade.
+  const salasAbertas = async (porta: number): Promise<number> =>
+    ((await (await fetch(`http://127.0.0.1:${porta}/admin/estado`, { headers: { [ADMIN_HEADER]: TOKEN } })).json()) as { salas: unknown[] }).salas.length;
+  const esperar = async (ok: () => Promise<boolean>, ms = 5000): Promise<boolean> => {
+    const t0 = Date.now();
+    while (Date.now() - t0 < ms) {
+      if (await ok()) return true;
+      await new Promise((r) => setTimeout(r, 25));
+    }
+    return false;
+  };
+
+  it('o dono grava com a sala de pé: ao esvaziar, ela fecha já (não espera os 30 s) e quem entra de novo cai numa sala com o esquadrão novo; sem gravar nada, a sala vazia espera', async () => {
+    limpar();
+    const s = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', dirDados: pasta, metricasToken: TOKEN, guard: GUARD });
+    try {
+      // Sem esquadrão novo, a sala vazia fica (a reconexão de quem caiu dá 30 s).
+      const a = await abrirSala(s.port, 'ANTES');
+      expect(await salasAbertas(s.port)).toBe(1);
+      await a.sair();
+      await new Promise((r) => setTimeout(r, 400));
+      expect(await salasAbertas(s.port)).toBe(1);
+
+      // O dono grava um esquadrão: a sala de antes (vazia, sem esquadrão) está desatualizada e fecha na hora.
+      const gravou = await fetch(`http://127.0.0.1:${s.port}${ADMIN_ESQUADRAO_GRAVAR_PATH}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', [ADMIN_HEADER]: TOKEN },
+        body: JSON.stringify({ esquadrao: DO_DONO }),
+      });
+      expect(gravou.status).toBe(200);
+      expect(await esperar(async () => (await salasAbertas(s.port)) === 0)).toBe(true);
+
+      // A sala nova nasce com o esquadrão; esvaziada, ela está em dia e espera como qualquer outra.
+      const b = await abrirSala(s.port, 'DEPOIS2');
+      expect(await salasAbertas(s.port)).toBe(1);
+      await b.sair();
+      await new Promise((r) => setTimeout(r, 400));
+      expect(await salasAbertas(s.port)).toBe(1);
+
+      // Trocar o esquadrão de novo torna essa sala desatualizada também.
+      await fetch(`http://127.0.0.1:${s.port}${ADMIN_ESQUADRAO_GRAVAR_PATH}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', [ADMIN_HEADER]: TOKEN },
+        body: JSON.stringify({ esquadrao: esquadrao([{ papel: 'mech', nome: 'GAMA' }]) }),
+      });
+      expect(await esperar(async () => (await salasAbertas(s.port)) === 0)).toBe(true);
+    } finally {
+      await s.close();
+    }
+  });
+});

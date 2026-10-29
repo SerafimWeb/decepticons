@@ -39,8 +39,7 @@ por camada, < 1 ms), animações só de `transform` e `opacity` (compositor), ex
 | O que o dono quer mexer | Hoje | Onde |
 |---|---|---|
 | Sensibilidade, câmera, qualidade, teclas, dificuldade | ✅ tela de Configurações | `core/Settings.ts`, `ui/SettingsMenu.ts` |
-| Quantos Mechs e andróides, técnico, personalidade de cada Mech, quantos atacam juntos | ✅ | `ui/EnemySettings.ts` |
-| **Apelidos** dos inimigos, andróides, técnico e aliados | ✅ | `ui/EnemySettings.ts`, `core/botNames.ts` |
+| Quantos Mechs e andróides, técnico, personalidade de cada Mech, **apelidos**, quantos atacam juntos | ✅ **uma porta só (P270, 28/10): a janela ESQUADRÃO**, offline e, para o Comandante, nas salas online (as seções INIMIGOS e NOMES saíram do Ajustar) | `ui/SquadPanel.ts`, `ui/squadOnline.ts`, `core/botNames.ts` |
 | Potência de cada arma e de cada clã (dano, cadência, calor, alcance, vida, velocidade) | ✅ | `tuning/power.ts`, `ui/PowerSettings.ts`, link `?potencias=` |
 | Montar o **seu** Mech (chassi, armas, módulo, escudo) | ✅ | `hangar/`, `ui/HangarMenu.ts`, link `?build=` |
 | Papéis e números dos chassis | ✅ no código, **sem tela** | `entities/chassis.ts` (`CHASSIS_PAPEL`) |

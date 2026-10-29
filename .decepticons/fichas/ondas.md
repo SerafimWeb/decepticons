@@ -74,7 +74,7 @@ o número que entra no código é o que ele medir, e a ficha é corrigida para b
   **chassi novo** (Ferret-X, Colossus-01 — `ROADMAP`, Fase 5), com ficha própria, e não um `×1,5` invisível.
 - **Agressividade sobe com a onda** (decisão do dono no ROADMAP: "a cada onda a IA fica mais agressiva e nova"): isso
   é do diretor de ataque (precisão, tempo de reação, quantos atacam juntos) — **não** é vida, e sim as mesmas
-  alavancas que o `EnemySettings` já expõe.
+  alavancas que o esquadrão (a janela ESQUADRÃO) já expõe.
 
 ## 5. Metas de equilíbrio (cada uma vira um teste)
 
