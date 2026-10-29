@@ -1,6 +1,6 @@
 import type { MapaOnline } from '../../../shared/net/mapa';
 import { ROOM_BOT_ANDROIDS, ROOM_BOT_MECHS } from '../../../shared/net/constants';
-import { LIMITES_DAS_REGRAS, type RegrasOnline } from '../../../shared/regras';
+import type { RegrasOnline } from '../../../shared/regras';
 import { DEFAULT_SETTINGS } from '../core/Settings';
 import { ehTita, type ChassisId } from '../entities/chassis';
 import { factorySpec, validateLoadout, type LoadoutSpec } from '../hangar/loadout';
