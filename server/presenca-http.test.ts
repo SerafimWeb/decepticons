@@ -111,6 +111,20 @@ describe('quem entrou nas salas, contra o servidor de verdade (P275)', () => {
     }
   });
 
+  it('a conexão que cai antes de a sala processar o JOIN (a sala nova ainda carrega) não deixa uma visita "na sala agora" para sempre', async () => {
+    const ws = new WebSocket(`ws://127.0.0.1:${server.port}/?sala=CORRIDA&mapa=praia`);
+    ws.on('error', () => undefined);
+    await new Promise<void>((ok) => ws.on('open', () => ok()));
+    ws.send(join_('Corrida'));
+    ws.terminate(); // JOIN e queda no mesmo instante: a sala da Estação dos Cabos ainda está sendo montada
+    await ate(async () => server.rooms.has('CORRIDA@praia'));
+    await new Promise((r) => setTimeout(r, 600)); // o JOIN e o fechamento passam pela fila da sala
+    const { corpo } = await ler();
+    const v = visita(corpo, 'Corrida');
+    if (v) expect(v.saiuEm, 'a entrada, se nasceu, já tem a saída').not.toBeNull();
+    expect(corpo?.dentroAgora).toBe(0);
+  });
+
   it('quem sai ganha a hora de saída e deixa de contar como dentro', async () => {
     const ws = await entrar('SAIDA', 'Saindo');
     await ate(async () => visita((await ler()).corpo, 'Saindo')?.saiuEm === null);
