@@ -5,9 +5,9 @@ import { WebSocket } from 'ws';
 import { ESQUADRAO_VERSAO, type BotSpec, type EsquadraoSpec } from '../client/src/sim/esquadrao';
 import { ADMIN_ESQUADRAO_GRAVAR_PATH, ADMIN_ESQUADRAO_PATH, esquadraoDasRegras, LIMITES_ONLINE } from '../client/src/sim/esquadraoOnline';
 import { Writer } from '../shared/net/codec';
-import { PROTOCOL_VERSION, ROOM_SIZE } from '../shared/net/constants';
+import { PROTOCOL_VERSION, ROOM_SIZE, ROOM_UNITS } from '../shared/net/constants';
 import { ADMIN_HEADER } from '../shared/net/admin';
-import { decodeRoster, encodeJoin, messageType, MSG, type RosterEntry } from '../shared/net/messages';
+import { decodeRoster, decodeSnapshot, encodeJoin, messageType, MSG, newSnapshot, type RosterEntry } from '../shared/net/messages';
 import { REGRAS_PADRAO } from '../shared/regras';
 import { factorySpec, loadoutKey } from '../client/src/hangar/loadout';
 import { ArenaRoom, type Peer } from './ArenaRoom';
@@ -78,12 +78,12 @@ describe('o armazém do esquadrão das salas online (P270)', () => {
     expect(a.atual()?.inimigos).toEqual([]);
   });
 
-  it('o que passa do teto da sala é cortado ao gravar (3 Mechs, 3 andróides, 1 técnico; sem aliados nem titãs)', () => {
+  it('o que passa do teto da sala é cortado ao gravar (6 Mechs, 6 andróides, 1 técnico; sem aliados nem titãs)', () => {
     limpar();
     const a = new ArmazemDoEsquadraoOnline(pasta);
     const muito: BotSpec[] = [
-      ...Array.from({ length: 6 }, (): BotSpec => ({ papel: 'mech' })), { papel: 'mech', chassi: 'colossus01' },
-      ...Array.from({ length: 6 }, (): BotSpec => ({ papel: 'android' })), { papel: 'technician' }, { papel: 'technician' },
+      ...Array.from({ length: 9 }, (): BotSpec => ({ papel: 'mech' })), { papel: 'mech', chassi: 'colossus01' },
+      ...Array.from({ length: 9 }, (): BotSpec => ({ papel: 'android' })), { papel: 'technician' }, { papel: 'technician' },
     ];
     a.gravar({ esquadrao: esquadrao(muito, [{ papel: 'mech' }]) });
     const guardado = a.atual()!;
@@ -178,14 +178,14 @@ describe('as rotas do dono para o esquadrão das salas online', () => {
       expect((await chamar(ADMIN_ESQUADRAO_GRAVAR_PATH, TOKEN, { esquadrao: { v: 9 } })).status).toBe(400);
       expect((await chamar(ADMIN_ESQUADRAO_GRAVAR_PATH, TOKEN, {})).status).toBe(400);
 
-      const muito = esquadrao([...Array.from({ length: 5 }, (_, i): BotSpec => ({ papel: 'mech', nome: `M${i}` }))], [{ papel: 'mech' }]);
+      const muito = esquadrao([...Array.from({ length: 9 }, (_, i): BotSpec => ({ papel: 'mech', nome: `M${i}` }))], [{ papel: 'mech' }]);
       const gravou = await chamar(ADMIN_ESQUADRAO_GRAVAR_PATH, TOKEN, { esquadrao: muito });
       expect(gravou.status).toBe(200);
       const resposta = (await gravou.json()) as { salvo: boolean; esquadrao: EsquadraoSpec };
       expect(resposta.salvo).toBe(true);
-      expect(resposta.esquadrao.inimigos.map((b) => b.nome)).toEqual(['M0', 'M1', 'M2']); // o teto da sala
+      expect(resposta.esquadrao.inimigos.map((b) => b.nome)).toEqual(['M0', 'M1', 'M2', 'M3', 'M4', 'M5']); // o teto da sala
       expect(resposta.esquadrao.aliados).toEqual([]);
-      expect(JSON.parse(readFileSync(resolve(pasta, ESQUADRAO_ONLINE_ARQUIVO), 'utf8')).inimigos).toHaveLength(3); // o que vai ao disco já é o que vale
+      expect(JSON.parse(readFileSync(resolve(pasta, ESQUADRAO_ONLINE_ARQUIVO), 'utf8')).inimigos).toHaveLength(LIMITES_ONLINE.mech); // o que vai ao disco já é o que vale
 
       await s.close();
       const s2 = await abrir(); // o reinício lembra
@@ -308,6 +308,36 @@ describe('a sala vazia com o esquadrão de antes fecha na hora (P270)', () => {
       expect(await esperar(async () => (await salasAbertas(s.port)) === 0)).toBe(true);
     } finally {
       await s.close();
+    }
+  });
+});
+
+describe('o teto de robôs da sala online cabe na banda por jogador (P273)', () => {
+  const CHEIO = esquadrao([
+    ...Array.from({ length: LIMITES_ONLINE.mech }, (_, i): BotSpec => ({ papel: 'mech', nome: `M${i}` })),
+    ...Array.from({ length: LIMITES_ONLINE.android }, (_, i): BotSpec => ({ papel: 'android', nome: `A${i}` })),
+    { papel: 'technician', nome: 'DOC' },
+  ]);
+
+  it('com de 1 a 8 humanos o estado que cada um recebe nunca passa de ROOM_UNITS unidades (os Mechs de IA cedem a vaga a quem entra; os andróides e o técnico ficam) e, de 2 humanos para cima, é exatamente ROOM_UNITS', async () => {
+    for (const humanos of [1, 2, 5, 8]) {
+      const room = await ArenaRoom.create('TETO', undefined, 'arena', undefined, CHEIO);
+      try {
+        const peers = Array.from({ length: humanos }, () => new FakePeer());
+        peers.forEach((p, i) => room.receive(p, entrar(`H${i}`)));
+        for (let t = 0; t < 6; t++) room.step();
+        const estado = newSnapshot();
+        const ultimo = peers[0]!.got.filter((b) => messageType(b) === MSG.SNAPSHOT).at(-1)!;
+        expect(decodeSnapshot(ultimo, estado)).toBe(true);
+        const esperado = humanos + Math.min(ROOM_SIZE - humanos, LIMITES_ONLINE.mech) + LIMITES_ONLINE.android + LIMITES_ONLINE.technician;
+        expect(estado.count, `${humanos} humanos`).toBe(esperado);
+        expect(estado.count, `${humanos} humanos`).toBeLessThanOrEqual(ROOM_UNITS);
+        if (humanos >= 2) expect(estado.count, `${humanos} humanos`).toBe(ROOM_UNITS);
+        // O que o jogador vê na lista é o mesmo: os de fora não aparecem.
+        expect(peers[0]!.roster().length, `${humanos} humanos`).toBe(esperado);
+      } finally {
+        room.dispose();
+      }
     }
   });
 });

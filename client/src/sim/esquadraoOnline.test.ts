@@ -11,8 +11,8 @@ const mech = (extra: Partial<BotSpec> = {}): BotSpec => ({ papel: 'mech', ...ext
 const papeis = (e: EsquadraoSpec) => e.inimigos.map((b) => b.papel);
 
 describe('o esquadrão das salas online (P270): o que a sala aceita', () => {
-  it('o teto é o da sala que já se mede: 3 Mechs, 3 andróides e 1 técnico, dentro das unidades de uma sala cheia (G11)', () => {
-    expect(LIMITES_ONLINE).toEqual({ mech: 3, android: 3, technician: 1 });
+  it('o teto é o que cabe na banda por jogador: 6 Mechs, 6 andróides e 1 técnico, dentro das unidades de uma sala cheia (G11, P273)', () => {
+    expect(LIMITES_ONLINE).toEqual({ mech: 6, android: 6, technician: 1 });
     // Os Mechs de IA dividem as vagas dos humanos (ROOM_SIZE); só os andróides e o técnico são unidades a mais.
     expect(LIMITES_ONLINE.mech).toBeLessThanOrEqual(ROOM_SIZE);
     expect(ROOM_SIZE + LIMITES_ONLINE.android + LIMITES_ONLINE.technician).toBeLessThanOrEqual(ROOM_UNITS);
@@ -20,12 +20,12 @@ describe('o esquadrão das salas online (P270): o que a sala aceita', () => {
 
   it('o que passa do teto sai do fim da lista, papel por papel, e a ordem dos que ficam é a que veio', () => {
     const lista = esquadrao([
-      mech({ nome: 'UM' }), { papel: 'android' }, mech({ nome: 'DOIS' }), { papel: 'technician' }, mech({ nome: 'TRES' }), mech({ nome: 'QUATRO' }), { papel: 'technician' },
-      { papel: 'android' }, { papel: 'android' }, { papel: 'android' },
+      mech({ nome: 'UM' }), { papel: 'android' }, mech({ nome: 'DOIS' }), { papel: 'technician' }, ...['TRES', 'QUATRO', 'CINCO', 'SEIS', 'SETE', 'OITO'].map((nome) => mech({ nome })), { papel: 'technician' },
+      ...Array.from({ length: 8 }, (): BotSpec => ({ papel: 'android' })),
     ]);
     const online = esquadraoParaOnline(lista);
-    expect(online.inimigos.filter((b) => b.papel === 'mech').map((b) => b.nome)).toEqual(['UM', 'DOIS', 'TRES']);
-    expect(papeis(online).filter((p) => p === 'android')).toHaveLength(3);
+    expect(online.inimigos.filter((b) => b.papel === 'mech').map((b) => b.nome)).toEqual(['UM', 'DOIS', 'TRES', 'QUATRO', 'CINCO', 'SEIS']);
+    expect(papeis(online).filter((p) => p === 'android')).toHaveLength(LIMITES_ONLINE.android);
     expect(papeis(online).filter((p) => p === 'technician')).toHaveLength(1);
     expect(papeis(online).slice(0, 4)).toEqual(['mech', 'android', 'mech', 'technician']);
   });
@@ -79,9 +79,9 @@ describe('o esquadrão das salas online (P270): o que a sala aceita', () => {
   });
 
   it('a resposta do servidor só vale inteira: o esquadrão vem limpo para o online, e o que não é resposta vira null', () => {
-    const boa = lerRespostaDoEsquadrao({ salvo: true, esquadrao: esquadrao([mech(), mech(), mech(), mech()], [mech()]) });
+    const boa = lerRespostaDoEsquadrao({ salvo: true, esquadrao: esquadrao(Array.from({ length: 9 }, () => mech()), [mech()]) });
     expect(boa?.salvo).toBe(true);
-    expect(boa?.esquadrao.inimigos).toHaveLength(3);
+    expect(boa?.esquadrao.inimigos).toHaveLength(LIMITES_ONLINE.mech);
     expect(boa?.esquadrao.aliados).toEqual([]);
     for (const ruim of [null, {}, { salvo: 'sim', esquadrao: esquadrao([]) }, { salvo: true }, { salvo: true, esquadrao: { v: 5, inimigos: [] } }]) expect(lerRespostaDoEsquadrao(ruim), JSON.stringify(ruim)).toBeNull();
   });
@@ -127,6 +127,6 @@ describe('a chave do esquadrão de uma sala e os limites do editor online', () =
   it('os limites do editor online são o teto da sala (sem aliados nem titãs) e batem com o que o servidor corta', () => {
     const l = limitesOnline();
     expect(l.porPapel).toEqual(LIMITES_ONLINE);
-    expect(l).toMatchObject({ aliados: 0, titas: 0, tecnicos: 1, inimigos: 7, total: 7 });
+    expect(l).toMatchObject({ aliados: 0, titas: 0, tecnicos: 1, inimigos: 13, total: 13 });
   });
 });

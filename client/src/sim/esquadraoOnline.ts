@@ -1,4 +1,5 @@
 import type { MapaOnline } from '../../../shared/net/mapa';
+import { ROOM_BOT_ANDROIDS, ROOM_BOT_MECHS } from '../../../shared/net/constants';
 import { LIMITES_DAS_REGRAS, type RegrasOnline } from '../../../shared/regras';
 import { DEFAULT_SETTINGS } from '../core/Settings';
 import { ehTita, type ChassisId } from '../entities/chassis';
@@ -11,9 +12,9 @@ import { chaveDoEsquadrao, ESQUADRAO_VERSAO, esquadraoDeFoes, sanearEsquadrao, t
  * (`server/esquadraoOnline.ts`, `esquadrao-online.json`), no molde das regras (`shared/regras.ts`) e dos outdoors. Vale para as salas **novas**: a sala de pé termina como começou
  * (os corpos nascem com a partida), e a sala vazia fecha em 30 s. Sem um esquadrão salvo valem as regras (`esquadraoDasRegras`): o jogo online de sempre.
  *
- * **O teto é o da sala que já se mede** (G11/G12, `CAPACIDADE.md`): `ROOM_UNITS` é 8 Mechs (humanos mais bots que completam) + 3 andróides + 1 técnico, e `LIMITES_DAS_REGRAS` já era
- * 3 Mechs e 3 andróides. Um esquadrão online não passa disto: **mais robôs seriam mais estado a 20 Hz para cada jogador** e pedem homologação antes. Também não há **aliados** (o roster
- * de rede não os descreve, `ArenaRoom`) nem **titãs** (um corpo de 20 m e 1.900 de torso não cabe no orçamento de rede e de CPU da sala).
+ * **O teto é o que cabe na banda por jogador** (G11, `CAPACIDADE.md`; P273): até 6 Mechs, 6 andróides e o técnico, que com os humanos dá no máximo `ROOM_UNITS` (15) unidades no estado a 20 Hz,
+ * os 8 KB/s da meta. (Era 3, 3 e 1 até 29/10; o servidor e a GPU aguentam muito mais, a banda não.) Também não há **aliados** (o roster de rede não os descreve, `ArenaRoom`) nem **titãs**
+ * (um corpo de 20 m e 1.900 de torso não cabe no orçamento de rede e de CPU da sala).
  *
  * Só dados e conta (sem Three.js nem DOM): roda igual no servidor, no navegador e nos testes. Nada é confiado: o que vem da rede passa por `esquadraoParaOnline`.
  */
@@ -25,10 +26,10 @@ export const ADMIN_ESQUADRAO_GRAVAR_PATH = '/admin/esquadrao/gravar';
 export const MAPAS_DO_ESQUADRAO_ONLINE: readonly MapaOnline[] = ['arena', 'praia'];
 export const esquadraoValeNoMapa = (mapa: MapaOnline): boolean => MAPAS_DO_ESQUADRAO_ONLINE.includes(mapa);
 
-/** O que cabe num esquadrão online: o mesmo que as regras já deixavam (3 Mechs, 3 andróides) e o técnico, único. */
+/** O que cabe num esquadrão online: 6 Mechs, 6 andróides e o técnico, único (`ROOM_BOT_MECHS`, `ROOM_BOT_ANDROIDS`). As regras da sala (sem esquadrão salvo) seguem em `LIMITES_DAS_REGRAS` (3 e 3). */
 export const LIMITES_ONLINE: Readonly<Record<PapelDoBot, number>> = Object.freeze({
-  mech: LIMITES_DAS_REGRAS.mechs.max,
-  android: LIMITES_DAS_REGRAS.androides.max,
+  mech: ROOM_BOT_MECHS,
+  android: ROOM_BOT_ANDROIDS,
   technician: 1,
 });
 

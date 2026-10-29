@@ -140,7 +140,7 @@ export class EsquadraoEditor {
     private mapa: MapId = 'arena',
     /** O esquadrão que as Configurações mandam: o que o preset PADRÃO monta e o que "voltar ao padrão" devolve. */
     private readonly padrao: () => EsquadraoSpec = esquadraoPadrao,
-    /** O esquadrão das salas online (P270): o teto da sala (3 Mechs, 3 andróides, 1 técnico), sem aliados nem titãs. */
+    /** O esquadrão das salas online (P270): o teto da sala (6 Mechs, 6 andróides, 1 técnico: `LIMITES_ONLINE`), sem aliados nem titãs. */
     private readonly online = false,
   ) {
     const limpo = online ? esquadraoParaOnline(inicial) : sanearEsquadrao(inicial, 'arena');

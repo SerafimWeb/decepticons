@@ -265,13 +265,15 @@ describe('rede: orçamento de banda (G11)', () => {
     expect(encodeSnapshot(new Writer(), fullSnapshot(12)).length).toBe(snapshotBytes(12));
   });
 
-  it('download: sala cheia (8 Mechs, 3 andróides e o técnico) a 20 Hz, numa luta intensa, cabe em 8 KB/s com folga', () => {
-    expect(downloadPerSecond(ROOM_UNITS)).toBeLessThan(DOWNLOAD_BUDGET * 0.8);
+  it('download: sala cheia (ROOM_UNITS = 8 Mechs, 6 andróides e o técnico) a 20 Hz, numa luta intensa e com todos com fogo, choque ou gelo, cabe em 8 KB/s (P273: é a meta inteira, sem folga)', () => {
+    expect(ROOM_UNITS).toBe(15);
+    expect(downloadPerSecond(ROOM_UNITS, true)).toBeLessThan(DOWNLOAD_BUDGET);
+    expect(downloadPerSecond(ROOM_UNITS, true)).toBeGreaterThan(DOWNLOAD_BUDGET * 0.95);
   });
 
-  it('o teto sem delta: até 15 unidades cabem mandando tudo a cada estado; acima, só com o delta (M7)', () => {
+  it('o teto sem delta: até 15 unidades cabem mandando tudo a cada estado, e a sala cheia usa todas elas; acima, só com o delta (M7) ou com a meta de banda maior (decisão do dono)', () => {
     expect(unitsWithinBudget()).toBe(15);
-    expect(unitsWithinBudget()).toBeGreaterThanOrEqual(ROOM_UNITS + 3);
+    expect(unitsWithinBudget()).toBe(ROOM_UNITS);
     expect(downloadPerSecond(16)).toBeGreaterThanOrEqual(DOWNLOAD_BUDGET);
   });
 });
