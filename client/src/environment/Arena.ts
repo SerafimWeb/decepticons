@@ -9,7 +9,7 @@ import { ArenaQuadro } from './ArenaQuadro';
 import { caixaDaRampa, MOBILIARIO_URBANO, PREDIOS_URBANOS, QUIOSQUES_URBANOS, RAMPAS_URBANAS, type BlocoUrbano, type RampaUrbana } from './ArenaUrbana';
 import { ArenaTelao } from './ArenaTelao';
 import { buildingBands } from './BuildingBands';
-import type { DestructibleDef, Destructibles } from './Destructibles';
+import type { DestructibleDef, Destructibles, EstiloDeBarricada } from './Destructibles';
 import { SerafimTower } from './SerafimTower';
 import { Bunker, type MapId } from './Bunker';
 import { exigirMapa, exigirPraia, type ArenaDoCenario, type InstanciaDaPraia, type InstanciaDoMapa } from './mapasSobDemanda';
@@ -129,7 +129,7 @@ export class Arena implements ArenaDoCenario {
   constructor(
     private readonly scene: THREE.Scene,
     private readonly physics: PhysicsWorld,
-    destructibles: Destructibles,
+    private readonly destructibles: Destructibles,
     map: MapId = 'arena',
     opcoes: { transformador?: boolean } = {},
   ) {
@@ -187,6 +187,11 @@ export class Arena implements ArenaDoCenario {
     this.telao = new ArenaTelao(scene);
     // A cidade em volta (as torres, os telões de propaganda, a rua, os postes e o chão molhado, P264) é só desenho: o jogo a monta por cima,
     // num pedaço sob demanda (`CidadeNeonCenario.ts`). O servidor e os testes de regra ficam só com o que conta para a partida.
+  }
+
+  /** O cenário do navegador (a cidade em volta, P264) dá às barricadas que quebram o desenho de supercomputador (P272): só desenho, o colisor e a vida são os mesmos. */
+  estilizarBarricadas(estilo: EstiloDeBarricada): void {
+    this.destructibles.estilizar(estilo);
   }
 
   /** O relógio visual do mapa (s, desde que foi montado): só a praia o conta. É o que o ciclo do dia usa quando a partida não traz outro (`CicloDoDia.progressoDaPartida`). */

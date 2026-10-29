@@ -1,5 +1,13 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Os supercomputadores da praça (Claude, P272, branch `claude/supercomputadores`)
+
+**O pedido (28/10):** "essas caixas do centro do cenário… supercomputadores… macminis gigantes… servidores blindados… que chame atenção pela beleza".
+**Entrega:** `environment/Supercomputadores.ts`: as 6 barricadas e os 2 quiosques viram **mini-Mac gigante, rack blindado, banco de servidores e nó quântico** (a variante sai do formato), do tamanho exato do colisor; LEDs que respiram no shader e apagam sem o transformador. Só no navegador, pelo cenário da cidade (`Destructibles.estilizar`); o servidor e as regras seguem com a caixa.
+**Custo (Vega 11, rodadas alternadas main × branch, mediana de 3):** GPU p50 13,1→12,9 (nascimento), 16,5→17,0 (alto), 11,2→11,4, 11,0→11,5, 11,1→11,5 ms (dentro do ruído de ±2); **+16 chamadas de desenho**; 0/480 poses com NaN na GPU real; pacote de partida 482,4→482,5 KB. **Testes:** +8 (o desenho cabe no colisor, o orçamento de triângulos, as luzes, o shader sem `pow`/`sqrt`/`log`, o gancho nas barricadas em pé e nas que voltam).
+**Falta:** o olho do Comandante (gostou da linguagem? mais cor? os contêineres e os três prédios do meio também?).
+**Próxima sessão começa com:** o que o Comandante pedir sobre as máquinas; a decisão sobre a publicidade dinâmica (P271: `MARCA_E_ANUNCIOS.md` § 7).
+
 ## O esquadrão das salas online e o Ajustar sem INIMIGOS/NOMES (Claude, P270, PRs 1 e 2)
 
 **O pedido (28/10):** "quando eu jogo online, queria poder configurar os times no botão ESQUADRÃO… esse botão compete com o Ajustar" (último item antes de lançar). **Respostas dele:** só o Comandante monta, para todas as salas; uma porta só, o ESQUADRÃO.

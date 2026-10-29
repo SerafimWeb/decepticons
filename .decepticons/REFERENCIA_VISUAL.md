@@ -237,5 +237,6 @@ no asfalto, por um truque barato de shader, sem desenhar a cena duas vezes).
 fotorrealismo (volumetria de verdade, reflexo de verdade, raio traçado).
 **Ainda não (próximos cortes, se o Comandante quiser):** pista elevada e passarelas entre as torres; hologramas flutuando; tráfego de veículos voadores; chuva e
 névoa de chão mais densa; mobília de rua (toldos, barracas, máquinas) ao longo da avenida; os três prédios do meio da praça, que ainda são caixas.
+**Atualização (P272, 28/10):** as caixas escuras do centro da praça (as barricadas que quebram e os quiosques) viraram **supercomputadores** (mini-Mac gigante, rack blindado, banco de servidores, nó quântico; `Supercomputadores.ts`): a "mobília de rua" da praça agora é tecnologia, no tom do que o Comandante pediu ("vanguardista, que chame atenção pela beleza").
 **Atualização (P266, 28/10):** os telões com anúncios inventados deram lugar aos **outdoors da marca** (a arte dos produtos do Comandante, na vertical; `MARCA_E_ANUNCIOS.md`): "nenhuma marca real" passa a valer só para os
 letreiros de bandeira e os neons. O **holograma** que os quadros mostram flutuando virou a logo da Serafim em 3D sobre o Prédio Serafim.
