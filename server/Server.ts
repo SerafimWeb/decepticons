@@ -1143,8 +1143,11 @@ export async function startServer(
     ws.on('close', () => {
       limparEspera();
       release();
-      presenca.saiu(peer);
-      void sala.then((r) => r?.leave(peer));
+      // Na mesma fila da sala (o JOIN que chegou antes do fechamento é processado antes): a entrada do diário sempre nasce antes da saída, nunca fica uma visita aberta sem conexão (P275, revisão).
+      void sala.then((r) => {
+        r?.leave(peer);
+        presenca.saiu(peer);
+      });
     });
     ws.on('error', () => {
       release();

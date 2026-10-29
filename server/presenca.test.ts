@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DiarioDePresenca, PRESENCA_ARQUIVO, PRESENCA_MAX, PRESENCA_RETENCAO_DIAS } from './presenca';
+import { DiarioDePresenca, PRESENCA_ABERTA_NO_MAXIMO_MS, PRESENCA_ARQUIVO, PRESENCA_JUNTA_RECONEXAO_MS, PRESENCA_MAX_CONTAS, PRESENCA_MAX_CONVIDADOS, PRESENCA_RETENCAO_DIAS } from './presenca';
 
 const pasta = resolve('.tmp', 'presenca-teste');
 afterAll(() => rmSync(pasta, { recursive: true, force: true }));
@@ -58,7 +58,7 @@ describe('o diário de presença: quem entrou nas salas e quando (P275)', () => 
     expect(d.recentes()[0]!.apelido).toBe('ALFA');
   });
 
-  it('o diário guarda 30 dias: a visita que saiu há mais que isso sai do arquivo na próxima mudança; quem ainda está dentro fica', () => {
+  it('o diário guarda 30 dias: a visita que saiu há mais que isso sai do arquivo na próxima mudança (a que ninguém fechou vale 12 h e envelhece igual)', () => {
     const r = relogio();
     const d = new DiarioDePresenca(null, r.agora);
     const velho = {};
@@ -72,22 +72,98 @@ describe('o diário de presença: quem entrou nas salas e quando (P275)', () => 
     expect(d.recentes().map((v) => v.apelido)).toEqual(['NOVO', 'DENTRO', 'VELHO']); // ainda no prazo
     r.anda(2 * DIA);
     d.entrou({}, quem('OUTRO'));
-    expect(d.recentes().map((v) => v.apelido)).toEqual(['OUTRO', 'NOVO', 'DENTRO']); // VELHO passou de 30 dias
+    expect(d.recentes().map((v) => v.apelido)).toEqual(['OUTRO', 'NOVO']); // VELHO e DENTRO (aberta, vale 12 h) passaram de 30 dias
   });
 
-  it('o teto de visitas guardadas: passando dele, as mais velhas saem primeiro', () => {
+  it('o teto dos convidados: passando dele, os mais velhos saem primeiro', () => {
     const r = relogio();
     const d = new DiarioDePresenca(null, r.agora);
-    for (let i = 0; i < PRESENCA_MAX + 5; i++) {
+    for (let i = 0; i < PRESENCA_MAX_CONVIDADOS + 5; i++) {
       const c = {};
       d.entrou(c, quem(`P${i}`));
       d.saiu(c);
       r.anda(10);
     }
-    const todas = d.recentes(PRESENCA_MAX + 100);
-    expect(todas).toHaveLength(PRESENCA_MAX);
-    expect(todas[0]!.apelido).toBe(`P${PRESENCA_MAX + 4}`);
+    const todas = d.recentes(PRESENCA_MAX_CONVIDADOS + 100);
+    expect(todas).toHaveLength(PRESENCA_MAX_CONVIDADOS);
+    expect(todas[0]!.apelido).toBe(`P${PRESENCA_MAX_CONVIDADOS + 4}`);
     expect(todas.at(-1)!.apelido).toBe('P5');
+  });
+
+  it('quem inunda o diário de convidados (entrar e sair em loop com apelidos inventados) não apaga as entradas de quem estava logado', () => {
+    const r = relogio();
+    const d = new DiarioDePresenca(null, r.agora);
+    for (let i = 0; i < 10; i++) {
+      const c = {};
+      d.entrou(c, quem(`CONTA${i}`, 100 + i));
+      d.saiu(c);
+      r.anda(10);
+    }
+    for (let i = 0; i < PRESENCA_MAX_CONVIDADOS * 2; i++) {
+      const c = {};
+      d.entrou(c, quem(`SPAM${i}`));
+      d.saiu(c);
+      r.anda(10);
+    }
+    const todas = d.recentes(PRESENCA_MAX_CONVIDADOS + PRESENCA_MAX_CONTAS);
+    expect(todas.filter((v) => v.conta !== null)).toHaveLength(10);
+    expect(todas.filter((v) => v.conta === null)).toHaveLength(PRESENCA_MAX_CONVIDADOS);
+  });
+
+  it('o teto das contas vale por si: as mais velhas das contas saem, os convidados não são tocados', () => {
+    const r = relogio();
+    const d = new DiarioDePresenca(null, r.agora);
+    d.entrou({}, quem('CONVIDADO'));
+    for (let i = 0; i < PRESENCA_MAX_CONTAS + 3; i++) {
+      const c = {};
+      d.entrou(c, quem(`C${i}`, i + 1));
+      d.saiu(c);
+      r.anda(10);
+    }
+    const todas = d.recentes(PRESENCA_MAX_CONVIDADOS + PRESENCA_MAX_CONTAS);
+    expect(todas.filter((v) => v.conta !== null)).toHaveLength(PRESENCA_MAX_CONTAS);
+    expect(todas.some((v) => v.apelido === 'CONVIDADO')).toBe(true);
+    expect(todas.some((v) => v.apelido === 'C0')).toBe(false);
+  });
+
+  it('a mesma pessoa que sai e volta à mesma sala em 2 minutos (a rede oscilou) continua na MESMA entrada; depois disso, ou outra pessoa, ou outra sala, ou a aba aberta ao lado, é entrada nova', () => {
+    const r = relogio();
+    const d = new DiarioDePresenca(null, r.agora);
+    const a = {};
+    d.entrou(a, quem('ALFA', 7));
+    r.anda(60_000);
+    d.saiu(a);
+    r.anda(30_000);
+    const b = {};
+    d.entrou(b, quem('ALFA', 7)); // voltou em 30 s
+    expect(d.recentes()).toHaveLength(1);
+    expect(d.recentes()[0]).toMatchObject({ apelido: 'ALFA', saiu: null });
+    expect(d.dentroAgora()).toBe(1);
+    d.saiu(b);
+    expect(d.recentes()[0]!.saiu).not.toBeNull(); // a conexão nova fecha a entrada reaberta
+    r.anda(PRESENCA_JUNTA_RECONEXAO_MS + 1);
+    d.entrou({}, quem('ALFA', 7)); // voltou tarde
+    expect(d.recentes()).toHaveLength(2);
+    const c = {};
+    d.saiu(c);
+    d.entrou({}, quem('ALFA', 8)); // outra conta com o mesmo apelido
+    d.entrou({}, quem('ALFA', 7, 'OUTRA')); // outra sala
+    d.entrou({}, quem('ALFA', 7)); // outra aba, com a entrada de antes ainda aberta
+    expect(d.recentes()).toHaveLength(5);
+  });
+
+  it('uma visita que ninguém fechou (a rede sumiu sem aviso) para de contar 12 h depois da entrada, e a conexão que fechar depois não a reescreve', () => {
+    const r = relogio();
+    const d = new DiarioDePresenca(null, r.agora);
+    const sumida = {};
+    d.entrou(sumida, quem('SUMIDA'));
+    const entrou = d.recentes()[0]!.entrou;
+    r.anda(PRESENCA_ABERTA_NO_MAXIMO_MS + 60_000);
+    d.entrou({}, quem('OUTRO'));
+    expect(d.recentes().find((v) => v.apelido === 'SUMIDA')!.saiu).toBe(entrou + PRESENCA_ABERTA_NO_MAXIMO_MS);
+    expect(d.dentroAgora()).toBe(1);
+    d.saiu(sumida);
+    expect(d.recentes().find((v) => v.apelido === 'SUMIDA')!.saiu).toBe(entrou + PRESENCA_ABERTA_NO_MAXIMO_MS);
   });
 
   it('as visitas de uma conta, as mais novas primeiro e só as dela (o que ela recebe ao baixar os próprios dados)', () => {
