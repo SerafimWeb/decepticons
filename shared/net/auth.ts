@@ -59,7 +59,7 @@ export const SESSAO_HEADER = 'x-cybermech-sessao';
  * A versão do texto da política de privacidade (`/privacidade/`) que quem cria a conta aceita. **Mudou o texto em algo que o titular precisa saber de novo? Mude esta data junto**
  * (e o texto em `scripts/privacidade.mjs`): a conta guarda a versão que a pessoa aceitou, e um navegador com a versão velha é mandado recarregar antes de criar conta.
  */
-export const POLITICA_VERSAO = '2026-10-21.1';
+export const POLITICA_VERSAO = '2026-10-29.1';
 
 /** O que o formulário de criar conta manda além do e-mail e da senha: as duas caixas marcadas (política lida; maior de 18 anos ou com autorização do responsável). */
 export interface AceiteDaPolitica {
@@ -230,6 +230,8 @@ export interface DadosDaConta {
   progresso: unknown | null;
   atividade: { dia: string; segundos: number; partidas: number; abates: number; mortes: number }[];
   sessoes: { criadaEm: string; venceEm: string }[];
+  /** As vezes em que esta conta entrou numa sala online (o diário de presença, P275; 30 dias): a mesma lista que o dono vê, só a desta conta. */
+  entradasEmSalas: { apelido: string; sala: string; mapa: string; entrouEm: string; saiuEm: string | null }[];
 }
 
 // ---------------------------------------------------------------- progresso do piloto (P174)

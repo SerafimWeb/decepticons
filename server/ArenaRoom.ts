@@ -112,7 +112,7 @@ export class ArenaRoom {
   /** O chat de texto direto entre dois pilotos (P216): só repassa, sem histórico. */
   private readonly texto = new RelayDeTexto<Peer>((peer, bytes) => peer.send(bytes));
   /** Alguém entrou na partida (montagem aceita). O servidor conta a origem; a sala não sabe para quê. */
-  onEntrou?: (peer: Peer) => void;
+  onEntrou?: (peer: Peer, apelido: string) => void;
   /** Alguém foi recusado, e por quê. */
   onRecusou?: (peer: Peer, motivo: RejectReason) => void;
   /** Sala fechada: o mundo físico foi liberado; mensagens e saídas que ainda chegarem são ignoradas. */
@@ -365,7 +365,7 @@ export class ArenaRoom {
       peer.send(encodeJaneiroMultidao(this.w, { total: this.match.multidao.total, mortos: estado.mortos, fugas: Array.from(estado.fugas) }));
     }
     this.broadcastRoster();
-    this.onEntrou?.(peer);
+    this.onEntrou?.(peer, m.name);
   }
 
   private reject(peer: Peer, reason: RejectReason): void {

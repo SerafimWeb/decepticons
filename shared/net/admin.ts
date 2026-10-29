@@ -25,6 +25,8 @@ export const ADMIN_AVALIAR_PATH = '/admin/avaliar';
 export const ADMIN_TESTAR_PATH = '/admin/testar';
 export const ADMIN_FECHAR_SALA_PATH = '/admin/sala/fechar';
 export const ADMIN_REINICIAR_PATH = '/admin/reiniciar';
+/** Quem entrou nas salas e quando (P275): o diário de presença, só para o dono. */
+export const ADMIN_PRESENCA_PATH = '/admin/presenca';
 
 /** De quanto em quanto tempo o servidor tira uma amostra (s), e quantas guarda (uma hora). */
 export const AMOSTRA_CADA_S = 5;
@@ -203,6 +205,48 @@ export function lerHistorico(raw: unknown): AdminHistorico | null {
     amostras.push({ t: t!, jogadores: jogadores!, salas: salas!, tickMs: tickMs!, rssMB: rssMB!, cpuPct: cpuPct!, saidaKBs: saidaKBs!, lacoMs: lacoMs! });
   }
   return { passoS, amostras };
+}
+
+/** Uma entrada de alguém numa sala, como o painel do dono a vê (P275). A conta vem como o número e um rótulo **mascarado** (`p***@x.com`): o e-mail inteiro nunca sai do banco de contas. */
+export interface AdminVisita {
+  apelido: string;
+  conta: { id: number; rotulo: string } | null;
+  sala: string;
+  mapa: string;
+  /** ISO 8601. */
+  entrouEm: string;
+  /** `null` = ainda na sala. */
+  saiuEm: string | null;
+}
+
+export interface AdminPresenca {
+  /** As visitas, as mais novas primeiro. */
+  visitas: AdminVisita[];
+  /** Quantos dias o servidor guarda cada visita. */
+  retencaoDias: number;
+  /** Quantas pessoas estão dentro agora (no diário todo, não só nas listadas). */
+  dentroAgora: number;
+}
+
+export function lerPresenca(raw: unknown): AdminPresenca | null {
+  const r = objeto(raw);
+  const retencao = num(r?.retencaoDias);
+  const dentro = num(r?.dentroAgora);
+  if (!r || retencao === null || dentro === null || !Array.isArray(r.visitas)) return null;
+  const visitas: AdminVisita[] = [];
+  for (const x of r.visitas) {
+    const o = objeto(x);
+    const apelido = texto(o?.apelido);
+    const sala = texto(o?.sala);
+    const mapa = texto(o?.mapa);
+    const entrouEm = texto(o?.entrouEm);
+    const c = o?.conta === null ? null : objeto(o?.conta);
+    const conta = c ? { id: num(c.id), rotulo: texto(c.rotulo) } : null;
+    if (!o || apelido === null || sala === null || mapa === null || entrouEm === null || (o.saiuEm !== null && texto(o.saiuEm) === null)) return null;
+    if (o.conta !== null && (!conta || conta.id === null || conta.rotulo === null)) return null;
+    visitas.push({ apelido, conta: conta ? { id: conta.id!, rotulo: conta.rotulo! } : null, sala, mapa, entrouEm, saiuEm: o.saiuEm === null ? null : (o.saiuEm as string) });
+  }
+  return { visitas, retencaoDias: retencao, dentroAgora: dentro };
 }
 
 export function lerLog(raw: unknown): AdminLog | null {

@@ -15,6 +15,7 @@ import {
   lerEstado,
   lerHistorico,
   lerLog,
+  lerPresenca,
   lerTeste,
 } from './admin';
 import { METRICAS_HEADER } from './telemetry';
@@ -108,5 +109,21 @@ describe('contrato do painel do servidor', () => {
     expect(lerErro({ erro: 'não' })).toEqual({ erro: 'não' });
     expect(lerErro({ jogadores: 2 })).toBeNull();
     expect(lerErro('erro')).toBeNull();
+  });
+});
+
+describe('o diário de presença no contrato do painel (P275)', () => {
+  const visita = { apelido: 'ALFA', conta: { id: 7, rotulo: 'p***@x.com' }, sala: 'ARENA', mapa: 'arena', entrouEm: '2026-10-29T13:20:00.000Z', saiuEm: null };
+  const boa = { visitas: [visita, { ...visita, apelido: 'BRAVO', conta: null, saiuEm: '2026-10-29T13:40:00.000Z' }], retencaoDias: 30, dentroAgora: 1 };
+
+  it('lê a resposta inteira: a conta com o número e o rótulo mascarado, o convidado sem conta, quem ainda está dentro sem hora de saída', () => {
+    expect(lerPresenca(boa)).toEqual(boa);
+    expect(lerPresenca({ visitas: [], retencaoDias: 30, dentroAgora: 0 })).toEqual({ visitas: [], retencaoDias: 30, dentroAgora: 0 });
+  });
+
+  it('recusa o que não é a resposta: falta campo, conta torta, hora que não é texto', () => {
+    for (const ruim of [null, {}, { ...boa, visitas: 'x' }, { ...boa, retencaoDias: 'x' }, { ...boa, visitas: [{ ...visita, conta: { id: 'x', rotulo: 'a' } }] }, { ...boa, visitas: [{ ...visita, conta: { id: 1 } }] }, { ...boa, visitas: [{ ...visita, saiuEm: 5 }] }, { ...boa, visitas: [{ ...visita, apelido: 3 }] }]) {
+      expect(lerPresenca(ruim), JSON.stringify(ruim)).toBeNull();
+    }
   });
 });

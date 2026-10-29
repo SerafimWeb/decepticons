@@ -1,4 +1,4 @@
-import type { AdminAmostra, AdminErro, Resultado, Veredito } from '../../../shared/net/admin';
+import type { AdminAmostra, AdminErro, AdminVisita, Resultado, Veredito } from '../../../shared/net/admin';
 import type { MotivoDeFalha } from '../net/admin';
 import { mapaDaChave } from '../../../shared/net/mapa';
 import { TEATROS } from './theater';
@@ -86,6 +86,33 @@ export function nomeDoMapa(chave: string): string {
 export function linhaDaSala(s: { codigo: string; jogadores: number; bots: number; rodada: number; restanteS: number; jogando: boolean }): string {
   const resto = s.jogando ? `${Math.floor(s.restanteS / 60)}:${String(s.restanteS % 60).padStart(2, '0')}` : 'intervalo';
   return `${s.codigo} · ${s.jogadores} jogando · ${s.bots} bots · rodada ${s.rodada}, ${resto}`;
+}
+
+/** "10:21" se foi hoje; "28/10 21:40" se não (a hora do aparelho de quem olha). */
+export function horaDaVisita(iso: string, agora: number): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  const dois = (n: number) => String(n).padStart(2, '0');
+  const hora = `${dois(d.getHours())}:${dois(d.getMinutes())}`;
+  const hoje = new Date(agora);
+  const mesmoDia = d.getFullYear() === hoje.getFullYear() && d.getMonth() === hoje.getMonth() && d.getDate() === hoje.getDate();
+  return mesmoDia ? hora : `${dois(d.getDate())}/${dois(d.getMonth() + 1)} ${hora}`;
+}
+
+/**
+ * Uma visita no painel (P275): quando entrou, quem era (o apelido e, se estava logado, a conta com o e-mail mascarado), onde e quanto ficou ("na sala agora" se ainda está).
+ * Devolve as partes separadas para a tela destacar o apelido.
+ */
+export function linhaDaVisita(v: AdminVisita, agora: number): { quando: string; quem: string; conta: string | null; onde: string; ficou: string } {
+  const entrou = new Date(v.entrouEm).getTime();
+  const saiu = v.saiuEm === null ? null : new Date(v.saiuEm).getTime();
+  return {
+    quando: horaDaVisita(v.entrouEm, agora),
+    quem: v.apelido,
+    conta: v.conta ? `${v.conta.rotulo} (conta ${v.conta.id})` : null,
+    onde: `${v.sala.split(/[@~]/)[0] ?? v.sala} · ${nomeDoMapa(v.mapa === 'arena' ? v.sala : `${v.sala}@${v.mapa}`)}`,
+    ficou: saiu === null ? 'na sala agora' : Number.isFinite(entrou) && Number.isFinite(saiu) ? duracao((saiu - entrou) / 1000) : '—',
+  };
 }
 
 /** Cor de um valor contra a meta: verde até a meta, laranja até 1,5×, vermelho acima. */

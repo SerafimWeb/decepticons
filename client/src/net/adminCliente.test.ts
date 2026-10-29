@@ -206,3 +206,17 @@ describe('o esquadrão das salas online no cliente do painel (P270)', () => {
     expect(await cliente(resposta({}, 401)).gravarEsquadrao(esquadrao)).toMatchObject({ ok: false, motivo: 'token' });
   });
 });
+
+describe('o diário de presença no cliente do painel (P275)', () => {
+  it('lê quem entrou no caminho certo, com a chave do dono, e uma resposta fora do contrato é "resposta"', async () => {
+    const corpo = { visitas: [{ apelido: 'ALFA', conta: null, sala: 'ARENA', mapa: 'arena', entrouEm: '2026-10-29T13:20:00.000Z', saiuEm: null }], retencaoDias: 30, dentroAgora: 1 };
+    const buscar = resposta(corpo);
+    const r = await cliente(buscar).presenca();
+    expect(r).toEqual({ ok: true, dados: corpo });
+    const [url, init] = (buscar as unknown as { mock: { calls: [string, RequestInit][] } }).mock.calls[0]!;
+    expect(url).toBe('https://jogo.selvamkt.com.br/admin/presenca');
+    expect((init.headers as Record<string, string>)[ADMIN_HEADER]).toBe('T0KEN');
+    expect(await cliente(resposta({ visitas: 3 })).presenca()).toMatchObject({ ok: false, motivo: 'resposta' });
+    expect(await cliente(resposta({}, 401)).presenca()).toMatchObject({ ok: false, motivo: 'token' });
+  });
+});

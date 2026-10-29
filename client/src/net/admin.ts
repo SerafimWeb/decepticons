@@ -5,6 +5,7 @@ import {
   ADMIN_HEADER,
   ADMIN_HISTORICO_PATH,
   ADMIN_LOG_PATH,
+  ADMIN_PRESENCA_PATH,
   ADMIN_REINICIAR_PATH,
   ADMIN_TESTAR_PATH,
   type AdminAvaliacao,
@@ -12,6 +13,7 @@ import {
   type AdminEstado,
   type AdminHistorico,
   type AdminLog,
+  type AdminPresenca,
   type AdminReiniciar,
   type AdminTeste,
   lerAvaliacao,
@@ -19,6 +21,7 @@ import {
   lerEstado,
   lerHistorico,
   lerLog,
+  lerPresenca,
   lerTeste,
 } from '../../../shared/net/admin';
 import { serverHttpUrl } from '../../../shared/net/serverUrl';
@@ -80,6 +83,8 @@ export class AdminCliente {
   estado = (): Promise<Resposta<AdminEstado>> => this.chamar(ADMIN_ESTADO_PATH, lerEstado);
   historico = (): Promise<Resposta<AdminHistorico>> => this.chamar(ADMIN_HISTORICO_PATH, lerHistorico);
   log = (): Promise<Resposta<AdminLog>> => this.chamar(ADMIN_LOG_PATH, lerLog);
+  /** Quem entrou nas salas e quando (P275): o diário de presença do servidor, só para o dono. */
+  presenca = (): Promise<Resposta<AdminPresenca>> => this.chamar(ADMIN_PRESENCA_PATH, lerPresenca);
   avaliar = (): Promise<Resposta<AdminAvaliacao>> => this.chamar(ADMIN_AVALIAR_PATH, lerAvaliacao);
   testar = (): Promise<Resposta<AdminTeste>> => this.chamar(ADMIN_TESTAR_PATH, lerTeste, { metodo: 'POST', esperaMs: ESPERA_TESTE_MS });
   fecharSala = (sala: string): Promise<Resposta<true>> => this.chamar(ADMIN_FECHAR_SALA_PATH, (r) => ((r as { ok?: unknown } | null)?.ok === true ? true : null), { metodo: 'POST', corpo: { sala } });

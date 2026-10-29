@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AdminAmostra } from '../../../shared/net/admin';
-import { caminhoDoGrafico, duracao, linhaDaSala, nivelContraMeta, nomeDoMapa, num, serie, textoDoMotivo, voltou } from './serverData';
+import { caminhoDoGrafico, duracao, horaDaVisita, linhaDaSala, linhaDaVisita, nivelContraMeta, nomeDoMapa, num, serie, textoDoMotivo, voltou } from './serverData';
 
 describe('janela do servidor: as contas da tela', () => {
   it('a duração em palavras: segundos, minutos, horas e dias', () => {
@@ -92,5 +92,25 @@ describe('janela do servidor: as contas da tela', () => {
     expect(voltou(3600, 3700)).toBe(false);
     expect(voltou(3600, 3600)).toBe(false); // o mesmo uptime é o mesmo processo, não uma volta
     expect(voltou(3600, null)).toBe(false);
+  });
+});
+
+describe('janela do servidor: quem entrou (P275)', () => {
+  const AGORA = new Date(2026, 9, 29, 12, 0, 0).getTime(); // 29/10/2026 12:00, no fuso de quem roda o teste
+  const em = (dia: number, h: number, min: number) => new Date(2026, 9, dia, h, min, 0).toISOString();
+
+  it('a hora de hoje é só "10:21"; a de outro dia leva o dia e o mês; o que não é data vira um traço', () => {
+    expect(horaDaVisita(em(29, 10, 21), AGORA)).toBe('10:21');
+    expect(horaDaVisita(em(28, 21, 5), AGORA)).toBe('28/10 21:05');
+    expect(horaDaVisita('ontem', AGORA)).toBe('—');
+  });
+
+  it('a linha de uma visita: quando entrou, o apelido, a conta com o e-mail mascarado, onde (a sala e o mapa) e quanto ficou; quem está dentro diz "na sala agora"', () => {
+    const base = { apelido: 'ALFA', conta: { id: 7, rotulo: 'p***@x.com' }, sala: 'ARENA', mapa: 'arena', entrouEm: em(29, 10, 21), saiuEm: em(29, 10, 55) };
+    expect(linhaDaVisita(base, AGORA)).toEqual({ quando: '10:21', quem: 'ALFA', conta: 'p***@x.com (conta 7)', onde: 'ARENA · CIDADE NEON', ficou: '34 min' });
+    const convidado = linhaDaVisita({ ...base, conta: null, saiuEm: null, mapa: 'praia' }, AGORA);
+    expect(convidado.conta).toBeNull();
+    expect(convidado.ficou).toBe('na sala agora');
+    expect(convidado.onde).toMatch(/^ARENA · /);
   });
 });
