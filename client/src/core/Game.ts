@@ -93,10 +93,10 @@ import { OffscreenIndicators } from '../ui/OffscreenIndicators';
 import { Nameplates } from '../ui/Nameplates';
 import { RoundHud } from '../ui/RoundHud';
 import { SettingsMenu } from '../ui/SettingsMenu';
-import { EnemySettings } from '../ui/EnemySettings';
 import { InputManager } from './InputManager';
 import { Quality } from './Quality';
 import { browserStorage, keyLabel, radiansPerCount, Settings, type GameSettings, type QualityPreset } from './Settings';
+import { modoComandante } from './ModoComandante';
 import type { VoiceChat } from '../voice/VoiceChat';
 import type { VoiceHud } from '../voice/VoiceHud';
 import { WARMUP_TIMEOUT_MS, warmUpSceneResources, warmUpShaders } from './ShaderWarmup';
@@ -120,7 +120,7 @@ import { poweredLoadout, poweredStats } from '../tuning/power';
 import { PowerStore } from '../tuning/PowerStore';
 import { EsquadraoStore } from './EsquadraoStore';
 import { PARAM_DA_TATICA, taticaDeTexto } from '../combat/taticas';
-import { CHASSIS_DOS_BOTS, esquadraoDeFoes, PARAM_DO_ESQUADRAO, resumoDoEsquadrao } from '../sim/esquadrao';
+import { CHASSIS_DOS_BOTS, esquadraoDeFoes, PARAM_DO_ESQUADRAO } from '../sim/esquadrao';
 import { ALLY_COUNT } from '../sim/nascimentos';
 import { SequenciaDeAbates } from '../combat/killStreak';
 import { bootProgresso } from './bootProgress';
@@ -966,18 +966,6 @@ export class Game {
     new ServerStatus(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER, document.getElementById('menu-status'));
     this.settingsMenu = new SettingsMenu(this.settings);
     this.settingsMenu.setDiagnosticoDaVoz(() => this.diagnosticarVoz());
-    // Seção "Inimigos": a contagem da partida em curso é a base do aviso de reiniciar.
-    const esquadrao = this.squad.current && !online ? resumoDoEsquadrao(this.squad.current) : null;
-    new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician, names: foes.names }, undefined, undefined,
-      esquadrao
-        ? {
-            resumo: `${esquadrao.inimigos} inimigo${esquadrao.inimigos === 1 ? '' : 's'} e ${esquadrao.aliados} aliado${esquadrao.aliados === 1 ? '' : 's'}`,
-            voltarAoPadrao: () => {
-              this.squad.save(null);
-              reloadWithout(PARAM_DO_ESQUADRAO);
-            },
-          }
-        : null);
     new PowerSettings(this.power);
     this.settings.onChange((s) => this.applySettings(s));
     // O aviso de abate (P96) e a abertura da rodada (3·2·1·COMBATE!) só avisam; o som é do AudioSystem e a voz, do navegador (um contexto de áudio só).
@@ -1084,9 +1072,9 @@ export class Game {
     // Console de comando (P86): a pausa vira a sala de comando. Os monitores só leem o jogo por estes callbacks (G3).
     const mapa = roteiro && !online ? roteiro.mapa : mapFromSearch(location.search, !!online, this.gameMode);
     const allies = (): readonly MechBase[] => this.match.allies?.mechs ?? [];
-    // Janela do esquadrão (P91): offline, na Arena e no Bunker. Online o servidor manda os inimigos; as missões têm o pool delas.
+    // Janela do esquadrão (P91): offline, na Arena e no Bunker; as missões têm o pool delas. Online o servidor manda nos inimigos e o dono manda no servidor (P270): só o modo Comandante abre a janela, e ela edita o esquadrão das salas.
     const esquadraoIndisponivel = (): string | null =>
-      online ? 'Online, quem manda nos inimigos é o servidor.' : this.gameMode !== 'deathmatch' && this.gameMode !== 'dominio' ? 'O esquadrão vale no combate livre (Arena e Bunker) e no Domínio; as missões têm o pool delas.' : null;
+      online ? (modoComandante() ? null : 'Online, quem manda nos inimigos é o servidor: o Comandante monta o esquadrão das salas.') : this.gameMode !== 'deathmatch' && this.gameMode !== 'dominio' ? 'O esquadrão vale no combate livre (Arena e Bunker) e no Domínio; as missões têm o pool delas.' : null;
     // Os painéis do console (Esquadrão, Campanhas, Arsenal, Servidor, Câmeras) são pedaços sob demanda: baixam no primeiro clique e não pesam no JS de partida (R7).
     const squadPanel = sobDemanda(async () => new (await import('../ui/SquadPanel')).SquadPanel({
       store: this.squad,
@@ -1096,6 +1084,8 @@ export class Game {
       mapa,
       indisponivel: esquadraoIndisponivel,
       abrirAjustes: () => document.getElementById('btn-settings')?.click(),
+      atacantes: { atual: () => this.settings.value.maxAttackers, mudar: (n) => this.settings.update({ maxAttackers: n }) },
+      ...(online ? { online: adminCliente } : {}),
       reiniciar: () => reloadWithout(PARAM_DO_ESQUADRAO),
     }));
     // Janela Campanha (fase 4B): offline apenas. Jogar uma etapa é abrir o jogo com o link dela; o esquadrão "meu" é o salvo no aparelho, não o do link da etapa.

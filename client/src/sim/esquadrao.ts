@@ -176,6 +176,8 @@ export interface Limites {
   /** Titãs inimigos (P108): 0 no Bunker. */
   titas: number;
   total: number;
+  /** Teto por papel, quando há (a sala online, P270: 3 Mechs, 3 andróides, 1 técnico); ausente = só os tetos de cima. */
+  porPapel?: Readonly<Record<PapelDoBot, number>>;
 }
 
 /** Os limites no mapa: o menor entre o teto de CPU e o chão que o mapa tem (o Bunker tem 11 pontos livres). */

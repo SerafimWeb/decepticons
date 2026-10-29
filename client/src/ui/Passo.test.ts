@@ -50,11 +50,9 @@ describe('a ligação e o estilo (o que o navegador de verdade mostra)', () => {
     expect(css).toMatch(/\.settings-box \.setting-row::before\s*\{[^}]*content: '❯'/);
   });
 
-  it('as Configurações vestem a qualidade, a dificuldade, o narrador, o microfone e o efeito da voz, e a lista de inimigos veste os seus', () => {
+  it('as Configurações vestem a qualidade, a dificuldade, o narrador, o microfone e o efeito da voz', () => {
     const menu = readFileSync(resolve(RAIZ, 'src/ui/SettingsMenu.ts'), 'utf8');
     expect(menu).toMatch(/for \(const s of \[this\.selQuality, this\.selDiff, this\.selNarracao, this\.selVozModo, this\.selVozEfeito\]\) ligarPasso\(s\)/);
-    const inimigos = readFileSync(resolve(RAIZ, 'src/ui/EnemySettings.ts'), 'utf8');
-    expect(inimigos).toMatch(/ligarPasso\(control\)/);
   });
 
   it('o seletor de idioma NÃO vira passo (sete línguas pedem a lista, e o select do canto é o da primeira tela)', () => {
