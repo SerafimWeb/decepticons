@@ -13,6 +13,7 @@ import { criarTorres, type TorresCriadas, type UniformesDaCidade } from './Cidad
 import { HologramaSerafim } from './HologramaSerafim';
 import type { ArenaDoCenario, CenarioDaCidade, CenarioDaCidadeCarregado } from './mapasSobDemanda';
 import { criarOutdoors, type OutdoorsCriados } from './Outdoors';
+import { criarSupercomputadores, type SupercomputadoresCriados } from './Supercomputadores';
 
 /**
  * O ENTORNO DA CIDADE NEON (P264, PR2): "quero que o cenário fique nesse nível dos exemplos que enviei" (quatro quadros de uma cidade cyberpunk).
@@ -22,6 +23,7 @@ import { criarOutdoors, type OutdoorsCriados } from './Outdoors';
  *  - os **outdoors da marca** (P266: o Olho do Pai, a Serafim Web e a logo, `Outdoors.ts` + `brand/anuncios.ts`; P267: cada um alterna entre as imagens, e o Comandante ajusta quantos aparecem, o período e
  *    quais anúncios entram, pelo painel OUTDOORS — a configuração fica no servidor, `shared/outdoors.ts`), os letreiros de bandeira e os desenhos em neon (`CidadeNeonLetreiros.ts`);
  *  - o **holograma 3D da logo** da Serafim, flutuando sobre o prédio Serafim (`HologramaSerafim.ts`, P266);
+ *  - os **supercomputadores**: as barricadas que quebram ganham corpo de máquina (mini-Mac gigante, rack blindado, nó quântico, banco de servidores; `Supercomputadores.ts`, P272), com LEDs que respiram;
  *  - a rua no lugar da grade Tron, os postes e os bueiros com vapor (`CidadeNeonRua.ts`);
  *  - o chão molhado refletindo tudo isso (`CidadeNeonReflexos.ts`).
  *
@@ -52,6 +54,7 @@ export class CidadeNeonCenario implements CenarioDaCidade {
   private readonly bueiros: BueirosDaRua;
   private readonly outdoors: OutdoorsCriados;
   private readonly holograma: HologramaSerafim;
+  private readonly servidores: SupercomputadoresCriados;
   private parametros: ParametrosDeOutdoors = PARAMETROS_PADRAO;
 
   constructor(scene: THREE.Scene, arena: ArenaDoCenario, particles: ParticleSystem | null) {
@@ -70,6 +73,9 @@ export class CidadeNeonCenario implements CenarioDaCidade {
     scene.add(this.torres.malha, this.outdoors.grupo, criarLetreiros(layout.letreiros, arte, this.u), criarNeons(layout.neons, arte, this.u), criarPostes(layout.postes, this.u));
     this.bueiros = new BueirosDaRua(scene, layout.bueiros, particles);
     this.holograma = new HologramaSerafim(scene, this.u.tempo);
+    // As barricadas que quebram viram supercomputadores (o desenho; o colisor e a vida seguem os da Arena).
+    this.servidores = criarSupercomputadores(this.u.tempo);
+    arena.estilizarBarricadas(this.servidores.estilo);
 
     const cor = (hex: number, k: number): THREE.Color => new THREE.Color(hex).multiplyScalar(k);
     const daPraca = (x: number, z: number): boolean => Math.max(Math.abs(x), Math.abs(z)) < ALCANCE_DO_REFLEXO;
@@ -106,7 +112,7 @@ export class CidadeNeonCenario implements CenarioDaCidade {
     this.reflexos = criarReflexos(fontes, cabecas, this.u, this.outdoors.anuncios);
     scene.add(this.reflexos.grupo);
     // A luz da cidade inteira (janelas, outdoors, letreiros, postes, reflexos) é este uniforme: o transformador do banco o escurece (`Arena.registraLuzes`).
-    this.luzes = [this.u.luz.value];
+    this.luzes = [this.u.luz.value, ...this.servidores.luzes];
     this.totalDeOutdoors = layout.outdoors.length;
     this.aplicarOutdoors(PARAMETROS_PADRAO);
   }

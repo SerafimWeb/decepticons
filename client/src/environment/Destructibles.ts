@@ -15,6 +15,12 @@ export interface DestructibleDef {
   hp: number;
 }
 
+/**
+ * O desenho próprio de uma barricada (P272: os supercomputadores da praça): recebe a definição e devolve o corpo, **centrado na origem e do tamanho exato do colisor** (ou `null` para ficar com a caixa de sempre).
+ * Quem o dá é o cenário do navegador (`CidadeNeonCenario`); o servidor e os testes de regra ficam com a caixa. Só desenho: a vida, o colisor e o id de rede não mudam.
+ */
+export type EstiloDeBarricada = (def: DestructibleDef) => THREE.Object3D | null;
+
 /** Uma caixa-alvo em coordenadas do mundo: o centro, o tamanho e, se for o caso, o giro (o coqueiro gira em Y). */
 export interface CaixaAlvo {
   center: THREE.Vector3;
@@ -53,6 +59,8 @@ interface Prop {
   id: number;
   /** Só nas barricadas: o desenho (a caixa com arestas) e a cor do neon. Os alvos externos desenham-se sozinhos. */
   group?: THREE.Group;
+  /** O corpo de dentro do grupo (a caixa de sempre ou o desenho do estilo): `estilizar` o troca sem mexer nas arestas. */
+  corpo?: THREE.Object3D;
   edgeMat?: THREE.LineBasicMaterial;
   accent?: THREE.Color;
   externo?: AlvoExterno;
@@ -115,6 +123,8 @@ export class Destructibles {
   /** Arestas do cubo unitário, compartilhadas (escala por prop); só o material é por prop. */
   private readonly edgeGeo = new THREE.EdgesGeometry(this.geo);
   private readonly mat = new THREE.MeshStandardMaterial({ color: PALETTE.steel, metalness: 0.3, roughness: 0.8 });
+  /** O desenho das barricadas que passam a existir (a rodada nova as traz de volta): o do cenário, ou a caixa. */
+  private estilo: EstiloDeBarricada | null = null;
 
   constructor(
     private readonly scene: THREE.Scene,
@@ -127,6 +137,30 @@ export class Destructibles {
     const id = this.entradas.length;
     this.entradas.push(def);
     this.build(def, id);
+  }
+
+  /**
+   * Troca o desenho das barricadas **que estão em pé** (e das que voltarem na rodada nova) pelo do estilo, ou volta à caixa com `null`. As arestas de neon (que a vida pinta de vermelho) e o colisor ficam como estão.
+   * Chamado uma vez, quando o cenário do navegador chega (P272); nada por quadro.
+   */
+  estilizar(estilo: EstiloDeBarricada | null): void {
+    this.estilo = estilo;
+    for (const prop of this.vivos) {
+      const def = this.entradas[prop.id];
+      if (!prop.group || !prop.corpo || !def || ehExterno(def)) continue;
+      prop.group.remove(prop.corpo);
+      prop.corpo = this.corpoDe(def, prop.size);
+      prop.group.add(prop.corpo);
+    }
+  }
+
+  /** O corpo de uma barricada: o do estilo, ou a caixa de sempre na escala do colisor. */
+  private corpoDe(def: DestructibleDef, size: THREE.Vector3): THREE.Object3D {
+    const feito = this.estilo?.(def);
+    if (feito) return feito;
+    const caixa = new THREE.Mesh(this.geo, this.mat);
+    caixa.scale.copy(size);
+    return caixa;
   }
 
   /** Registra um alvo cujo desenho é de quem chama (ver `AlvoExterno`). Devolve o id estável. */
@@ -189,8 +223,7 @@ export class Destructibles {
 
     const group = new THREE.Group();
     group.position.copy(center);
-    const body = new THREE.Mesh(this.geo, this.mat);
-    body.scale.copy(size);
+    const body = this.corpoDe(def, size);
     group.add(body);
     const edgeMat = new THREE.LineBasicMaterial({ color: accent.clone() });
     const edges = new THREE.LineSegments(this.edgeGeo, edgeMat);
@@ -199,7 +232,7 @@ export class Destructibles {
     this.scene.add(group);
 
     const collider = this.physics.addStaticBox(center, size);
-    this.registra({ id, group, colliders: [collider], caixas: [{ center, size }], edgeMat, accent, center, size, hp: def.hp, maxHp: def.hp });
+    this.registra({ id, group, corpo: body, colliders: [collider], caixas: [{ center, size }], edgeMat, accent, center, size, hp: def.hp, maxHp: def.hp });
   }
 
   /** Aplica dano se o colisor for destrutível. Retorna true se era. */

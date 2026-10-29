@@ -2,7 +2,7 @@ import type * as THREE from 'three';
 import type { CerebroDoChefe } from '../combat/CerebroDoChefe';
 import type { MechBase } from '../entities/MechBase';
 import type { ParticleSystem } from '../fx/ParticleSystem';
-import type { Destructibles } from './Destructibles';
+import type { Destructibles, EstiloDeBarricada } from './Destructibles';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { PowerSpec } from '../tuning/power';
 import type { ParametrosDeOutdoors } from '../../../shared/outdoors';
@@ -160,6 +160,8 @@ export type MissaoJaneiroCarregada = typeof import('../sim/MissaoJaneiroPedaco')
 export interface ArenaDoCenario {
   readonly chao: THREE.Mesh | null;
   readonly grade: THREE.Object3D | null;
+  /** As barricadas que quebram ganham o desenho do cenário (os supercomputadores, P272). */
+  estilizarBarricadas(estilo: EstiloDeBarricada): void;
 }
 
 /** O entorno da Cidade Neon montado (P264): só desenho. `luzes` são as cores que o transformador do banco escurece (`Arena.registraLuzes`). */
