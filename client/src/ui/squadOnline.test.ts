@@ -98,35 +98,35 @@ describe('a janela ESQUADRÃO falando com o servidor (P270)', () => {
 describe('o editor do esquadrão das salas online (P270)', () => {
   const online = (inicial: EsquadraoSpec = salvoCom([])) => new EsquadraoEditor(inicial, 'arena', () => esquadraoDasRegras(REGRAS_PADRAO), true);
 
-  it('o teto é o da sala: 3 Mechs, 3 andróides, 1 técnico, e o que já passava do teto entra cortado', () => {
+  it('o teto é o da sala: 6 Mechs, 6 andróides, 1 técnico, e o que já passava do teto entra cortado', () => {
     const e = online();
-    for (let i = 0; i < 5; i++) e.adicionar('inimigo', 'mech');
-    for (let i = 0; i < 5; i++) e.adicionar('inimigo', 'android');
+    for (let i = 0; i < 9; i++) e.adicionar('inimigo', 'mech');
+    for (let i = 0; i < 9; i++) e.adicionar('inimigo', 'android');
     for (let i = 0; i < 3; i++) e.adicionar('inimigo', 'technician');
-    expect(e.lista('inimigo').filter((b) => b.papel === 'mech')).toHaveLength(3);
-    expect(e.lista('inimigo').filter((b) => b.papel === 'android')).toHaveLength(3);
+    expect(e.lista('inimigo').filter((b) => b.papel === 'mech')).toHaveLength(6);
+    expect(e.lista('inimigo').filter((b) => b.papel === 'android')).toHaveLength(6);
     expect(e.lista('inimigo').filter((b) => b.papel === 'technician')).toHaveLength(1);
-    expect(e.podeAdicionar('inimigo', 'mech')).toMatch(/no máximo 3 mechs/);
+    expect(e.podeAdicionar('inimigo', 'mech')).toMatch(/no máximo 6 mechs/);
     expect(e.podeAdicionar('inimigo', 'technician')).toMatch(/no máximo 1 técnico/);
-    const grande = salvoCom(['A', 'B', 'C', 'D', 'E']);
-    expect(online(grande).lista('inimigo')).toHaveLength(3);
+    const grande = salvoCom(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']);
+    expect(online(grande).lista('inimigo')).toHaveLength(6);
   });
 
   it('não há aliados nem titãs: o botão recusa com o motivo, e o robô que viraria titã fica como estava', () => {
     const e = online(salvoCom(['A']));
     expect(e.podeAdicionar('aliado', 'mech')).toBe('online não há aliados');
     expect(e.adicionar('aliado', 'mech')).toBe(-1);
-    expect(e.limites).toMatchObject({ aliados: 0, titas: 0, inimigos: 7, total: 7 });
+    expect(e.limites).toMatchObject({ aliados: 0, titas: 0, inimigos: 13, total: 13 });
     const recusa = e.editar('inimigo', 0, { chassi: 'colossus01' });
     expect(recusa).toMatch(/não há titãs/);
     expect(e.lista('inimigo')[0]!.chassi).toBeUndefined();
   });
 
-  it('só os prontos que servem a uma sala existem (PADRÃO, PESADOS, DUELO), cortados no teto; o resto é recusado', () => {
+  it('só os prontos que servem a uma sala existem (PADRÃO, PESADOS, DUELO); o resto é recusado', () => {
     for (const id of PREDEFINIDOS_ONLINE) expect(PREDEFINIDOS.some((p) => p.id === id), id).toBe(true);
     const pesados = online();
     pesados.usarPredefinido('pesados');
-    expect(pesados.lista('inimigo')).toHaveLength(3); // eram 6 Mechs: cabem 3
+    expect(pesados.lista('inimigo')).toHaveLength(6); // os 6 Mechs cabem (até o P273 o teto era 3 e o pronto entrava cortado)
     expect(pesados.lista('aliado')).toEqual([]); // os 3 escoteiros aliados ficam de fora
     expect(online().usarPredefinido('cerco')).toBeNull();
     expect(online().usarPredefinido('aliados')).toBeNull();

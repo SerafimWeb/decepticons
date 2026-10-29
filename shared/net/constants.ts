@@ -46,8 +46,18 @@ export const MAX_INPUTS_PER_PACKET = 8;
 
 /** Mechs numa sala (humanos + bots completando). */
 export const ROOM_SIZE = 8;
-/** Unidades numa sala cheia: 8 Mechs (humanos + bots), até 3 andróides e o técnico. */
-export const ROOM_UNITS = ROOM_SIZE + 3 + 1;
+/**
+ * Os robôs de combate que o esquadrão do dono pode pôr numa sala online (P273, 29/10: "será q precisamos manter o limite de 3 mechs e 3 androides?"): até 6 Mechs e 6 andróides.
+ * Os Mechs de fora cedem a vaga a quem entra (humanos + Mechs de fora nunca passam de `ROOM_SIZE`); os andróides e o técnico ficam sempre.
+ */
+export const ROOM_BOT_MECHS = 6;
+export const ROOM_BOT_ANDROIDS = 6;
+/**
+ * Unidades numa sala cheia: 8 Mechs (humanos + bots), os andróides e o técnico, no pior caso de qualquer número de humanos (de 1 a 8: 14 ou 15). É **exatamente o que cabe nos 8 KB/s por jogador**
+ * (G11, `unitsWithinBudget`): medido em 29/10, o servidor gasta 0,3 a 0,8 ms por tick com até 26 unidades e a GPU integrada (Vega 11) desenha 13 robôs tão bem quanto 7;
+ * o que limita é a banda. Passar daqui pede mandar só a mudança (delta) ou subir a meta de banda, e isso é decisão do dono (`CAPACIDADE.md`).
+ */
+export const ROOM_UNITS = ROOM_SIZE + ROOM_BOT_ANDROIDS + 1;
 /** Teto de unidades num estado (Mechs, andróides, técnico): o id cabe em 1 byte e o buffer é fixo. */
 export const MAX_UNITS = 32;
 /** Teto de eventos num pacote de eventos. */

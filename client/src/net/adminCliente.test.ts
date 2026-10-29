@@ -181,11 +181,11 @@ describe('o esquadrão das salas online no cliente do painel (P270)', () => {
   const esquadrao: EsquadraoSpec = { v: ESQUADRAO_VERSAO, inimigos: [{ papel: 'mech', nome: 'ALFA' }], aliados: [] };
 
   it('lê o esquadrão no caminho certo, com a chave, e o que passa do teto da sala volta cortado', async () => {
-    const muito = { v: ESQUADRAO_VERSAO, inimigos: Array.from({ length: 6 }, () => ({ papel: 'mech' as const })), aliados: [{ papel: 'mech' as const }] };
+    const muito = { v: ESQUADRAO_VERSAO, inimigos: Array.from({ length: 9 }, () => ({ papel: 'mech' as const })), aliados: [{ papel: 'mech' as const }] };
     const buscar = resposta({ salvo: true, esquadrao: muito });
     const r = await cliente(buscar).esquadrao();
     expect(r.ok && r.dados.salvo).toBe(true);
-    expect(r.ok && r.dados.esquadrao.inimigos).toHaveLength(3);
+    expect(r.ok && r.dados.esquadrao.inimigos).toHaveLength(6);
     expect(r.ok && r.dados.esquadrao.aliados).toEqual([]);
     const [url, init] = (buscar as unknown as { mock: { calls: [string, RequestInit][] } }).mock.calls[0]!;
     expect(url).toBe('https://jogo.selvamkt.com.br/admin/esquadrao');

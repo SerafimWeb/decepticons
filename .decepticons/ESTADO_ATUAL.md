@@ -1,5 +1,10 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O teto de robôs online sobe para 6/6/1 (Claude, P273, branch `claude/teto-de-robos`)
+
+**O pedido (29/10):** "será q precisamos manter o limite de 3 mechs e 3 androides? … mais bots, pra mais emoção". **Medido** (`CAPACIDADE.md`): CPU do servidor < 1 ms/tick com 26 robôs; Vega 11 desenha 13 robôs como 7 (p50 10,4 × 10,6 ms); **a banda (8 KB/s por jogador) é o limite: 15 unidades.** **Entrega:** o esquadrão online vai a **6 Mechs, 6 andróides, 1 técnico** (`ROOM_BOT_*`, `ROOM_UNITS` 15); +1 teste (1 a 8 humanos nunca passam de 15), 3 mutações derrubadas. **Decisão do dono em aberto:** para mais que 15 unidades, subir a meta de banda (24 unidades = 11,9 KB/s) ou o delta (protocolo novo). **Falta:** o aliado online ("o meu time", P280) divide esta mesma conta de 15 unidades.
+**Próxima sessão começa com:** o que o Comandante achar da sala com 13 robôs; P280 (o meu time online), P275 (quem entrou), P277 (o borrão das luzes), P281 (apagão e visão noturna).
+
 ## O cabeçalho do console e a data do build (Claude, P278 e P279, branch `claude/cabecalho-e-build`)
 
 **Os pedidos (29/10):** "adicione no rodapé a data e hora do último build" e "o online · sala arena… está por cima do cabeçalho; os botões do cabeçalho, mais intuitivos e coesos". **Entrega:** o rodapé mostra o instante do build (`buildInfo.ts`, o `site.mjs` grava `VITE_BUILD_EM`); o selo online mora no cabeçalho (`#cc-online`, `Game.escreverStatusOnline`) e o do HUD some com o console aberto; os botões em dois grupos (piloto, azul; Comandante, amarelo, com SAIR vermelho); a 1280 px os grupos descem para duas linhas. **Provas:** +6 testes, Chrome (GPU) a 1280 e 1920, online contra um servidor local, 0 erros de console; capturas em `.decepticons/arte/`. **Em fila, uma por PR:** teto de robôs e o meu time online (P273, P280); quem entrou na sala (P275); o borrão das luzes (P277); o apagão com visão noturna (P281). (O P276, o tiro que não acertava online, já está na `main`.)

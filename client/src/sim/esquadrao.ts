@@ -176,7 +176,7 @@ export interface Limites {
   /** Titãs inimigos (P108): 0 no Bunker. */
   titas: number;
   total: number;
-  /** Teto por papel, quando há (a sala online, P270: 3 Mechs, 3 andróides, 1 técnico); ausente = só os tetos de cima. */
+  /** Teto por papel, quando há (a sala online, P270 e P273: 6 Mechs, 6 andróides, 1 técnico); ausente = só os tetos de cima. */
   porPapel?: Readonly<Record<PapelDoBot, number>>;
 }
 
