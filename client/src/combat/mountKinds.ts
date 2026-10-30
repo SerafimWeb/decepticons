@@ -28,7 +28,7 @@ export const MOUNT_KIND_LABEL: Readonly<Record<MountKind, string>> = {
 };
 
 /** Os tipos que algum chassi já tem de verdade; os outros são reservados (a arma pode caber neles, mas não há onde pôr). */
-export const LIVE_KINDS: readonly MountKind[] = ['arm', 'shoulder'];
+export const LIVE_KINDS: readonly MountKind[] = ['arm', 'shoulder', 'back'];
 
 /**
  * A maior classe de arma que cada tipo aceita, **na visão do chassi** (um gigante enxerga as pesadas dos Mechs como leves, então o mesmo encaixe dele aceita o que

@@ -42,11 +42,11 @@ describe('tipos de encaixe: braço, ombro, costas, peito e cabeça (ordem P84 do
   });
 
   it('cada ranhura do Hangar tem um tipo: as duas mãos são braço, os lançadores, ombro', () => {
-    expect(SLOT_KIND).toEqual({ right: 'arm', left: 'arm', shoulders: 'shoulder' });
+    expect(SLOT_KIND).toEqual({ right: 'arm', left: 'arm', shoulders: 'shoulder', back: 'back', rightShoulder: 'shoulder', leftShoulder: 'shoulder' });
   });
 
-  it('só braço e ombro existem de verdade; costas, peito e cabeça são reservados e nenhum chassi tem encaixe deles (mudar isto é mexer em MOUNTS, na rede e no desenho)', () => {
-    expect(LIVE_KINDS).toEqual(['arm', 'shoulder']);
+  it('braço, ombro e costas existem de verdade (as costas são o encaixe extra de P282, do Colossus-01); peito e cabeça seguem reservados (mudar isto é mexer em MOUNTS, na rede e no desenho)', () => {
+    expect(LIVE_KINDS).toEqual(['arm', 'shoulder', 'back']);
     for (const k of Object.values(SLOT_KIND)) expect(LIVE_KINDS, k).toContain(k);
   });
 });

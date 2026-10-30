@@ -5,6 +5,9 @@ import { TIERS, weapon, type WeaponId } from '../combat/weapons';
 import type { Persona } from '../core/Settings';
 import type { MechPart } from '../entities/MechBase';
 import { hasShoulderSlot, isMetalShield, validateLoadout, type ArmSpec, type LoadoutSpec } from '../hangar/loadout';
+import { EXTRA_SLOTS, type ExtraSlot } from '../combat/encaixesExtras';
+/** A sigla de cada encaixe extra na ficha (P282). */
+const ENCAIXE_EXTRA: Readonly<Record<ExtraSlot, FichaMech['armas'][number]['encaixe']>> = { back: 'COS', rightShoulder: 'OMB D', leftShoulder: 'OMB E' };
 
 /**
  * O que os monitores do console de comando mostram, sem tela (dá para testar no Node): a ficha do seu Mech, a escalação da partida
@@ -35,7 +38,7 @@ export interface FichaMech {
   velocidade: Medida;
   /** Carga das armas: ocupada e o limite do chassi, em t. */
   carga: { usada: number; limite: number };
-  armas: { encaixe: 'DIR' | 'ESQ' | 'OMB' | 'MÓD'; nome: string }[];
+  armas: { encaixe: 'DIR' | 'ESQ' | 'OMB' | 'MÓD' | 'COS' | 'OMB D' | 'OMB E'; nome: string }[];
 }
 
 const COMBATE = (Object.keys(CHASSIS) as ChassisId[]).filter((id) => id !== 'colossus01' && id !== 'colossusv4');
@@ -53,6 +56,10 @@ export function fichaDoMech(spec: LoadoutSpec): FichaMech {
   const armas: FichaMech['armas'] = [{ encaixe: 'DIR', nome: nomeDoBraco(spec.right) }];
   if (spec.left) armas.push({ encaixe: 'ESQ', nome: nomeDoBraco(spec.left) });
   if (spec.shoulders && hasShoulderSlot(spec.chassis)) armas.push({ encaixe: 'OMB', nome: nomeDoBraco(spec.shoulders) });
+  for (const slot of EXTRA_SLOTS) {
+    const arm = spec[slot];
+    if (arm) armas.push({ encaixe: ENCAIXE_EXTRA[slot], nome: nomeDoBraco(arm) });
+  }
   if (spec.module) armas.push({ encaixe: 'MÓD', nome: MODULO_NOME[spec.module] });
   return {
     chassi: spec.chassis,

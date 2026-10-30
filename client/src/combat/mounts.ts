@@ -1,5 +1,6 @@
 import type { MechPart } from '../entities/MechBase';
 import type { Loadout, WeaponStats } from './weapons';
+import { extraDaMontagem } from './encaixesExtras';
 
 /**
  * Encaixes de arma do corpo: os lugares de onde uma arma atira. Dado puro, sem 3D (G14: o servidor lê o mesmo).
@@ -9,7 +10,7 @@ import type { Loadout, WeaponStats } from './weapons';
  *
  * A ordem de `MOUNTS` é estável (ela pode ir para a rede um dia): encaixe novo entra no fim.
  */
-export const MOUNTS = ['rightHand', 'leftHand', 'rightShoulder', 'leftShoulder'] as const;
+export const MOUNTS = ['rightHand', 'leftHand', 'rightShoulder', 'leftShoulder', 'back'] as const;
 export type MountId = (typeof MOUNTS)[number];
 
 /** Direção ou posição em três números: x (direita), y (cima), z (trás). */
@@ -21,6 +22,7 @@ export const MOUNT_PART: Readonly<Record<MountId, MechPart>> = {
   leftHand: 'leftArm',
   rightShoulder: 'torso',
   leftShoulder: 'torso',
+  back: 'torso',
 };
 
 /** Quais encaixes atiram em cada botão. Todos os de um botão atiram juntos (a segunda mão entra meio intervalo depois). */
@@ -46,6 +48,13 @@ export const SHOULDER_TRIGGERS: TriggerLayout = { primary: ['rightHand', 'leftHa
  */
 export const SPLIT_SHOULDER_TRIGGERS: TriggerLayout = { primary: ['rightHand'], secondary: ['leftHand', 'rightShoulder', 'leftShoulder'] };
 
+/**
+ * Os robôs com encaixes extras (P282: Colossus-01, Onça) atiram os extras no **Ataque 2**, junto com a mão esquerda: as costas e os dois ombros são o botão secundário, cada um com a sua arma
+ * (`combat/encaixesExtras.ts`). Sem a costa, o Onça não tem o encaixe dela: o gatilho só inclui o que o chassi tem.
+ */
+export const TRIGGERS_COM_COSTAS: TriggerLayout = { primary: ['rightHand'], secondary: ['leftHand', 'back', 'rightShoulder', 'leftShoulder'] };
+export const TRIGGERS_COM_OMBROS: TriggerLayout = { primary: ['rightHand'], secondary: ['leftHand', 'rightShoulder', 'leftShoulder'] };
+
 /** Um layout de gatilhos com nome, para o Hangar oferecer a escolha (o primeiro de cada chassi é o padrão). */
 export interface NamedLayout {
   /** O nome inteiro (a dica do botão e os textos). */
@@ -65,6 +74,9 @@ export const shoulderMounts = (t: TriggerLayout): readonly MountId[] => [...t.pr
 export function weaponAt(l: Loadout, mount: MountId): WeaponStats | null {
   if (mount === 'rightHand') return l.primary;
   if (mount === 'leftHand') return l.offhand !== undefined ? l.offhand : l.secondary;
+  // Os encaixes extras (P282) levam a arma do próprio encaixe; o ombro sem extra é o lançador duplo do `secondary` (Marauder).
+  const extra = extraDaMontagem(l, mount);
+  if (extra !== null) return l[extra] ?? null;
   return l.secondary;
 }
 

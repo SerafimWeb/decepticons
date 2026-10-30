@@ -1,3 +1,5 @@
+import { extrasDoChassi, hasShoulderSlot } from './loadout';
+import { MOUNT_DO_EXTRA } from '../combat/encaixesExtras';
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -285,8 +287,10 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
   it('em todo chassi: os ombros existem na montagem se e só se o chassi tem lançadores nos ombros; a carga da fábrica bate com o Loadout', () => {
     for (const id of Object.keys(CHASSIS) as ChassisId[]) {
       const stats = CHASSIS[id];
-      const shouldersWired = (stats.triggers?.secondary ?? []).some((m) => m === 'rightShoulder' || m === 'leftShoulder');
-      expect(armOptions('shoulders', id).length > 0, id).toBe(shouldersWired);
+      // O lançador duplo (a ranhura 'shoulders', do Marauder) existe se e só se o gatilho leva os dois ombros e o chassi não tem os extras de peso (P282: esses têm ombro próprio).
+      const shouldersWired = (stats.triggers?.secondary ?? []).some((m) => m === 'rightShoulder' || m === 'leftShoulder') && extrasDoChassi(id).length === 0;
+      expect(hasShoulderSlot(id), id).toBe(shouldersWired);
+      for (const slot of extrasDoChassi(id)) expect(stats.triggers?.secondary ?? [], id).toContain(MOUNT_DO_EXTRA[slot]);
       const spec = factorySpec(id);
       const c = validateLoadout(spec);
       expect(c.ok, id).toBe(true);

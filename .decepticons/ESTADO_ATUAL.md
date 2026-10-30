@@ -1,5 +1,10 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Os encaixes extras de peso: o Colossus-01 e o Onça (Claude, P282 e P285, branch `claude/colossus-slots`)
+
+**O pedido (29/10 e 30/10):** três slots no Colossus-01 (costas e dois ombros), com o teto de classe por encaixe, e dois ombros no Onça. **Entrega:** `combat/encaixesExtras.ts` (a regra pura), `MOUNTS` com as costas, o `Armament` com o cronômetro e a carga de cada extra, o Hangar com as ranhuras novas, o texto da montagem na versão 3 (só quando há extra), e o desenho com os nós das costas e dos ombros. **Provas:** +20 testes e 2 mutações à mão derrubadas; no Chrome (GPU) o Hangar mostra as cinco ranhuras do Colossus, o cerco nas costas dispara pelo clique direito e o canhão pelo esquerdo, e a foto por trás mostra a arma fora do corpo. **Falta:** o olho do Comandante; o Onça no jogo; o tiro dos extras no servidor (usa a mesma regra, mas não foi provado online).
+**Próxima sessão começa com:** P283 (o quadro como objetivo dos dois times, com técnico aliado).
+
 ## O canhão de cerco que carregava e não atirava (Claude, P284, branch `claude/canhao-de-cerco`)
 
 **O pedido (29/10):** "o canhão de cerco carrega mas não faz nada". **Causa:** no Ataque 2 (clique direito ou Q) o `Armament` zerava a carga no tick da soltura, e o cerco só atira ao soltar. **Conserto:** `segurandoCarga` em `combat/Armament.ts`; vale também online (o servidor roda o mesmo `Armament`, depois do reinício). **Provas:** +5 testes, 1 mutação derrubada, e no Chrome (Colossus-V4) o clique direito antes não soltava o obus e agora solta. **Falta:** o olho dele.

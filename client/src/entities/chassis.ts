@@ -1,5 +1,6 @@
 import { fitsMount, type MountKind } from '../combat/mountKinds';
-import { SHOULDER_TRIGGERS, SPLIT_SHOULDER_TRIGGERS } from '../combat/mounts';
+import { SHOULDER_TRIGGERS, SPLIT_SHOULDER_TRIGGERS, TRIGGERS_COM_COSTAS, TRIGGERS_COM_OMBROS } from '../combat/mounts';
+import { armasDoEncaixeExtra } from '../combat/encaixesExtras';
 import { fitsSize, type RobotSize } from '../combat/weaponClass';
 import { WEAPON_IDS, weapon, type WeaponId } from '../combat/weapons';
 import type { MechStats } from './MechBase';
@@ -195,6 +196,11 @@ export const ONCA_B2_STATS: MechStats = {
   height: 6.5,
   radius: 1.6,
   weaponCapacity: 16,
+  // P282: o Onça tem dois encaixes extras, um em cada ombro (de peso: armas pesadas, médias e leves; o cerco é tamanho 3 e não cabe nele). Sem arma de fábrica.
+  triggers: TRIGGERS_COM_OMBROS,
+  loadout: { ...VECTOR09_STATS.loadout, rightShoulder: null, leftShoulder: null },
+  // Bocas dos ombros medidas no rig procedural (30/10): em metros a partir dos pés, virado para -Z.
+  muzzles: { rightShoulder: [0.99, 4.95, 0], leftShoulder: [-0.99, 4.95, 0] },
   maxModuleHealth: {
     torso: 450,
     head: 150,
@@ -243,7 +249,11 @@ export const COLOSSUS_BOSS_STATS: MechStats = {
  */
 const COLOSSUS_PLAYER_STATS: MechStats = {
   ...COLOSSUS_BOSS_STATS,
-  loadout: { primary: weapon('cannon'), secondary: weapon('barrage') },
+  // P282: três encaixes extras, um nas costas e um em cada ombro, de peso (armas pesadas, médias e leves). Saem vazios: o Comandante monta no Hangar.
+  loadout: { primary: weapon('cannon'), secondary: weapon('barrage'), back: null, rightShoulder: null, leftShoulder: null },
+  triggers: TRIGGERS_COM_COSTAS,
+  // Bocas dos encaixes extras medidas no rig procedural (um zz-medir de Vector09, 30/10): em metros a partir dos pés, virado para -Z. Mudou o desenho do Colossus? Meça de novo.
+  muzzles: { back: [0, 10.38, 7.14], rightShoulder: [1.86, 10.38, 0], leftShoulder: [-1.86, 10.38, 0] },
 };
 
 /**
@@ -446,9 +456,13 @@ export interface ArmSlots {
   right: readonly WeaponId[];
   left: readonly WeaponId[];
   shoulders?: readonly WeaponId[];
+  /** Os encaixes extras (P282, `combat/encaixesExtras.ts`): as costas e cada ombro, uma arma cada. Ausente = o chassi não tem o encaixe. */
+  back?: readonly WeaponId[];
+  rightShoulder?: readonly WeaponId[];
+  leftShoulder?: readonly WeaponId[];
 }
 /** O tipo de encaixe de cada ranhura do Hangar (`combat/mountKinds.ts`): as duas mãos são braço, os dois lançadores são ombro. */
-export const SLOT_KIND: Readonly<Record<keyof ArmSlots, MountKind>> = { right: 'arm', left: 'arm', shoulders: 'shoulder' };
+export const SLOT_KIND: Readonly<Record<keyof ArmSlots, MountKind>> = { right: 'arm', left: 'arm', shoulders: 'shoulder', back: 'back', rightShoulder: 'shoulder', leftShoulder: 'shoulder' };
 /**
  * **A curadoria saiu; entrou o contrato** (ordem P120, 14/10/2026: "é só das que sejam possíveis mesmo, não precisa
  * inventar nova regra que estrague algo mais correto anterior"). Antes cada chassi tinha uma lista escolhida a dedo;
@@ -487,11 +501,24 @@ const armasDoBracoEsquerdo = (size: RobotSize, primarioDuplo: boolean): readonly
 export const ARM_SLOTS: Record<ChassisId, ArmSlots> = {
   vector09: { right: armasDoBracoDireito(CHASSIS_SIZE.vector09), left: armasDoBracoEsquerdo(CHASSIS_SIZE.vector09, false) },
   android: { right: armasDoBracoDireito(CHASSIS_SIZE.android), left: armasDoBracoEsquerdo(CHASSIS_SIZE.android, false) },
-  colossus01: { right: armasDoBracoDireito(CHASSIS_SIZE.colossus01), left: armasDoBracoEsquerdo(CHASSIS_SIZE.colossus01, false) },
+  // Os três encaixes extras de peso (P282): costas e os dois ombros, com teto de classe pesada (aceitam pesada, média e leve).
+  colossus01: {
+    right: armasDoBracoDireito(CHASSIS_SIZE.colossus01),
+    left: armasDoBracoEsquerdo(CHASSIS_SIZE.colossus01, false),
+    back: armasDoEncaixeExtra(CHASSIS_SIZE.colossus01, 'heavy'),
+    rightShoulder: armasDoEncaixeExtra(CHASSIS_SIZE.colossus01, 'heavy'),
+    leftShoulder: armasDoEncaixeExtra(CHASSIS_SIZE.colossus01, 'heavy'),
+  },
   // O titã só tem as armas de tamanho 3 (o canhão de cerco, nas duas mãos): as dos Mechs não cabem nele.
   colossusv4: { right: armasDoBracoDireito(CHASSIS_SIZE.colossusv4), left: armasDoBracoEsquerdo(CHASSIS_SIZE.colossusv4, false) },
   arara: { right: armasDoBracoDireito(CHASSIS_SIZE.arara), left: armasDoBracoEsquerdo(CHASSIS_SIZE.arara, false) },
-  onca: { right: armasDoBracoDireito(CHASSIS_SIZE.onca), left: armasDoBracoEsquerdo(CHASSIS_SIZE.onca, false) },
+  // Os dois ombros de peso do Onça (P282), teto de classe pesada.
+  onca: {
+    right: armasDoBracoDireito(CHASSIS_SIZE.onca),
+    left: armasDoBracoEsquerdo(CHASSIS_SIZE.onca, false),
+    rightShoulder: armasDoEncaixeExtra(CHASSIS_SIZE.onca, 'heavy'),
+    leftShoulder: armasDoEncaixeExtra(CHASSIS_SIZE.onca, 'heavy'),
+  },
   genesis01: { right: armasDoBracoDireito(CHASSIS_SIZE.genesis01), left: armasDoBracoEsquerdo(CHASSIS_SIZE.genesis01, false) },
   // O Lancer-L1 traz a arma na própria malha e o escudo no braço esquerdo: a curadoria dele é da MALHA, não da regra.
   lancerL1: { right: ENERGY_ARMS, left: [] },

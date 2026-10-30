@@ -14,7 +14,7 @@ interface Chamada {
   o: BurstOptions;
 }
 /** A boca de cada encaixe no Mech de mentira: a direita em x = 1, a esquerda em x = -1 (os ombros, mais alto). */
-const BOCAS: Record<MountId, [number, number, number]> = { rightHand: [1, 3, 2], leftHand: [-1, 3, 2], rightShoulder: [1.5, 5, 0], leftShoulder: [-1.5, 5, 0] };
+const BOCAS: Record<MountId, [number, number, number]> = { rightHand: [1, 3, 2], leftHand: [-1, 3, 2], rightShoulder: [1.5, 5, 0], leftShoulder: [-1.5, 5, 0], back: [0, 5, -1] };
 
 function palco() {
   const chamadas: Chamada[] = [];

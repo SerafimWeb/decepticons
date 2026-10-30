@@ -5,6 +5,7 @@ import { ARM_SLOTS, CHASSIS, CHASSIS_SIZE, METAL_SHIELD_CHASSIS, type ChassisId 
 import { triggersOf } from '../entities/MechBase';
 import { attackOf, shoulderMounts, type Attack, type MountId } from '../combat/mounts';
 import { classFor, WEAPON_CLASSES, type WeaponClass } from '../combat/weaponClass';
+import { EXTRA_SLOTS, MOUNT_DO_EXTRA, type ExtraSlot } from '../combat/encaixesExtras';
 
 /**
  * Contrato do Hangar (AGENTS, regra 5: o contrato entra antes da tela). Uma montagem é só ids e níveis
@@ -31,7 +32,7 @@ export interface ArmSpec {
 }
 
 export interface LoadoutSpec {
-  v: 1 | 2;
+  v: 1 | 2 | 3;
   /** O módulo extra: um gerador de energia ou os óculos de visão noturna (`visao`, P282). */
   module?: ModuloId | null;
   chassis: ChassisId;
@@ -41,6 +42,10 @@ export interface LoadoutSpec {
   left: ArmSpec | null;
   /** Ombros: o lançador dos dois ombros, ou nada. Só existe nos chassis que têm o encaixe (`ARM_SLOTS`); ausente = vazio. */
   shoulders?: ArmSpec | null;
+  /** Os encaixes extras (P282): as costas e cada ombro. Ausente ou `null` = vazio; só existem nos chassis que os têm (`ARM_SLOTS`). Com algum deles cheio, a chave vai na versão 3. */
+  back?: ArmSpec | null;
+  rightShoulder?: ArmSpec | null;
+  leftShoulder?: ArmSpec | null;
   /**
    * Qual layout de gatilhos o chassi usa (`MechStats.layouts`, P95): como os encaixes se dividem entre o Ataque 1 e o Ataque 2. Ausente ou 0 = o padrão. **Só na versão 2** (a chave de texto
    * leva um último grupo `L<n>` quando é diferente de 0). Só os chassis com mais de um layout aceitam um valor diferente de 0.
@@ -61,10 +66,10 @@ export const FACTORY_LOADOUT: LoadoutSpec = {
   left: { id: 'rockets', tier: 0 },
 };
 
-export type ArmSlot = 'right' | 'left' | 'shoulders';
+export type ArmSlot = 'right' | 'left' | 'shoulders' | ExtraSlot;
 
 /** O encaixe que representa cada ranhura do Hangar (os dois ombros contam pelo direito: sempre atiram no mesmo ataque). */
-export const SLOT_MOUNT: Readonly<Record<ArmSlot, MountId>> = { right: 'rightHand', left: 'leftHand', shoulders: 'rightShoulder' };
+export const SLOT_MOUNT: Readonly<Record<ArmSlot, MountId>> = { right: 'rightHand', left: 'leftHand', shoulders: 'rightShoulder', ...MOUNT_DO_EXTRA };
 
 /** O ataque (1, o clique; 2, o clique direito) que aciona a ranhura neste chassi, pelo layout de gatilhos dele (`combat/mounts.ts`). */
 export function slotAttack(slot: ArmSlot, chassis: ChassisId, layout = 0): Attack | null {
@@ -78,6 +83,12 @@ export const layoutCount = (chassis: ChassisId): number => CHASSIS[chassis].layo
 export function armOptions(slot: ArmSlot, chassis: ChassisId = 'vector09'): readonly WeaponId[] {
   return ARM_SLOTS[chassis][slot] ?? [];
 }
+
+/** O chassi tem este encaixe extra (P282: as costas ou um ombro de peso)? */
+export const temEncaixeExtra = (chassis: ChassisId, slot: ExtraSlot): boolean => ARM_SLOTS[chassis][slot] !== undefined;
+
+/** Os encaixes extras que o chassi tem, na ordem da lista do Hangar (vazia para quem não tem nenhum). */
+export const extrasDoChassi = (chassis: ChassisId): readonly ExtraSlot[] => EXTRA_SLOTS.filter((slot) => temEncaixeExtra(chassis, slot));
 
 /**
  * As armas do encaixe agrupadas pela classe que o **chassi** enxerga (leves, médias, pesadas; grupo vazio não existe), cada grupo na
@@ -117,7 +128,8 @@ export function factorySpec(chassis: ChassisId): LoadoutSpec {
 /** Cada arma da montagem que atira, uma por encaixe (o lançador dos ombros vale dois): carga, calor e dano se somam daqui. */
 export function specWeapons(spec: LoadoutSpec): WeaponStats[] {
   const chassis = CHASSIS[spec.chassis];
-  const out = [spec.right, spec.left];
+  const out: (ArmSpec | null)[] = [spec.right, spec.left];
+  for (const slot of EXTRA_SLOTS) out.push(spec[slot] ?? null);
   if (spec.shoulders) for (let i = 0; i < shoulderMounts(triggersOf(chassis, spec.layout)).length; i++) out.push(spec.shoulders);
   return out.filter((a): a is ArmSpec => a !== null && !isMetalShield(a)).map((a) => weapon(a.id as WeaponId, a.tier));
 }
@@ -134,7 +146,7 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
   const fail = (error: LoadoutError, detail: string, mass = 0, capacity = 0): LoadoutCheck => ({ ok: false, error, detail, mass, capacity });
   if (typeof spec !== 'object' || spec === null) return fail('formato', 'montagem vazia');
   const s = spec as Partial<LoadoutSpec>;
-  if (s.v !== 1 && (s.v !== 2 || s.module === undefined)) return fail('formato', `versão ${String(s.v)} desconhecida`);
+  if (s.v !== 1 && ((s.v !== 2 && s.v !== 3) || s.module === undefined)) return fail('formato', `versão ${String(s.v)} desconhecida`);
   if (typeof s.chassis !== 'string' || !Object.hasOwn(CHASSIS, s.chassis)) return fail('chassi', `chassi ${String(s.chassis)} não existe`);
   const chassis = CHASSIS[s.chassis];
   const capacity = chassis.weaponCapacity;
@@ -142,14 +154,23 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
   if (s.left !== null && !isArm(s.left)) return fail('formato', 'braço esquerdo inválido', 0, capacity);
   const layout = s.layout ?? 0;
   if (!Number.isInteger(layout) || layout < 0 || layout >= layoutCount(s.chassis)) return fail('encaixe', `o ${chassis.name} não tem o layout ${String(s.layout)}`, 0, capacity);
-  if (layout > 0 && s.v !== 2) return fail('formato', 'layout só na versão 2', 0, capacity);
+  if (layout > 0 && s.v === 1) return fail('formato', 'layout só nas versões 2 e 3', 0, capacity);
   const shoulders = s.shoulders ?? null;
   if (shoulders !== null && !isArm(shoulders)) return fail('formato', 'ombros inválidos', 0, capacity);
   if (shoulders !== null && !hasShoulderSlot(s.chassis)) return fail('encaixe', `o ${chassis.name} não tem lançadores nos ombros`, 0, capacity);
+  for (const slot of EXTRA_SLOTS) {
+    const arm = s[slot] ?? null;
+    if (arm !== null && !isArm(arm)) return fail('formato', 'encaixe extra inválido', 0, capacity);
+    if (arm !== null && !temEncaixeExtra(s.chassis, slot)) return fail('encaixe', `o ${chassis.name} não tem esse encaixe`, 0, capacity);
+  }
   const arms: [ArmSlot, ArmSpec][] = [['right', s.right]];
   if (s.left) arms.push(['left', s.left]);
   if (shoulders) arms.push(['shoulders', shoulders]);
-  const where = { right: 'braço direito', left: 'braço esquerdo', shoulders: 'ombros' } as const;
+  for (const slot of EXTRA_SLOTS) {
+    const arm = s[slot];
+    if (arm) arms.push([slot, arm]);
+  }
+  const where = { right: 'braço direito', left: 'braço esquerdo', shoulders: 'ombros', back: 'costas', rightShoulder: 'ombro direito', leftShoulder: 'ombro esquerdo' } as const;
   for (const [slot, arm] of arms) {
     if (isMetalShield(arm)) {
       if (slot !== 'left' || !acceptsMetalShield(s.chassis)) return fail('encaixe', `o ${chassis.name} não tem suporte para o ${METAL_SHIELDS[arm.id].name}`, 0, capacity);
@@ -161,10 +182,13 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
     if (!armOptions(slot, s.chassis).includes(arm.id as WeaponId)) return fail('encaixe', `${weapon(arm.id as WeaponId).name} não vai no ${where[slot]} do ${chassis.name}`, 0, capacity);
     if (!unlocked(arm.id as WeaponId, arm.tier)) return fail('bloqueado', `${weapon(arm.id as WeaponId, arm.tier).name} ainda bloqueado`, 0, capacity);
   }
-  const spec2 = { v: LOADOUT_VERSION, chassis: s.chassis, right: s.right, left: s.left ?? null, shoulders, ...(layout > 0 ? { layout } : {}) } satisfies LoadoutSpec;
+  // Só os extras que o chassi tem entram na montagem (os outros não existem para ele).
+  const extrasSpec: Partial<Record<ExtraSlot, ArmSpec | null>> = {};
+  for (const slot of EXTRA_SLOTS) if (temEncaixeExtra(s.chassis, slot)) extrasSpec[slot] = s[slot] ?? null;
+  const spec2 = { v: LOADOUT_VERSION, chassis: s.chassis, right: s.right, left: s.left ?? null, shoulders, ...extrasSpec, ...(layout > 0 ? { layout } : {}) } satisfies LoadoutSpec;
   // Carga: cada arma conta uma vez por encaixe em que atira (o lançador dos ombros vale dois).
   const module = s.module ?? null;
-  if (module !== null && (s.v !== 2 || !ehModulo(module))) return fail('formato', 'módulo inválido ou versão incompatível', 0, capacity);
+  if (module !== null && (s.v === 1 || !ehModulo(module))) return fail('formato', 'módulo inválido ou versão incompatível', 0, capacity);
   if (module && s.chassis === 'android') return fail('encaixe', 'Andróide não possui encaixe de módulo', 0, capacity);
   // Quem já enxerga no escuro de fábrica (o Arara, o Lancer) não leva os óculos: o módulo existe para os outros (P282).
   if (module === 'visao' && chassis.visaoNoturna) return fail('encaixe', `o ${chassis.name} já enxerga no escuro de fábrica`, 0, capacity);
@@ -177,7 +201,12 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
   const loadout: Loadout = hasShoulderSlot(s.chassis)
     ? { primary, offhand: left, secondary: shoulders ? weapon(shoulders.id as WeaponId, shoulders.tier) : null }
     : { primary, secondary: left };
-  if (s.v === 2) loadout.module = module;
+  for (const slot of EXTRA_SLOTS) {
+    if (!(slot in extrasSpec)) continue;
+    const arm = extrasSpec[slot];
+    loadout[slot] = arm ? weapon(arm.id as WeaponId, arm.tier) : null;
+  }
+  if (s.v !== 1) loadout.module = module;
   if (layout > 0) loadout.layout = layout;
   if (plate) loadout.metalShield = { id: plate.id, tier: plate.tier };
   return { ok: true, loadout, mass, capacity };
@@ -190,12 +219,35 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
  */
 export function loadoutKey(spec: LoadoutSpec): string {
   const arm = (a: ArmSpec | null | undefined) => (a ? `${a.id}-${a.tier}` : '-');
+  // Com algum encaixe extra cheio, a chave vai na versão 3 (as montagens antigas seguem iguais, e um cliente antigo lê a sua como antes).
+  if (EXTRA_SLOTS.some((slot) => spec[slot])) return `v3.${spec.chassis}.${arm(spec.right)}.${arm(spec.left)}.${arm(spec.shoulders)}.${spec.module ?? '-'}.${arm(spec.back)}.${arm(spec.rightShoulder)}.${arm(spec.leftShoulder)}${spec.layout ? `.L${spec.layout}` : ''}`;
   const base = `v${spec.v}.${spec.chassis}.${arm(spec.right)}.${arm(spec.left)}`;
   if (spec.v === 2) return `${base}.${arm(spec.shoulders)}.${spec.module ?? '-'}${spec.layout ? `.L${spec.layout}` : ''}`;
   return hasShoulderSlot(spec.chassis) ? `${base}.${arm(spec.shoulders)}` : base;
 }
 
 export function parseLoadoutKey(key: string): LoadoutSpec | null {
+  if (key.trim().startsWith('v3.')) {
+    const parts = key.trim().split('.');
+    // v3.<chassi>.<direito>.<esquerdo>.<ombros>.<módulo>.<costas>.<ombro D>.<ombro E>[.L<n>]: nove grupos, o décimo é o layout.
+    if (parts.length !== 9 && !(parts.length === 10 && /^L[1-9]$/.test(parts[9]!))) return null;
+    const a = (x: string | undefined): unknown => (x === '-' ? null : /^([a-z]+)-([0-2])$/.test(x ?? '') ? { id: x!.slice(0, -2), tier: Number(x!.at(-1)) } : undefined);
+    const [right, left, shoulders, back, rightShoulder, leftShoulder] = [a(parts[2]), a(parts[3]), a(parts[4]), a(parts[6]), a(parts[7]), a(parts[8])];
+    if ([right, left, shoulders, back, rightShoulder, leftShoulder].includes(undefined)) return null;
+    const spec = {
+      v: 3,
+      chassis: parts[1],
+      right,
+      left,
+      shoulders,
+      module: parts[5] === '-' ? null : parts[5],
+      back,
+      rightShoulder,
+      leftShoulder,
+      ...(parts.length === 10 ? { layout: Number(parts[9]!.slice(1)) } : {}),
+    };
+    return validateLoadout(spec).ok ? (spec as LoadoutSpec) : null;
+  }
   if (key.trim().startsWith('v2.')) {
     const parts = key.trim().split('.');
     // O 7º grupo (`L1`...) é o layout de gatilhos, só quando não é o padrão.

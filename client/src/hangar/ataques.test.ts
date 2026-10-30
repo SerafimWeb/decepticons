@@ -1,3 +1,4 @@
+import { extrasDoChassi } from './loadout';
 import { describe, expect, it } from 'vitest';
 import { attackOf, DEFAULT_TRIGGERS, SHOULDER_TRIGGERS } from '../combat/mounts';
 import { CHASSIS, type ChassisId } from '../entities/chassis';
@@ -22,7 +23,7 @@ describe('Ataque 1 e Ataque 2: qual botão aciona cada encaixe', () => {
   });
 
   it('cada ranhura do Hangar é um encaixe: as mãos pelas mãos e os dois ombros pelo ombro direito', () => {
-    expect(SLOT_MOUNT).toEqual({ right: 'rightHand', left: 'leftHand', shoulders: 'rightShoulder' });
+    expect(SLOT_MOUNT).toEqual({ right: 'rightHand', left: 'leftHand', shoulders: 'rightShoulder', back: 'back', rightShoulder: 'rightShoulder', leftShoulder: 'leftShoulder' });
   });
 
   it('nos robôs pequenos de entrada (sem ombros) cada braço tem o seu botão: o direito é o Ataque 1 e o esquerdo, o Ataque 2', () => {
@@ -31,7 +32,8 @@ describe('Ataque 1 e Ataque 2: qual botão aciona cada encaixe', () => {
     for (const id of pequenos) {
       expect(slotAttack('right', id), id).toBe(1);
       expect(slotAttack('left', id), id).toBe(2);
-      expect(slotAttack('shoulders', id), id).toBeNull(); // sem ombros, nada a atirar dali
+      if (extrasDoChassi(id).length === 0) expect(slotAttack('shoulders', id), id).toBeNull(); // sem ombros, nada a atirar dali
+      for (const slot of extrasDoChassi(id)) expect(slotAttack(slot, id), id).toBe(2); // os extras de peso (P282) atiram no Ataque 2
     }
   });
 
