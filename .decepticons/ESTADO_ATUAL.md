@@ -1,5 +1,10 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O canhão de cerco que carregava e não atirava (Claude, P284, branch `claude/canhao-de-cerco`)
+
+**O pedido (29/10):** "o canhão de cerco carrega mas não faz nada". **Causa:** no Ataque 2 (clique direito ou Q) o `Armament` zerava a carga no tick da soltura, e o cerco só atira ao soltar. **Conserto:** `segurandoCarga` em `combat/Armament.ts`; vale também online (o servidor roda o mesmo `Armament`, depois do reinício). **Provas:** +5 testes, 1 mutação derrubada, e no Chrome (Colossus-V4) o clique direito antes não soltava o obus e agora solta. **Falta:** o olho dele.
+**Próxima sessão começa com:** P283 (o quadro como objetivo e o técnico aliado) e P282 (Colossus-01: costas e ombros).
+
 ## A fase escura e a visão noturna (Claude, P281, branch `claude/visao-noturna`)
 
 **O pedido (29/10):** *"quero jogar na fase escura e ver só os olhos, os fogos, os rastros e explosões, e que isso reflita nos objetos e mechs… só o ARARA, o Lancer e os andróides têm visão noturna nativa; os outros usam como módulo extra"*; e, sobre o número de jogadores: *"vamos manter, sem alterar protocolo novo"* (a banda segue em 15 unidades; o P280, o meu time online, ficou congelado).

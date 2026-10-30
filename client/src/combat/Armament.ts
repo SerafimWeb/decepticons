@@ -196,8 +196,10 @@ export class Armament {
     else this.launcher.fixedUpdate(dt);
     this.side.fixedUpdate(dt);
     const s = l.secondary;
-    // A salva do lançador leve que já começou segue saindo com o botão solto (`RocketLauncher.committed`).
-    if (!s || !(secondary || (s.kind === 'ammo' && this.launcher.committed)) || !m.canFireSecondary) {
+    // A salva do lançador leve que já começou segue saindo com o botão solto (`RocketLauncher.committed`). **A carga com espera** (o canhão de cerco no Ataque 2) também: o tiro sai AO SOLTAR o botão, então
+    // o `ChargeTimer` precisa ser chamado com o botão solto enquanto há carga (antes o reset daqui apagava a carga cheia no tick em que o jogador soltava, e o cerco "carregava e não fazia nada").
+    const segurandoCarga = s?.chargeHold === true && this.charge[2]!.progress > 0;
+    if (!s || !(secondary || segurandoCarga || (s.kind === 'ammo' && this.launcher.committed)) || !m.canFireSecondary) {
       this.charge[2]!.reset();
       m.weaponCharging = this.primaryCharge > 0;
       return;
