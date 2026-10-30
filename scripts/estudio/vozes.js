@@ -182,52 +182,173 @@
   }
   $('#vz-tomadas').addEventListener('change', async () => { await abrirTomada($('#vz-tomadas').value); if (onda.aparar()) campos(); marcarSujo(); });
 
+  // ── o microfone (P286): escolher o aparelho, testar, procurar o que funciona ───────────────────
+  const MIC = window.EstudioMic;
+  const ganhoDaTela = () => Math.min(8, Math.max(1, Number($('#vz-mic-ganho').value) || 1));
+  // A lista só tem os nomes depois da permissão: até lá a escolha lembrada vale (e `lembrar('')` guarda a escolha explícita do padrão).
+  const aparelhoDaTela = () => $('#vz-mic').value || MIC.lembrado();
+  /** O medidor (a barra é em dB: a voz de um fone baixinho ainda aparece) e a cor: vermelho estourando, laranja fraco. */
+  function medidor(pico, rms) {
+    $('#vz-nivel').style.width = `${MIC.barra(pico)}%`;
+    $('#vz-nivel').style.background = pico > 0.95 ? 'var(--vermelho)' : rms < 0.01 ? 'var(--laranja)' : 'var(--verde)';
+  }
+  const textoDoNivel = (pico, rms) => `voz ${r2(MIC.dB(rms))} dB · pico ${r2(MIC.dB(pico))} dB`;
+
+  async function preencherAparelhos(escolher) {
+    let lista = [];
+    try { lista = await MIC.listar(); } catch { /* sem lista: fica só o padrão */ }
+    const sel = $('#vz-mic');
+    const atual = escolher ?? sel.value ?? MIC.lembrado();
+    sel.replaceChildren(new Option('Padrão do sistema (pode ser um aparelho mudo)', ''));
+    for (const a of lista) sel.append(new Option(a.nome, a.id));
+    sel.value = lista.some((a) => a.id === atual) ? atual : '';
+    return lista;
+  }
+  // Sem a permissão o navegador não dá o nome dos aparelhos: lista já se ela foi dada antes; senão o primeiro TESTAR ou GRAVAR libera e preenche.
+  (async () => {
+    $('#vz-mic').replaceChildren(new Option('Padrão do sistema (clique em TESTAR para listar)', ''));
+    try {
+      const p = await navigator.permissions?.query({ name: 'microphone' });
+      if (p?.state === 'granted') await preencherAparelhos(MIC.lembrado());
+    } catch { /* o navegador não deixa consultar: a lista vem no primeiro teste */ }
+  })();
+  $('#vz-mic').addEventListener('change', () => { MIC.lembrar($('#vz-mic').value); $('#vz-mic-estado').textContent = ''; });
+
+  let teste = null; // o teste aberto (`{ ponte, relogio }`), ou null
+  function fecharTeste() {
+    if (!teste) return;
+    clearInterval(teste.relogio);
+    teste.ponte.fechar();
+    teste = null;
+    $('#vz-mic-testar').textContent = 'testar o microfone';
+    $('#vz-nivel').style.width = '0';
+  }
+  async function alternarTeste() {
+    if (teste) return fecharTeste();
+    if (gravador && gravador.state === 'recording') return msg('Termine a gravação antes de testar.', 'erro');
+    try {
+      if (ctx.state === 'suspended') await ctx.resume();
+      const fluxo = await MIC.abrir(aparelhoDaTela());
+      await preencherAparelhos(aparelhoDaTela());
+      const ponte = MIC.ligar(ctx, fluxo, ganhoDaTela());
+      let picoMax = 0, rmsMax = 0;
+      const t0 = performance.now();
+      $('#vz-mic-testar').textContent = '■ parar o teste';
+      $('#vz-mic-estado').textContent = `Aberto: ${ponte.rotulo || '(sem nome)'}. Fale no microfone…`;
+      teste = {
+        ponte,
+        relogio: setInterval(() => {
+          const l = ponte.ler();
+          picoMax = Math.max(picoMax, l.pico); rmsMax = Math.max(rmsMax, l.rms);
+          medidor(l.pico, l.rms);
+          const s = (performance.now() - t0) / 1000;
+          $('#vz-mic-estado').textContent = `Aberto: ${ponte.rotulo || '(sem nome)'} · ${textoDoNivel(l.pico, l.rms)}`;
+          if (s >= 12) { fecharTeste(); concluirTeste(ponte.rotulo, picoMax, rmsMax); }
+        }, 80),
+      };
+      teste.concluir = () => concluirTeste(ponte.rotulo, picoMax, rmsMax);
+    } catch (e) {
+      $('#vz-mic-estado').textContent = `Sem acesso ao microfone (${e.name}). Libere o microfone para esta página no navegador (o cadeado ao lado do endereço).`;
+    }
+  }
+  function concluirTeste(rotulo, pico, rms) {
+    const v = MIC.veredito(pico, rms);
+    const g = MIC.sugerirGanho(rms, ganhoDaTela());
+    $('#vz-mic-estado').textContent = `${rotulo || 'Microfone'}: ${v.texto}${g ? ` Ganho sugerido: ×${g} (já coloquei no campo).` : ''}`;
+    if (g) $('#vz-mic-ganho').value = String(g);
+    $('#vz-mic-estado').style.color = v.estado === 'ok' ? 'var(--verde)' : v.estado === 'mudo' ? 'var(--vermelho)' : 'var(--laranja)';
+  }
+  $('#vz-mic-testar').addEventListener('click', () => {
+    if (teste) { const t = teste; fecharTeste(); t.concluir(); return; }
+    $('#vz-mic-estado').style.color = '';
+    alternarTeste();
+  });
+  $('#vz-mic-procurar').addEventListener('click', async () => {
+    if (teste) fecharTeste();
+    if (gravador && gravador.state === 'recording') return msg('Termine a gravação antes de procurar.', 'erro');
+    const botao = $('#vz-mic-procurar');
+    botao.disabled = true;
+    try {
+      if (ctx.state === 'suspended') await ctx.resume();
+      await MIC.liberar();
+      const lista = await preencherAparelhos(aparelhoDaTela());
+      if (!lista.length) return msg('O navegador não listou nenhum microfone. Confira se o fone/microfone está ligado e liberado para o navegador.', 'erro');
+      $('#vz-mic-estado').style.color = '';
+      const { achados, melhor } = await MIC.procurar(ctx, lista, { aoAndar: (a) => { $('#vz-mic-estado').textContent = `Ouvindo ${a.nome}… (fale um pouco)`; } });
+      for (const a of achados) msg(`${a.nome}: ${a.estado === 'mudo' ? 'SILÊNCIO TOTAL' : a.estado === 'erro' ? a.texto : `sinal ${r2(MIC.dB(a.rms))} dB`}`, a.estado === 'mudo' || a.estado === 'erro' ? 'erro' : 'ok');
+      if (melhor) {
+        $('#vz-mic').value = melhor.id; MIC.lembrar(melhor.id);
+        $('#vz-mic-estado').textContent = `Escolhi: ${melhor.nome} (é o que tem sinal). Clique em TESTAR e fale, ou grave.`;
+        $('#vz-mic-estado').style.color = 'var(--verde)';
+      } else {
+        $('#vz-mic-estado').textContent = 'Nenhum microfone entrega sinal. No Windows: Configurações > Sistema > Som > Entrada (veja se não está mudo ou desativado); no fone Bluetooth, confira se ele está no modo de chamada.';
+        $('#vz-mic-estado').style.color = 'var(--vermelho)';
+      }
+    } catch (e) {
+      msg(`Procurar microfone: ${e.name === 'NotAllowedError' ? 'o navegador negou o microfone (o cadeado ao lado do endereço)' : e.message}`, 'erro');
+    } finally { botao.disabled = false; }
+  });
+
   // ── gravar ──────────────────────────────────────────────────────────────────────────────────────
-  let gravador = null, fluxo = null, partes = [], analisador = null, temporizador = null, comeco = 0;
+  let gravador = null, ponte = null, partes = [], temporizador = null, comeco = 0, descartar = false;
   function liberarMicrofone() {
     clearInterval(temporizador); temporizador = null;
-    if (fluxo) { for (const t of fluxo.getTracks()) t.stop(); fluxo = null; }
+    if (ponte) { ponte.fechar(); ponte = null; }
     $('#vz-nivel').style.width = '0';
     $('#vz-gravar').disabled = false; $('#vz-parar-gravacao').disabled = true;
   }
   async function comecarGravacao() {
     if (!chave) return msg('Escolha uma fala primeiro.', 'erro');
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') return msg('Este navegador não grava áudio. Use o Chrome, ou importe uma gravação feita no celular.', 'erro');
+    fecharTeste();
+    let fluxo;
     try {
       parar();
       if (ctx.state === 'suspended') await ctx.resume();
       // Sem cancelamento de eco, supressão de ruído nem ganho automático: o tratamento é nosso (e a voz chega crua, com a dinâmica toda).
-      fluxo = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+      fluxo = await MIC.abrir(aparelhoDaTela());
     } catch (e) {
       return msg(`Sem acesso ao microfone (${e.name}). Libere o microfone para esta página no navegador (o cadeado ao lado do endereço), ou importe uma gravação.`, 'erro');
     }
+    // Com a permissão dada os aparelhos já têm nome: a lista se completa.
+    if ($('#vz-mic').options.length <= 1) await preencherAparelhos(aparelhoDaTela());
+    ponte = MIC.ligar(ctx, fluxo, ganhoDaTela());
     const tipo = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'].find((t) => MediaRecorder.isTypeSupported(t));
-    gravador = new MediaRecorder(fluxo, tipo ? { mimeType: tipo } : undefined);
+    gravador = new MediaRecorder(ponte.saida, tipo ? { mimeType: tipo } : undefined);
     partes = [];
+    descartar = false;
     gravador.ondataavailable = (e) => { if (e.data.size) partes.push(e.data); };
     const fala = chave, sot = sotaque;
-    gravador.onstop = () => enviar(new Blob(partes, { type: gravador.mimeType || 'audio/webm' }), fala, sot);
-    const fonte = ctx.createMediaStreamSource(fluxo);
-    analisador = ctx.createAnalyser(); analisador.fftSize = 1024;
-    fonte.connect(analisador);
-    const amostras = new Float32Array(analisador.fftSize);
+    gravador.onstop = () => { if (descartar) { descartar = false; return; } enviar(new Blob(partes, { type: gravador.mimeType || 'audio/webm' }), fala, sot); };
     gravador.start();
     comeco = performance.now();
+    let picoTotal = 0;
+    $('#vz-mic-estado').style.color = '';
+    $('#vz-mic-estado').textContent = `Gravando de: ${ponte.rotulo || '(sem nome)'}`;
     $('#vz-gravar').disabled = true; $('#vz-parar-gravacao').disabled = false;
     temporizador = setInterval(() => {
-      analisador.getFloatTimeDomainData(amostras);
-      let pico = 0; for (const v of amostras) pico = Math.max(pico, Math.abs(v));
-      $('#vz-nivel').style.width = `${Math.min(100, pico * 100)}%`;
-      $('#vz-nivel').style.background = pico > 0.95 ? 'var(--vermelho)' : 'var(--verde)';
+      const { pico, rms } = ponte.ler();
+      picoTotal = Math.max(picoTotal, pico);
+      medidor(pico, rms);
       const s = (performance.now() - comeco) / 1000;
-      $('#vz-estado-gravacao').textContent = `● gravando ${r2(s)} s${pico > 0.95 ? ' — ALTO DEMAIS: afaste-se do microfone' : ''}`;
+      $('#vz-estado-gravacao').textContent = `● gravando ${r2(s)} s · ${textoDoNivel(pico, rms)}${pico > 0.95 ? ' — ALTO DEMAIS: afaste-se do microfone' : ''}`;
+      // Dois segundos de zero absoluto: o aparelho está mudo. Para na hora e diz, em vez de deixar a pessoa falar sozinha até o fim.
+      if (s >= 2 && picoTotal === 0) {
+        const rotulo = ponte.rotulo;
+        descartar = true;
+        pararGravacao();
+        $('#vz-estado-gravacao').textContent = '';
+        $('#vz-mic-estado').style.color = 'var(--vermelho)';
+        $('#vz-mic-estado').textContent = `${rotulo || 'Microfone'}: ${MIC.veredito(0, 0).texto}`;
+        return msg('Parei: o microfone não entregou nada em 2 segundos (silêncio total). Nada foi guardado.', 'erro');
+      }
       if (s >= LIMITE_DA_GRAVACAO_S) pararGravacao();
     }, 80);
   }
   function pararGravacao() {
     if (gravador && gravador.state !== 'inactive') gravador.stop();
     liberarMicrofone();
-    $('#vz-estado-gravacao').textContent = 'enviando…';
+    $('#vz-estado-gravacao').textContent = descartar ? '' : 'enviando…';
   }
   /** Manda o áudio bruto ao servidor (que converte para WAV e numera a tomada) e abre a tomada nova já aparada. */
   async function enviar(corpo, fala, sot) {

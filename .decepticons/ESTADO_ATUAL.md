@@ -1,5 +1,11 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O microfone do Estúdio (Claude, P286, branch `claude/estudio-microfone`)
+
+**O pedido (30/10):** "quero gravar os áudios, mas não consegui gravar, ficou mudo o microfone… continue evoluindo o estúdio". **Causa (medida neste PC):** a aba VOZES abria sempre o aparelho padrão do Windows, hoje o ponto USB "Microfone (Captain 300)", que entrega zero absoluto; só o fone Bluetooth tem sinal. **Entrega:** lista de microfones reais com escolha exata e lembrada, medidor em dB com veredito, PROCURAR O QUE FUNCIONA, ganho de entrada, parada em 2 s de silêncio e o servidor recusa tomada muda (422). **Provas:** +27 testes (`server/estudioMic.test.ts`, `estudio-vozes.test.ts`), 1 mutação derrubada, bancada no Chrome (`medicoes/estudio.mjs`, agora com um segundo navegador de microfone mudo: para sozinho e não guarda nada). **Falta:** o olho e o ouvido do Comandante (gravar de verdade; o aparelho que funciona hoje é o fone Bluetooth).
+**Na mesma mensagem (P287 a P290, registradas em `ORDENS_DO_COMANDO.md`):** unificar Esquadrão, Wargame e Hangar (chassis e encaixes iguais, o botão de cada arma configurável, o Wargame dizendo qual robô vai a cada ponto). Cada uma em PR próprio.
+**Próxima sessão começa com:** P288 (a ficha do esquadrão com os chassis e encaixes do Hangar), depois P289 e P290.
+
 ## Os encaixes extras de peso: o Colossus-01 e o Onça (Claude, P282 e P285, branch `claude/colossus-slots`)
 
 **O pedido (29/10 e 30/10):** três slots no Colossus-01 (costas e dois ombros), com o teto de classe por encaixe, e dois ombros no Onça. **Entrega:** `combat/encaixesExtras.ts` (a regra pura), `MOUNTS` com as costas, o `Armament` com o cronômetro e a carga de cada extra, o Hangar com as ranhuras novas, o texto da montagem na versão 3 (só quando há extra), e o desenho com os nós das costas e dos ombros. **Provas:** +20 testes e 2 mutações à mão derrubadas; no Chrome (GPU) o Hangar mostra as cinco ranhuras do Colossus, o cerco nas costas dispara pelo clique direito e o canhão pelo esquerdo, e a foto por trás mostra a arma fora do corpo. **Falta:** o olho do Comandante; o Onça no jogo; o tiro dos extras no servidor (usa a mesma regra, mas não foi provado online).
