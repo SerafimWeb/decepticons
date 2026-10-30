@@ -232,3 +232,63 @@ describe('canhão de trilho: carga e interrupção nos encaixes reais', () => {
     expect(b.mech.weaponCharging).toBe(true);
   });
 });
+
+describe('canhão de cerco: carga com espera, o tiro sai ao soltar o botão (P124), no Ataque 1 e no Ataque 2', () => {
+  const CERCO = weapon('siege');
+  const build = (onde: 'primary' | 'secondary') =>
+    bench(onde === 'primary' ? { primary: CERCO, secondary: null } : { primary: weapon('plasma'), secondary: CERCO });
+  const segurar = (b: ReturnType<typeof build>, onde: 'primary' | 'secondary', s: number) => b.hold(s, onde === 'primary', onde === 'secondary');
+
+  for (const onde of ['primary', 'secondary'] as const) {
+    const rotulo = onde === 'primary' ? 'Ataque 1 (o clique)' : 'Ataque 2 (o clique direito ou Q)';
+
+    it(`${rotulo}: carregar não dispara; a carga cheia espera segurada; soltar dispara um obus só e zera a carga`, () => {
+      const b = build(onde);
+      segurar(b, onde, CERCO.chargeTime! + 0.2);
+      expect(b.shots.filter((s) => s.w.id === 'siege')).toHaveLength(0);
+      expect(b.mech.weaponCharging).toBe(true);
+      segurar(b, onde, 3); // segurando a carga pronta: espera o momento, não dispara sozinha
+      expect(b.shots.filter((s) => s.w.id === 'siege')).toHaveLength(0);
+      b.hold(0.1, false, false);
+      expect(b.shots.filter((s) => s.w.id === 'siege')).toHaveLength(1);
+      expect(b.shots.find((s) => s.w.id === 'siege')).toMatchObject({ kind: 'bolt', mount: onde === 'primary' ? 'rightHand' : 'leftHand' });
+      expect(onde === 'primary' ? b.armament.primaryCharge : b.armament.secondaryCharge).toBe(0);
+      expect(b.mech.weaponCharging).toBe(false);
+      b.hold(0.5, false, false);
+      expect(b.shots.filter((s) => s.w.id === 'siege')).toHaveLength(1); // soltar de novo não repete
+    });
+
+    it(`${rotulo}: soltar antes de completar a carga não dispara e perde a carga parcial`, () => {
+      const b = build(onde);
+      segurar(b, onde, CERCO.chargeTime! - 0.6);
+      expect(onde === 'primary' ? b.armament.primaryCharge : b.armament.secondaryCharge).toBeGreaterThan(0.5);
+      b.hold(0.1, false, false);
+      expect(b.shots.filter((s) => s.w.id === 'siege')).toHaveLength(0);
+      expect(onde === 'primary' ? b.armament.primaryCharge : b.armament.secondaryCharge).toBe(0);
+      segurar(b, onde, 0.5); // recomeça do zero: meio segundo não completa
+      b.hold(0.1, false, false);
+      expect(b.shots.filter((s) => s.w.id === 'siege')).toHaveLength(0);
+    });
+  }
+
+  it('Ataque 2: perder o braço esquerdo com a carga cheia cancela o tiro (nada sai ao soltar)', () => {
+    const b = build('secondary');
+    segurar(b, 'secondary', CERCO.chargeTime! + 0.2);
+    b.mech.damagePart('leftArm', 9999);
+    b.hold(0.5, false, false);
+    expect(b.shots.filter((s) => s.w.id === 'siege')).toHaveLength(0);
+    expect(b.armament.secondaryCharge).toBe(0);
+  });
+
+  it('o Colossus-V4 de fábrica (cerco nas duas mãos): cada botão solta o obus da mão dele, e o outro botão não conta', () => {
+    const l: Loadout = { primary: CERCO, secondary: CERCO };
+    const b = bench(l);
+    segurar(b, 'primary', 2.6); b.hold(0.1, false, false);
+    expect(b.from('rightHand')).toHaveLength(1);
+    expect(b.from('leftHand')).toHaveLength(0);
+    b.hold(5, false, false); // o intervalo do cerco passa (4,5 s)
+    b.hold(2.6, false, true); b.hold(0.1, false, false);
+    expect(b.from('leftHand')).toHaveLength(1);
+    expect(b.from('rightHand')).toHaveLength(1);
+  });
+});
