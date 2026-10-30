@@ -813,6 +813,13 @@ export interface Loadout {
   secondary: WeaponStats | null;
   /** Só nos chassis com duas mãos no gatilho principal (Marauder): a arma da mão esquerda, que atira junto com a `primary`. */
   offhand?: WeaponStats | null;
+  /**
+   * Os encaixes extras (P282, `combat/encaixesExtras.ts`): as costas e cada ombro, uma arma cada. `null` = o encaixe está vazio; **ausente** = o chassi não tem o encaixe
+   * (o ombro do Marauder é o `secondary`, e as costas só existem nos robôs que as trazem).
+   */
+  back?: WeaponStats | null;
+  rightShoulder?: WeaponStats | null;
+  leftShoulder?: WeaponStats | null;
   /** Qual dos layouts de gatilho do chassi (`MechStats.layouts`) vale; ausente = o primeiro, o padrão. */
   layout?: number;
 }

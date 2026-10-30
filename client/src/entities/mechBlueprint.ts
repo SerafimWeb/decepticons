@@ -1,6 +1,7 @@
 import { weaponModel } from './weaponModels';
 import * as THREE from 'three';
 import type { Loadout } from '../combat/weapons';
+import { EXTRA_SLOTS, type ExtraSlot } from '../combat/encaixesExtras';
 import { PALETTE } from '../core/palette';
 import type { LegRig, MechRig } from './MechBase';
 import { batchRigMeshes, beveledBox, box, cyl, frostShell, group, heatVapor, taperedBox } from './meshKit';
@@ -8,6 +9,8 @@ import { batchRigMeshes, beveledBox, box, cyl, frostShell, group, heatVapor, tap
 /** Parâmetros visuais apenas; não altera colisão, massa, vida, calor ou armas da simulação. */
 export interface MechBlueprint {
   readonly id: 'ferret' | 'vector09' | 'heavy' | 'colossus01';
+  /** Tem os encaixes extras de peso (P282: as costas e os dois ombros ao lado da cabeça): o rig cria os nós deles. */
+  readonly encaixesDePeso?: boolean;
   readonly label: string;
   readonly referenceHeight: number;
   readonly torso: { readonly width: number; readonly height: number; readonly depth: number };
@@ -76,6 +79,7 @@ export const MEDIUM_MECH_BLUEPRINT: MechBlueprint = {
  * sessão. A capacidade `tail` continua disponível no tipo e no builder pra quem precisar depois.
  */
 export const HEAVY_MECH_BLUEPRINT: MechBlueprint = {
+  encaixesDePeso: true,
   id: 'heavy', label: 'PESADO', referenceHeight: 6.5,
   torso: { width: 3.1, height: 2.3, depth: 2.3 },
   head: { width: 0.7, height: 0.42, depth: 0.8, antenna: 0 },
@@ -91,6 +95,7 @@ export const HEAVY_MECH_BLUEPRINT: MechBlueprint = {
  * São parâmetros estritamente visuais; IA, vida e armas entram no encontro em outro módulo.
  */
 export const COLOSSUS_01_BLUEPRINT: MechBlueprint = {
+  encaixesDePeso: true,
   id: 'colossus01', label: 'COLOSSUS-01', referenceHeight: 14,
   torso: { width: 5.8, height: 3.8, depth: 4.2 },
   head: { width: 1.65, height: 1.05, depth: 1.5, antenna: 0 },
@@ -272,6 +277,19 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   rack.name = 'morteiro-costas';
   rack.visible = false;
   const barrageMouth = buildBackMortar(rack, blueprint, M);
+  // Os encaixes extras de peso (P282): as costas e os dois ombros ao lado da cabeça, só nos robôs que os têm. O nó fica vazio até a montagem levar uma arma (`mountWeapons`).
+  const nos: Partial<Record<ExtraSlot, THREE.Object3D>> = blueprint.encaixesDePeso
+    ? {
+        // atrás da traseira do tronco (a mochila termina a ~1,6 × a profundidade): a arma sai para trás, sem ficar enterrada no corpo
+        back: group(torso, 0, torsoH * 1.02, torsoD * 1.7),
+        rightShoulder: group(torso, torsoW * 0.32, torsoH * 1.02, 0),
+        leftShoulder: group(torso, -torsoW * 0.32, torsoH * 1.02, 0),
+      }
+    : {};
+  // Onde cada extra leva a sua arma: a arma fica com a boca no nó e o corpo para trás (como nas mãos). Um ponto sem peso (o próprio nó) serve de boca.
+  const bocaDoExtra = new THREE.Object3D();
+  const extrasMontados: Partial<Record<ExtraSlot, THREE.Object3D | undefined>> = {};
+  const mostrandoExtra: Partial<Record<ExtraSlot, Loadout['secondary']>> = {};
 
   const batchedMaterial = batchRigMeshes(model, [M.armor, M.paint]);
   // Só depois do lote: `batchRigMeshes` varre e remove todo `THREE.Mesh` dos pivôs para fundir no casco —
@@ -351,6 +369,15 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
     placePlate(plateUp);
   };
   const mountWeapons = (loadout: Loadout): void => {
+    for (const slot of EXTRA_SLOTS) {
+      const no = nos[slot];
+      if (!no) continue;
+      const w = loadout[slot] ?? null;
+      if (mostrandoExtra[slot] === w) continue;
+      extrasMontados[slot]?.removeFromParent();
+      extrasMontados[slot] = attachModule(w, no, bocaDoExtra);
+      mostrandoExtra[slot] = w;
+    }
     if (loadout.metalShield) {
       plate ??= buildPlate();
       plate.visible = true;
@@ -382,6 +409,8 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   model.scale.setScalar(scale);
   return {
     model, pelvis, torso, head, leftArm, rightArm, leftLeg, rightLeg, muzzle, leftMuzzle,
+    backMuzzle: nos.back,
+    shoulderMuzzles: nos.rightShoulder && nos.leftShoulder ? { right: nos.rightShoulder, left: nos.leftShoulder } : undefined,
     thrusters, thrusterMaterial: batchedMaterial, setDashVisual: batchedMaterial.userData.setDash,
     hullMaterials: [batchedMaterial], hipHeight, setHeatVisual, setFrozenVisual: updateFrost, setGuardVisual, mountWeapons, barrageMouth,
   };

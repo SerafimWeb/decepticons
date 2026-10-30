@@ -159,6 +159,8 @@ export interface MechRig {
    * Só nos rigs com encaixe de arma nos pulsos (`weaponMount.ts`): monta no desenho as armas da montagem.
    * Idempotente e barata; o `MechBase` a chama ao nascer e a cada `equip`. Sem ela, a arma é parte do modelo.
    */
+  /** O nó das costas (o encaixe extra de P282), quando o robô tem o encaixe. */
+  backMuzzle?: Located;
   mountWeapons?: (loadout: Loadout) => void;
   /**
    * Só nos rigs com morteiro de chuva de mísseis nas costas (`mechBlueprint.ts`): o nó da boca dele. Serve só ao desenho do
@@ -199,6 +201,8 @@ function mountNode(rig: MechRig, mount: MountId): Located {
       return rig.shoulderMuzzles?.right ?? rig.torso;
     case 'leftShoulder':
       return rig.shoulderMuzzles?.left ?? rig.torso;
+    case 'back':
+      return rig.backMuzzle ?? rig.torso;
   }
 }
 
@@ -287,6 +291,7 @@ export abstract class MechBase {
     leftHand: new THREE.Vector3(),
     rightShoulder: new THREE.Vector3(),
     leftShoulder: new THREE.Vector3(),
+    back: new THREE.Vector3(),
   };
   /** A 1ª pessoa esconde a cabeça do próprio Mech; parte destruída também some. */
   private headVisibleByCamera = true;

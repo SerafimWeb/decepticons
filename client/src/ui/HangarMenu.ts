@@ -9,7 +9,8 @@ import { triggersOf } from '../entities/MechBase';
 import { METAL_SHIELD_IDS, METAL_SHIELDS, METAL_SHIELD_TIERS, metalShieldMass, type MetalShieldId } from '../combat/MetalShield';
 import type { DamageType } from '../combat/weapons';
 import type { Hangar } from '../hangar/Hangar';
-import { acceptsMetalShield, armGroups, armOptions, factorySpec, hasShoulderSlot, isMetalShield, layoutCount, loadoutKey, slotAttack, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
+import { acceptsMetalShield, armGroups, armOptions, extrasDoChassi, factorySpec, hasShoulderSlot, isMetalShield, layoutCount, loadoutKey, slotAttack, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
+import { EXTRA_SLOTS, MOUNT_DO_EXTRA } from '../combat/encaixesExtras';
 import { shoulderMounts } from '../combat/mounts';
 import { PRESET_COUNT } from '../hangar/Hangar';
 import { AdminPanel } from './AdminPanel';
@@ -58,14 +59,17 @@ export const CHASSIS_LABEL: Record<ChassisId, { title: string; className: string
   quadraV2: { title: 'QUADRA-V2', className: 'MÉDIO · IMPORTADO', detail: 'Malha de Vanta Works.' },
   marauder: { title: 'MARAUDER', className: 'MÉDIO · IMPORTADO', detail: 'Duas mãos armadas e lançadores nos ombros.' },
 };
-const SLOT_LABEL: Record<ArmSlot, string> = { right: 'BRAÇO DIREITO', left: 'BRAÇO ESQUERDO', shoulders: 'OMBROS' };
+const SLOT_LABEL: Record<ArmSlot, string> = { right: 'BRAÇO DIREITO', left: 'BRAÇO ESQUERDO', shoulders: 'OMBROS', back: 'COSTAS', rightShoulder: 'OMBRO DIREITO', leftShoulder: 'OMBRO ESQUERDO' };
 /** A chuva de mísseis, num Mech sem ombros, é um morteiro nas costas (o desenho do braço esquerdo troca o casulo por ele). */
 const nasCostas = (id: string, slot: ArmSlot): boolean => id === 'barrage' && slot !== 'shoulders';
-const SLOT_NUM: Record<ArmSlot, string> = { right: '01', left: '02', shoulders: '03' };
+const SLOT_NUM: Record<ArmSlot, string> = { right: '01', left: '02', shoulders: '03', back: '04', rightShoulder: '05', leftShoulder: '06' };
+/** As ranhuras que o Hangar mostra (as do chassi entram à parte: `extrasDoChassi`). */
+const SLOTS_DO_HANGAR: readonly string[] = ['right', 'left', 'shoulders', ...EXTRA_SLOTS];
 /** De onde o encaixe da tela atira (a tela de teste usa para desenhar o tiro). Nos ombros, os dois lançadores. */
 function slotMounts(chassis: ChassisId, slot: ArmSlot, layout = 0): readonly MountId[] {
   if (slot === 'right') return ['rightHand'];
   if (slot === 'left') return ['leftHand'];
+  if (slot !== 'shoulders') return [MOUNT_DO_EXTRA[slot]];
   return shoulderMounts(triggersOf(CHASSIS[chassis], layout));
 }
 /** Como a chapa metálica funciona (depois da frase própria de cada uma). Cada pedaço do texto do encaixe se traduz sozinho (`traduzir`): a frase inteira muda de caso a caso. */
@@ -545,8 +549,8 @@ export class HangarMenu {
       return;
     }
     const slot = target?.closest<HTMLButtonElement>('[data-slot]')?.dataset.slot;
-    if (slot === 'right' || slot === 'left' || slot === 'shoulders') {
-      this.selectedSlot = slot;
+    if (slot !== undefined && SLOTS_DO_HANGAR.includes(slot)) {
+      this.selectedSlot = slot as ArmSlot;
       this.tab = 'armas';
       this.message = '';
       this.render();
@@ -736,7 +740,7 @@ export class HangarMenu {
       ? '<span class="hg-layout-title">COMO OS ATAQUES SE DIVIDEM</span>' + layouts.map((l, i) => `<button type="button" class="hg-layout-btn${(spec.layout ?? 0) === i ? ' selected' : ''}" data-layout="${i}" aria-pressed="${(spec.layout ?? 0) === i}" title="${l.name}">${l.short}</button>`).join('')
       : '';
     const shield = SHIELD_ARM.includes(spec.chassis);
-    const slots: readonly ArmSlot[] = hasShoulderSlot(spec.chassis) ? ['right', 'left', 'shoulders'] : ['right', 'left'];
+    const slots: readonly ArmSlot[] = [...(hasShoulderSlot(spec.chassis) ? ['right', 'left', 'shoulders'] : ['right', 'left']) as ArmSlot[], ...extrasDoChassi(spec.chassis)];
     // Trocou de chassi para um sem ombros com os ombros escolhidos: volta ao braço direito.
     if (!slots.includes(this.selectedSlot)) this.selectedSlot = 'right';
     slotList.innerHTML = slots
@@ -873,6 +877,7 @@ function copySpec(spec: LoadoutSpec): LoadoutSpec {
   if (spec.module !== undefined) copy.module = spec.module;
   if (spec.layout !== undefined) copy.layout = spec.layout;
   if (spec.shoulders !== undefined) copy.shoulders = spec.shoulders ? { ...spec.shoulders } : null;
+  for (const slot of EXTRA_SLOTS) if (spec[slot] !== undefined) copy[slot] = spec[slot] ? { ...spec[slot]! } : null;
   return copy;
 }
 

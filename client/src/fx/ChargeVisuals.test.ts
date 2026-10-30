@@ -5,7 +5,7 @@ import { weapon, type WeaponStats } from '../combat/weapons';
 import type { MechBase } from '../entities/MechBase';
 import { ChargeVisuals } from './ChargeVisuals';
 
-const BOCAS: Record<MountId, [number, number, number]> = { rightHand: [1, 3, 2], leftHand: [-1, 3, 2], rightShoulder: [1.5, 5, 0], leftShoulder: [-1.5, 5, 0] };
+const BOCAS: Record<MountId, [number, number, number]> = { rightHand: [1, 3, 2], leftHand: [-1, 3, 2], rightShoulder: [1.5, 5, 0], leftShoulder: [-1.5, 5, 0], back: [0, 5, -1] };
 
 function palco() {
   const pontos: THREE.Vector3[] = [];

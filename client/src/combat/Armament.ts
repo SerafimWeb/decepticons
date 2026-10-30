@@ -1,7 +1,8 @@
 import { ChargeTimer } from './ChargeTimer';
 import { aimSpreadOf, aimTimeOf, settleSpread, settleStep } from './aim';
 import type { MechBase } from '../entities/MechBase';
-import { type MountId } from './mounts';
+import { attackOf, type MountId } from './mounts';
+import { EXTRA_SLOTS, extraDaMontagem, MOUNT_DO_EXTRA } from './encaixesExtras';
 import { NO_SPREAD, spreadAt, type Spread } from './spread';
 import { FireTimer, FuelTank, RocketLauncher, SpinUp } from './trigger';
 import { weapon, type WeaponStats } from './weapons';
@@ -66,6 +67,9 @@ export class Armament {
   /** Cadência do gatilho secundário quando ele não é de carregador (serra, arma de energia). */
   private readonly side = new FireTimer();
   private readonly charge = [new ChargeTimer(), new ChargeTimer(), new ChargeTimer()];
+  /** Os encaixes extras (P282: costas e ombros dos robôs grandes): um cronômetro de tiro e uma carga por encaixe, na ordem de `EXTRA_SLOTS`. */
+  private readonly extraShot = EXTRA_SLOTS.map(() => new FireTimer());
+  private readonly extraCharge = EXTRA_SLOTS.map(() => new ChargeTimer());
   /** Rotação do cano de cada mão (só a metralhadora rotatória gira; nas outras armas fica em 0). */
   private readonly spin = [new SpinUp(), new SpinUp()];
   /** Tanque de combustível de cada mão (só o lança-chamas tem; `null` nas outras armas). */
@@ -186,6 +190,8 @@ export class Armament {
       }
     }
 
+    this.fixedExtras(dt, fire, secondary, sink);
+
     // Cano girando e chama acesa na rede (os outros jogadores desenham o fluxo por estas bandeiras, sem um evento por tiro).
     m.status.spinning = (this.held[0]! && this.spin[0]!.level > 0.3) || (this.held[1]! && this.spin[1]!.level > 0.3);
     m.status.flaming = m.alive && (this.burning[0]! || this.burning[1]!);
@@ -210,6 +216,7 @@ export class Armament {
       let volley = 0;
       for (const mount of triggers.secondary) {
         if (mount === 'leftHand' && l.offhand !== undefined) continue; // a mão armada do Marauder já atirou no laço das mãos
+        if (extraDaMontagem(l, mount) !== null) continue; // os encaixes extras atiram no laço deles (`fixedExtras`)
         if (!m.canFireMount(mount)) continue;
         sink.rocket(mount, s, volley++, this.salvoSpread(s));
         m.onFireMount(mount, s);
@@ -221,6 +228,7 @@ export class Armament {
       } else {
         for (const mount of triggers.secondary) {
           if (mount === 'leftHand' && l.offhand !== undefined) continue;
+          if (extraDaMontagem(l, mount) !== null) continue; // os encaixes extras atiram no laço deles (`fixedExtras`)
           if (!m.canFireMount(mount)) continue;
           // A onda sônica sai das duas bocas dos ombros ao mesmo tempo (como os foguetes); a rotatória só vai no gatilho principal (ARM_SLOTS).
           if (s.hook) sink.hook?.(mount, s);
@@ -233,6 +241,33 @@ export class Armament {
       this.side.shot(s.fireInterval);
     }
     m.weaponCharging = this.primaryCharge > 0 || this.secondaryCharge > 0;
+  }
+
+  /**
+   * Os encaixes extras (P282): cada um atira a sua arma pelo botão do seu ataque, com o cronômetro e a carga dele. A carga com espera (o cerco) é avaliada **com o botão solto** (o mesmo
+   * conserto do `segurandoCarga`, P284): quem solta, dispara. Sem extra na montagem, não faz nada.
+   */
+  private fixedExtras(dt: number, fire: boolean, secondary: boolean, sink: ShotSink): void {
+    const m = this.mech;
+    const l = m.loadout;
+    const triggers = m.triggers;
+    for (let i = 0; i < EXTRA_SLOTS.length; i++) {
+      const slot = EXTRA_SLOTS[i]!;
+      const mount = MOUNT_DO_EXTRA[slot];
+      const timer = this.extraShot[i]!;
+      timer.fixedUpdate(dt);
+      const w = l[slot] ?? null;
+      const button = attackOf(triggers, mount);
+      if (!w || button === null || extraDaMontagem(l, mount) === null) {
+        this.extraCharge[i]!.reset();
+        continue;
+      }
+      const held = button === 1 ? fire : secondary;
+      if (!this.extraCharge[i]!.step(dt, held, timer.ready && m.canFireMount(mount), w.chargeTime, w.chargeHold)) continue;
+      sink.projectile(mount, w, NO_SPREAD);
+      m.onFireMount(mount, w);
+      timer.shot(w.fireInterval);
+    }
   }
 
   /** O desvio deste tiro: o cone da rotatória cresce com a rotação do cano, e a mira aberta (P121) soma a sua amplitude; as outras armas vão retas. */
