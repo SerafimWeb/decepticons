@@ -992,5 +992,12 @@
  "Chat de voz: trocar o jogador escolhido": "Chat vocal : changer le joueur choisi",
  "Contas de menores de 18 anos só ouvem o chat de voz: sem microfone. O áudio do jogo segue normal.": "Les comptes de moins de 18 ans écoutent seulement le chat vocal : pas de micro. Le son du jeu reste normal.",
  "Conta de menor de 18 anos: o chat de voz só ouve (sem microfone). O áudio do jogo segue normal.": "Compte de moins de 18 ans : le chat vocal est en écoute seule (pas de micro). Le son du jeu reste normal.",
- "Informe o mês e o ano de nascimento da sua conta. Quem tem menos de 18 anos só ouve o chat de voz, sem microfone. Só dá para informar uma vez.": "Indiquez le mois et l'année de naissance de votre compte. Les moins de 18 ans écoutent seulement le chat vocal, sans micro. On ne peut l'indiquer qu'une fois."
+ "Informe o mês e o ano de nascimento da sua conta. Quem tem menos de 18 anos só ouve o chat de voz, sem microfone. Só dá para informar uma vez.": "Indiquez le mois et l'année de naissance de votre compte. Les moins de 18 ans écoutent seulement le chat vocal, sans micro. On ne peut l'indiquer qu'une fois.",
+ "VISÃO NOTURNA": "VISION NOCTURNE",
+ "SEM VISÃO NOTURNA": "SANS VISION NOCTURNE",
+ "só o que brilha aparece": "seul ce qui brille apparaît",
+ "Visão noturna": "Vision nocturne",
+ "Visão noturna:": "Vision nocturne :",
+ "enxerga no escuro": "voit dans le noir",
+ "enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.": "voit pendant la phase sombre (l'Arara, le Lancer et les androïdes l'ont déjà d'origine) et prend la place du générateur."
 }

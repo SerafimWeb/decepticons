@@ -217,6 +217,8 @@ const _beamTo = new THREE.Vector3();
 export class BotSystem {
   /** Quem os bots caçam (hoje: só o jogador). */
   targets: readonly MechBase[] = [];
+  /** A escuridão da cena (0 a 1, P282): `Match.escuridao`, passada aos cérebros a cada tick (quem não tem visão noturna enxerga menos longe). */
+  escuridao = 0;
   readonly mechs: readonly MechBase[];
   private readonly bots: Bot[] = [];
   /** Reservas retiradas da sala quando entram humanos; não renascem durante a reserva. */
@@ -753,6 +755,7 @@ export class BotSystem {
         }
         brain.leader = leader;
       }
+      if (brain instanceof BotController) brain.escuridao = this.escuridao;
       const input = brain.think(dt, this.targets);
       if (brain instanceof BotController && brain.radioReport) this.radio(bot, brain);
       mech.guard(brain instanceof BotController && brain.wantsGuard);

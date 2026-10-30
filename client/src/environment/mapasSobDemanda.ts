@@ -170,6 +170,8 @@ export interface CenarioDaCidade {
   /** `camera`: onde está a câmera (o holograma desenha menos camadas quando ela está perto: custo de preenchimento na GPU integrada). */
   update(dt: number, camera?: THREE.Vector3): void;
   setDetalhe(alto: boolean): void;
+  /** A fase escura (P282): `escuridao` de 0 a 1; o holograma se apaga com a cidade. */
+  setEscuridao(escuridao: number): void;
   /** Quantos outdoors o mapa tem (o teto do controle de quantidade do painel). */
   readonly totalDeOutdoors: number;
   /** Os outdoors da marca (P267): aplica quantos aparecem, o período da troca e os anúncios que entram. Leve: serve para acompanhar um controle deslizante. */

@@ -1,4 +1,4 @@
-import { SHIELDS, type ShieldId } from '../combat/EnergyShield';
+import { ehModulo, massaDoModulo, type ModuloId } from '../combat/modulos';
 import { isMetalShieldId, metalShieldMass, METAL_SHIELDS, type MetalShieldId } from '../combat/MetalShield';
 import { weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { ARM_SLOTS, CHASSIS, CHASSIS_SIZE, METAL_SHIELD_CHASSIS, type ChassisId } from '../entities/chassis';
@@ -32,7 +32,8 @@ export interface ArmSpec {
 
 export interface LoadoutSpec {
   v: 1 | 2;
-  module?: ShieldId | null;
+  /** O módulo extra: um gerador de energia ou os óculos de visão noturna (`visao`, P282). */
+  module?: ModuloId | null;
   chassis: ChassisId;
   /** Braço direito (Vector-09: energia; andróide: blaster). */
   right: ArmSpec;
@@ -163,10 +164,12 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
   const spec2 = { v: LOADOUT_VERSION, chassis: s.chassis, right: s.right, left: s.left ?? null, shoulders, ...(layout > 0 ? { layout } : {}) } satisfies LoadoutSpec;
   // Carga: cada arma conta uma vez por encaixe em que atira (o lançador dos ombros vale dois).
   const module = s.module ?? null;
-  if (module !== null && (s.v !== 2 || !Object.hasOwn(SHIELDS, module))) return fail('formato', 'módulo inválido ou versão incompatível', 0, capacity);
-  if (module && s.chassis === 'android') return fail('encaixe', 'Andróide não possui encaixe de gerador', 0, capacity);
+  if (module !== null && (s.v !== 2 || !ehModulo(module))) return fail('formato', 'módulo inválido ou versão incompatível', 0, capacity);
+  if (module && s.chassis === 'android') return fail('encaixe', 'Andróide não possui encaixe de módulo', 0, capacity);
+  // Quem já enxerga no escuro de fábrica (o Arara, o Lancer) não leva os óculos: o módulo existe para os outros (P282).
+  if (module === 'visao' && chassis.visaoNoturna) return fail('encaixe', `o ${chassis.name} já enxerga no escuro de fábrica`, 0, capacity);
   const plate = isMetalShield(s.left) ? s.left : null;
-  const mass = specWeapons(spec2).reduce((sum, w) => sum + w.mass, 0) + (module ? SHIELDS[module].mass : 0) + (plate ? metalShieldMass(plate.id, plate.tier) : 0);
+  const mass = specWeapons(spec2).reduce((sum, w) => sum + w.mass, 0) + (module ? massaDoModulo(module) : 0) + (plate ? metalShieldMass(plate.id, plate.tier) : 0);
   if (mass > capacity + 1e-9) return fail('carga', `${mass} t de armas numa carga de ${capacity} t`, mass, capacity);
   // Com ombros, o gatilho secundário é deles e a mão esquerda leva a segunda arma do principal.
   const left = s.left && !plate ? weapon(s.left.id as WeaponId, s.left.tier) : null;

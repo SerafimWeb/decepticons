@@ -65,6 +65,7 @@ export const VECTOR09_STATS: MechStats = {
 export const ANDROID_STATS: MechStats = {
   name: 'ANDRÓIDE A-1',
   statusResist: 1.5, // pequeno: fogo, choque e gelo duram uma vez e meia (`combat/StatusEffects.ts`)
+  visaoNoturna: true, // P282: os andróides enxergam no escuro de fábrica (o técnico e o manifestante também)
   moveSpeed: 10.5,
   groundAccel: 120,
   airAccel: 40,
@@ -160,6 +161,7 @@ export const PILOT_ANDROID_STATS: MechStats = {
 export const ARARA_B1_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'ARARA-B1',
+  visaoNoturna: true, // P282: o batedor enxerga no escuro de fábrica
   moveSpeed: 13,
   groundAccel: 40,
   dashSpeed: 42,
@@ -298,6 +300,7 @@ export const GENESIS01_STATS: MechStats = {
 export const LANCER_L1_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'LANCER-L1',
+  visaoNoturna: true, // P282: o duelista enxerga no escuro de fábrica
   // Papel: DUELISTA de curta distância (a escopeta só vale de perto). Ágil, com dash que volta mais cedo, menos vida no tronco, e o braço do
   // escudo é o mais forte (a chapa protege o flanco e o braço é a primeira coisa que ele põe na frente).
   moveSpeed: 9.8,

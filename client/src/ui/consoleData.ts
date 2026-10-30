@@ -1,6 +1,6 @@
 import { CHASSIS, CHASSIS_PAPEL, type ChassisId } from '../entities/chassis';
 import { METAL_SHIELDS } from '../combat/MetalShield';
-import type { ShieldId } from '../combat/EnergyShield';
+import type { ModuloId } from '../combat/modulos';
 import { TIERS, weapon, type WeaponId } from '../combat/weapons';
 import type { Persona } from '../core/Settings';
 import type { MechPart } from '../entities/MechBase';
@@ -18,7 +18,7 @@ export { COMANDANTE_KEY } from '../core/ModoComandante';
 
 // ─── Ficha do seu Mech ────────────────────────────────────────────────────────────────────────────────────────────────────
 
-export const MODULO_NOME: Readonly<Record<ShieldId, string>> = { frontal: 'Barreira frontal', sphere: 'Esfera de energia', fire: 'Anel de fogo' };
+export const MODULO_NOME: Readonly<Record<ModuloId, string>> = { frontal: 'Barreira frontal', sphere: 'Esfera de energia', fire: 'Anel de fogo', visao: 'Visão noturna' };
 
 export interface Medida {
   valor: number;

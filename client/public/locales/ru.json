@@ -992,5 +992,12 @@
  "Chat de voz: trocar o jogador escolhido": "Голосовой чат: сменить выбранного игрока",
  "Contas de menores de 18 anos só ouvem o chat de voz: sem microfone. O áudio do jogo segue normal.": "Аккаунты младше 18 лет могут только слушать голосовой чат: без микрофона. Звук игры работает как обычно.",
  "Conta de menor de 18 anos: o chat de voz só ouve (sem microfone). O áudio do jogo segue normal.": "Аккаунт младше 18 лет: голосовой чат только на прослушивание (без микрофона). Звук игры работает как обычно.",
- "Informe o mês e o ano de nascimento da sua conta. Quem tem menos de 18 anos só ouve o chat de voz, sem microfone. Só dá para informar uma vez.": "Укажите месяц и год рождения вашего аккаунта. Те, кому нет 18 лет, могут только слушать голосовой чат, без микрофона. Указать можно только один раз."
+ "Informe o mês e o ano de nascimento da sua conta. Quem tem menos de 18 anos só ouve o chat de voz, sem microfone. Só dá para informar uma vez.": "Укажите месяц и год рождения вашего аккаунта. Те, кому нет 18 лет, могут только слушать голосовой чат, без микрофона. Указать можно только один раз.",
+ "VISÃO NOTURNA": "НОЧНОЕ ВИДЕНИЕ",
+ "SEM VISÃO NOTURNA": "БЕЗ НОЧНОГО ВИДЕНИЯ",
+ "só o que brilha aparece": "видно только то, что светится",
+ "Visão noturna": "Ночное видение",
+ "Visão noturna:": "Ночное видение:",
+ "enxerga no escuro": "видит в темноте",
+ "enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.": "видит в тёмной фазе (Арара, Лансер и андроиды получают его с завода) и занимает место генератора."
 }

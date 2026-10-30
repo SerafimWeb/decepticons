@@ -16,6 +16,8 @@ import { addBankSign } from '../environment/BankSign';
 import { addSerafimPlaque, SERAFIM_TOWER } from '../environment/SerafimTower';
 import { DroneVisuals } from '../fx/DroneVisuals';
 import { explosionScale, explosionShake, explosionSoundDistance } from '../fx/explosionScale';
+import { FaseEscura } from '../fx/FaseEscura';
+import { VisaoNoturnaHud } from '../ui/VisaoNoturnaHud';
 import { ShadowBlobs, terrainGround } from '../fx/ShadowBlobs';
 import { BankTerminal } from '../ui/BankTerminal';
 import { bankReward, nearBank, type BankReply } from '../../../shared/bank/codes';
@@ -432,6 +434,10 @@ export class Game {
   private multidaoCarregando = false;
   /** A cidade em volta da Cidade Neon (P264, P266): as torres, os outdoors da marca, o holograma, a rua e o chão molhado. Só desenho, pedaço sob demanda; `null` nos outros mapas. */
   private cidade: CenarioDaCidade | null = null;
+  /** A fase escura (P282): a cena escurece com o apagão do quadro (ou com o chip do Comandante); só na Cidade Neon offline, `null` nos outros mapas e online. */
+  private faseEscura: FaseEscura | null = null;
+  private faseEscuraForcada = false;
+  private readonly visaoNoturnaHud = new VisaoNoturnaHud(document.getElementById('nv-overlay'), document.getElementById('nv-aviso'));
   /** A cutscene-piloto do 8 DE JANEIRO (`?cutscene=janeiro-abertura`, P245): câmera por trajetória, sem controle do jogador, para gravar em vídeo (`scripts/cutscene.mjs`). Carregada sob demanda. */
   private readonly cutsceneQuer = cutsceneFromSearch(location.search);
   private cutscene: CutsceneJaneiro | null = null;
@@ -648,6 +654,12 @@ export class Game {
       if (cidade) {
         this.cidade = cidade.construir(this.scene, this.match.arena, this.particles);
         this.match.arena.registraLuzes(this.cidade.luzes);
+      }
+      // A fase escura (P282): só na Cidade Neon e só offline (online o servidor joga as regras de sempre). As luzes de fábrica são guardadas aqui, com o cenário todo montado.
+      if (!online) {
+        this.faseEscura = new FaseEscura(this.scene);
+        this.faseEscura.registrar();
+        this.projectiles.onMuzzle = (o) => this.faseEscura?.clarao(o.x, o.y, o.z);
       }
     }
     this.droneVisuals = this.match.drones ? new DroneVisuals(this.scene, this.match.drones) : null;
@@ -1136,6 +1148,12 @@ export class Game {
         if (v) new m.VisibilidadePanel(v, adminCliente).abrir();
       });
     });
+    // A fase escura (P282): o chip do Comandante liga e desliga a escuridão para testar, sem esperar o apagão do quadro.
+    document.getElementById('cc-fase-escura')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.faseEscuraForcada = !this.faseEscuraForcada;
+      this.sincronizarFaseEscura();
+    });
     // O painel dos telões (P246): qual vídeo toca em cada tela da Cidade Neon; só no modo Comandante, pedaço sob demanda.
     document.getElementById('cc-telao')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1474,6 +1492,21 @@ export class Game {
   }
 
   /** Montagem nova do Hangar entra no renascimento: armas trocadas, carregador cheio, Mech frio. */
+  /**
+   * A fase escura (P282): a regra da partida (`Match.faseEscura`) vale com o interruptor `modo:fase-escura` liberado ou com o chip do Comandante, que também força a escuridão total.
+   * Só existe na Cidade Neon offline (`faseEscura` nulo nos outros mapas e online): ali o chip não faz nada.
+   */
+  private sincronizarFaseEscura(): void {
+    const existe = this.faseEscura !== null;
+    const forcada = existe && this.faseEscuraForcada;
+    this.match.faseEscura = existe && (forcada || funcionalidadeVisivel('modo:fase-escura'));
+    this.match.escuridaoForcada = forcada ? 1 : null;
+    const chip = document.getElementById('cc-fase-escura');
+    chip?.classList.toggle('on', forcada);
+    chip?.setAttribute('aria-pressed', String(forcada));
+    if (!existe && this.faseEscuraForcada) this.faseEscuraForcada = false;
+  }
+
   private equipPending(keepHeat = false): void {
     const loadout = this.hangar.takePending();
     if (!loadout) return;
@@ -1790,6 +1823,9 @@ export class Game {
     };
     this.match.setCoordenacao(funcionalidadeVisivel('ia:time'));
     aoMudarVisibilidade(() => this.match.setCoordenacao(funcionalidadeVisivel('ia:time')));
+    // A fase escura (P282): restrita até o Comandante liberar; o chip dele a liga por cima, para testar.
+    this.sincronizarFaseEscura();
+    aoMudarVisibilidade(() => this.sincronizarFaseEscura());
     // Foguete: o dano em área já foi aplicado pela partida; aqui, fogo, fumaça, tremor e som.
     this.match.onExplosion = (at, w) => {
       // O estouro é do tamanho da explosão da arma (o foguete, de 6 m, é a medida): um míssil leve de 2,2 m solta um terço das partículas e do tremor, e o som só de três em três
@@ -1797,6 +1833,7 @@ export class Game {
       // P160: a explosão com corpo (clarão, bola de fogo, fumaça escura, estilhaços, queimado e onda de choque no chão: `fx/Explosions.ts`).
       const k = explosionScale(w.blastRadius);
       this.weaponFx.explosion(at, w);
+      this.faseEscura?.explosao(at.x, at.y + 1.5, at.z, k);
       const dist = at.distanceTo(mech.position);
       rig.addShake(explosionShake(dist, k));
       if (!w.salvo || (this.microBlasts++ % 3) === 0) this.audio.playExplosion(explosionSoundDistance(dist, k));
@@ -2298,6 +2335,16 @@ export class Game {
     // O mapa que anima (o mar da praia, P126): nos outros, o `Arena.update` não faz nada.
     this.match.arena.update(dt);
     this.cidade?.update(dt, this.camera.position);
+    // A fase escura (P282): as luzes do dia, o céu e a névoa caem com a escuridão (o apagão do quadro ou o chip do Comandante); os óculos dependem do Mech de quem joga; as luzes dos tiros apagam.
+    if (this.faseEscura) {
+      const escuridao = this.match.escuridao;
+      const visao = this.mech.visaoNoturna;
+      this.faseEscura.aplicar(escuridao, visao);
+      this.faseEscura.update(dt);
+      this.match.arena.setEscuridao(escuridao);
+      this.cidade?.setEscuridao(escuridao);
+      this.visaoNoturnaHud.atualizar(escuridao, visao);
+    }
     // A Amazônia (P180, parte B): a câmera leva o céu e o detalhe da floresta junto.
     this.match.arena.observar(this.camera.position.x, this.camera.position.y, this.camera.position.z);
     // Os telões da Cidade Neon (P246): decide tocar/pausar pela distância da câmera e pelo degrau de qualidade (G12); nos outros mapas, `telao` é `null`.

@@ -190,6 +190,13 @@ export class HologramaSerafim {
     scene.add(this.anel, this.feixe);
   }
 
+  /** Liga ou apaga o holograma (o anel projetor, o feixe, as camadas e a aura) com a luz da cidade (P282, a fase escura). */
+  setLigado(ligado: boolean): void {
+    this.grupo.visible = ligado;
+    this.anel.visible = ligado;
+    this.feixe.visible = ligado;
+  }
+
   /**
    * Por quadro: gira e balança o grupo (só atribui números: nada aloca) e, com a câmera, ajusta o número de camadas à distância. O relógio dos shaders é o do mapa.
    * Sem câmera (os testes), mantém o que já estava.

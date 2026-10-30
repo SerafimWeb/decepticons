@@ -1,4 +1,5 @@
 import type { MountId } from '../combat/mounts';
+import { ehModulo } from '../combat/modulos';
 import { CLASS_LABEL_PLURAL } from '../combat/weaponClass';
 import { funcionalidadeVisivel } from '../core/Visibilidade';
 import { TIERS, weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
@@ -276,7 +277,7 @@ export class HangarMenu {
         <div id="hangar-slot-list" class="hg-slots"></div>
         <div id="hangar-layout" class="hg-layout" role="group" aria-label="Como os ataques se dividem"></div>
         <div id="hangar-weapon-editor" class="hg-editor"></div>
-        <label class="hg-module"><span>MÓDULO EXTRA <i>(não ocupa os braços)</i></span><select id="hangar-module-select" aria-label="Módulo de energia"><option value="">Sem módulo</option><option value="frontal">Barreira frontal · 2,0 t · 5 s, 120°</option><option value="sphere">Esfera de energia · 4,0 t · 3,75 s, 360°</option><option value="fire">Anel de fogo · 3,0 t · 5 s, raio de 7 m</option></select><small>Ctrl liga e desliga. Os impactos gastam a energia. <b>Anel de fogo:</b> não segura tiro; queima os inimigos num raio de 7 m e esquenta todos ali, inclusive você; derrete o inimigo congelado.</small></label>
+        <label class="hg-module"><span>MÓDULO EXTRA <i>(não ocupa os braços)</i></span><select id="hangar-module-select" aria-label="Módulo de energia"><option value="">Sem módulo</option><option value="frontal">Barreira frontal · 2,0 t · 5 s, 120°</option><option value="sphere">Esfera de energia · 4,0 t · 3,75 s, 360°</option><option value="fire">Anel de fogo · 3,0 t · 5 s, raio de 7 m</option><option value="visao">Visão noturna · 0,5 t · enxerga no escuro</option></select><small>Ctrl liga e desliga. Os impactos gastam a energia. <b>Anel de fogo:</b> não segura tiro; queima os inimigos num raio de 7 m e esquenta todos ali, inclusive você; derrete o inimigo congelado.</small><small><b>Visão noturna:</b> enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.</small></label>
         <div class="hg-actions">
           <span id="hangar-message" role="status"></span>
           <button class="hg-btn hangar-apply" type="button" data-action="apply">APLICAR MONTAGEM ›</button>
@@ -638,7 +639,7 @@ export class HangarMenu {
     const target = event.target;
     if (!(target instanceof HTMLSelectElement)) return;
     if (this.visitando) { this.render(); return; } // o seletor volta ao que o outro piloto montou
-    if (target.id === 'hangar-module-select') { this.draft = { ...this.draft, v: 2, module: target.value === 'frontal' || target.value === 'sphere' || target.value === 'fire' ? target.value : null }; this.render(); return; }
+    if (target.id === 'hangar-module-select') { this.draft = { ...this.draft, v: 2, module: ehModulo(target.value) ? target.value : null }; this.render(); return; }
     if (target.id !== 'hangar-weapon-select') return;
     const selected = target.value as WeaponId | MetalShieldId | '';
     this.draft = withArm(this.draft, this.selectedSlot, () => (selected ? { id: selected, tier: this.draft[this.selectedSlot]?.tier ?? 0 } : null));
@@ -687,6 +688,9 @@ export class HangarMenu {
     const label = CHASSIS_LABEL[spec.chassis];
     const moduleSelect = this.root.querySelector<HTMLSelectElement>('#hangar-module-select')!;
     moduleSelect.value = spec.module ?? ''; moduleSelect.disabled = spec.chassis === 'android';
+    // Quem já enxerga no escuro de fábrica não leva os óculos de módulo (P282).
+    const visao = moduleSelect.querySelector<HTMLOptionElement>('option[value="visao"]');
+    if (visao) visao.disabled = chassis.visaoNoturna === true;
     const report = this.hangar.report(spec);
     const current = this.hangar.current;
     this.root.dataset.tab = this.tab;

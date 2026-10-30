@@ -49,6 +49,11 @@
       <div id="kill-feed"></div>
       <div id="damage-indicator"></div>
       <div id="static-noise"></div>
+      <div id="nv-overlay" aria-hidden="true"></div>
+      <div id="nv-aviso" role="status" data-estado="dia" hidden>
+        <span class="nv-com"><b>VISÃO NOTURNA</b></span>
+        <span class="nv-sem"><b>SEM VISÃO NOTURNA</b><small>só o que brilha aparece</small></span>
+      </div>
       <div id="damage-vignette"></div>
       <div id="death">
         <div class="title">ABATIDO</div>
@@ -113,6 +118,7 @@
             <button type="button" class="cc-chip cc-telao" id="cc-telao" hidden title="Qual vídeo toca em cada telão da Cidade Neon">TELÕES ▸</button>
             <button type="button" class="cc-chip cc-outdoors" id="cc-outdoors" hidden title="Quantos outdoors da marca aparecem na Cidade Neon, de quanto em quanto tempo trocam de imagem e quais anúncios entram">OUTDOORS ▸</button>
             <button type="button" class="cc-chip cc-wargame" id="cc-wargame" hidden title="Monta um episódio de IA contra IA: elenco, mapa clicável, legenda e câmera">WARGAME ▸</button>
+            <button type="button" class="cc-chip cc-fase-escura" id="cc-fase-escura" hidden aria-pressed="false" title="Liga e desliga a fase escura no jogo offline da Cidade Neon: as luzes da cidade se apagam e só os olhos, o fogo, os rastros e as explosões aparecem">FASE ESCURA</button>
             <button type="button" class="cc-chip cc-sair" id="cc-chip-comandante" hidden title="Sair do modo Comandante (os monitores de ajuste somem)">SAIR ✕</button>
           </div>
         </div>
