@@ -15,15 +15,15 @@ const grupo = (classe: string): string => {
 };
 
 describe('o cabeçalho do console (P279)', () => {
-  it('os botões estão em dois grupos: do piloto (ARQUIVO, LADO, RELATÓRIO) e do Comandante (VISIBILIDADE, TELÕES, OUTDOORS, WARGAME e o SAIR), cada um com os mesmos ids de sempre', () => {
+  it('os botões estão em dois grupos: do piloto (ARQUIVO, LADO, RELATÓRIO) e do Comandante (VISIBILIDADE, TELÕES, OUTDOORS, WARGAME, FASE ESCURA e o SAIR), cada um com os mesmos ids de sempre', () => {
     const piloto = grupo('cc-grupo-piloto');
     for (const id of ['cc-arquivo', 'cc-lado', 'cc-relatorio']) expect(piloto).toContain(`id="${id}"`);
     const comando = grupo('cc-grupo-comando');
-    for (const id of ['cc-visibilidade', 'cc-telao', 'cc-outdoors', 'cc-wargame', 'cc-chip-comandante']) expect(comando).toContain(`id="${id}"`);
+    for (const id of ['cc-visibilidade', 'cc-telao', 'cc-outdoors', 'cc-wargame', 'cc-fase-escura', 'cc-chip-comandante']) expect(comando).toContain(`id="${id}"`);
     // Nenhum botão do cabeçalho fora de um grupo.
     const cabecalho = html.slice(html.indexOf('<header class="cc-top'), html.indexOf('</header>', html.indexOf('<header class="cc-top')));
-    expect((cabecalho.match(/class="cc-chip /g) ?? []).length).toBe(8);
-    expect((piloto.match(/class="cc-chip /g) ?? []).length + (comando.match(/class="cc-chip /g) ?? []).length).toBe(8);
+    expect((cabecalho.match(/class="cc-chip /g) ?? []).length).toBe(9);
+    expect((piloto.match(/class="cc-chip /g) ?? []).length + (comando.match(/class="cc-chip /g) ?? []).length).toBe(9);
   });
 
   it('o selo da sala online mora no cabeçalho (embaixo do nome da sala de comando) e o Game o escreve junto com o do HUD', () => {

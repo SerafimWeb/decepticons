@@ -803,7 +803,8 @@ export function splashDamage(w: WeaponStats, dist: number): number {
  * (`MechStats.triggers`, `combat/mounts.ts`). No padrão, `primary` é da mão direita e `secondary` da esquerda.
  */
 export interface Loadout {
-  module?: import('./EnergyShield').ShieldId | null;
+  /** O módulo extra: um gerador de energia ou os óculos de visão noturna (`combat/modulos.ts`). */
+  module?: import('./modulos').ModuloId | null;
   /** Escudo físico na mão esquerda, no lugar da arma dela: `secondary` fica vazio e o botão 2 levanta a chapa. */
   metalShield?: { id: import('./MetalShield').MetalShieldId; tier: Tier } | null;
   /** Gatilho principal (mouse esquerdo): a arma da mão direita. */

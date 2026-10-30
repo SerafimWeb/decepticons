@@ -992,5 +992,12 @@
  "Chat de voz: trocar o jogador escolhido": "ボイスチャット：選んだプレイヤーを切り替える",
  "Contas de menores de 18 anos só ouvem o chat de voz: sem microfone. O áudio do jogo segue normal.": "18歳未満のアカウントはボイスチャットを聞くだけで、マイクは使えません。ゲームの音声は通常どおりです。",
  "Conta de menor de 18 anos: o chat de voz só ouve (sem microfone). O áudio do jogo segue normal.": "18歳未満のアカウント：ボイスチャットは聞くだけです（マイクなし）。ゲームの音声は通常どおりです。",
- "Informe o mês e o ano de nascimento da sua conta. Quem tem menos de 18 anos só ouve o chat de voz, sem microfone. Só dá para informar uma vez.": "アカウントの生まれた月と年を入力してください。18歳未満の方はボイスチャットを聞くだけで、マイクは使えません。入力できるのは一度だけです。"
+ "Informe o mês e o ano de nascimento da sua conta. Quem tem menos de 18 anos só ouve o chat de voz, sem microfone. Só dá para informar uma vez.": "アカウントの生まれた月と年を入力してください。18歳未満の方はボイスチャットを聞くだけで、マイクは使えません。入力できるのは一度だけです。",
+ "VISÃO NOTURNA": "暗視装置",
+ "SEM VISÃO NOTURNA": "暗視装置なし",
+ "só o que brilha aparece": "光るものだけが見える",
+ "Visão noturna": "暗視装置",
+ "Visão noturna:": "暗視装置：",
+ "enxerga no escuro": "暗闇で見える",
+ "enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.": "暗闇フェーズで見えるようになります（アララ、ランサー、アンドロイドは標準装備）。ジェネレーターの枠を使います。"
 }

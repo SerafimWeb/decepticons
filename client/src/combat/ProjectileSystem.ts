@@ -60,6 +60,8 @@ export class ProjectileSystem {
   onFired?: (origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
   /** Quem desenha o clarão, o brilho da cabeça, o rastro e a marca (P160; só o cliente liga). */
   fx?: ShotFx;
+  /** A boca de um tiro acendeu (o clarão): a fase escura (P282) acende uma luz pontual ali. Só o jogo com tela liga; a simulação não sabe dele. */
+  onMuzzle?: (origin: THREE.Vector3, w: WeaponStats) => void;
 
   private readonly pool: Projectile[] = [];
   private readonly friendlyMat: THREE.MeshBasicMaterial;
@@ -138,6 +140,7 @@ export class ProjectileSystem {
     }
     if (!first) return;
     this.muzzle(origin, dir, w);
+    this.onMuzzle?.(origin, w);
     first.fxTrail = this.fx ? this.fx.fired(origin, dir, w, hostile) : -1;
   }
 

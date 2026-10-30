@@ -4864,3 +4864,36 @@ body:has(#overlay.console:not(.hidden)) .net-status { display: none; }
 .srv-presenca li small { color: var(--muted); }
 .srv-presenca li .srv-conta { color: #8fb6d6; }
 .srv-presenca .srv-vazio { color: var(--muted); border-left-color: transparent; }
+
+/* A fase escura e a visão noturna (P282): a moldura verde dos óculos (vinheta e linhas finas) e o aviso de quem enxerga ou não no escuro. Só aparecem a partir de metade da escuridão. */
+#nv-overlay {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 50%, rgba(0, 26, 8, 0.66) 100%),
+    repeating-linear-gradient(0deg, rgba(120, 255, 160, 0.045) 0 1px, rgba(0, 0, 0, 0) 1px 3px);
+}
+#nv-overlay.on { opacity: 1; }
+#nv-aviso {
+  position: absolute;
+  left: 50%;
+  top: 74px;
+  transform: translateX(-50%);
+  padding: 5px 16px;
+  text-align: center;
+  font: 700 12px/1.2 'Consolas', 'Courier New', monospace;
+  letter-spacing: 3px;
+  border: 1px solid;
+  pointer-events: none;
+}
+#nv-aviso[hidden] { display: none; }
+#nv-aviso small { display: block; margin-top: 3px; font-size: 10px; font-weight: 400; letter-spacing: 1px; opacity: 0.85; }
+#nv-aviso .nv-com, #nv-aviso .nv-sem { display: none; }
+#nv-aviso[data-estado='com'] { color: #7dffa6; border-color: rgba(125, 255, 166, 0.55); background: rgba(0, 24, 8, 0.6); }
+#nv-aviso[data-estado='com'] .nv-com { display: block; }
+#nv-aviso[data-estado='sem'] { color: #ffb347; border-color: rgba(255, 179, 71, 0.55); background: rgba(30, 16, 0, 0.6); }
+#nv-aviso[data-estado='sem'] .nv-sem { display: block; }
+.cc-fase-escura.on, .cc-grupo-comando .cc-fase-escura.on { background: var(--warn); color: var(--bg); }

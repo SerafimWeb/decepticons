@@ -455,6 +455,8 @@ export class CommandConsole {
     if (outdoors) outdoors.hidden = !this.comandante;
     const wargame = this.root.querySelector<HTMLElement>('#cc-wargame');
     if (wargame) wargame.hidden = !this.comandante;
+    const faseEscura = this.root.querySelector<HTMLElement>('#cc-fase-escura');
+    if (faseEscura) faseEscura.hidden = !this.comandante;
   }
 
   private pintarMech(): void {

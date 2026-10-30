@@ -63,6 +63,8 @@ export const PLATAFORMA_DA_ARENA = PLATFORM;
 
 /** O mínimo de luz que a cidade mantém sem energia (o jogador ainda lê os prédios e as arestas; a ordem é "no escuro", não "cego"). */
 export const PISO_DA_LUZ_DA_CIDADE = 0.12;
+/** O mínimo de luz que a cidade mantém na **fase escura** no apagão total (P282: "todas as luzes da cidade se apagando, só as dos robôs e dos tiros"): quase nada (as torres e os letreiros são HDR: a 3% ainda apareciam). */
+export const PISO_DA_LUZ_NO_ESCURO = 0.005;
 
 /** Uma cor neon da cidade e a cor de fábrica dela: a energia do transformador escala a primeira a partir da segunda. */
 interface LuzDaCidade {
@@ -125,6 +127,10 @@ export class Arena implements ArenaDoCenario {
   /** O desenho das zonas de cura e de resfriamento: some quando o transformador está sem energia. */
   private readonly desenhoDasZonas: THREE.Object3D[] = [];
   private energiaDaCidade = 1;
+  /** A escuridão da fase escura (0 a 1, P282): derruba as luzes neon da cidade abaixo do piso do transformador, em qualquer modo. */
+  private escuridaoDaFase = 0;
+  /** As luzes neon que só a fase escura apaga (as zonas de cura e de resfriamento e a borda da plataforma): a energia do transformador não mexe nelas. */
+  private readonly neonDaFase: LuzDaCidade[] = [];
 
   private readonly boxGeo = new THREE.BoxGeometry(1, 1, 1);
   private readonly solidMat = new THREE.MeshStandardMaterial({ color: PALETTE.steel, metalness: 0.3, roughness: 0.8 });
@@ -230,9 +236,33 @@ export class Arena implements ArenaDoCenario {
     }
     if (!this.transformador || Math.abs(energia - this.energiaDaCidade) < 0.004) return;
     this.energiaDaCidade = energia;
-    const f = PISO_DA_LUZ_DA_CIDADE + (1 - PISO_DA_LUZ_DA_CIDADE) * Math.min(1, Math.max(0, energia));
-    for (const l of this.luzesDaCidade) l.cor.copy(l.base).multiplyScalar(f);
+    this.aplicarLuzesDaCidade();
     for (const z of this.desenhoDasZonas) z.visible = energia > 0;
+  }
+
+  /**
+   * A escuridão da fase escura (0 a 1, P282): as luzes neon da cidade (arestas, faixas, janelas, letreiros) caem até {@link PISO_DA_LUZ_NO_ESCURO}, **em qualquer modo** (o transformador só existe
+   * na missão em ondas). Vale o menor entre a luz que a energia deixa e a que a escuridão deixa. A praia não usa (tem o ciclo do dia dela).
+   */
+  setEscuridao(escuridao: number): void {
+    if (this.praia || this.amazonia || this.praca) return;
+    const e = Math.min(1, Math.max(0, Number.isFinite(escuridao) ? escuridao : 0));
+    const extremo = e === 0 || e === 1;
+    if (extremo ? e === this.escuridaoDaFase : Math.abs(e - this.escuridaoDaFase) < 0.004) return;
+    this.escuridaoDaFase = e;
+    this.aplicarLuzesDaCidade();
+  }
+
+  /** Refaz as cores neon da cidade: o menor entre a luz da energia do transformador e a da escuridão da fase. */
+  private aplicarLuzesDaCidade(): void {
+    const daEnergia = PISO_DA_LUZ_DA_CIDADE + (1 - PISO_DA_LUZ_DA_CIDADE) * Math.min(1, Math.max(0, this.energiaDaCidade));
+    const daFase = 1 - this.escuridaoDaFase * (1 - PISO_DA_LUZ_NO_ESCURO);
+    const f = Math.min(daEnergia, daFase);
+    for (const l of this.luzesDaCidade) l.cor.copy(l.base).multiplyScalar(f);
+    for (const l of this.neonDaFase) l.cor.copy(l.base).multiplyScalar(daFase);
+    // Os contornos das caixas e os telões seguem a luz da cidade (a fase escura os apaga; sem ela, o neon de fábrica).
+    this.destructibles.setLuz(daFase);
+    this.telao?.setLigado(this.escuridaoDaFase < 0.5);
   }
 
   /** Registra uma cor neon da cidade para a energia do transformador escurecer (guarda a de fábrica). */
@@ -269,10 +299,9 @@ export class Arena implements ArenaDoCenario {
   private buildZones(): void {
     for (const z of ARENA_ZONES) {
       const accent = z.kind === 'heal' ? PALETTE.green : PALETTE.cyan;
-      const disc = new THREE.Mesh(
-        new THREE.CircleGeometry(z.radius, 32),
-        new THREE.MeshBasicMaterial({ color: neon(accent, 0.9), transparent: true, opacity: 0.18, depthWrite: false }),
-      );
+      const discoMat = new THREE.MeshBasicMaterial({ color: neon(accent, 0.9), transparent: true, opacity: 0.18, depthWrite: false });
+      this.neonDaFase.push({ cor: discoMat.color, base: discoMat.color.clone() });
+      const disc = new THREE.Mesh(new THREE.CircleGeometry(z.radius, 32), discoMat);
       disc.rotation.x = -Math.PI / 2;
       disc.position.set(z.x, 0.03, z.z);
       this.scene.add(disc);
@@ -284,7 +313,9 @@ export class Arena implements ArenaDoCenario {
         const a = (i / segs) * Math.PI * 2;
         ringPts.push(new THREE.Vector3(z.x + Math.cos(a) * z.radius, 0.05, z.z + Math.sin(a) * z.radius));
       }
-      const anel = new THREE.Line(new THREE.BufferGeometry().setFromPoints(ringPts), new THREE.LineBasicMaterial({ color: neon(accent, 3) }));
+      const anelMat = new THREE.LineBasicMaterial({ color: neon(accent, 3) });
+      this.neonDaFase.push({ cor: anelMat.color, base: anelMat.color.clone() });
+      const anel = new THREE.Line(new THREE.BufferGeometry().setFromPoints(ringPts), anelMat);
       this.scene.add(anel);
       this.desenhoDasZonas.push(anel);
     }
@@ -308,8 +339,11 @@ export class Arena implements ArenaDoCenario {
     const grid = new THREE.GridHelper(h * 2, (h * 2) / 4, PALETTE.gridMain, PALETTE.gridSub);
     grid.position.y = 0.02;
     (grid.material as THREE.LineBasicMaterial).color.setScalar(1.4);
+    this.neonDaFase.push({ cor: (grid.material as THREE.LineBasicMaterial).color, base: (grid.material as THREE.LineBasicMaterial).color.clone() });
     this.scene.add(grid);
 
+    const bordaMat = new THREE.LineBasicMaterial({ color: neon(PALETTE.pink, 3) });
+    this.neonDaFase.push({ cor: bordaMat.color, base: bordaMat.color.clone() });
     const border = new THREE.LineLoop(
       new THREE.BufferGeometry().setFromPoints([
         new THREE.Vector3(-h, 0.05, -h),
@@ -317,7 +351,7 @@ export class Arena implements ArenaDoCenario {
         new THREE.Vector3(h, 0.05, h),
         new THREE.Vector3(-h, 0.05, h),
       ]),
-      new THREE.LineBasicMaterial({ color: neon(PALETTE.pink, 3) }),
+      bordaMat,
     );
     this.scene.add(border);
 

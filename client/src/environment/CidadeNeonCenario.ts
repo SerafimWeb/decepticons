@@ -160,6 +160,11 @@ export class CidadeNeonCenario implements CenarioDaCidade {
   }
 
   /** A qualidade baixa (G12) tira o chão molhado, a grade de LEDs e o brilho dos outdoors, e metade das camadas do holograma. */
+  /** A fase escura (P282): o holograma se apaga com a cidade (`escuridao` de 0 a 1; apagado a partir de metade). As luzes das torres, dos outdoors e dos letreiros já caem pelo uniforme `luzes`. */
+  setEscuridao(escuridao: number): void {
+    this.holograma.setLigado(escuridao < 0.5);
+  }
+
   setDetalhe(alto: boolean): void {
     this.outdoors.setDetalhe(alto);
     this.holograma.setDetalhe(alto);

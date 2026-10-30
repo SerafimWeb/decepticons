@@ -8,6 +8,7 @@ import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { setLocalMove, turnToward, wrapAngle, yawOf } from './steer';
 import { papelTatico, type PapelTatico } from './tatica';
 import { RocketLauncher } from './trigger';
+import { alcanceDeVisao } from './visaoNoturna';
 import type { WeaponStats } from './weapons';
 
 export type SquadOrder = 'follow' | 'focus' | 'hold';
@@ -234,6 +235,8 @@ export class BotController {
   wantsToFire = false;
   /** Atira também a arma da mão esquerda (P108 b)? Quem liga é o `BotSystem`, quando o esquadrão deu uma arma secundária ao robô. */
   useSecondary = false;
+  /** A escuridão da cena (0 a 1, P282): quem não tem visão noturna enxerga menos longe, a não ser o alvo que acabou de atirar (`combat/visaoNoturna.ts`). O `BotSystem` a escreve a cada tick. */
+  escuridao = 0;
   /**
    * Papel na organização do esquadrão (P119), tirado da arma principal: arma de **linha** = `apoio` (segura a linha de
    * tiro); arma de perto, média, corpo a corpo ou perfil `steady` = `assalto`. É o que decide quem fica de retaguarda.
@@ -650,7 +653,7 @@ export class BotController {
     _aim.set(tp.x, tp.y + t.stats.height * AIM_HEIGHT, tp.z);
     _dir.subVectors(_aim, _eye);
     const dist = _dir.length();
-    if (dist > VISION_RANGE) return null;
+    if (dist > alcanceDeVisao(VISION_RANGE, this.escuridao, this.mech.visaoNoturna, t.denunciadoS > 0)) return null;
     if ((this.state === 'patrol' || this.state === 'search') && dist > HEARING_RADIUS) {
       const off = Math.abs(wrapAngle(yawOf(_dir.x, _dir.z) - this.yaw));
       if (off > VISION_HALF_ANGLE) return null;

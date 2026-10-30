@@ -133,6 +133,9 @@ export class Destructibles {
   private readonly mat = new THREE.MeshStandardMaterial({ color: PALETTE.steel, metalness: 0.3, roughness: 0.8 });
   /** O desenho das barricadas que passam a existir (a rodada nova as traz de volta): o do cenário, ou a caixa. */
   private estilo: EstiloDeBarricada | null = null;
+  /** O brilho do neon dos contornos em relação ao de fábrica (1 = aceso, perto de 0 = a cidade às escuras, P282): a fase escura o baixa; as barricadas novas já nascem assim. */
+  private luz = 1;
+  private readonly danificado = new THREE.Color().copy(DAMAGED);
 
   constructor(
     private readonly scene: THREE.Scene,
@@ -160,8 +163,26 @@ export class Destructibles {
       prop.corpo = this.corpoDe(def, prop.size);
       prop.group.add(prop.corpo);
       // O contorno acompanha o corpo: o da máquina é mais fraco (`BRILHO_DO_CONTORNO_DE_MAQUINA`).
-      prop.accent!.set(def.accent).multiplyScalar(this.brilhoDoContorno());
+      prop.accent!.set(def.accent).multiplyScalar(this.brilhoDoContorno() * this.luz);
       prop.edgeMat?.color.copy(prop.accent!);
+    }
+  }
+
+  /**
+   * A luz do neon dos contornos (0,005 a 1; P282): a **fase escura** apaga os contornos das caixas junto com a cidade (só as luzes dos robôs, dos tiros e das explosões ficam). Muda só quando o valor
+   * muda; o vermelho do dano acompanha, e as barricadas que voltarem na rodada nova nascem com a luz de agora.
+   */
+  setLuz(f: number): void {
+    const novo = Math.min(1, Math.max(0.005, Number.isFinite(f) ? f : 1));
+    if (novo === this.luz) return;
+    this.luz = novo;
+    this.danificado.copy(DAMAGED).multiplyScalar(novo);
+    for (const prop of this.vivos) {
+      const def = this.entradas[prop.id];
+      if (!prop.accent || !prop.edgeMat || !def || ehExterno(def)) continue;
+      // Refeita da cor de fábrica (não multiplicada pela razão): voltar a 1 devolve o neon exato, sem erro de ponto flutuante acumulado.
+      prop.accent.set(def.accent).multiplyScalar(this.brilhoDoContorno() * novo);
+      prop.edgeMat.color.lerpColors(prop.accent, this.danificado, 1 - Math.max(0, prop.hp) / prop.maxHp);
     }
   }
 
@@ -234,7 +255,7 @@ export class Destructibles {
     const def = entrada;
     const center = new THREE.Vector3(def.x, def.h / 2, def.z);
     const size = new THREE.Vector3(def.w, def.h, def.d);
-    const accent = new THREE.Color(def.accent).multiplyScalar(this.brilhoDoContorno());
+    const accent = new THREE.Color(def.accent).multiplyScalar(this.brilhoDoContorno() * this.luz);
 
     const group = new THREE.Group();
     group.position.copy(center);
@@ -260,7 +281,7 @@ export class Destructibles {
       return true;
     }
     // Arestas vão do neon original ao vermelho conforme o dano; um alvo externo sacode o próprio desenho.
-    if (prop.edgeMat) prop.edgeMat.color.lerpColors(prop.accent!, DAMAGED, 1 - Math.max(0, prop.hp) / prop.maxHp);
+    if (prop.edgeMat) prop.edgeMat.color.lerpColors(prop.accent!, this.danificado, 1 - Math.max(0, prop.hp) / prop.maxHp);
     else if (prop.externo?.acertou) {
       const i = Math.max(0, prop.colliders.indexOf(collider));
       prop.externo.acertou({ debris: this.debris, particles: this.particles }, prop.hp / prop.maxHp, prop.caixas[i]!);

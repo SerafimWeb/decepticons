@@ -29,6 +29,8 @@ export function deveAtualizarTela(distancia: number, tier: number): boolean {
 
 interface Tela {
   readonly id: IdDeTelao;
+  /** O painel inteiro (fundo, tela e arestas): a fase escura o esconde. */
+  readonly grupo: THREE.Group;
   readonly material: THREE.MeshBasicMaterial;
   readonly posicao: THREE.Vector3;
   video: HTMLVideoElement | null;
@@ -54,6 +56,8 @@ interface Tela {
 export class ArenaTelao {
   private readonly telas: Tela[];
   private relogioDeObservacao = 0;
+  /** A cidade tem luz (P282)? Sem ela (a fase escura) os telões se apagam: somem da cena e o vídeo para de decodificar. */
+  private ligado = true;
 
   constructor(scene: THREE.Scene) {
     this.telas = TELOES_DA_ARENA.map((id) => this.construirTela(scene, id));
@@ -72,7 +76,7 @@ export class ArenaTelao {
     arestas.position.z = 0.075;
     grupo.add(fundo, tela, arestas);
     scene.add(grupo);
-    return { id, material, posicao: new THREE.Vector3(p.x, p.y, p.z), video: null, textura: null, arquivo: null, camera: null, alvo: null, tocando: false, esperaDoVideo: null };
+    return { id, grupo, material, posicao: new THREE.Vector3(p.x, p.y, p.z), video: null, textura: null, arquivo: null, camera: null, alvo: null, tocando: false, esperaDoVideo: null };
   }
 
   /** Busca a configuração do servidor uma vez (nunca lança, nunca trava o jogo): sem rede, ou sem nada atribuído, as telas ficam sem sinal. */
@@ -170,11 +174,28 @@ export class ArenaTelao {
     t.material.needsUpdate = true;
   }
 
+  /**
+   * Liga ou apaga os telões com a luz da cidade (P282, a fase escura): apagados, somem da cena, o vídeo pausa e a câmera ao vivo não redesenha. Só mexe quando o estado muda; ao religar, o
+   * `atualizar` volta a tocar os que estiverem perto.
+   */
+  setLigado(ligado: boolean): void {
+    if (ligado === this.ligado) return;
+    this.ligado = ligado;
+    for (const t of this.telas) {
+      t.grupo.visible = ligado;
+      if (!ligado) {
+        t.video?.pause();
+        t.tocando = false;
+      }
+    }
+  }
+
   /** A cada ~0,5 s (nunca por quadro): decide tocar/pausar vídeo, ou se a câmera daquela tela vale a pena redesenhar, pela distância da câmera principal e pelo degrau de qualidade (G12). */
   atualizar(dt: number, cameraPos: THREE.Vector3, tier: number): void {
     this.relogioDeObservacao += dt;
     if (this.relogioDeObservacao < INTERVALO_DE_OBSERVACAO) return;
     this.relogioDeObservacao = 0;
+    if (!this.ligado) return;
     for (const t of this.telas) {
       if (!t.video && !t.camera) continue;
       const perto = deveAtualizarTela(cameraPos.distanceTo(t.posicao), tier);

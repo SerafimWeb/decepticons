@@ -43,6 +43,7 @@ import type { ChefesJaneiro } from './ChefesJaneiro';
 import { posicaoNaMarcha } from './DragaMarcha';
 import { ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VIDA } from '../environment/ArenaLayout';
 import { QUADRO, QuadroDeLuz } from './QuadroDeLuz';
+import { escuridaoDaEnergia } from '../combat/visaoNoturna';
 import { dentroDoComplexo, NUCLEO, NucleoDaEstacao, pesoDoInvasor } from './NucleoDaEstacao';
 import { danoDeAfogamento, fatorDeVelocidade, FUNDURA_MOLHADA, fundoParaAfogar, funduraEm, passoDoAfogamento, type Agua } from '../combat/Agua';
 import { DebrisSystem } from '../environment/DebrisSystem';
@@ -329,6 +330,13 @@ export class Match {
    */
   readonly quadro: QuadroDeLuz | null = null;
   private quadroDefensores = 0;
+  /**
+   * A fase escura (P282, `combat/visaoNoturna.ts`): ligada, a cena escurece com o apagão do quadro e quem não tem visão noturna enxerga menos longe. **Desligada (o padrão), nada muda**:
+   * o interruptor `fase:escura` do painel de visibilidade (restrita até o Comandante liberar) e o chip do Comandante a ligam. Só o jogo offline a liga: o servidor nunca.
+   */
+  faseEscura = false;
+  /** A escuridão (0 a 1) que o Comandante força no chip FASE ESCURA, ignorando o quadro; `null` = a que o quadro deixa. */
+  escuridaoForcada: number | null = null;
   /** Para qual alvo cada andróide e cada manifestante foi mandado (0 a 2 = o cabo; 3 e 4 = a porta principal e a dos fundos; 5 = o quadro de luz; -1 nenhum), na ordem de `bots.mechs`. */
   private readonly rumoDosAlvos: number[] = [];
   private readonly pontosDosAlvos = [...PONTOS_DOS_CABOS, ...PORTAS_DA_ESTACAO, PRAIA_QUADRO_DE_LUZ].map((p) => new THREE.Vector3(p.x, 0, p.z));
@@ -1224,6 +1232,9 @@ export class Match {
       for (const m of this.bots.mechs) this.combat.tickStatus(m, dt);
       if (this.allies) for (const m of this.allies.mechs) this.combat.tickStatus(m, dt);
       for (const p of this.pilots) p.fixedUpdate(dt);
+      const escuridao = this.escuridao;
+      this.bots.escuridao = escuridao;
+      if (this.allies) this.allies.escuridao = escuridao;
       this.bots.fixedUpdate(dt);
       this.allies?.fixedUpdate(dt);
       this.drones?.fixedUpdate(dt);
@@ -1444,6 +1455,13 @@ export class Match {
    * O quadro de luz da cidade (P164): conta quem o depreda (todo rebelde a menos de 7 m, com o peso de `pesoDoInvasor`) e quem está perto para recuperá-lo (o jogador e os aliados), roda a regra
    * pura (`QuadroDeLuz`) e **liga a energia às zonas**: com o quadro apagado, as zonas de cura e de resfriamento deixam de funcionar. Custo: um laço sobre os rebeldes, aliados e jogadores.
    */
+  /** A escuridão da cena agora (0 a 1): zero com a fase escura desligada; a forçada pelo Comandante; ou a que o quadro deixa (dia com ele inteiro, escuro com ele apagado). */
+  get escuridao(): number {
+    if (!this.faseEscura) return 0;
+    if (this.escuridaoForcada !== null) return this.escuridaoForcada;
+    return this.quadro ? escuridaoDaEnergia(this.quadro.energia) : 0;
+  }
+
   private tickDoQuadro(dt: number): void {
     const q = this.quadro;
     if (!q) return;

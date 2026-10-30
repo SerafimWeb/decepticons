@@ -992,5 +992,12 @@
  "Chat de voz: trocar o jogador escolhido": "语音聊天：切换所选玩家",
  "Contas de menores de 18 anos só ouvem o chat de voz: sem microfone. O áudio do jogo segue normal.": "18岁以下的账号只能收听语音聊天，不能使用麦克风。游戏音频照常。",
  "Conta de menor de 18 anos: o chat de voz só ouve (sem microfone). O áudio do jogo segue normal.": "18岁以下的账号：语音聊天只能收听（无麦克风）。游戏音频照常。",
- "Informe o mês e o ano de nascimento da sua conta. Quem tem menos de 18 anos só ouve o chat de voz, sem microfone. Só dá para informar uma vez.": "请填写账号的出生年月。18岁以下的玩家只能收听语音聊天，不能使用麦克风。只能填写一次。"
+ "Informe o mês e o ano de nascimento da sua conta. Quem tem menos de 18 anos só ouve o chat de voz, sem microfone. Só dá para informar uma vez.": "请填写账号的出生年月。18岁以下的玩家只能收听语音聊天，不能使用麦克风。只能填写一次。",
+ "VISÃO NOTURNA": "夜视",
+ "SEM VISÃO NOTURNA": "无夜视",
+ "só o que brilha aparece": "只能看到发光的东西",
+ "Visão noturna": "夜视",
+ "Visão noturna:": "夜视：",
+ "enxerga no escuro": "能在黑暗中视物",
+ "enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.": "可在黑暗阶段视物（Arara、Lancer 和机器人出厂自带），并占用发生器的位置。"
 }

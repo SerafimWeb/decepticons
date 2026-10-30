@@ -2,6 +2,8 @@ import { EnergyShield } from '../combat/EnergyShield';
 import { MetalShield, RAISED_SPEED } from '../combat/MetalShield';
 import { StatusSet, type StatusKind } from '../combat/StatusEffects';
 import { CombatBoost } from '../combat/CombatBoost';
+import { ehVisaoNoturna, geradorDoModulo } from '../combat/modulos';
+import { DENUNCIA_DO_TIRO_S } from '../combat/visaoNoturna';
 import { legDamageLean } from '../fx/DamageVisuals';
 import { statusTint, type Tint } from './statusTint';
 import RAPIER from '@dimforge/rapier3d-simd-compat';
@@ -65,6 +67,8 @@ export interface MechStats extends ChassisHeat {
   loadout: Loadout;
   /** Carga máxima das armas nos braços (t): o orçamento do Hangar. */
   weaponCapacity: number;
+  /** Enxerga no escuro de fábrica (P282: o Arara, o Lancer e os andróides); os outros levam a visão noturna como módulo extra (`combat/modulos.ts`). */
+  visaoNoturna?: boolean;
   maxModuleHealth: MechModules;
   /** Status do chassi: 'hangar' (público) ou 'oficina' (escondido para jogadores comuns). */
   status?: 'oficina' | 'hangar';
@@ -262,6 +266,8 @@ export abstract class MechBase {
   readonly status = new StatusSet();
   /** Armas nos braços: as de fábrica do chassi ou as montadas no Hangar (`equip`). */
   private armed: Loadout;
+  /** Segundos que faltam para o clarão do último tiro deixar de denunciar este Mech no escuro (`combat/visaoNoturna.ts`); só o tick fixo o gasta. */
+  denunciadoS = 0;
   private leftRecoil = 0;
   private readonly pelvisBaseRoll: number;
   private readonly rightArmBaseZ: number;
@@ -298,7 +304,7 @@ export abstract class MechBase {
     this.heatSink = new HeatSink(stats);
     this.status.resist = stats.statusResist ?? 1;
     this.armed = loadout;
-    this.energyShield.equip(loadout.module);
+    this.energyShield.equip(geradorDoModulo(loadout.module));
     this.metalShield.equip(loadout.metalShield, stats.maxModuleHealth.leftArm);
     rig.mountWeapons?.(loadout);
     this.leftArmBaseZ = rig.leftArm.position.z;
@@ -486,6 +492,11 @@ export abstract class MechBase {
     return this.armed;
   }
 
+  /** Enxerga no escuro: o chassi de fábrica (`MechStats.visaoNoturna`) ou o módulo de visão noturna montado no Hangar (`combat/visaoNoturna.ts`). */
+  get visaoNoturna(): boolean {
+    return this.stats.visaoNoturna === true || ehVisaoNoturna(this.armed.module);
+  }
+
   /**
    * Troca as armas (Hangar). O jogo chama no renascimento: o Mech volta com a montagem nova e frio.
    * A montagem já vem validada (`hangar/loadout.ts`); aqui só se aplica.
@@ -495,7 +506,7 @@ export abstract class MechBase {
    * fica: a pausa não vira um jeito de esfriar.
    */
   equip(loadout: Loadout, keepHeat = false): void {
-    this.energyShield.equip(loadout.module, keepHeat);
+    this.energyShield.equip(geradorDoModulo(loadout.module), keepHeat);
     this.metalShield.equip(loadout.metalShield, this.stats.maxModuleHealth.leftArm, keepHeat);
     this.armed = loadout;
     this.rig.mountWeapons?.(loadout);
@@ -719,6 +730,7 @@ export abstract class MechBase {
 
   /** Um disparo do gatilho secundário: recuo do braço esquerdo (se for dele) e o calor do lançamento. */
   onFireSecondary(): void {
+    this.denunciadoS = DENUNCIA_DO_TIRO_S;
     if (this.triggers.secondary.includes('leftHand')) this.leftRecoil = 1;
     if (this.loadout.secondary) this.heatSink.add(this.loadout.secondary.heatPerShot);
   }
@@ -728,6 +740,7 @@ export abstract class MechBase {
    * Ombro não recua (o lançador é preso ao torso).
    */
   onFireMount(mount: MountId, w: WeaponStats): void {
+    this.denunciadoS = DENUNCIA_DO_TIRO_S;
     if (mount === 'rightHand') this.recoil = 1;
     else if (mount === 'leftHand') this.leftRecoil = w.kind === 'ammo' ? 1 : 0.7;
     this.heatSink.add(w.heatPerShot);
@@ -791,6 +804,7 @@ export abstract class MechBase {
   fixedUpdate(input: MechInput, dt: number): void {
     if (!this.alive) return;
     this.combatBoost.fixedUpdate(dt);
+    if (this.denunciadoS > 0) this.denunciadoS = Math.max(0, this.denunciadoS - dt);
     this.energyShield.step(dt, input.shield === true);
     const s = this.stats;
     const vel = this.velocity;
