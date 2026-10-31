@@ -44,7 +44,21 @@ export const DEFAULT_FIXED_CAMERAS: readonly FixedCameraPoint[] = Object.freeze(
   },
 ]);
 
-export type SpectatorTargetKind = 'fixed' | 'drone' | 'mech';
+export type SpectatorTargetKind = 'fixed' | 'drone' | 'mech' | 'orbit';
+
+/**
+ * A visão aérea do WARGAME (P291): uma câmera alta que dá a volta devagar em torno do centro do cenário, olhando para o centro. É o alvo de número 0
+ * quando o roteiro está rodando: os detalhes se leem sem pressa e a batalha se vê de vários ângulos.
+ */
+export interface OrbitaDaCamera {
+  readonly center: THREE.Vector3;
+  /** Distância horizontal do centro (m). */
+  readonly raio: number;
+  /** Altura acima do chão (m): acima dos prédios. */
+  readonly altura: number;
+  /** Radianos por segundo (0,05 = uma volta em ~2 min). */
+  readonly velocidade: number;
+}
 
 export interface SpectatorTargetView {
   readonly kind: SpectatorTargetKind;
@@ -54,6 +68,9 @@ export interface SpectatorTargetView {
   readonly fixed?: FixedCameraPoint;
   readonly drone?: Drone;
 }
+
+/** Quantos segundos o alvo fica na tela quando a troca automática está ligada (o WARGAME usa 20 s: 15 s era rápido demais para ler a cena). */
+export const TROCA_AUTOMATICA_PADRAO_S = 20;
 
 const FOLLOW_SMOOTHING = 8;
 const RELEASE_S = 0.35;
@@ -71,6 +88,9 @@ export class SpectatorCam {
   private state: SpectatorState = 'idle';
   private targetIndex = 0;
   private releaseElapsed = 0;
+  private orbitAngle = 0;
+  private autoS = 0;
+  private autoElapsed = 0;
 
   private readonly fixedCameras: readonly FixedCameraPoint[];
   private readonly getDrones: () => readonly Drone[];
@@ -102,13 +122,17 @@ export class SpectatorCam {
       getDrones?: () => readonly Drone[];
       getDynamicMechs?: () => readonly MechBase[];
       getMechName?: (mech: MechBase) => string;
+      orbit?: OrbitaDaCamera;
     },
   ) {
     this.fixedCameras = options?.fixedCameras ?? DEFAULT_FIXED_CAMERAS;
     this.getDrones = options?.getDrones ?? (() => []);
     this.getDynamicMechs = options?.getDynamicMechs ?? (() => []);
     this.getMechName = options?.getMechName;
+    this.orbit = options?.orbit ?? null;
   }
+
+  private readonly orbit: OrbitaDaCamera | null;
 
   get active(): boolean {
     return this.state !== 'idle';
@@ -129,6 +153,7 @@ export class SpectatorCam {
   /** Lista todos os alvos disponíveis atualmente (câmeras fixas + drones + mechs vivos). */
   getTargets(): SpectatorTargetView[] {
     const list: SpectatorTargetView[] = [];
+    if (this.orbit) list.push({ kind: 'orbit', id: 'orbita', label: 'VISÃO AÉREA · ÓRBITA LENTA' });
     for (const fix of this.fixedCameras) {
       list.push({ kind: 'fixed', id: fix.id, label: fix.label, fixed: fix });
     }
@@ -172,7 +197,26 @@ export class SpectatorCam {
     this.viewPosition.copy(this.camera.position);
     this.viewQuaternion.copy(this.camera.quaternion);
     this.releaseElapsed = 0;
+    this.autoElapsed = 0;
     this.state = 'spectating';
+  }
+
+  /** Troca sozinha de alvo a cada `segundos` (0 = desligada: o alvo fica onde está). */
+  setAutoCycle(segundos: number): void {
+    this.autoS = Math.max(0, segundos);
+    this.autoElapsed = 0;
+  }
+
+  get autoCycleS(): number {
+    return this.autoS;
+  }
+
+  /** Vai para a visão aérea (se o modo tem uma). Devolve se foi. */
+  goToOrbit(): boolean {
+    const i = this.getTargets().findIndex((t) => t.kind === 'orbit');
+    if (i < 0) return false;
+    this.setTarget(i);
+    return true;
   }
 
   /** Alterna para o próximo alvo. */
@@ -180,6 +224,7 @@ export class SpectatorCam {
     const targets = this.getTargets();
     if (targets.length <= 1) return;
     this.targetIndex = (this.targetIndex + 1) % targets.length;
+    this.autoElapsed = 0;
   }
 
   /** Alterna para o alvo anterior. */
@@ -231,8 +276,16 @@ export class SpectatorCam {
       this.targetIndex = 0;
     }
 
+    // Troca automática (WARGAME): conta o tempo do alvo atual e passa ao próximo quando acaba.
+    if (this.autoS > 0 && targets.length > 1) {
+      this.autoElapsed += dt;
+      if (this.autoElapsed >= this.autoS) this.nextTarget();
+    }
+
     const current = targets[this.targetIndex]!;
-    if (current.kind === 'fixed' && current.fixed) {
+    if (current.kind === 'orbit' && this.orbit) {
+      this.updateOrbit(this.orbit, dt);
+    } else if (current.kind === 'fixed' && current.fixed) {
       this.updateFixed(current.fixed, dt);
     } else if (current.kind === 'drone' && current.drone) {
       this.updateDrone(current.drone, dt);
@@ -241,6 +294,25 @@ export class SpectatorCam {
     } else {
       this.nextTarget();
     }
+  }
+
+  /** A visão aérea: dá a volta devagar em torno do centro e olha para ele. Sem alocar (os buffers são os de sempre). */
+  private updateOrbit(orbit: OrbitaDaCamera, dt: number): void {
+    this.orbitAngle += dt * orbit.velocidade;
+    this.lookAt.copy(orbit.center);
+    this.desiredPosition.set(
+      orbit.center.x + Math.cos(this.orbitAngle) * orbit.raio,
+      orbit.center.y + orbit.altura,
+      orbit.center.z + Math.sin(this.orbitAngle) * orbit.raio,
+    );
+    this.aimCamera.position.copy(this.desiredPosition);
+    this.aimCamera.lookAt(this.lookAt);
+    this.desiredQuaternion.copy(this.aimCamera.quaternion);
+    const smoothing = 1 - Math.exp(-dt * FOLLOW_SMOOTHING);
+    this.viewPosition.lerp(this.desiredPosition, smoothing);
+    this.viewQuaternion.slerp(this.desiredQuaternion, smoothing);
+    this.applyView();
+    this.updateOcclusion(this.lookAt);
   }
 
   private updateFixed(fixed: FixedCameraPoint, dt: number): void {

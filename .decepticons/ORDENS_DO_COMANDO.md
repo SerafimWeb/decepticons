@@ -14,6 +14,17 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P291 a P294 — O Wargame como DEMO, a câmera, o Colossus e as armas (31/10, Claude)
+
+> Mensagem do Comandante (31/10), depois de jogar o Wargame e o Colossus-01 no site. Cada ordem vai no seu PR; o estado de cada uma se atualiza na linha dela.
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P291 | 31/10 | "no wargame, não consegui mudar a câmera ou visão… apertei C e saiu… quero ter mais controle das câmeras, sem sair, sem travar, podendo ficar fixa ou randomizada a cada tantos segundos… a melhor câmera é uma câmera do alto, tipo drone parado ou em um giro lento pelas laterais, focando no centro" | 🟡 | **Feito no código (Claude, 31/10); falta a prova no Chrome.** Na partida do Wargame, C, V, Espaço e Esc **não saem mais** (saía por P264: recarregava sem o roteiro). A primeira visão é uma **visão aérea** que dá a volta devagar (0,05 rad/s, ~2 min) em torno do centro, olhando a arena. Teclas: **1** visão aérea, **2** troca sozinha a cada 20 s (de novo desliga), **3** segura o plano. O botão da HUD vira **SAIR DO WARGAME E JOGAR** (é o único caminho para a partida). | WARGAME ▸ EXECUTAR, depois 1, 2 e 3 |
+| P292 | 31/10 | "o wargame, minha ideia é que ele seja um DEMO, pra ficar rolando à vontade… quando eu clicar no wargame + deathmatch, ele entra modo demo no deathmatch, ou no capture a bandeira, ou sobrevivência ou domínio (com as configs que eu customizar no botão do wargame)" | ⏸ | Registrada. Hoje o roteiro força o Deathmatch (`Game.ts`, `modo`); falta o modo de partida como escolha do painel e um demo que não depende de batidas. Planejado em duas partes: (1) o modo escolhido vira o do link; (2) um DEMO sem batidas (só a visão aérea e a IA). | o painel WARGAME |
+| P293 | 31/10 | "o botão AJUSTAR é redundante… controles e som também estão repetidos, podia ser um só de config" | ⏸ | Registrada. É a AUDITORIA_INTERFACE § 4 (G7) e a repetição de Configurações no console. Próximo corte do P287. | o console (AJUSTAR) |
+| P294 | 31/10 | "o canhão nas costas do colossus ficou horrível; a chuva de mísseis estava configurada no braço esquerdo, mas deveria ser nas costas, e o canhão das costas está errado… precisa de uma auditoria nesse negócio das armas" | ⏸ | Registrada. **Achado (Claude, 31/10):** a chuva de mísseis (`barrage`) é do gatilho secundário e `fitsExtraSlot` não a aceita num encaixe extra (o `Armament` dispara extras só com projétil simples); por isso ela ficou na mão esquerda. Pôr a chuva nas costas pede o `Armament` disparar a chuva no encaixe extra (engenharia, não só dado). O canhão de cerco (`siege`, tamanho 3) cabe nas costas do Colossus-01 e o desenho do encaixe das costas é o que parece errado (a malha). Precisa da auditoria das armas por encaixe (quem atira o quê, onde sai o tiro, o desenho). | o Hangar (Colossus-01) e o console |
+
 ## P286 a P290 — Esquadrão, Wargame e Hangar numa língua só; o microfone do Estúdio (30/10, Claude)
 
 > Uma mensagem só do Comandante (30/10, com duas capturas: a tela ESQUADRÃO com a lista de chassis aberta e a janela WARGAME · CIDADE NEON). Cada ordem vai no seu PR; o estado de cada uma se atualiza na linha dela.

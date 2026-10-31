@@ -35,7 +35,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { CameraRig } from '../camera/CameraRig';
 import { KillCam } from '../camera/KillCam';
 import { camerasDoMapa } from '../camera/camerasDoMapa';
-import { SpectatorCam } from '../camera/SpectatorCam';
+import { SpectatorCam, TROCA_AUTOMATICA_PADRAO_S } from '../camera/SpectatorCam';
 import { SpectatorHUD } from '../ui/SpectatorHUD';
 import type { CameraModeId } from '../camera/CameraMode';
 import type { CombatSystem } from '../combat/CombatSystem';
@@ -756,6 +756,8 @@ export class Game {
     this.spectatorCam = new SpectatorCam(this.camera, physics, this.match.arena.occluders, {
       // As câmeras do cenário (P148): cada mapa tem as suas (antes todos usavam as da Arena).
       fixedCameras: camerasDoMapa(this.match.arena.mapa),
+      // O WARGAME (P291): a visão aérea que dá a volta devagar no centro (o alvo 0), olhando a arena inteira.
+      orbit: roteiro && !online ? { center: new THREE.Vector3(0, 0, 0), raio: Math.max(45, this.match.arena.halfSize * 0.9), altura: Math.max(38, this.match.arena.halfSize * 0.45), velocidade: 0.05 } : undefined,
       getDrones: () => this.match.drones?.drones ?? [],
       getDynamicMechs: () => {
         const list: MechBase[] = [];
@@ -787,11 +789,13 @@ export class Game {
     });
     this.spectatorHud.onPrev = () => this.spectatorCam.prevTarget();
     this.spectatorHud.onNext = () => this.spectatorCam.nextTarget();
-    this.spectatorHud.onExit = () => this.toggleSpectatorCam();
+    // No WARGAME, o botão de saída é o caminho para a partida (P291): as teclas da câmera não saem mais da cena.
+    this.spectatorHud.onExit = () => (this.wargameAtivo ? this.sairDoWargame() : this.toggleSpectatorCam());
     if (roteiro && !online) {
       // Entra direto no modo espectador (o mesmo do botão CFTV): o Comandante nunca controla o Mech do WARGAME.
       this.wargameAtivo = true;
       this.toggleSpectatorCam();
+      this.spectatorHud.setWargame(true);
       // O HUD do jogador (vida, munição, ordens do esquadrão) não tem sentido numa cena que ninguém pilota — o
       // mesmo botão do F1 (sempre começa visível, então um toggle só já esconde).
       this.hud.toggleVisibility();
@@ -2001,6 +2005,13 @@ export class Game {
         return;
       }
       if (this.spectatorCam.isSpectating) {
+        // O WARGAME (P291): a câmera é do Comandante e NÃO sai da cena (antes, C, V, Espaço e Esc recarregavam a página sem o roteiro, P264).
+        // 1 = visão aérea · 2 = troca sozinha a cada 20 s (de novo desliga) · 3 = segura o plano atual.
+        if (this.wargameAtivo) {
+          if (code === 'Digit1') { this.spectatorCam.setAutoCycle(0); this.spectatorCam.goToOrbit(); return; }
+          if (code === 'Digit2') { this.spectatorCam.setAutoCycle(this.spectatorCam.autoCycleS > 0 ? 0 : TROCA_AUTOMATICA_PADRAO_S); return; }
+          if (code === 'Digit3') { this.spectatorCam.setAutoCycle(0); return; }
+        }
         if (code === 'ArrowLeft' || code === 'KeyQ') {
           this.spectatorCam.prevTarget();
           return;
@@ -2183,10 +2194,7 @@ export class Game {
   /** Chamado dentro do keydown ou do toque em CAM (gesto do usuário), exigência do Pointer Lock. */
   private switchCamera(): void {
     if (this.spectatorCam.active) {
-      if (this.wargameAtivo) {
-        this.sairDoWargame();
-        return;
-      }
+      if (this.wargameAtivo) return; // o WARGAME não solta a câmera (P291): a saída é o botão da HUD
       this.spectatorCam.release();
       this.spectatorHud.setVisible(false);
       this.btnCftv?.classList.remove('active');
@@ -2217,10 +2225,8 @@ export class Game {
 
   private toggleSpectatorCam(): void {
     if (this.spectatorCam.isSpectating) {
-      if (this.wargameAtivo) {
-        this.sairDoWargame();
-        return;
-      }
+      // No WARGAME a câmera não solta: a saída é o botão da HUD (`sairDoWargame`), nunca uma tecla de câmera (P291).
+      if (this.wargameAtivo) return;
       this.spectatorCam.release();
       this.spectatorHud.setVisible(false);
       this.btnCftv?.classList.remove('active');

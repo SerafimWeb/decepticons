@@ -17,6 +17,17 @@ export class SpectatorHUD {
   onNext?: () => void;
   onExit?: () => void;
 
+  /**
+   * O WARGAME (P291): a câmera não é do jogador (o Mech não é controlado), então não há "VOLTAR AO MECH". O botão vira "SAIR E JOGAR" (carrega a
+   * mesma arena sem o roteiro) e a dica diz os atalhos da câmera.
+   */
+  setWargame(on: boolean): void {
+    if (!this.exitBtn || !this.root) return;
+    this.exitBtn.textContent = on ? 'SAIR DO WARGAME E JOGAR' : 'VOLTAR AO MECH';
+    const dica = this.root.querySelector('.spec-hint');
+    if (dica) dica.textContent = on ? '[ 1 ] visão aérea · [ 2 ] troca sozinha (20 s) · [ 3 ] segura o plano' : 'Use [ ← / → ] ou setas para trocar · [ C / ESC ] voltar';
+  }
+
   constructor(parent?: HTMLElement) {
     if (typeof document === 'undefined') return;
     const container = parent ?? document.getElementById('hud') ?? document.body;
