@@ -36,6 +36,16 @@
 | P298 | 31/10 | "talvez ele possa servir como um grande círculo refrigerador para outros mechs se esfriarem perto dele" | ⏸ | Registrada. Aura de resfriamento: um Mech perto do Colossus esfria mais rápido. Pede regra de calor no tick (G4/G5) e teste de simulação. | o jogo (Colossus com o resfriador) |
 | P299 | 31/10 | "os tiros e a cabeça do colossus não mudaram ainda" (depois do P295) | 🟡 | **Achado (Claude, 31/10):** o P295 foi mesclado às 16:15; a captura do Comandante (16:25) pode ter vindo antes da atualização do site, ou com cache. Pedir: recarregar a página (Ctrl+F5). Os tiros dos ombros e do canhão das costas mudaram de origem (boca fora do corpo); a arma da mão direita não mudou. | o Hangar e o jogo (depois de Ctrl+F5) |
 
+## P300 a P302 — Escolher o botão de cada arma (31/10, Claude)
+
+> Pedido do Comandante: poder configurar o disparo de cada arma, para cada estilo de jogador. Três fases, uma por PR.
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P300 | 31/10 | "vamos evoluir o jeito de atirar: mão direita + mão esquerda no botão 1; armas do ombro, cabeça e costas reunidas no botão 2; ou todas no botão 1 e a principal no botão 2" | 🟡 | **Fase 1 feita (Claude, 31/10; falta o olho do Comandante): o motor dispara por encaixe.** Cada mão, a secundária (um grupo por botão, com carregador, cronômetro e carga próprios) e os ombros e costas seguem o layout de cada um. Testado: 865 testes de combate iguais, mais 5 de botão livre (a mão esquerda no botão 1 dispara o foguete; o plasma da direita sai no botão 2). Hoje o disparo é fixo por chassi (`triggersOf`) e o `Armament` amarra a mão direita ao botão 1 e a esquerda ao 2 (a arma errada sai do encaixe errado se o botão muda). Fase 1 troca isso por um disparo generico por encaixe (cronômetro, carga, carregador e tipo de arma por encaixe), com a mesma regra de hoje como padrão. Prova: os testes de tiro atuais passam sem mudar, mais um teste de cada encaixe no botão 1 e no 2. Nenhum jogador vê mudança com o padrão. **Limite:** o contador de foguetes do HUD segue o grupo do botão 2 (a fase 2 faz o HUD seguir o botão da secundária). | o jogo (nada muda) e os testes de tiro |
+| P301 | 31/10 | "poder clicar no próprio mech no hangar e dizer qual arma é botão 1 e qual é botão 2" | ⏸ | **Fase 2:** a montagem ganha o campo `botoes` (encaixe → 1 ou 2), validado no cliente e no servidor e levado na chave da montagem (versão nova). Hangar: clicar no encaixe do Mech e marcar o botão. Presets: padrão do chassi, tudo no 1 com principal no 2, mãos no 1 e resto no 2. | o Hangar (cada encaixe) |
+| P302 | 31/10 | "mão esquerda no botão 1 para os mechs comuns" (sim, do Comandante) e "talvez jogadores profissionais tenham mouse com mais botões" | ⏸ | **Fase 3:** a mão esquerda do Vector-09 e dos mechs comuns pode ir ao botão 1 (a fase 1 já deixa o encaixe livre). Terceiro botão (mouse extra ou tecla) como botão 3 do encaixe, configurável como as outras. | o Hangar e o jogo |
+
 ## P286 a P290 — Esquadrão, Wargame e Hangar numa língua só; o microfone do Estúdio (30/10, Claude)
 
 > Uma mensagem só do Comandante (30/10, com duas capturas: a tela ESQUADRÃO com a lista de chassis aberta e a janela WARGAME · CIDADE NEON). Cada ordem vai no seu PR; o estado de cada uma se atualiza na linha dela.

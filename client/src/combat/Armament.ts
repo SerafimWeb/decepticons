@@ -55,8 +55,14 @@ export interface ShotSink {
  * - **Calor:** cada tiro soma o calor da arma no dissipador do Mech; superaquecido, nenhum encaixe atira.
  */
 export class Armament {
-  /** Carregador do gatilho secundário (o HUD lê daqui). Refeito ao trocar de armas. */
-  launcher: RocketLauncher;
+  /**
+   * Carregador do grupo do botão 2 (o HUD lê daqui). Cada botão tem o seu grupo da arma secundária: `secondaryLaunchers[0]` é o do botão 1.
+   * Refeito ao trocar de armas.
+   */
+  private secondaryLaunchers: RocketLauncher[];
+  get launcher(): RocketLauncher {
+    return this.secondaryLaunchers[1]!;
+  }
   /** Cadência de cada mão do gatilho principal. */
   private primaryLaunchers: RocketLauncher[];
   private readonly hands = [new FireTimer(), new FireTimer()];
@@ -64,9 +70,12 @@ export class Armament {
   private readonly held = [false, false];
   /** Quanto a mira já assentou em cada gatilho (0 = aberta, 1 = firme): a identidade de mira da arma (ordem P121). */
   private readonly aimLevel = [0, 0, 0];
-  /** Cadência do gatilho secundário quando ele não é de carregador (serra, arma de energia). */
-  private readonly side = new FireTimer();
-  private readonly charge = [new ChargeTimer(), new ChargeTimer(), new ChargeTimer()];
+  /** Cadência de cada grupo da arma secundária quando ela não é de carregador (serra, arma de energia): índice = botão - 1. */
+  private readonly sides = [new FireTimer(), new FireTimer()];
+  /** Carga das mãos (índice = mão: 0 a direita, 1 a esquerda). */
+  private readonly charge = [new ChargeTimer(), new ChargeTimer()];
+  /** Carga de cada grupo da arma secundária (índice = botão - 1: a carga com espera, como o cerco). */
+  private readonly secondaryCharges = [new ChargeTimer(), new ChargeTimer()];
   /** Os encaixes extras (P282: costas e ombros dos robôs grandes): um cronômetro de tiro e uma carga por encaixe, na ordem de `EXTRA_SLOTS`. */
   private readonly extraShot = EXTRA_SLOTS.map(() => new FireTimer());
   private readonly extraCharge = EXTRA_SLOTS.map(() => new ChargeTimer());
@@ -88,10 +97,10 @@ export class Armament {
     return level;
   }
   get primaryCharge(): number { return Math.max(this.charge[0]!.progress, this.charge[1]!.progress); }
-  get secondaryCharge(): number { return this.charge[2]!.progress; }
+  get secondaryCharge(): number { return this.secondaryCharges[1]!.progress; }
 
   constructor(private readonly mech: MechBase) {
-    this.launcher = this.newLauncher();
+    this.secondaryLaunchers = [this.newLauncher(), this.newLauncher()];
     this.primaryLaunchers = [new RocketLauncher(mech.loadout.primary), new RocketLauncher(mech.loadout.offhand ?? mech.loadout.primary)];
     this.refuel();
   }
@@ -106,15 +115,16 @@ export class Armament {
 
   /** O Mech trocou de armas (Hangar): carregador novo, cheio, com o lançador montado. */
   rearm(): void {
-    this.launcher = this.newLauncher();
+    this.secondaryLaunchers = [this.newLauncher(), this.newLauncher()];
     this.primaryLaunchers = [new RocketLauncher(this.mech.loadout.primary), new RocketLauncher(this.mech.loadout.offhand ?? this.mech.loadout.primary)];
     for (const t of this.hands) t.reset();
     for (const s of this.spin) s.reset();
     this.aimLevel[0] = this.aimLevel[1] = this.aimLevel[2] = 0; // arma nova: a mira abre e assenta de novo (ordem P121)
     this.refuel();
     this.mech.status.spinning = false;
-    this.side.reset();
+    for (const t of this.sides) t.reset();
     for (const c of this.charge) c.reset();
+    for (const c of this.secondaryCharges) c.reset();
     this.mech.weaponCharging = false;
   }
 
@@ -142,8 +152,8 @@ export class Armament {
       for (let i = 0; i < 2; i++) {
         const mount = HAND_MOUNTS[i]!;
         const w = i === 0 ? l.primary : l.offhand;
-        // Só o chassi de duas mãos armadas (`offhand` declarado) tem a mão esquerda como mão de gatilho; nos outros ela é a arma do Ataque 2 (mais abaixo).
-        const button = triggers.primary.includes(mount) ? 1 : i === 1 && l.offhand !== undefined && triggers.secondary.includes(mount) ? 2 : 0;
+        // O botão da mão é o que o layout põe nela (`attackOf`). A mão sem arma própria (a esquerda sem `offhand`) é da arma secundária, que tem o seu grupo (mais abaixo).
+        const button = w ? (attackOf(triggers, mount) ?? 0) : 0;
         const timer = this.hands[i]!;
         if (button === 0) {
           this.spin[i]!.reset();
@@ -197,38 +207,70 @@ export class Armament {
     m.status.flaming = m.alive && (this.burning[0]! || this.burning[1]!);
     if (!m.alive) for (const t of this.tanks) t?.refill(); // renasce com o tanque cheio
 
-    // Morto, o carregador enche (renasce pronto).
-    if (!m.alive) this.launcher.refill();
-    else this.launcher.fixedUpdate(dt);
-    this.side.fixedUpdate(dt);
+    // Morto, o carregador enche (renasce pronto). Um carregador e um cronômetro por grupo da secundária.
+    for (const launcher of this.secondaryLaunchers) {
+      if (!m.alive) launcher.refill(); else launcher.fixedUpdate(dt);
+    }
+    for (const t of this.sides) t.fixedUpdate(dt);
     const s = l.secondary;
-    // A salva do lançador leve que já começou segue saindo com o botão solto (`RocketLauncher.committed`). **A carga com espera** (o canhão de cerco no Ataque 2) também: o tiro sai AO SOLTAR o botão, então
-    // o `ChargeTimer` precisa ser chamado com o botão solto enquanto há carga (antes o reset daqui apagava a carga cheia no tick em que o jogador soltava, e o cerco "carregava e não fazia nada").
-    const segurandoCarga = s?.chargeHold === true && this.charge[2]!.progress > 0;
-    if (!s || !(secondary || segurandoCarga || (s.kind === 'ammo' && this.launcher.committed)) || !m.canFireSecondary) {
-      this.charge[2]!.reset();
-      m.weaponCharging = this.primaryCharge > 0;
+    if (s) {
+      this.fireSecondary(1, dt, fire, secondary, sink, s);
+      this.fireSecondary(2, dt, fire, secondary, sink, s);
+    } else {
+      for (const c of this.secondaryCharges) c.reset();
+    }
+    m.weaponCharging = this.primaryCharge > 0 || this.secondaryCharge > 0;
+  }
+
+  /**
+   * Os encaixes que disparam a arma secundária (`loadout.secondary`): a mão esquerda sem `offhand` e os ombros que não são extras (o lançador
+   * duplo do Marauder). A ordem é a dos volleys (a mão antes dos ombros). Quem dispara é o botão que o layout põe em cada um (`attackOf`).
+   */
+  private secondaryMounts(button: 1 | 2): MountId[] {
+    const l = this.mech.loadout;
+    const triggers = this.mech.triggers;
+    const sources: MountId[] = ['leftHand', 'rightShoulder', 'leftShoulder'];
+    return sources.filter((mount) => {
+      const fromSecondary = mount === 'leftHand' ? l.offhand === undefined : extraDaMontagem(l, mount) === null;
+      return fromSecondary && attackOf(triggers, mount) === button;
+    });
+  }
+
+  /**
+   * O grupo de um botão (1 ou 2) da arma secundária: um carregador (no ataque de foguete, o salvo sai de todos os encaixes do grupo com um tiro gasto),
+   * ou cadência e carga (arma de energia, serra, cerco). Cada grupo tem os seus; o botão 1 e o 2 não se atrapalham.
+   */
+  private fireSecondary(button: 1 | 2, dt: number, fire: boolean, secondary: boolean, sink: ShotSink, s: WeaponStats): void {
+    const m = this.mech;
+    const idx = button - 1;
+    const mounts = this.secondaryMounts(button);
+    const launcher = this.secondaryLaunchers[idx]!;
+    const charge = this.secondaryCharges[idx]!;
+    const side = this.sides[idx]!;
+    const held = button === 1 ? fire : secondary;
+    // A carga com espera (o cerco) é avaliada com o botão solto (P284): solta, dispara.
+    const segurandoCarga = s.chargeHold === true && charge.progress > 0;
+    const podeAtirar = mounts.some((mount) => m.canFireMount(mount));
+    if (mounts.length === 0 || !podeAtirar || !(held || segurandoCarga || (s.kind === 'ammo' && launcher.committed))) {
+      charge.reset();
       return;
     }
-    m.weaponCharging = this.primaryCharge > 0;
     if (s.kind === 'ammo') {
-      if (!this.launcher.tryFire()) return;
+      if (!launcher.tryFire()) return;
       let volley = 0;
-      for (const mount of triggers.secondary) {
-        if (mount === 'leftHand' && l.offhand !== undefined) continue; // a mão armada do Marauder já atirou no laço das mãos
-        if (extraDaMontagem(l, mount) !== null) continue; // os encaixes extras atiram no laço deles (`fixedExtras`)
+      for (const mount of mounts) {
         if (!m.canFireMount(mount)) continue;
         sink.rocket(mount, s, volley++, this.salvoSpread(s));
         m.onFireMount(mount, s);
       }
-    } else if (this.charge[2]!.step(dt, secondary, this.side.ready, s.chargeTime, s.chargeHold)) {
+      return;
+    }
+    if (charge.step(dt, held, side.ready, s.chargeTime, s.chargeHold)) {
       if (s.kind === 'melee') {
         sink.melee(s);
         m.onFireSecondary();
       } else {
-        for (const mount of triggers.secondary) {
-          if (mount === 'leftHand' && l.offhand !== undefined) continue;
-          if (extraDaMontagem(l, mount) !== null) continue; // os encaixes extras atiram no laço deles (`fixedExtras`)
+        for (const mount of mounts) {
           if (!m.canFireMount(mount)) continue;
           // A onda sônica sai das duas bocas dos ombros ao mesmo tempo (como os foguetes); a rotatória só vai no gatilho principal (ARM_SLOTS).
           if (s.hook) sink.hook?.(mount, s);
@@ -238,9 +280,8 @@ export class Armament {
           m.onFireMount(mount, s);
         }
       }
-      this.side.shot(s.fireInterval);
+      side.shot(s.fireInterval);
     }
-    m.weaponCharging = this.primaryCharge > 0 || this.secondaryCharge > 0;
   }
 
   /**
