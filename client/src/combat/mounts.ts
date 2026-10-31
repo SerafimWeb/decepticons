@@ -55,6 +55,22 @@ export const SPLIT_SHOULDER_TRIGGERS: TriggerLayout = { primary: ['rightHand'], 
 export const TRIGGERS_COM_COSTAS: TriggerLayout = { primary: ['rightHand'], secondary: ['leftHand', 'back', 'rightShoulder', 'leftShoulder'] };
 export const TRIGGERS_COM_OMBROS: TriggerLayout = { primary: ['rightHand'], secondary: ['leftHand', 'rightShoulder', 'leftShoulder'] };
 
+/**
+ * O layout que vale para uma montagem (P301): o do chassi, com o botão que o jogador escolheu para cada encaixe. Quem não foi escolhido segue o chassi.
+ * Calculado uma vez por montagem (não por tick). Sem escolha, devolve o próprio layout do chassi.
+ */
+export function triggersComBotoes(base: TriggerLayout, botoes?: Partial<Record<MountId, 1 | 2>>): TriggerLayout {
+  if (!botoes) return base;
+  const primary: MountId[] = [];
+  const secondary: MountId[] = [];
+  for (const mount of MOUNTS) {
+    const b = botoes[mount] ?? attackOf(base, mount);
+    if (b === 1) primary.push(mount);
+    else if (b === 2) secondary.push(mount);
+  }
+  return { primary, secondary };
+}
+
 /** Um layout de gatilhos com nome, para o Hangar oferecer a escolha (o primeiro de cada chassi é o padrão). */
 export interface NamedLayout {
   /** O nome inteiro (a dica do botão e os textos). */

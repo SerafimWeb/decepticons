@@ -822,4 +822,9 @@ export interface Loadout {
   leftShoulder?: WeaponStats | null;
   /** Qual dos layouts de gatilho do chassi (`MechStats.layouts`) vale; ausente = o primeiro, o padrão. */
   layout?: number;
+  /**
+   * P301 (fase 2): o botão de cada encaixe, quando o jogador escolheu (1 = clique, 2 = clique direito). Ausente = o padrão do chassi (`layout`).
+   * Só encaixes com arma entram. O motor compõe o layout com isto (`triggersComBotoes`, em `mounts.ts`).
+   */
+  botoes?: Partial<Record<'rightHand' | 'leftHand' | 'rightShoulder' | 'leftShoulder' | 'back', 1 | 2>>;
 }
