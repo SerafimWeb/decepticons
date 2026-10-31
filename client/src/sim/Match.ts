@@ -561,7 +561,7 @@ export class Match {
     this.combat.sameSide = (a, b) => this.sameSide(a, b);
     this.respawner = new Respawner(this.spawnPoints); // na missão do rio o ponto é um só (o posto avançado): jogador e Resistência renascem juntos
     this.crush = new CrushRule(this.combat);
-    const kitDe = (s: SlotDoPlano): BotKit => ({ chassi: s.chassi, arma: s.arma, secundaria: s.secundaria, dificuldade: s.dificuldade });
+    const kitDe = (s: SlotDoPlano): BotKit => ({ chassi: s.chassi, arma: s.arma, secundaria: s.secundaria, extras: s.extras, dificuldade: s.dificuldade });
     const pontos = (l: readonly SlotDoPlano[]) => l.map((s) => s.ponto);
     const nomes = (l: readonly SlotDoPlano[]) => l.map((s) => s.nome);
     const rebeldes = plano?.inimigos;

@@ -3,6 +3,7 @@ import { CoverSeeking } from './CoverSeeking';
 import { ObstacleSteering } from './ObstacleSteering';
 import { mulberry32 } from '../core/rng';
 import type { Difficulty, Persona } from '../core/Settings';
+import { EXTRA_SLOTS, MOUNT_DO_EXTRA } from './encaixesExtras';
 import type { MechBase, MechInput } from '../entities/MechBase';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { setLocalMove, turnToward, wrapAngle, yawOf } from './steer';
@@ -262,6 +263,13 @@ export class BotController {
   /** Quer atirar a arma da mão esquerda neste tick (mesma mira de `shotDir`; a arma explosiva mira em `blastAim`). */
   wantsToFireSecondary = false;
   /**
+   * Os encaixes extras (P288: costas e ombros) que querem atirar neste tick, na ordem de `EXTRA_SLOTS` (a mesma mira de `shotDir`). Cada um tem o cronômetro e o alcance da arma dele; só roda quando o
+   * esquadrão deu arma a algum (`useExtras`), então o bot de sempre não paga nada.
+   */
+  readonly wantsToFireExtra: boolean[] = EXTRA_SLOTS.map(() => false);
+  useExtras = false;
+  private readonly extraCooldown: number[] = EXTRA_SLOTS.map(() => 0);
+  /**
    * Lança as armas **explosivas** da mão esquerda (foguetes, teleguiado, granadas, lançador leve, cruzador, chuva) em **salvas** (P160 parte 4): o carregador
    * de verdade (`RocketLauncher`), a pausa entre salvas pela dificuldade e pela personalidade, e nunca perto demais (a explosão pegaria o próprio bot).
    * Quem liga é o `BotSystem`.
@@ -511,6 +519,7 @@ export class BotController {
     this.burstLeft = this.burstSize();
     this.fireCooldown = 0;
     this.secondaryCooldown = 0;
+    this.extraCooldown.fill(0);
     this.volleyLeft = 0;
     this.volleyGap = 0;
     this.volleyCooldown = VOLLEY_FIRST_S + this.blastRand() * 2;
@@ -539,6 +548,7 @@ export class BotController {
     const cmd = this.input;
     this.wantsToFire = false;
     this.wantsToFireSecondary = false;
+    if (this.useExtras) this.wantsToFireExtra.fill(false);
     cmd.jump = false;
     cmd.dash = false;
     if (!this.mech.alive) {
@@ -1029,6 +1039,7 @@ export class BotController {
     const m = this.mech;
     this.fireCooldown -= dt;
     this.secondaryCooldown -= dt;
+    if (this.useExtras) for (let i = 0; i < EXTRA_SLOTS.length; i++) this.extraCooldown[i]! -= dt;
     // O carregador da arma explosiva recarrega e as pausas da salva correm o tempo todo, com ou sem alvo.
     this.launcher?.fixedUpdate(dt);
     this.volleyCooldown -= dt;
@@ -1073,7 +1084,16 @@ export class BotController {
     const secundario = !!w2 && naMira && this.secondaryCooldown <= 0 && m.canFireLeftHand && dist <= w2.maxRange;
     const explosiva = this.useExplosives && m.loadout.secondary?.kind === 'ammo' ? m.loadout.secondary : null;
     if (explosiva) this.volley(explosiva, t, dist, facingOff);
-    if (!primario && !secundario) return;
+    // Os encaixes extras (P288): cada um na sua cadência e no seu alcance, na mesma mira.
+    let extra = false;
+    if (this.useExtras && naMira) {
+      for (let i = 0; i < EXTRA_SLOTS.length; i++) {
+        const slot = EXTRA_SLOTS[i]!;
+        const w = m.loadout[slot];
+        if (w && this.extraCooldown[i]! <= 0 && m.canFireMount(MOUNT_DO_EXTRA[slot]) && dist <= w.maxRange) extra = true;
+      }
+    }
+    if (!primario && !secundario && !extra) return;
 
     // Erro de mira: gira a direção um pouco em yaw e em pitch.
     _dir.normalize();
@@ -1092,6 +1112,15 @@ export class BotController {
     if (secundario) {
       this.wantsToFireSecondary = true;
       this.secondaryCooldown = Math.max(this.secondaryCooldown, -dt) + w2!.fireInterval;
+    }
+    if (extra) {
+      for (let i = 0; i < EXTRA_SLOTS.length; i++) {
+        const slot = EXTRA_SLOTS[i]!;
+        const w = m.loadout[slot];
+        if (!w || this.extraCooldown[i]! > 0 || !m.canFireMount(MOUNT_DO_EXTRA[slot]) || dist > w.maxRange) continue;
+        this.wantsToFireExtra[i] = true;
+        this.extraCooldown[i] = Math.max(this.extraCooldown[i]!, -dt) + w.fireInterval;
+      }
     }
     if (!primario) return;
     this.wantsToFire = true;
