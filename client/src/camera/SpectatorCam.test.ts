@@ -235,3 +235,62 @@ describe('SpectatorCam', () => {
     expect(camera.position.distanceTo(normalPose)).toBeLessThan(1e-4);
   });
 });
+
+/**
+ * A visão aérea do WARGAME (P291): a primeira posição do episódio dá a volta devagar no centro, olhando para ele; a troca automática passa de alvo a cada N segundos.
+ */
+describe('SpectatorCam no WARGAME (P291): visão aérea e troca automática', () => {
+  const orbita = { center: new THREE.Vector3(0, 0, 0), raio: 80, altura: 40, velocidade: 0.05 };
+
+  it('com órbita, a visão aérea é o alvo 0 e o primeiro do episódio; sem órbita, não existe', () => {
+    const com = new SpectatorCam(new THREE.PerspectiveCamera(), CLEAR_WORLD, [], { orbit: orbita });
+    com.start(0);
+    expect(com.getTargets()[0]!.kind).toBe('orbit');
+    expect(com.currentIndex).toBe(0);
+    expect(com.goToOrbit()).toBe(true);
+    const sem = new SpectatorCam(new THREE.PerspectiveCamera(), CLEAR_WORLD, []);
+    expect(sem.getTargets().some((t) => t.kind === 'orbit')).toBe(false);
+    expect(sem.goToOrbit()).toBe(false);
+  });
+
+  it('a câmera aérea fica na altura e no raio da órbita, olhando para o centro, e anda em volta', () => {
+    const camera = new THREE.PerspectiveCamera();
+    const spectator = new SpectatorCam(camera, CLEAR_WORLD, [], { orbit: orbita });
+    spectator.start(0);
+    for (let i = 0; i < 600; i++) spectator.update(1 / 60); // 10 s de órbita, com a suavização já assentada
+    const p = camera.position;
+    expect(p.y).toBeCloseTo(orbita.altura, 0);
+    expect(Math.hypot(p.x, p.z)).toBeCloseTo(orbita.raio, 0);
+    const antes = p.clone();
+    for (let i = 0; i < 300; i++) spectator.update(1 / 60);
+    expect(camera.position.distanceTo(antes)).toBeGreaterThan(5); // o ângulo andou: não é uma câmera parada
+    // olha para o centro: a direção da câmera aponta para dentro da arena
+    const olhar = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+    const paraCentro = new THREE.Vector3(-p.x, -p.y, -p.z).normalize();
+    expect(olhar.dot(paraCentro)).toBeGreaterThan(0.9);
+  });
+
+  it('a troca automática passa ao próximo alvo depois de N segundos, e para quando desligada (0)', () => {
+    const spectator = new SpectatorCam(new THREE.PerspectiveCamera(), CLEAR_WORLD, [], { orbit: orbita });
+    spectator.start(0);
+    spectator.setAutoCycle(20);
+    expect(spectator.autoCycleS).toBe(20);
+    for (let i = 0; i < 19 * 60; i++) spectator.update(1 / 60);
+    expect(spectator.currentIndex).toBe(0); // 19 s: ainda na órbita
+    for (let i = 0; i < 2 * 60; i++) spectator.update(1 / 60);
+    expect(spectator.currentIndex).toBe(1); // passou dos 20 s
+    spectator.setAutoCycle(0);
+    for (let i = 0; i < 60 * 60; i++) spectator.update(1 / 60);
+    expect(spectator.currentIndex).toBe(1); // desligada: não troca mais
+  });
+
+  it('trocar à mão zera o relógio da troca automática (o alvo novo tem os seus 20 s inteiros)', () => {
+    const spectator = new SpectatorCam(new THREE.PerspectiveCamera(), CLEAR_WORLD, [], { orbit: orbita });
+    spectator.start(0);
+    spectator.setAutoCycle(20);
+    for (let i = 0; i < 15 * 60; i++) spectator.update(1 / 60);
+    spectator.nextTarget();
+    for (let i = 0; i < 15 * 60; i++) spectator.update(1 / 60);
+    expect(spectator.currentIndex).toBe(1); // 15 s no alvo novo: ainda não passou dos 20 s
+  });
+});

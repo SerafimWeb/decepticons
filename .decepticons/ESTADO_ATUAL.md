@@ -1,3 +1,8 @@
+## O Wargame com câmera de verdade (Claude, P291, branch `claude/wargame-camera`)
+
+**O pedido (31/10):** "apertei C e saiu; não consegui mudar a câmera; quero a visão aérea lenta e a troca a cada tantos segundos". **Entrega:** na partida do Wargame as teclas de câmera não saem da cena; a primeira visão é uma órbita aérea lenta sobre o centro; **1** órbita, **2** troca sozinha a cada 20 s, **3** segura o plano; o botão da HUD vira **SAIR DO WARGAME E JOGAR**. **Provas:** +4 testes da órbita e da troca automática (`camera/SpectatorCam.test.ts`), typecheck e 61 testes do HUD/Wargame verdes. **Falta:** a prova no Chrome (a máquina estava sem memória virtual para o navegador; a bancada `medicoes/wargame-painel.mjs` já existe) e o olho do Comandante.
+**Próxima sessão começa com:** a prova no Chrome; depois P292 (o modo de partida no painel) e P294 (a auditoria das armas do Colossus, que pede engenharia no `Armament`).
+
 # ESTADO ATUAL — CYBERMECH
 
 ## O Wargame diz quem vai a cada ponto, e o console sem repetição (Claude, P290 e P287 primeiro corte, branch `claude/wargame-elenco`)
