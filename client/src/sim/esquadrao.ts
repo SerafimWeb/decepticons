@@ -1,3 +1,4 @@
+import { EXTRA_SLOTS, type ExtraSlot } from '../combat/encaixesExtras';
 import { weapon, type Tier, type WeaponId } from '../combat/weapons';
 import { NAME_MAX } from '../core/botNames';
 import { DEFAULT_SETTINGS, type Difficulty, type EnemyNames, type Persona } from '../core/Settings';
@@ -54,6 +55,11 @@ export interface BotSpec {
    * Só as de `armasSecundariasDoBot` (as do encaixe esquerdo do chassi que o bot sabe atirar). Ombro, módulo e layout de ataques ficam para depois: dependem da IA.
    */
   secundaria?: ArmaDoBot;
+  /**
+   * Os encaixes extras de peso (P288, os mesmos do Hangar: costas e os dois ombros, `combat/encaixesExtras.ts`): cada um com a sua arma, que o bot atira junto com as outras, no ritmo dela. Só nos chassis que têm o
+   * encaixe (hoje o Onça; o titã segue com a arma de fábrica) e só as de `armasDoExtraDoBot`. Ausente = vazio.
+   */
+  extras?: Partial<Record<ExtraSlot, ArmaDoBot>>;
   /** Dificuldade própria. Padrão: a da partida (Configurações). */
   dificuldade?: Difficulty;
 }
@@ -114,6 +120,15 @@ export function armaExplosivaDoBot(id: WeaponId): boolean {
 export function armasSecundariasDoBot(chassi: ChassisId): readonly WeaponId[] {
   if (ehTita(chassi)) return [];
   return ARM_SLOTS[chassi].left.filter((id) => armaServeAoBot(id) || armaExplosivaDoBot(id));
+}
+
+/**
+ * As armas que cabem num **encaixe extra** do chassi (P288: costas e ombros) e que o bot sabe usar: as do encaixe (energia de tiro simples, teto de classe) que `armaServeAoBot` aceita, na ordem do catálogo.
+ * Chassi sem o encaixe, ou titã (que luta com a arma de fábrica, como chefe): nenhuma.
+ */
+export function armasDoExtraDoBot(chassi: ChassisId, slot: ExtraSlot): readonly WeaponId[] {
+  if (ehTita(chassi)) return [];
+  return (ARM_SLOTS[chassi][slot] ?? []).filter(armaServeAoBot);
 }
 
 const TIERS: readonly Tier[] = [0, 1, 2];
@@ -276,6 +291,15 @@ export function sanearBot(raw: unknown, lado: LadoDoBot = 'inimigo'): BotSpec | 
   if (s2 && typeof s2 === 'object' && typeof s2.id === 'string' && ehNivel(s2.tier) && (armasSecundariasDoBot(chassi) as readonly string[]).includes(s2.id)) {
     bot.secundaria = { id: s2.id, tier: s2.tier };
   }
+  const ex = r.extras as Record<string, Partial<ArmaDoBot> | null | undefined> | null | undefined;
+  if (ex && typeof ex === 'object') {
+    const extras: Partial<Record<ExtraSlot, ArmaDoBot>> = {};
+    for (const slot of EXTRA_SLOTS) {
+      const a2 = ex[slot];
+      if (a2 && typeof a2 === 'object' && typeof a2.id === 'string' && ehNivel(a2.tier) && (armasDoExtraDoBot(chassi, slot) as readonly string[]).includes(a2.id)) extras[slot] = { id: a2.id as WeaponId, tier: a2.tier };
+    }
+    if (Object.keys(extras).length) bot.extras = extras;
+  }
   return bot;
 }
 
@@ -339,6 +363,8 @@ export function esquadraoPadrao(): EsquadraoSpec {
 const LETRA_DO_PAPEL: Readonly<Record<PapelDoBot, string>> = { mech: 'm', android: 'a', technician: 't' };
 const LETRA_DA_PERSONA: Readonly<Record<Persona, string>> = { soldado: 's', brabo: 'b', manso: 'm', fujao: 'f' };
 const LETRA_DA_DIFICULDADE: Readonly<Record<Difficulty, string>> = { facil: 'f', normal: 'n', dificil: 'd' };
+/** A letra de cada encaixe extra no link (P288): `b` costas (back), `r` ombro direito, `l` ombro esquerdo (left). */
+const LETRA_DO_EXTRA: Readonly<Record<ExtraSlot, string>> = { back: 'b', rightShoulder: 'r', leftShoulder: 'l' };
 const deLetra = <T extends string>(tabela: Readonly<Record<T, string>>, letra: string): T | undefined =>
   (Object.keys(tabela) as T[]).find((k) => tabela[k] === letra);
 
@@ -366,6 +392,10 @@ function chaveDoBot(b: BotSpec): string {
   if (b.chassi) campos.push(`c${b.chassi}`);
   if (b.arma) campos.push(`w${b.arma.id}-${b.arma.tier}`);
   if (b.secundaria) campos.push(`s${b.secundaria.id}-${b.secundaria.tier}`);
+  for (const slot of EXTRA_SLOTS) {
+    const a = b.extras?.[slot];
+    if (a) campos.push(`${LETRA_DO_EXTRA[slot]}${a.id}-${a.tier}`);
+  }
   if (b.dificuldade) campos.push(`d${LETRA_DA_DIFICULDADE[b.dificuldade]}`);
   if (b.nome) campos.push(`n${nomeParaTexto(b.nome)}`);
   return campos.join(':');
@@ -374,7 +404,7 @@ function chaveDoBot(b: BotSpec): string {
 /**
  * O esquadrão em texto curto, para link e para guardar: `q1.<inimigos>.<aliados>`, cada lado com os robôs separados por vírgula (`-` se
  * não tem ninguém) e cada robô com o papel (`m` Mech, `a` andróide, `t` técnico) e os campos que saem do padrão: `p` personalidade
- * (`b` brabo, `m` manso, `f` fujão), `c` chassi, `w` arma-nível, `d` dificuldade (`f` fácil, `d` difícil) e `n` nome. O padrão de hoje é `q1.m:pb,a,a,t.m,m:wemp-0`.
+ * (`b` brabo, `m` manso, `f` fujão), `c` chassi, `w` arma-nível, `s` mão esquerda, `b`/`r`/`l` os encaixes extras (costas, ombro direito, ombro esquerdo; P288), `d` dificuldade (`f` fácil, `d` difícil) e `n` nome. O padrão de hoje é `q1.m:pb,a,a,t.m,m:wemp-0`.
  */
 export function chaveDoEsquadrao(spec: EsquadraoSpec): string {
   const lado = (l: readonly BotSpec[], ladoDoBot: LadoDoBot) => {
@@ -413,6 +443,11 @@ function lerBot(texto: string, lado: LadoDoBot): BotSpec | null {
       const m = /^([a-z]+)-([0-2])$/.exec(valor);
       if (!m) return null;
       bruto.secundaria = { id: m[1], tier: Number(m[2]) };
+    } else if (tag === 'b' || tag === 'r' || tag === 'l') {
+      const m = /^([a-z]+)-([0-2])$/.exec(valor);
+      if (!m) return null;
+      const slot = (Object.keys(LETRA_DO_EXTRA) as ExtraSlot[]).find((k) => LETRA_DO_EXTRA[k] === tag)!;
+      bruto.extras = { ...(bruto.extras as object | undefined), [slot]: { id: m[1], tier: Number(m[2]) } };
     } else if (tag === 'd') {
       bruto.dificuldade = deLetra(LETRA_DA_DIFICULDADE, valor);
       if (!bruto.dificuldade) return null;
@@ -423,12 +458,15 @@ function lerBot(texto: string, lado: LadoDoBot): BotSpec | null {
     } else return null;
   }
   // Persona, chassi e arma só existem no Mech; arma que não cabe no chassi ou que o bot não sabe usar recusa a chave.
-  if (papel !== 'mech' && (bruto.persona || bruto.chassi || bruto.arma || bruto.secundaria)) return null;
+  if (papel !== 'mech' && (bruto.persona || bruto.chassi || bruto.arma || bruto.secundaria || bruto.extras)) return null;
   if (papel === 'technician' && bruto.dificuldade) return null;
   const arma = bruto.arma as ArmaDoBot | undefined;
   if (arma && !(armasDoBot((bruto.chassi as ChassisId | undefined) ?? 'vector09') as readonly string[]).includes(arma.id)) return null;
   const sec = bruto.secundaria as ArmaDoBot | undefined;
   if (sec && !(armasSecundariasDoBot((bruto.chassi as ChassisId | undefined) ?? 'vector09') as readonly string[]).includes(sec.id)) return null;
+  for (const [slot, a] of Object.entries((bruto.extras ?? {}) as Record<string, ArmaDoBot>)) {
+    if (!(armasDoExtraDoBot((bruto.chassi as ChassisId | undefined) ?? 'vector09', slot as ExtraSlot) as readonly string[]).includes(a.id)) return null;
+  }
   return sanearBot(bruto, lado);
 }
 
@@ -474,6 +512,8 @@ export interface SlotDoPlano {
   arma: ArmaDoBot | null;
   /** `null` = nenhuma arma na mão esquerda (o bot só atira a principal). */
   secundaria: ArmaDoBot | null;
+  /** Os encaixes extras que o robô leva (P288); `null` = nenhum. */
+  extras: Partial<Record<ExtraSlot, ArmaDoBot>> | null;
   /** `null` = a dificuldade da partida. */
   dificuldade: Difficulty | null;
 }
@@ -534,6 +574,7 @@ export function planejarEsquadrao(spec: EsquadraoSpec, mapa: MapId, nomes: Enemy
           chassi: b.chassi ?? 'vector09',
           arma: b.arma ?? null,
           secundaria: b.secundaria ?? null,
+          extras: b.extras ?? null,
           dificuldade: b.dificuldade ?? null,
         };
       });

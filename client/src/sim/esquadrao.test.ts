@@ -363,7 +363,7 @@ describe('o plano que a partida monta', () => {
 
   it('o esquadrão padrão nasce nos pontos de sempre, com os nomes e as personalidades de sempre', () => {
     const p = planejarEsquadrao(esquadraoPadrao(), 'arena', NOMES);
-    expect(p.inimigos.mechs).toEqual([{ ponto: BOT_SPAWNS[0], nome: 'CLAWD', persona: 'brabo', chassi: 'vector09', arma: null, secundaria: null, dificuldade: null }]);
+    expect(p.inimigos.mechs).toEqual([{ ponto: BOT_SPAWNS[0], nome: 'CLAWD', persona: 'brabo', chassi: 'vector09', arma: null, secundaria: null, extras: null, dificuldade: null }]);
     expect(p.inimigos.androids.map((s) => [s.ponto, s.nome])).toEqual([[ANDROID_SPAWNS[0], 'KUEN'], [ANDROID_SPAWNS[1], 'DIPSIK']]);
     expect(p.inimigos.tecnicos.map((s) => [s.ponto, s.nome])).toEqual([[TECHNICIAN_SPAWNS[0], 'ENTRÓPICO']]);
     expect(p.aliados.mechs.map((s) => [s.ponto, s.nome, s.arma?.id])).toEqual([[ALLY_SPAWNS[0], 'ESCOLTA·PLASMA', undefined], [ALLY_SPAWNS[1], 'SUPRESSOR·EMP', 'emp']]);

@@ -1,5 +1,10 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A ficha do esquadrão na língua do Hangar (Claude, P288, branch `claude/esquadrao-ficha`)
+
+**O pedido (30/10):** "os chassis nessa aba do esquadrão não são todos do hangar… só dá pra escolher a arma direita ou esquerda (e agora há ombros e costas)". **Entrega:** o **Chassi** é uma lista só (Mechs na ordem do Hangar + andróide + técnico; trocar refaz o robô e guarda apelido e dificuldade), as ranhuras têm os nomes do Hangar (Braço direito/esquerdo, Costas, Ombros) e **o bot atira os encaixes extras** (o Onça tem os ombros; o titã segue com a arma de fábrica, e a ficha diz). O link leva os encaixes; o antigo segue igual. **Provas:** +27 testes (contrato, editor, simulação do bot atirando os ombros com cadência), 3 mutações derrubadas, Chrome real (`medicoes/esquadrao-ficha.mjs`, 13 verificações; fotos em `arte/esquadrao-ficha-*`). **Falta:** o olho do Comandante; online não provado numa sala (usa a mesma simulação); o botão de cada arma (P289) e o Wargame (P290).
+**Próxima sessão começa com:** P290 (o Wargame: qual robô vai a cada ponto), depois P289.
+
 ## O microfone do Estúdio (Claude, P286, branch `claude/estudio-microfone`)
 
 **O pedido (30/10):** "quero gravar os áudios, mas não consegui gravar, ficou mudo o microfone… continue evoluindo o estúdio". **Causa (medida neste PC):** a aba VOZES abria sempre o aparelho padrão do Windows, hoje o ponto USB "Microfone (Captain 300)", que entrega zero absoluto; só o fone Bluetooth tem sinal. **Entrega:** lista de microfones reais com escolha exata e lembrada, medidor em dB com veredito, PROCURAR O QUE FUNCIONA, ganho de entrada, parada em 2 s de silêncio e o servidor recusa tomada muda (422). **Provas:** +27 testes (`server/estudioMic.test.ts`, `estudio-vozes.test.ts`), 1 mutação derrubada, bancada no Chrome (`medicoes/estudio.mjs`, agora com um segundo navegador de microfone mudo: para sozinho e não guarda nada). **Falta:** o olho e o ouvido do Comandante (gravar de verdade; o aparelho que funciona hoje é o fone Bluetooth).

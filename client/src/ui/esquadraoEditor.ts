@@ -1,6 +1,7 @@
 import { TIERS, weapon, type Tier, type WeaponId } from '../combat/weapons';
 import { DIFFICULTY_LABELS, PERSONA_LABELS, type EnemyNames, type Persona } from '../core/Settings';
-import { CHASSIS, ehTita } from '../entities/chassis';
+import { EXTRA_SLOTS, type ExtraSlot } from '../combat/encaixesExtras';
+import { CHASSIS, ehTita, type ChassisId } from '../entities/chassis';
 import type { MapId } from '../environment/Bunker';
 import {
   type BotSpec,
@@ -98,6 +99,9 @@ export interface DescricaoDoBot {
   linha: string;
 }
 
+/** Como a linha da lista chama cada encaixe extra (curto: a linha cabe em uma só). */
+const ROTULO_DO_EXTRA: Readonly<Record<ExtraSlot, string>> = { back: 'costas', rightShoulder: 'ombro D', leftShoulder: 'ombro E' };
+
 const ROTULO_DO_PAPEL: Readonly<Record<PapelDoBot, string>> = { mech: 'MECH', android: 'ANDRÓIDE', technician: 'TÉCNICO' };
 export const rotuloDoPapel = (p: PapelDoBot): string => ROTULO_DO_PAPEL[p];
 
@@ -124,6 +128,10 @@ export function descreverBot(bot: BotSpec, lado: Lado, indiceNoPapel: number, no
     if (bot.chassi) partes.push(CHASSIS[bot.chassi].name);
     if (bot.arma) partes.push(nomeDaArma(bot.arma.id, bot.arma.tier));
     if (bot.secundaria) partes.push(`esq. ${nomeDaArma(bot.secundaria.id, bot.secundaria.tier)}`);
+    for (const slot of EXTRA_SLOTS) {
+      const a = bot.extras?.[slot];
+      if (a) partes.push(`${ROTULO_DO_EXTRA[slot]} ${nomeDaArma(a.id, a.tier)}`);
+    }
   }
   if (bot.dificuldade && bot.papel !== 'technician') partes.push(DIFFICULTY_LABELS[bot.dificuldade].toLowerCase());
   return { nome, linha: partes.join(' · ') };
@@ -243,7 +251,7 @@ export class EsquadraoEditor {
    * Muda campos de um robô. Um campo com `undefined` volta ao padrão. O robô passa pelo contrato de novo: trocar o chassi larga a arma que
    * ele não aceita, e persona, chassi e arma de quem não é Mech não pegam.
    */
-  editar(lado: Lado, i: number, mudanca: { nome?: string | undefined; persona?: Persona | undefined; chassi?: BotSpec['chassi']; arma?: BotSpec['arma']; secundaria?: BotSpec['secundaria']; dificuldade?: BotSpec['dificuldade'] }): string | null {
+  editar(lado: Lado, i: number, mudanca: { nome?: string | undefined; persona?: Persona | undefined; chassi?: BotSpec['chassi']; arma?: BotSpec['arma']; secundaria?: BotSpec['secundaria']; extras?: BotSpec['extras']; dificuldade?: BotSpec['dificuldade'] }): string | null {
     const l = this.ref(lado);
     const atual = l[i];
     if (!atual) return null;
@@ -274,6 +282,47 @@ export class EsquadraoEditor {
     if (atual?.secundaria) this.editar(lado, i, { secundaria: { id: atual.secundaria.id, tier } });
   }
 
+  /** Troca a arma de um encaixe extra (costas ou ombro, P288), mantendo o nível; `null` esvazia o encaixe. Arma que o encaixe do chassi não aceita é descartada pelo contrato. */
+  editarExtra(lado: Lado, i: number, slot: ExtraSlot, arma: WeaponId | null): void {
+    const atual = this.ref(lado)[i];
+    if (!atual) return;
+    const extras: NonNullable<BotSpec['extras']> = { ...(atual.extras ?? {}) };
+    if (arma) extras[slot] = { id: arma, tier: extras[slot]?.tier ?? 0 };
+    else delete extras[slot];
+    this.editar(lado, i, { extras: Object.keys(extras).length ? extras : undefined });
+  }
+
+  /** Troca o nível da arma de um encaixe extra sem mudar qual é. */
+  editarNivelExtra(lado: Lado, i: number, slot: ExtraSlot, tier: Tier): void {
+    const arma = this.ref(lado)[i]?.extras?.[slot];
+    if (arma) this.editar(lado, i, { extras: { ...this.ref(lado)[i]!.extras, [slot]: { id: arma.id, tier } } });
+  }
+
+  /**
+   * O corpo do robô, na mesma lista do Hangar (P288): um chassi de Mech, o andróide ou o técnico. Trocar de papel refaz o robô (o apelido e a dificuldade ficam; o resto é do papel novo) e
+   * respeita os tetos como se ele fosse posto agora: o técnico tem teto, e a sala online tem teto por papel. Devolve o motivo da recusa (e o robô fica como estava), ou `null`.
+   */
+  trocarCorpo(lado: Lado, i: number, corpo: ChassisId | 'android' | 'technician'): string | null {
+    const l = this.ref(lado);
+    const atual = l[i];
+    if (!atual) return null;
+    const papel: PapelDoBot = corpo === 'android' || corpo === 'technician' ? corpo : 'mech';
+    if (papel === atual.papel) return papel === 'mech' ? this.editar(lado, i, { chassi: corpo as ChassisId }) : null;
+    // Como se o robô atual saísse e o novo entrasse: os mesmos tetos de `podeAdicionar`.
+    l.splice(i, 1);
+    const motivo = this.podeAdicionar(lado, papel);
+    l.splice(i, 0, atual);
+    if (motivo) return motivo;
+    const novo = sanearBot({ papel, nome: atual.nome, dificuldade: atual.dificuldade }, lado);
+    if (!novo) return 'este lado não aceita esse robô';
+    l[i] = novo;
+    if (papel !== 'mech') return null;
+    // Virou Mech: o chassi escolhido passa pelo mesmo contrato (o titã tem teto por mapa).
+    const recusa = this.editar(lado, i, { chassi: corpo as ChassisId });
+    if (recusa) l[i] = atual;
+    return recusa;
+  }
+
   limparLado(lado: Lado): void {
     this.ref(lado).length = 0;
   }
@@ -301,6 +350,7 @@ export class EsquadraoEditor {
   }
 }
 
+/** Uma cópia funda (as armas, a esquerda e os encaixes extras são objetos): mexer na cópia nunca mexe no robô do editor. */
 function copia(b: BotSpec): BotSpec {
-  return { ...b, ...(b.arma ? { arma: { ...b.arma } } : {}) };
+  return structuredClone(b);
 }
