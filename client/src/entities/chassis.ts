@@ -237,7 +237,8 @@ export const COLOSSUS_BOSS_STATS: MechStats = {
   dashDuration: 0,
   dashCooldown: 1,
   demolishOnDash: false,
-  weaponCapacity: 24,
+  // P302 (31/10, o Comandante): 32 t para equipar o Colossus à altura do corpo.
+  weaponCapacity: 32,
   maxModuleHealth: { torso: 1200, head: 260, leftArm: 380, rightArm: 380, leftLeg: 450, rightLeg: 450 },
 };
 

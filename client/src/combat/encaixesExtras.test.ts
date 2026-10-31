@@ -118,7 +118,8 @@ describe('a montagem com os encaixes extras: valida, pesa, e vai ao texto (a cha
   });
 
   it('uma montagem com costas carregadas acima da carga do chassi é recusada pela carga, como as outras', () => {
-    const pesada = colossus({ back: { id: 'siege', tier: 0 }, rightShoulder: { id: 'cannon', tier: 0 }, leftShoulder: { id: 'cannon', tier: 0 } });
+    // P302: a carga do Colossus é 32 t; aqui a soma passa disso (cerco de 12 t nas costas e na mão esquerda, canhões nos ombros)
+    const pesada = colossus({ left: { id: 'siege', tier: 0 }, back: { id: 'siege', tier: 0 }, rightShoulder: { id: 'cannon', tier: 0 }, leftShoulder: { id: 'cannon', tier: 0 } });
     const r = validateLoadout(pesada);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toBe('carga');
