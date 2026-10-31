@@ -41,6 +41,10 @@ export interface RadarQuadro {
   aliados: readonly RadarUnidade[];
   /** `grande`: Mech ou chefe (o andróide e o técnico são pontos menores). */
   inimigos: readonly (RadarUnidade & { grande: boolean })[];
+  /** Marcas numeradas com anel (o WARGAME, P290: o ponto de cada ordem, com o número da batida dentro). `destaque` engrossa o anel da batida em foco. */
+  marcas?: readonly { x: number; z: number; texto: string; cor: string; destaque?: boolean }[];
+  /** Setas (o WARGAME, P290): de onde o robô nasce até o ponto da ordem, para o Comandante ver quem vai aonde. */
+  setas?: readonly { de: { x: number; z: number }; para: { x: number; z: number }; cor: string }[];
 }
 
 /** A conta de tela: `X`/`Y` (mundo → tela) e o inverso `paraMundo` (tela → mundo, o clique no mapa do WARGAME, P262). */
@@ -77,6 +81,9 @@ const ROTULOS_ARENA = [
   { x: SERAFIM_TOWER.x, z: SERAFIM_TOWER.z, texto: 'SERAFIM', cor: 'rgba(57, 255, 106, 0.9)' },
   { x: -28, z: -35, texto: 'VORCARIS', cor: 'rgba(0, 229, 255, 0.85)' },
 ] as const;
+
+/** Os marcos com nome que o radar escreve num mapa: os do quadro, ou (a Arena, sem eles) o Banco VORCARIS e a torre da SERAFIM. O WARGAME usa a mesma lista para dizer "perto de VORCARIS" (P290). */
+export const marcosDoMapa = (q: Pick<RadarQuadro, 'mapa' | 'rotulos'>): readonly { x: number; z: number; texto: string; cor: string }[] => q.rotulos ?? (q.mapa === 'arena' ? ROTULOS_ARENA : []);
 
 /** As paredes do térreo do Bunker (os pisos dos andares de cima tapariam tudo). */
 export function plantaDoBunker(): RadarCaixa[] {
@@ -295,7 +302,7 @@ export class TacticalRadar {
       g.strokeRect(Math.round(x) + 0.5, Math.round(y) + 0.5, Math.round((c.x1 - c.x0) * k), Math.round((c.z1 - c.z0) * k));
     }
 
-    const rotulos = q.rotulos ?? (q.mapa === 'arena' ? ROTULOS_ARENA : []);
+    const rotulos = marcosDoMapa(q);
     if (rotulos.length > 0) {
       g.font = `700 ${9 * this.k}px Consolas, "Courier New", monospace`;
       g.textAlign = 'center';
@@ -305,8 +312,11 @@ export class TacticalRadar {
       }
     }
 
+    // As setas ficam por baixo dos pontos (P290): quem vai aonde, da posição de partida ao ponto da ordem.
+    if (q.setas) for (const s of q.setas) this.seta(X(s.de.x), Y(s.de.z), X(s.para.x), Y(s.para.z), s.cor);
     for (const a of q.aliados) this.ponto(X(a.x), Y(a.z), 3, '#00e5ff');
     for (const i of q.inimigos) this.ponto(X(i.x), Y(i.z), i.grande ? 3.6 : 2.4, '#ff2d3d');
+    if (q.marcas) for (const m of q.marcas) this.marca(X(m.x), Y(m.z), m.texto, m.cor, m.destaque === true);
     if (q.jogadores) for (const j of q.jogadores) this.piloto(X(j.x), Y(j.z), -Math.sin(j.yaw), -Math.cos(j.yaw));
     if (q.voce) {
       // Triângulo apontando para onde o Mech olha: a frente é (-sen yaw, -cos yaw).
@@ -352,6 +362,51 @@ export class TacticalRadar {
     g.closePath();
     g.fill();
     g.shadowBlur = 0;
+  }
+
+  /** Uma seta fina com a ponta no destino (P290). */
+  private seta(x0: number, y0: number, x1: number, y1: number, cor: string): void {
+    const g = this.g!;
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const d = Math.hypot(dx, dy);
+    if (d < 6) return;
+    g.strokeStyle = cor;
+    g.fillStyle = cor;
+    g.lineWidth = 1.2;
+    g.globalAlpha = 0.75;
+    g.beginPath();
+    g.moveTo(x0, y0);
+    g.lineTo(x1, y1);
+    g.stroke();
+    const ux = dx / d;
+    const uy = dy / d;
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(x1 - ux * 8 - uy * 4, y1 - uy * 8 + ux * 4);
+    g.lineTo(x1 - ux * 8 + uy * 4, y1 - uy * 8 - ux * 4);
+    g.closePath();
+    g.fill();
+    g.globalAlpha = 1;
+  }
+
+  /** Um anel com o número da batida dentro (P290). */
+  private marca(x: number, y: number, texto: string, cor: string, destaque: boolean): void {
+    const g = this.g!;
+    const r = (destaque ? 9 : 7.5) * this.k;
+    g.fillStyle = 'rgba(8, 14, 18, 0.85)';
+    g.strokeStyle = cor;
+    g.lineWidth = destaque ? 2.2 : 1.4;
+    g.beginPath();
+    g.arc(x, y, r, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+    g.fillStyle = cor;
+    g.font = `700 ${8 * this.k}px Consolas, "Courier New", monospace`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(texto, x, y + 0.5);
+    g.textBaseline = 'alphabetic';
   }
 
   private ponto(x: number, y: number, r: number, cor: string): void {

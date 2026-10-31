@@ -1128,6 +1128,7 @@ export class Game {
       store: new RoteiroStore(browserStorage()),
       planta: { mapa: 'arena', meia: this.match.arena.halfSize, caixas: plantaDaArena(this.match.arena.occluders) },
       esquadraoMeu: () => new EsquadraoStore(browserStorage(), '').current,
+      nomes: () => this.settings.value.names,
       indisponivel: wargameIndisponivel,
     }));
     // Janela ARSENAL (fase 4C): só leitura, as fichas das armas e dos chassis; abre sempre (offline e online).

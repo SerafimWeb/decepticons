@@ -37,6 +37,8 @@ holograma (37 KB) baixam em segundo plano só para quem abre a Cidade Neon. O te
 (ordem registrada, em menor frequência); mais qualidade nos prédios (próximo PR); o outdoor não é interativo (não há clique). **Onde conferir:** `?mapa=arena&comandante=1`, olhe ao norte (logo plana) e para o leste (o
 holograma sobre o prédio verde); `arte/cidade-neon-marca-*-claude.jpg`; `MARCA_E_ANUNCIOS.md`.
 
+**P290 — o WARGAME diz quem vai a cada ponto (REAL offline; falta o olho do dono):** a batida pode mirar **um robô** (`alvo`, a posição dele na lista do esquadrão; ausente = o lado inteiro), o mapa mostra os robôs numerados onde nascem, as ordens como anéis e as setas da batida em foco, e a lista "quem é quem" diz número, chassi e nome. Testado na partida e no link e visto no Chrome (`medicoes/wargame-painel.mjs`). **Falta:** editar o elenco dentro da janela.
+
 **P265 — sair do WARGAME de verdade (REAL): trocar de mapa, ou qualquer dos 4 jeitos de soltar a câmera de
 espectador (tecla C, botão, ⎵/Esc, botão de câmera), volta ao jogo normal e jogável, preservando `comandante=1`.**
 Antes, o `?wargame=` sobrevivia a uma troca de mapa (`MapLinks.ts`) e nenhum dos 4 lugares que soltam a câmera sabia

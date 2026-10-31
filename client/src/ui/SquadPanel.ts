@@ -78,7 +78,7 @@ function botao(texto: string, className: string, dados: Record<string, string>, 
 }
 
 /**
- * A janela do esquadrão (P91, fase 1C): a partir do console (PILOTOS → ESQUADRÃO, ou COMANDO → FICHA DE CADA BOT), o Comandante monta a
+ * A janela do esquadrão (P91, fase 1C): a partir do console (PILOTOS → ESQUADRÃO), o Comandante monta a
  * partida robô por robô: quantos inimigos e aliados, e o chassi, a arma, a personalidade, a dificuldade e o apelido de cada um. O que
  * vale está em `EsquadraoEditor` (o contrato, os limites, os prontos); aqui só se desenha e se liga os botões.
  *

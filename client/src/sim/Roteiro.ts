@@ -1,6 +1,6 @@
 import type { MapId } from '../environment/Bunker';
 import { MAPAS } from './campanha';
-import { chaveDoEsquadrao, esquadraoPadrao, lerChaveDoEsquadrao, limparNome, nomeParaTexto, sanearEsquadrao, textoParaNome, type EsquadraoSpec, type LadoDoBot } from './esquadrao';
+import { chaveDoEsquadrao, esquadraoPadrao, lerChaveDoEsquadrao, limparNome, nomeParaTexto, sanearEsquadrao, textoParaNome, type BotSpec, type EsquadraoSpec, type LadoDoBot } from './esquadrao';
 
 /**
  * O roteiro do WARGAME (P262: "transformar nossa gameplay num tipo de filme ou novela", times roteirizados que o
@@ -45,6 +45,11 @@ export interface BeatDoRoteiro {
   tick: number;
   /** Quem recebe a ordem (ausente = batida só de apresentação: legenda e/ou câmera, sem ordem). */
   lado?: LadoDoBot;
+  /**
+   * **Qual robô** do lado recebe a ordem (P290: "não sei qual mech vai em cada ponto"): a posição dele na lista do esquadrão desse lado (a da tela ESQUADRÃO, de 0). Ausente = o lado inteiro, como sempre.
+   * Só Mech e andróide recebem ordem (o técnico segue o Mech avariado); um índice que não existe no esquadrão, ou que é de técnico, sai no saneamento e a ordem volta a valer para o lado.
+   */
+  alvo?: number;
   ordem?: OrdemDoRoteiro;
   legenda?: { texto: string; duracaoS: number };
   camera?: CameraDoRoteiro;
@@ -80,6 +85,7 @@ export function limparLegenda(v: unknown): string | undefined {
 }
 
 const ehLado = (v: unknown): v is LadoDoBot => v === 'inimigo' || v === 'aliado';
+const ehAlvo = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0 && v < 64;
 const ehTipoDeOrdem = (v: unknown): v is TipoDeOrdem => (TIPOS_DE_ORDEM as readonly string[]).includes(v as string);
 const ehMapa = (v: unknown): v is MapId => typeof v === 'string' && (MAPAS as readonly string[]).includes(v);
 const ehNumeroFinito = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
@@ -131,6 +137,7 @@ export function sanearBatida(raw: unknown): BeatDoRoteiro | null {
   const ordem = sanearOrdem(r.ordem);
   if (lado && ordem) {
     batida.lado = lado;
+    if (ehAlvo(r.alvo)) batida.alvo = r.alvo;
     batida.ordem = ordem;
   }
   const legenda = sanearLegendaDaBatida(r.legenda);
@@ -159,13 +166,30 @@ export function sanearRoteiro(raw: unknown): RoteiroSpec {
     })
     .sort((a, b) => a.tick - b.tick)
     .slice(0, LIMITES_DO_ROTEIRO.beats);
+  limparAlvos(esquadrao, beats);
   const nome = limparNome(r.nome);
   return nome ? { v: ROTEIRO_VERSAO, nome, mapa, esquadrao, beats } : { v: ROTEIRO_VERSAO, mapa, esquadrao, beats };
+}
+
+/** O alvo precisa existir neste esquadrão e poder receber ordem; senão a batida volta a valer para o lado inteiro (o esquadrão pode ter mudado depois de a batida ser escrita). Muda as batidas recebidas. */
+export function limparAlvos(esquadrao: EsquadraoSpec, beats: BeatDoRoteiro[]): void {
+  for (const b of beats) if (b.lado && b.alvo !== undefined && posicaoNoSistema(esquadrao[b.lado === 'inimigo' ? 'inimigos' : 'aliados'], b.alvo) === null) delete b.alvo;
 }
 
 /** O roteiro padrão: a Arena, o esquadrão de fábrica, sem nenhuma batida (dois times parados até o Comandante montar o roteiro). */
 export function roteiroPadrao(): RoteiroSpec {
   return { v: ROTEIRO_VERSAO, mapa: 'arena', esquadrao: esquadraoPadrao(), beats: [] };
+}
+
+/**
+ * Onde o robô nº `i` da lista de um lado fica em `BotSystem.mechs`, que guarda **os Mechs primeiro, depois os andróides e depois os técnicos**, cada grupo na ordem do esquadrão (P290: é o que leva a ordem
+ * a UM robô). `null` se o robô não existe ou é um técnico (não recebe ordem: segue quem está avariado).
+ */
+export function posicaoNoSistema(lista: readonly BotSpec[], i: number): number | null {
+  const bot = lista[i];
+  if (!bot || bot.papel === 'technician') return null;
+  const antes = lista.slice(0, i).filter((b) => b.papel === bot.papel).length;
+  return bot.papel === 'mech' ? antes : lista.filter((b) => b.papel === 'mech').length + antes;
 }
 
 // ─── O stepper: o que dispara em cada tick ────────────────────────────────────
@@ -208,7 +232,11 @@ const num = (n: number): string => (Math.round(n * 10) / 10).toString();
 
 function chaveDaBatida(b: BeatDoRoteiro): string {
   const campos = [`t${b.tick}`];
-  if (b.lado && b.ordem) campos.push(`l${LETRA_DO_LADO[b.lado]}`, `o${LETRA_DA_ORDEM[b.ordem.tipo]}${num(b.ordem.ponto.x)},${num(b.ordem.ponto.z)}`);
+  if (b.lado && b.ordem) {
+    campos.push(`l${LETRA_DO_LADO[b.lado]}`);
+    if (b.alvo !== undefined) campos.push(`a${b.alvo}`);
+    campos.push(`o${LETRA_DA_ORDEM[b.ordem.tipo]}${num(b.ordem.ponto.x)},${num(b.ordem.ponto.z)}`);
+  }
   if (b.legenda) campos.push(`g${num(b.legenda.duracaoS)}_${nomeParaTexto(b.legenda.texto)}`);
   if (b.camera) campos.push(b.camera.modo === 'fixa' ? `kf${b.camera.indice}` : `km${LETRA_DO_LADO[b.camera.lado]}${b.camera.ordinal}`);
   return campos.join(':');
@@ -229,6 +257,10 @@ function lerBatida(texto: string): BeatDoRoteiro | null {
     if (tag === 'l') {
       lado = deLetra(LETRA_DO_LADO, valor);
       if (!lado) return null;
+    } else if (tag === 'a') {
+      const indice = Number(valor);
+      if (!/^\d+$/.test(valor) || !ehAlvo(indice)) return null;
+      bruto.alvo = indice;
     } else if (tag === 'o') {
       const m = /^([hf])(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(valor);
       if (!m) return null;
@@ -261,7 +293,7 @@ function lerBatida(texto: string): BeatDoRoteiro | null {
 /**
  * O roteiro em texto curto, para link e para guardar: `w1~<mapa>~<nome|->~<esquadrão>~<batida>~<batida>…`. O nome
  * vai em base64 de URL (`-` se não tem); cada batida é `t<tick>` seguido dos campos que tem: `l`+`o` (lado e ordem,
- * sempre juntos), `g` (legenda: segundos e texto em base64) e `k` (câmera: `f`+índice fixo, ou `m`+lado+ordinal).
+ * sempre juntos; `a`+índice quando a ordem é de UM robô, P290), `g` (legenda: segundos e texto em base64) e `k` (câmera: `f`+índice fixo, ou `m`+lado+ordinal).
  */
 export function chaveDoRoteiro(spec: RoteiroSpec): string {
   const limpo = sanearRoteiro(spec);
@@ -288,6 +320,7 @@ export function lerChaveDoRoteiro(chave: string): RoteiroSpec | null {
     beats.push(b);
   }
   beats.sort((a, b) => a.tick - b.tick);
+  limparAlvos(esquadrao, beats);
   const spec: RoteiroSpec = nome ? { v: ROTEIRO_VERSAO, nome, mapa, esquadrao, beats } : { v: ROTEIRO_VERSAO, mapa, esquadrao, beats };
   return spec;
 }
