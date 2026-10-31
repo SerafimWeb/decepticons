@@ -368,7 +368,7 @@ describe('a cobertura das telas avançadas (auditoria de 17/10: o Hangar falava 
 
   it('o Esquadrão e as Campanhas: os rótulos, os esquadrões prontos, as quantidades e o papel de cada chassi', () => {
     const casos = [
-      'ESQUADRÃO', 'FICHA DO ROBÔ', 'Apelido', 'Personalidade', 'Chassi', 'Arma principal', 'Mão esquerda', 'Dificuldade', '[ DUPLICAR ]', '[ SALVAR E REINICIAR ]', 'PRONTOS', 'BATALHÃO', 'DUELO', 'SÓ ALIADOS', '+ ANDRÓIDE',
+      'ESQUADRÃO', 'FICHA DO ROBÔ', 'Apelido', 'Personalidade', 'Chassi', 'Braço direito', 'Braço esquerdo', 'Costas', 'Ombro direito', 'Ombro esquerdo', 'Vazio', 'O titã luta com a arma de fábrica, como chefe: costas e ombros são só do Hangar.', 'Dificuldade', '[ DUPLICAR ]', '[ SALVAR E REINICIAR ]', 'PRONTOS', 'BATALHÃO', 'DUELO', 'SÓ ALIADOS', '+ ANDRÓIDE',
       '6 de 32 robôs · 4 contra você, 2 com você', 'Tirar CLAWD·BRABO',
       'Equilibrado: a referência. Nada excelente, nada fraco. Vida 300, 9 m/s.',
       'CAMPANHAS', 'DE FÁBRICA', 'OPERAÇÃO NEON', '1 etapa', '4 etapas', '1/8 etapas', 'CIDADE NEON · SOBREVIVÊNCIA', 'Limpe todas as ondas · 4 inimigos · 2 aliados', '1 etapa · o link leva 50 letras', '[ + NOVA CAMPANHA ]',

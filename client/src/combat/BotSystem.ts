@@ -23,6 +23,7 @@ import type { BarrageSystem } from './BarrageSystem';
 import type { CruiseSystem } from './CruiseSystem';
 import type { GrenadeSystem } from './GrenadeSystem';
 import type { RocketSystem } from './RocketSystem';
+import { EXTRA_SLOTS, MOUNT_DO_EXTRA, type ExtraSlot } from './encaixesExtras';
 import { applySpread, spreadAt, type Spread } from './spread';
 import { weapon, type Tier, type WeaponId, type WeaponStats } from './weapons';
 import { REPAIR_RATE } from './repair';
@@ -61,6 +62,13 @@ export const RADIO_RANGE = 80;
 /** Aviso de rádio na tela: no máximo um a cada tanto por time (não vira ruído). */
 const RADIO_CALLOUT_S = 8;
 
+/** Os encaixes extras que a montagem de fábrica declara, todos vazios (a base de quem leva uma arma nova na mão e ainda quer os ombros: o campo existe, mesmo sem arma, para o gatilho tratá-lo como extra). */
+function extrasVazios(loadout: object): Partial<Record<ExtraSlot, null>> {
+  const vazios: Partial<Record<ExtraSlot, null>> = {};
+  for (const slot of EXTRA_SLOTS) if (slot in loadout) vazios[slot] = null;
+  return vazios;
+}
+
 const _muzzle = new THREE.Vector3();
 const _entra = new THREE.Vector3();
 const _blastDir = new THREE.Vector3();
@@ -76,6 +84,8 @@ export interface BotKit {
   arma?: { id: WeaponId; tier: Tier } | null;
   /** A arma da mão esquerda (P108 b): o bot passa a atirá-la também, com a cadência dela. Ausente = só a principal, como sempre. */
   secundaria?: { id: WeaponId; tier: Tier } | null;
+  /** Os encaixes extras (P288: costas e ombros): cada um com a sua arma, que o bot atira junto com as outras. Ausente = nenhum. */
+  extras?: Partial<Record<ExtraSlot, { id: WeaponId; tier: Tier }>> | null;
   dificuldade?: Difficulty | null;
 }
 
@@ -293,6 +303,7 @@ export class BotSystem {
         brain.leash = tatica.leash;
       }
       brain.useSecondary = !!kit?.secundaria;
+      brain.useExtras = !android && !!kit?.extras && Object.keys(kit.extras).length > 0;
       // As armas explosivas da mão esquerda (P160 parte 4): o Mech bot lança a dele em salvas (o andróide e o titã seguem como estavam).
       brain.useExplosives = !!o.launchers && !android && !titan && mech.loadout.secondary?.kind === 'ammo';
       brain.home.copy(home);
@@ -325,14 +336,22 @@ export class BotSystem {
     const statsDoMech = (i: number, kit: BotKit | undefined) => {
       if (!o.kits) return o.escort && i % 2 ? suppressionStats : mechStats;
       const base = kit?.chassi ? statsDoBot(kit.chassi) : VECTOR09_STATS;
+      // Os encaixes extras (P288): só os que o chassi declara na montagem de fábrica (o Onça tem os ombros), cada um com a arma que o esquadrão deu.
+      const extras: Partial<Record<ExtraSlot, WeaponStats>> = {};
+      for (const slot of EXTRA_SLOTS) {
+        const a = kit?.extras?.[slot];
+        if (a && slot in base.loadout) extras[slot] = armaDoBot(a.id, a.tier, kit?.chassi ?? 'vector09');
+      }
+      const temExtras = Object.keys(extras).length > 0;
       if (kit?.arma) {
         const { metalShield } = base.loadout;
         const secondary = kit.secundaria ? armaDoBot(kit.secundaria.id, kit.secundaria.tier, kit.chassi ?? 'vector09') : null;
-        return poweredStats({ ...base, loadout: { ...(metalShield ? { metalShield } : {}), primary: armaDoBot(kit.arma.id, kit.arma.tier, kit.chassi ?? 'vector09'), secondary } }, power, 'mechs');
+        return poweredStats({ ...base, loadout: { ...(metalShield ? { metalShield } : {}), primary: armaDoBot(kit.arma.id, kit.arma.tier, kit.chassi ?? 'vector09'), secondary, ...(temExtras ? { ...extrasVazios(base.loadout), ...extras } : {}) } }, power, 'mechs');
       }
       if (kit?.secundaria) {
-        return poweredStats({ ...base, loadout: { ...base.loadout, secondary: armaDoBot(kit.secundaria.id, kit.secundaria.tier, kit.chassi ?? 'vector09') } }, power, 'mechs');
+        return poweredStats({ ...base, loadout: { ...base.loadout, secondary: armaDoBot(kit.secundaria.id, kit.secundaria.tier, kit.chassi ?? 'vector09'), ...extras } }, power, 'mechs');
       }
+      if (temExtras) return poweredStats({ ...base, loadout: { ...base.loadout, ...extras } }, power, 'mechs');
       return kit?.chassi ? poweredStats(base, power, 'mechs') : mechStats;
     };
     o.spawns.forEach((p, i) => {
@@ -773,6 +792,20 @@ export class BotSystem {
           this.particles.burst(_muzzle, brain.shotDir, { count: 6, color: MUZZLE_COLOR, speed: 10, life: 0.12, spread: 0.5, gravity: 0 });
         }
         mech.onFireMount('leftHand', w2);
+      }
+      // Os encaixes extras (P288): projétil simples da boca de cada um (costas, ombros), na direção da mira, com a cadência e o calor da arma dele.
+      if (brain instanceof BotController && brain.useExtras) {
+        for (let i = 0; i < EXTRA_SLOTS.length; i++) {
+          if (!brain.wantsToFireExtra[i]) continue;
+          const slot = EXTRA_SLOTS[i]!;
+          const w = mech.loadout[slot];
+          if (!w) continue;
+          const mount = MOUNT_DO_EXTRA[slot];
+          mech.simMuzzle(_muzzle, mount);
+          this.projectiles.fire(_muzzle, brain.shotDir, mech.collider, true, w);
+          this.particles.burst(_muzzle, brain.shotDir, { count: 6, color: MUZZLE_COLOR, speed: 10, life: 0.12, spread: 0.5, gravity: 0 });
+          mech.onFireMount(mount, w);
+        }
       }
       if (!brain.wantsToFire) continue;
       // Motosserra: o corte é regra do combate (sem projétil).

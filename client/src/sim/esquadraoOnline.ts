@@ -4,7 +4,7 @@ import type { RegrasOnline } from '../../../shared/regras';
 import { DEFAULT_SETTINGS } from '../core/Settings';
 import { ehTita, type ChassisId } from '../entities/chassis';
 import { factorySpec, validateLoadout, type LoadoutSpec } from '../hangar/loadout';
-import { chaveDoEsquadrao, ESQUADRAO_VERSAO, esquadraoDeFoes, sanearEsquadrao, type ArmaDoBot, type EsquadraoSpec, type Limites, type PapelDoBot } from './esquadrao';
+import { chaveDoEsquadrao, ESQUADRAO_VERSAO, esquadraoDeFoes, sanearEsquadrao, type ArmaDoBot, type BotSpec, type EsquadraoSpec, type Limites, type PapelDoBot } from './esquadrao';
 
 /**
  * O ESQUADRÃO DAS SALAS ONLINE (P270, ordem do Comandante em 28/10: "quando eu jogo online, queria poder configurar os times no botão ESQUADRÃO, pra mudar os mechs, nomes, etc").
@@ -91,9 +91,11 @@ export function lerRespostaDoEsquadrao(x: unknown): RespostaDoEsquadrao | null {
  * Sem arma pedida vale a de fábrica do chassi. Uma combinação que o Hangar recusaria (a carga do chassi, o encaixe) perde primeiro a mão esquerda e, se ainda assim não cabe, cai na de fábrica:
  * é só desenho (quem atira e fere é o servidor, com os números do chassi, e o bot não paga peso), mas uma chave que o cliente não lê não pode ir no roster.
  */
-export function montagemDoBot(kit: { chassi?: ChassisId; arma?: ArmaDoBot | null; secundaria?: ArmaDoBot | null }): LoadoutSpec {
+export function montagemDoBot(kit: { chassi?: ChassisId; arma?: ArmaDoBot | null; secundaria?: ArmaDoBot | null; extras?: BotSpec['extras'] | null }): LoadoutSpec {
   const fabrica = factorySpec(kit.chassi ?? 'vector09');
   const comArma: LoadoutSpec = kit.arma ? { ...fabrica, right: { id: kit.arma.id, tier: kit.arma.tier } } : fabrica;
-  const completa: LoadoutSpec = kit.secundaria ? { ...comArma, left: { id: kit.secundaria.id, tier: kit.secundaria.tier } } : comArma;
-  return [completa, comArma].find((spec) => validateLoadout(spec).ok) ?? fabrica;
+  const comEsquerda: LoadoutSpec = kit.secundaria ? { ...comArma, left: { id: kit.secundaria.id, tier: kit.secundaria.tier } } : comArma;
+  // Os encaixes extras (P288) vão primeiro ao chão se a carga não fechar: são o que mais pesa.
+  const completa: LoadoutSpec = { ...comEsquerda, ...Object.fromEntries(Object.entries(kit.extras ?? {}).map(([slot, a]) => [slot, { id: a.id, tier: a.tier }])) };
+  return [completa, comEsquerda, comArma].find((spec) => validateLoadout(spec).ok) ?? fabrica;
 }

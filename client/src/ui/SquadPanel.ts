@@ -1,11 +1,13 @@
+import { EXTRA_SLOTS, type ExtraSlot } from '../combat/encaixesExtras';
 import { TIERS, weapon, type Tier, type WeaponId } from '../combat/weapons';
 import { DEFAULT_SETTINGS, DIFFICULTY_LABELS, PERSONA_LABELS, type Difficulty, type EnemyNames, type Persona } from '../core/Settings';
 import { withoutParam } from '../core/url';
 import { armaDoBot, statsDoBot } from '../combat/titaBot';
-import { CHASSIS, CHASSIS_PAPEL, ehTita, type ChassisId } from '../entities/chassis';
+import { ARM_SLOTS, CHASSIS, CHASSIS_PAPEL, ehTita, type ChassisId } from '../entities/chassis';
 import type { MapId } from '../environment/Bunker';
 import {
   armasDoBot,
+  armasDoExtraDoBot,
   armasSecundariasDoBot,
   CHASSIS_DOS_BOTS,
   ESQUADRAO_VERSAO,
@@ -21,6 +23,8 @@ import { criarSquadOnline, type ClienteDoEsquadrao, type SquadOnline, type Squad
 const PERSONAS: readonly Persona[] = ['soldado', 'brabo', 'manso', 'fujao'];
 const DIFICULDADES: readonly Difficulty[] = ['facil', 'normal', 'dificil'];
 const NIVEIS: readonly Tier[] = [0, 1, 2];
+/** Os encaixes extras como o Hangar os chama (`HangarMenu.SLOT_LABEL`), em letras de ficha. */
+const EXTRA_ROTULO: Readonly<Record<ExtraSlot, string>> = { back: 'Costas', rightShoulder: 'Ombro direito', leftShoulder: 'Ombro esquerdo' };
 /** Quantos atacam ao mesmo tempo (o Mech conta 1, o andróide ½); o valor de agora entra na lista se não for um destes (as regras do servidor andam de meio em meio). */
 const PRESSOES = [1, 1.5, 2, 3, 4];
 const LADO_ROTULO: Readonly<Record<Lado, string>> = { inimigo: 'INIMIGOS', aliado: 'ALIADOS' };
@@ -365,16 +369,28 @@ export class SquadPanel {
     topo.append(el('h3', '', 'FICHA DO ROBÔ'), el('span', `squad-ficha-quem squad-${s.lado}`, `${s.lado === 'inimigo' ? 'INIMIGO' : 'ALIADO'} · ${rotuloDoPapel(bot.papel)}`));
     const campos: HTMLElement[] = [campo('Apelido', apelido, 'Aparece sobre o robô e no placar; vazio usa o nome de fábrica.')];
 
+    // O chassi na mesma lista do Hangar (P288): os Mechs na ordem dele, o andróide e (só nos inimigos) o técnico. Trocar de um para o outro refaz o robô; o apelido e a dificuldade ficam.
+    const corpoAtual: string = bot.papel === 'mech' ? (bot.chassi ?? 'vector09') : bot.papel;
+    const chassi: ChassisId = bot.chassi ?? 'vector09';
+    const opcoesDoCorpo: HTMLOptionElement[] = [
+      // Os titãs (P108) só do lado dos inimigos e onde o mapa os comporta (a Cidade Neon); o que o robô já é continua na lista.
+      ...CHASSIS_DOS_BOTS.filter((c) => !ehTita(c) || c === bot.chassi || (s.lado === 'inimigo' && this.editor.limites.titas > 0)).map((c) => opcao(c, CHASSIS[c].name, corpoAtual)),
+      ...PAPEIS_DO_LADO[s.lado].filter((p) => p !== 'mech').map((p) => opcao(p, rotuloDoPapel(p), corpoAtual)),
+    ];
+    const ajudaDoCorpo =
+      bot.papel === 'mech'
+        ? `${CHASSIS_PAPEL[chassi]} Vida ${CHASSIS[chassi].maxModuleHealth.torso}, ${CHASSIS[chassi].moveSpeed} m/s.`
+        : bot.papel === 'android'
+          ? 'Andróide: pequeno, muito rápido e frágil. Ataca de perto, com motosserra, e desvia com dash.'
+          : 'O técnico conserta os Mechs rebeldes e não atira: fica perto de quem está avariado.';
     if (bot.papel === 'mech') {
       const persona = bot.persona ?? 'soldado';
       campos.push(
         campo('Personalidade', selecao('squad-campo-persona', 'persona', PERSONAS.map((p) => opcao(p, PERSONA_LABELS[p].label, persona))), PERSONA_LABELS[persona].about),
       );
-      const chassi: ChassisId = bot.chassi ?? 'vector09';
-      campos.push(
-        // Os titãs (P108) só do lado dos inimigos e onde o mapa os comporta (a Cidade Neon); o que o robô já é continua na lista.
-        campo('Chassi', selecao('squad-campo-chassi', 'chassi', CHASSIS_DOS_BOTS.filter((c) => !ehTita(c) || c === chassi || (s.lado === 'inimigo' && this.editor.limites.titas > 0)).map((c) => opcao(c, CHASSIS[c].name, chassi))), `${CHASSIS_PAPEL[chassi]} Vida ${CHASSIS[chassi].maxModuleHealth.torso}, ${CHASSIS[chassi].moveSpeed} m/s.`),
-      );
+    }
+    campos.push(campo('Chassi', selecao('squad-campo-chassi', 'chassi', opcoesDoCorpo), ajudaDoCorpo));
+    if (bot.papel === 'mech') {
       // A arma de fábrica do ROBÔ (não a do Hangar): o Colossus-01 bot usa o plasma do chefe e o canhão de cerco do V4 sai com o dano limitado (combat/titaBot.ts).
       const fabrica = statsDoBot(chassi).loadout.primary;
       const armas: readonly WeaponId[] = armasDoBot(chassi);
@@ -386,7 +402,7 @@ export class SquadPanel {
         selecao('squad-campo-arma', 'arma', [opcao('', `De fábrica: ${fabrica.name}`, arma), ...armas.map((a) => opcao(a, weapon(a).name, arma))]),
         selecao('squad-campo-nivel', 'nivel', NIVEIS.map((t) => opcao(String(t), TIERS[t]?.label ?? '', nivel)), !bot.arma),
       );
-      campos.push(campo('Arma principal', linhaArma, `${nomeDaArma(w.id, w.tier)}: dano ${w.damage}, ótimo a ${w.optimalRange} m, ${(1 / w.fireInterval).toFixed(1).replace('.', ',')} tiros/s. O robô ataca de onde a arma rende.`));
+      campos.push(campo('Braço direito', linhaArma, `${nomeDaArma(w.id, w.tier)}: dano ${w.damage}, ótimo a ${w.optimalRange} m, ${(1 / w.fireInterval).toFixed(1).replace('.', ',')} tiros/s. O robô ataca de onde a arma rende.`));
       // A mão esquerda (P108 b): como no Hangar, uma segunda arma que atira junto, com a cadência dela. Só o que o encaixe esquerdo do chassi aceita e o bot sabe atirar.
       const esquerdas = armasSecundariasDoBot(chassi);
       if (esquerdas.length) {
@@ -399,19 +415,31 @@ export class SquadPanel {
           selecao('squad-campo-nivel2', 'nivel2', NIVEIS.map((t) => opcao(String(t), TIERS[t]?.label ?? '', nivel2)), !bot.secundaria),
         );
         campos.push(
-          campo('Mão esquerda', linhaEsq, w2 ? `${nomeDaArma(w2.id, w2.tier)}: dano ${w2.damage}, alcance ${w2.maxRange} m, ${(1 / w2.fireInterval).toFixed(1).replace('.', ',')} tiros/s. Atira junto com a principal, no próprio ritmo; quem soma armas esquenta mais.` : 'Sem arma na esquerda: o robô atira só a principal.'),
+          campo('Braço esquerdo', linhaEsq, w2 ? `${nomeDaArma(w2.id, w2.tier)}: dano ${w2.damage}, alcance ${w2.maxRange} m, ${(1 / w2.fireInterval).toFixed(1).replace('.', ',')} tiros/s. Atira junto com a principal, no próprio ritmo; quem soma armas esquenta mais.` : 'Sem arma na esquerda: o robô atira só a principal.'),
         );
       }
+      // Os encaixes extras (P288), os mesmos do Hangar: costas e ombros, cada um com a sua arma e o seu nível, só nos chassis que os têm.
+      for (const slot of EXTRA_SLOTS) {
+        const opcoes = armasDoExtraDoBot(chassi, slot);
+        if (!opcoes.length) continue;
+        const atual = bot.extras?.[slot];
+        const linha = el('div', 'squad-par');
+        linha.append(
+          selecao(`squad-campo-extra-${slot}`, `extra:${slot}`, [opcao('', 'Vazio', atual?.id ?? ''), ...opcoes.map((a) => opcao(a, weapon(a).name, atual?.id ?? ''))]),
+          selecao(`squad-campo-extra-nivel-${slot}`, `extra-nivel:${slot}`, NIVEIS.map((t) => opcao(String(t), TIERS[t]?.label ?? '', String(atual?.tier ?? 0))), !atual),
+        );
+        const w3 = atual ? armaDoBot(atual.id, atual.tier, chassi) : null;
+        campos.push(campo(EXTRA_ROTULO[slot], linha, w3 ? `${nomeDaArma(w3.id, w3.tier)}: dano ${w3.damage}, alcance ${w3.maxRange} m, ${(1 / w3.fireInterval).toFixed(1).replace('.', ',')} tiros/s. Atira junto com as outras, no próprio ritmo.` : undefined));
+      }
+      // O titã luta com a arma de fábrica, como chefe: os encaixes extras dele (costas e ombros) são só do Hangar.
+      if (ehTita(chassi) && EXTRA_SLOTS.some((slot) => ARM_SLOTS[chassi][slot] !== undefined)) campos.push(el('p', 'squad-dica', 'O titã luta com a arma de fábrica, como chefe: costas e ombros são só do Hangar.'));
     }
     if (bot.papel !== 'technician') {
       const dif = bot.dificuldade ?? '';
       campos.push(
         campo('Dificuldade', selecao('squad-campo-dificuldade', 'dificuldade', [opcao('', `Da ${this.online ? 'sala' : 'partida'} (${DIFFICULTY_LABELS[this.dificuldade()]})`, dif), ...DIFICULDADES.map((x) => opcao(x, DIFFICULTY_LABELS[x], dif))]), 'Reação, mira e rajada. Vale só para este robô; as outras seguem a da partida.'),
       );
-    } else {
-      campos.push(el('p', 'squad-dica', 'O técnico conserta os Mechs rebeldes e não atira: fica perto de quem está avariado.'));
     }
-    if (bot.papel === 'android') campos.push(el('p', 'squad-dica', 'Andróide: pequeno, muito rápido e frágil. Ataca de perto, com motosserra, e desvia com dash.'));
 
     const duplicar = botao('[ DUPLICAR ]', 'btn-terminal squad-dup', { acao: 'dup' }, { titulo: this.editor.podeAdicionar(s.lado, bot.papel) ?? 'Copia este robô (sem o apelido) logo depois dele', desligado: this.editor.podeAdicionar(s.lado, bot.papel) !== null });
     this.ficha.replaceChildren(topo, el('p', 'squad-quem', d.nome), ...campos, duplicar);
@@ -555,7 +583,7 @@ export class SquadPanel {
         this.editor.editar(s.lado, s.i, { persona: v as Persona });
         break;
       case 'chassi': {
-        const recusa = this.editor.editar(s.lado, s.i, { chassi: v as ChassisId });
+        const recusa = this.editor.trocarCorpo(s.lado, s.i, v as ChassisId | 'android' | 'technician');
         if (recusa) {
           this.msg = recusa;
           this.aviso.classList.add('aviso');
@@ -581,13 +609,19 @@ export class SquadPanel {
       case 'dificuldade':
         this.editor.editar(s.lado, s.i, { dificuldade: (v || undefined) as Difficulty | undefined });
         break;
-      default:
-        return;
+      default: {
+        // Os encaixes extras (P288): `extra:<encaixe>` troca a arma, `extra-nivel:<encaixe>` o nível.
+        const [campoExtra, encaixe] = (t.dataset.campo ?? '').split(':');
+        if (!encaixe || !(EXTRA_SLOTS as readonly string[]).includes(encaixe)) return;
+        if (campoExtra === 'extra') this.editor.editarExtra(s.lado, s.i, encaixe as ExtraSlot, (v || null) as WeaponId | null);
+        else if (campoExtra === 'extra-nivel') this.editor.editarNivelExtra(s.lado, s.i, encaixe as ExtraSlot, Number(v) as Tier);
+        else return;
+      }
     }
     this.msg = '';
     this.desenhar();
     // O seletor que acabou de mudar volta a ter o foco (desenhar refez a ficha).
-    this.root.querySelector<HTMLElement>(`#squad-campo-${t.dataset.campo}`)?.focus();
+    this.root.querySelector<HTMLElement>(`#${t.id}`)?.focus();
   }
 
   private tecla(e: KeyboardEvent): void {
