@@ -1,4 +1,5 @@
 import type { RoteiroStore } from '../core/RoteiroStore';
+import type { GameMode } from '../sim/gameMode';
 import type { EnemyNames } from '../core/Settings';
 import { withoutParam } from '../core/url';
 import { camerasDoMapa } from '../camera/camerasDoMapa';
@@ -33,6 +34,8 @@ export interface WargamePanelOptions {
 }
 
 const ORDEM_ROTULO: Readonly<Record<TipoDeOrdem, string>> = { hold: 'Segurar a posição', follow: 'Avançar até lá' };
+/** Os modos que o WARGAME roda (P292): o mesmo rótulo que o seletor de modo do console. */
+const MODO_ROTULO: Readonly<Record<GameMode, string>> = { deathmatch: 'DEATHMATCH', survival: 'SOBREVIVÊNCIA', ctf: 'BANDEIRA', dominio: 'DOMÍNIO' };
 const CAMERAS_DA_ARENA = camerasDoMapa('arena');
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', texto?: string): HTMLElementTagNameMap[K] {
@@ -71,6 +74,8 @@ export class WargamePanel {
   private modal: HTMLElement | null = null;
   private draft: RoteiroSpec = roteiroPadrao();
   private elencoEscolhido: 'padrao' | 'meu' = 'padrao';
+  /** O modo em que o episódio roda (P292): vai no link (`modo=`); o padrão é o Deathmatch, como antes. */
+  private modo: GameMode = 'deathmatch';
   /** Quem é quem no episódio (recalculado quando o elenco muda). */
   private robos: RoboDoElenco[] = [];
   /** Índice da batida armada para o próximo clique no mapa (`null` = nenhuma). */
@@ -167,8 +172,17 @@ export class WargamePanel {
       this.desenharLista();
       this.refrescarMapa();
     });
+    const modoSelect = el('select', 'wargame-elenco-select') as HTMLSelectElement;
+    modoSelect.title = 'Em que modo o episódio roda: o Comandante vê a partida que escolher, com a visão aérea e a IA dos dois lados';
+    for (const m of Object.keys(MODO_ROTULO) as GameMode[]) modoSelect.append(opcao(m, MODO_ROTULO[m]));
+    modoSelect.value = this.modo;
+    modoSelect.addEventListener('change', () => {
+      this.modo = modoSelect.value as GameMode;
+      // Sobrevivência e Bandeira têm times próprios no jogo: o lado aliado do elenco não entra nesses dois (P292).
+      this.say(this.modo === 'survival' || this.modo === 'ctf' ? 'Neste modo o jogo monta os times dele: o elenco de aliados não entra.' : 'Modo escolhido. Copie o link ou execute.');
+    });
     const topo = el('div', 'wargame-topo');
-    topo.append(nome, el('b', 'wargame-rotulo', 'ELENCO'), elencoSelect);
+    topo.append(nome, el('b', 'wargame-rotulo', 'ELENCO'), elencoSelect, el('b', 'wargame-rotulo', 'MODO'), modoSelect);
 
     this.mapa = new RoteiroMapa(this.o.planta);
     this.mapa.onClicar = (x, z) => this.aoClicarNoMapa(x, z);
@@ -192,6 +206,7 @@ export class WargamePanel {
     rodape.append(
       botao('SALVAR', 'lado-botao', () => this.salvar()),
       botao('COPIAR LINK', 'lado-botao', () => void this.copiarLink()),
+      botao('[ DEMO ]', 'lado-botao', () => this.demo()),
       botao('[ EXECUTAR ]', 'lado-botao primario', () => this.executar()),
       botao('[ FECHAR ]', 'lado-botao', () => this.fechar()),
     );
@@ -494,9 +509,23 @@ export class WargamePanel {
     else this.say('Salvo neste aparelho.');
   }
 
+  /**
+   * O endereço que roda este episódio no modo escolhido (P292). Tira o `wargame=` e o `modo=` que a página tinha e põe os do episódio;
+   * o Deathmatch não leva `modo=` (é o padrão do jogo).
+   */
+  private urlDoEpisodio(r: RoteiroSpec): string {
+    const base = new URL(withoutParam(withoutParam(location.href, PARAM_DO_ROTEIRO), 'modo'));
+    const partes = [base.search.replace(/^\?/, ''), this.modo === 'deathmatch' ? '' : `modo=${this.modo}`, `${PARAM_DO_ROTEIRO}=${chaveDoRoteiro(r)}`].filter(Boolean);
+    return `${base.origin}${base.pathname}?${partes.join('&')}${base.hash}`;
+  }
+
+  /** O DEMO: o mesmo elenco, sem batidas (só a visão aérea e a IA dos dois lados), no modo escolhido (P292). */
+  private demo(): void {
+    location.assign(this.urlDoEpisodio({ ...this.draft, beats: [] }));
+  }
+
   private async copiarLink(): Promise<void> {
-    const base = new URL(withoutParam(location.href, PARAM_DO_ROTEIRO));
-    const texto = `${base.origin}${base.pathname}${base.search}${base.search ? '&' : '?'}${PARAM_DO_ROTEIRO}=${chaveDoRoteiro(this.draft)}${base.hash}`;
+    const texto = this.urlDoEpisodio(this.draft);
     try {
       await navigator.clipboard.writeText(texto);
       this.say('Link copiado.');
@@ -506,7 +535,6 @@ export class WargamePanel {
   }
 
   private executar(): void {
-    const base = new URL(withoutParam(location.href, PARAM_DO_ROTEIRO));
-    location.assign(`${base.pathname}${base.search}${base.search ? '&' : '?'}${PARAM_DO_ROTEIRO}=${chaveDoRoteiro(this.draft)}${base.hash}`);
+    location.assign(this.urlDoEpisodio(this.draft));
   }
 }

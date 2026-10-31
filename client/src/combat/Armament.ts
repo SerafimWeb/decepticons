@@ -264,7 +264,9 @@ export class Armament {
       }
       const held = button === 1 ? fire : secondary;
       if (!this.extraCharge[i]!.step(dt, held, timer.ready && m.canFireMount(mount), w.chargeTime, w.chargeHold)) continue;
-      sink.projectile(mount, w, NO_SPREAD);
+      // A chuva de mísseis (P294) sai pelo caminho do foguete: o jogador a lança com o `BarrageSystem` (sobe e cai em volta da mira).
+      if (w.barrage !== undefined) sink.rocket(mount, w, i, NO_SPREAD);
+      else sink.projectile(mount, w, NO_SPREAD);
       m.onFireMount(mount, w);
       timer.shot(w.fireInterval);
     }

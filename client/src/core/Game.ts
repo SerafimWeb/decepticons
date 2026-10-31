@@ -602,7 +602,8 @@ export class Game {
     // O WARGAME (P262): o link `?wargame=` carrega um roteiro (os dois esquadrões, o mapa e as batidas) e vira um Deathmatch
     // espectador — o Comandante nunca controla o Mech, só troca de câmera (como o CFTV já faz); ver `espectador` abaixo.
     const roteiro = roteiroDoLink(location.search);
-    this.gameMode = online ? modoDaSalaOnline : roteiro ? 'deathmatch' : modoPedido;
+    // P292: o WARGAME joga no modo que o painel escolheu (`modo=` no link: deathmatch, sobrevivência, bandeira ou domínio), não força mais o Deathmatch.
+    this.gameMode = online ? modoDaSalaOnline : modoPedido;
     // O seletor de modo do menu mostra o que de fato roda (online na Cidade Neon é Deathmatch, mesmo com `modo=survival` na URL).
     this.modeSelector.mostrarModo(this.gameMode);
     const foes = online

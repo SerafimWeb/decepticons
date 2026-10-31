@@ -1,3 +1,8 @@
+## Wargame com modo e DEMO, um só lugar de configuração, a chuva nas costas (Claude, P292, P293, P294, branch `claude/console-ajustar`)
+
+**O pedido (31/10):** "o wargame como DEMO, com o modo que eu escolher; o AJUSTAR repetido; o canhão e a chuva do Colossus; resolva tudo". **Entrega:** o painel WARGAME tem MODO e [ DEMO ]; o console tem um só lugar de configuração (JOGO, CONTROLES, GRÁFICOS E SOM); a chuva de mísseis vai para as costas do Colossus-01, com o disparo pelo caminho do foguete. **Provas:** `Match.roteiroModo.test.ts` (os 4 modos rodam como espectador por 20 s), testes de encaixes (chuva nas costas dispara como foguete; fábrica volta igual do texto), CommandConsole e i18n, typecheck limpo. **Falta:** a prova no Chrome dos três (memória); o olho do Comandante no desenho das costas; SALVAR guardar o modo.
+**Próxima sessão começa com:** o Chrome desta entrega; depois o desenho do canhão das costas (com a foto que o Comandante apontar) e o modo no SALVAR.
+
 ## O Wargame com câmera de verdade (Claude, P291, branch `claude/wargame-camera`)
 
 **O pedido (31/10):** "apertei C e saiu; não consegui mudar a câmera; quero a visão aérea lenta e a troca a cada tantos segundos". **Entrega:** na partida do Wargame as teclas de câmera não saem da cena; a primeira visão é uma órbita aérea lenta sobre o centro; **1** órbita, **2** troca sozinha a cada 20 s, **3** segura o plano; o botão da HUD vira **SAIR DO WARGAME E JOGAR**. **Provas:** +4 testes da órbita e da troca automática (`camera/SpectatorCam.test.ts`), typecheck e 61 testes do HUD/Wargame verdes. **Falta:** a prova no Chrome (a máquina estava sem memória virtual para o navegador; a bancada `medicoes/wargame-painel.mjs` já existe) e o olho do Comandante.

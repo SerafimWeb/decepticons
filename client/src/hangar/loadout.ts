@@ -117,6 +117,16 @@ const armOf = (w: WeaponStats | null | undefined): ArmSpec | null => (w ? { id: 
 
 /** A montagem de fábrica de um chassi (as armas com que ele sai da fábrica, no nível delas). */
 export function factorySpec(chassis: ChassisId): LoadoutSpec {
+  const base = factorySpecDoBraco(chassis);
+  const extras = EXTRA_SLOTS.filter((slot) => CHASSIS[chassis].loadout[slot]);
+  if (extras.length === 0) return base;
+  // Com encaixe extra de fábrica (P294: a chuva nas costas do Colossus-01) a montagem vai na versão 3, completa: a chave e o texto têm todos os campos e voltam iguais.
+  const spec: LoadoutSpec = { v: 3, chassis, right: base.right, left: base.left ?? null, shoulders: base.shoulders ?? null, module: null, back: null, rightShoulder: null, leftShoulder: null };
+  for (const slot of extras) spec[slot] = armOf(CHASSIS[chassis].loadout[slot]!);
+  return spec;
+}
+
+function factorySpecDoBraco(chassis: ChassisId): LoadoutSpec {
   const l = CHASSIS[chassis].loadout;
   const right = armOf(l.primary)!;
   if (l.metalShield != null) return { v: LOADOUT_VERSION, chassis, right, left: { ...l.metalShield } };

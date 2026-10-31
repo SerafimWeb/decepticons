@@ -8,7 +8,7 @@ import { OnlineLobby } from './OnlineLobby';
  * abre o Lobby; sair recarrega sem a sala.
  */
 export class OnlineSwitch {
-  constructor(online: boolean, hasServer: boolean, before: HTMLElement | null = document.getElementById('btn-settings')) {
+  constructor(online: boolean, hasServer: boolean, before: HTMLElement | null = document.getElementById('btn-esquadrao')) {
     if (!before?.parentElement || (!online && !hasServer)) return;
     const btn = document.createElement('button');
     btn.id = 'btn-online';
