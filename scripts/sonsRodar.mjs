@@ -37,6 +37,13 @@ export function duracaoDoArquivo(ffmpeg, arquivo) {
   return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : Number.NaN;
 }
 
+/** O pico (dBFS) de um arquivo inteiro, lido do `volumedetect` do ffmpeg (`-Infinity` para o zero absoluto). `NaN` se não conseguir medir. */
+export function picoDoArquivo(ffmpeg, arquivo) {
+  const r = spawnSync(ffmpeg, ['-hide_banner', '-nostats', '-i', arquivo, '-af', 'volumedetect', '-f', 'null', '-'], { encoding: 'utf8' });
+  const m = /max_volume: (-inf|-?[\d.]+) dB/.exec((r.stderr ?? '') + (r.stdout ?? ''));
+  return m ? (m[1] === '-inf' ? Number.NEGATIVE_INFINITY : Number(m[1])) : Number.NaN;
+}
+
 /**
  * Processa um clipe: mede o trecho (já com os efeitos), calcula o ganho até o alvo (mais o ganho extra do clipe) e grava o mp3 em `destinoDir`.
  * Devolve `{ ok: true, destino, duracao, picoDb, mediaDb, ganhoDb, kb }` ou `{ ok: false, erro }`. `duracao` é a de depois dos efeitos.

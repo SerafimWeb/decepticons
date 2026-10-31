@@ -12,7 +12,7 @@ const REAL = (p: string) => resolve(p);
 const ffmpeg = acharFfmpeg();
 const ARQUIVOS = [
   'scripts/sons-armas.json', 'client/src/audio/armasSom.json', 'scripts/estudio/armas-info.json',
-  'scripts/estudio/index.html', 'scripts/estudio/estudio.css', 'scripts/estudio/nucleo.js', 'scripts/estudio/sons.js', 'scripts/estudio/vozes.js',
+  'scripts/estudio/index.html', 'scripts/estudio/estudio.css', 'scripts/estudio/nucleo.js', 'scripts/estudio/sons.js', 'scripts/estudio/microfone.js', 'scripts/estudio/vozes.js',
   'client/src/audio/falas.json', 'client/src/audio/vozesGeradas.json', 'scripts/vozes-gravadas.json', 'client/public/audio/vozes/br/combate.mp3',
 ];
 
@@ -23,6 +23,15 @@ function wav(segundos = 1): Buffer {
   const h = Buffer.alloc(44);
   h.write('RIFF', 0); h.writeUInt32LE(36 + d.length, 4); h.write('WAVEfmt ', 8); h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(1, 22);
   h.writeUInt32LE(taxa, 24); h.writeUInt32LE(taxa * 2, 28); h.writeUInt16LE(2, 32); h.writeUInt16LE(16, 34); h.write('data', 36); h.writeUInt32LE(d.length, 40);
+  return Buffer.concat([h, d]);
+}
+
+/** Um WAV com a amplitude dada (em passos de 16 bits): 0 é o zero absoluto de um aparelho mudo; 30 (−60 dBFS) é um chiado de microfone vivo. */
+function wavConstante(amplitude: number, segundos = 1): Buffer {
+  const taxa = 22050, n = Math.round(taxa * segundos), d = Buffer.alloc(n * 2);
+  for (let i = 0; i < n; i++) d.writeInt16LE(i % 2 === 0 ? amplitude : -amplitude, i * 2);
+  const h = wav(0.001).subarray(0, 44);
+  h.writeUInt32LE(36 + d.length, 4); h.writeUInt32LE(d.length, 40);
   return Buffer.concat([h, d]);
 }
 
@@ -119,6 +128,24 @@ describe('Estúdio, aba VOZES (P151, P155): o servidor', () => {
     const curto = await gravar('br', 'combate', wav(0.03));
     expect(curto.status).toBe(400);
     expect(readdirSync(join(vozes, 'br')).sort()).toEqual(antes); // nada ficou para trás (nem o arquivo bruto temporário)
+  });
+
+  it.skipIf(!ffmpeg)('GRAVAR recusa a tomada em silêncio total (microfone mudo, P286) com 422 e não deixa arquivo, mas guarda o chiado de um microfone vivo', async () => {
+    const antes = readdirSync(join(vozes, 'br')).sort();
+    const mudo = await gravar('br', 'combate', wavConstante(0));
+    expect(mudo.status).toBe(422);
+    expect(json(mudo).mudo).toBe(true);
+    expect(json(mudo).erro).toContain('silêncio total');
+    expect(json(mudo).erro).toContain('PROCURAR O QUE FUNCIONA');
+    expect(readdirSync(join(vozes, 'br')).sort()).toEqual(antes); // nem a tomada nem o arquivo bruto ficaram
+    // o chiado de um microfone de verdade (−60 dBFS) passa: só o zero absoluto é recusado
+    const vivo = await gravar('br', 'combate', wavConstante(30));
+    expect(vivo.status).toBe(200);
+    // e a tomada muda recusada não gastou o número: a próxima é a seguinte da última guardada
+    const proxima = await gravar('br', 'combate', wavConstante(0));
+    expect(proxima.status).toBe(422);
+    const seguinte = await gravar('br', 'combate', wav(0.5));
+    expect(json(seguinte).numero).toBe(json(vivo).numero + 1);
   });
 
   it.skipIf(!ffmpeg)('as tomadas são servidas só pelo nome simples e só as dos sotaques conhecidos', async () => {

@@ -129,6 +129,13 @@
           <h2>Gravar — <span id="vz-titulo" class="info">escolha uma fala</span></h2>
           <p style="font-size:26px;margin:4px 0 2px;font-weight:700" id="vz-texto">—</p>
           <p class="dica" id="vz-intencao"></p>
+          <div class="campos" id="vz-mic-bloco">
+            <label>Microfone<select id="vz-mic" style="max-width:340px"></select></label>
+            <label>Ganho (×)<input type="number" id="vz-mic-ganho" min="1" max="8" step="0.5" value="1"></label>
+            <button id="vz-mic-testar" class="pequeno">testar o microfone</button>
+            <button id="vz-mic-procurar" class="pequeno laranja">procurar o que funciona</button>
+          </div>
+          <p class="info" id="vz-mic-estado" style="margin:0 0 8px"></p>
           <div class="linha-botoes">
             <button id="vz-gravar" class="forte">● Gravar</button>
             <button id="vz-parar-gravacao" class="laranja" disabled>■ Parar</button>
@@ -196,6 +203,7 @@
 </main>
 <script src="/estudio/nucleo.js"></script>
 <script src="/estudio/sons.js"></script>
+<script src="/estudio/microfone.js"></script>
 <script src="/estudio/vozes.js"></script>
 </body>
 </html>

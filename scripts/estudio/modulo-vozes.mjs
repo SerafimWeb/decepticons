@@ -11,9 +11,12 @@ import { copyFileSync, createReadStream, existsSync, mkdirSync, readdirSync, rea
 import { extname, join } from 'node:path';
 import { duracaoFinal, resumoDosEfeitos } from '../efeitosLib.mjs';
 import { REGRAS_DE_VOZ, validarMapa } from '../sonsLib.mjs';
-import { capacidadesDoFfmpeg, duracaoDoArquivo, processarSom } from '../sonsRodar.mjs';
+import { capacidadesDoFfmpeg, duracaoDoArquivo, picoDoArquivo, processarSom } from '../sonsRodar.mjs';
 import { montarManifesto, SOTAQUES } from '../vozesLib.mjs';
 import { NOME_SEGURO, TETO_AUDIO, TIPOS, corpoJson, gravarJson, lerCorpo, lerJson } from './util.mjs';
+
+/** Abaixo disto o pico da tomada é só o zero de um aparelho mudo (o chiado de um microfone vivo fica acima de −70 dBFS): a tomada é recusada (P286). */
+export const PICO_MUDO_DB = -80;
 
 /** A extensão para guardar o corpo bruto antes de converter (o ffmpeg reconhece pelo conteúdo, mas a extensão ajuda). */
 const EXTENSAO_DO_TIPO = { 'audio/webm': '.webm', 'video/webm': '.webm', 'audio/ogg': '.ogg', 'audio/wav': '.wav', 'audio/x-wav': '.wav', 'audio/mpeg': '.mp3', 'audio/mp4': '.m4a', 'audio/aac': '.aac', 'audio/flac': '.flac' };
@@ -149,6 +152,11 @@ export function moduloVozes({ raiz, origemVozes, ffmpeg }) {
       if (!Number.isFinite(duracao) || duracao < 0.1) {
         try { unlinkSync(join(dir, arquivo)); } catch { /* já não está */ }
         return responder(400, { erro: 'a gravação ficou curta demais ou sem som' }), true;
+      }
+      // Silêncio total (P286, 30/10): o aparelho que o navegador abriu está mudo (o padrão do Windows pode ser um ponto morto). Guardar uma tomada vazia só esconde o defeito: recusa e diz o que fazer.
+      if (picoDoArquivo(ffmpeg, join(dir, arquivo)) <= PICO_MUDO_DB) {
+        try { unlinkSync(join(dir, arquivo)); } catch { /* já não está */ }
+        return responder(422, { erro: 'a gravação saiu em silêncio total: o microfone que o navegador abriu está mudo (o aparelho padrão do Windows pode ser um ponto morto). Escolha outro na lista de microfones, ou clique em PROCURAR O QUE FUNCIONA.', mudo: true }), true;
       }
       return responder(200, { ok: true, sotaque, chave, arquivo, numero: n, duracao: Math.round(duracao * 100) / 100 }), true;
     }

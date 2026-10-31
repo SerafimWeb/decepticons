@@ -27,7 +27,7 @@ const confere = (ok, texto) => { console.log(`${ok ? '✓' : '✗'} ${texto}`); 
 
 mkdirSync(resolve('.tmp'), { recursive: true });
 const raiz = mkdtempSync(join(resolve('.tmp'), 'e2e-estudio-'));
-for (const rel of ['scripts/sons-armas.json', 'client/src/audio/armasSom.json', 'scripts/estudio/armas-info.json', 'scripts/estudio/index.html', 'scripts/estudio/estudio.css', 'scripts/estudio/nucleo.js', 'scripts/estudio/sons.js', 'scripts/estudio/vozes.js', 'client/src/audio/falas.json', 'client/src/audio/vozesGeradas.json', 'scripts/vozes-gravadas.json', 'client/public/audio/vozes/br/combate.mp3']) {
+for (const rel of ['scripts/sons-armas.json', 'client/src/audio/armasSom.json', 'scripts/estudio/armas-info.json', 'scripts/estudio/index.html', 'scripts/estudio/estudio.css', 'scripts/estudio/nucleo.js', 'scripts/estudio/sons.js', 'scripts/estudio/microfone.js', 'scripts/estudio/vozes.js', 'client/src/audio/falas.json', 'client/src/audio/vozesGeradas.json', 'scripts/vozes-gravadas.json', 'client/public/audio/vozes/br/combate.mp3']) {
   mkdirSync(join(raiz, rel, '..'), { recursive: true });
   copyFileSync(resolve(rel), join(raiz, rel));
 }
@@ -158,6 +158,22 @@ confere(nFalas === 19 && (await p.locator('#vz-sotaques button').count()) === 4,
 confere((await p.locator('#vz-texto').textContent()).trim() === 'Combate!', 'a fala "Combate!" abre com o texto grande para ler');
 confere(/◆/.test(await p.locator('#vz-lista li', { hasText: 'Combate!' }).textContent()), 'o "Combate!" brasileiro aparece como voz gerada (◆)');
 
+// ── o microfone (P286): testar com veredito, procurar o que funciona ─────────────────────────────────────────────
+await p.click('#vz-mic-testar');
+await p.waitForFunction(() => document.querySelector('#vz-mic-estado').textContent.startsWith('Aberto:'), null, { timeout: 15000 });
+// o microfone de mentira apita de tempos em tempos: a barra é o maior valor visto em 2,5 s
+const barraNoTeste = await p.evaluate(async () => { let max = 0; for (let i = 0; i < 25; i++) { await new Promise((ok) => setTimeout(ok, 100)); max = Math.max(max, parseFloat(document.querySelector('#vz-nivel').style.width) || 0); } return max; });
+confere(barraNoTeste > 0, `o medidor se mexe durante o teste (barra a ${barraNoTeste}%)`);
+confere(/dB/.test(await p.locator('#vz-mic-estado').textContent()), 'o teste mostra o nível em dB');
+await p.click('#vz-mic-testar'); // para o teste e dá o veredito
+const veredito = (await p.locator('#vz-mic-estado').textContent()).trim();
+confere(!/SILÊNCIO TOTAL/.test(veredito) && /dB/.test(veredito), `o veredito do microfone de mentira não é silêncio: ${veredito.slice(0, 90)}`);
+confere((await p.locator('#vz-mic option').count()) >= 2, `a lista de microfones se preencheu depois da permissão (${await p.locator('#vz-mic option').count()} opções)`);
+await p.click('#vz-mic-procurar');
+await p.waitForFunction(() => /^(Escolhi:|Nenhum microfone)/.test(document.querySelector('#vz-mic-estado').textContent), null, { timeout: 60000 });
+confere(/^Escolhi:/.test(await p.locator('#vz-mic-estado').textContent()), `"procurar o que funciona" escolheu um aparelho com sinal: ${(await p.locator('#vz-mic-estado').textContent()).slice(0, 80)}`);
+confere((await p.inputValue('#vz-mic')) !== '', 'o aparelho escolhido ficou selecionado na lista');
+
 await p.click('#vz-gravar');
 await p.waitForFunction(() => document.querySelector('#vz-estado-gravacao').textContent.includes('gravando'), null, { timeout: 15000 });
 await p.waitForTimeout(1800);
@@ -190,6 +206,40 @@ await p.waitForFunction(() => [...document.querySelectorAll('#mensagens li')].so
 aceitarConfirmacao = false;
 confere(readFileSync(mp3Voz).equals(geradoAntes), 'voltar para a voz gerada devolveu o mp3 original, byte a byte');
 confere(/◆/.test(await p.locator('#vz-lista li', { hasText: 'Combate!' }).textContent()), 'o "Combate!" voltou a aparecer como voz gerada (◆)');
+
+// ── o microfone MUDO (P286): um navegador cujo microfone entrega só silêncio (o ponto USB morto do Comandante) ────────────────
+const silencio = join(raiz, 'silencio.wav');
+{
+  const taxa = 16000, n = taxa * 6, d = Buffer.alloc(n * 2);
+  const h = Buffer.alloc(44);
+  h.write('RIFF', 0); h.writeUInt32LE(36 + d.length, 4); h.write('WAVEfmt ', 8); h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(1, 22);
+  h.writeUInt32LE(taxa, 24); h.writeUInt32LE(taxa * 2, 28); h.writeUInt16LE(2, 32); h.writeUInt16LE(16, 34); h.write('data', 36); h.writeUInt32LE(d.length, 40);
+  writeFileSync(silencio, Buffer.concat([h, d]));
+}
+let mudoNav;
+for (const channel of ['chrome', 'msedge', undefined]) {
+  try { mudoNav = await chromium.launch({ channel, args: ['--autoplay-policy=no-user-gesture-required', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', `--use-file-for-fake-audio-capture=${silencio}`] }); break; } catch { /* próximo */ }
+}
+const antesDoMudo = readdirSync(join(origemVozes, 'br')).sort();
+const pm = await (await mudoNav.newContext({ viewport: { width: 1280, height: 1000 }, permissions: ['microphone'] })).newPage();
+const errosMudo = [];
+pm.on('pageerror', (e) => errosMudo.push(e.message));
+await pm.goto(url);
+await pm.waitForSelector('#lista-clipes li');
+await pm.click('#abas button[data-aba="vozes"]');
+await pm.waitForSelector('#vz-lista li');
+await pm.click('#vz-mic-testar');
+await pm.waitForFunction(() => document.querySelector('#vz-mic-estado').textContent.startsWith('Aberto:'), null, { timeout: 15000 });
+await pm.waitForTimeout(1500);
+await pm.click('#vz-mic-testar');
+confere(/SILÊNCIO TOTAL/.test(await pm.locator('#vz-mic-estado').textContent()), 'no microfone mudo o teste diz SILÊNCIO TOTAL e o que fazer');
+await pm.click('#vz-gravar');
+await pm.waitForFunction(() => [...document.querySelectorAll('#mensagens li')].some((li) => li.textContent.startsWith('Parei: o microfone não entregou nada')), null, { timeout: 20000 });
+confere(!(await pm.locator('#vz-gravar').isDisabled()), 'a gravação no microfone mudo parou sozinha e o botão voltou');
+await pm.waitForTimeout(800);
+confere(readdirSync(join(origemVozes, 'br')).sort().join() === antesDoMudo.join(), 'a gravação muda não guardou tomada nenhuma (nem arquivo temporário)');
+confere(errosMudo.length === 0, errosMudo.length ? `erros da página (microfone mudo): ${errosMudo.join(' | ')}` : 'nenhum erro na página no teste do microfone mudo');
+await mudoNav.close();
 await p.click('#abas button[data-aba="sons"]');
 
 // ouvir no ritmo e parar (não pode dar erro)
