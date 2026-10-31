@@ -11,6 +11,11 @@ export interface MechBlueprint {
   readonly id: 'ferret' | 'vector09' | 'heavy' | 'colossus01';
   /** Tem os encaixes extras de peso (P282: as costas e os dois ombros ao lado da cabeça): o rig cria os nós deles. */
   readonly encaixesDePeso?: boolean;
+  /**
+   * P295 (31/10, o Comandante): o canhão das costas sai no lugar da cabeça (sem cabeça), e os ombros ficam para fora, nas laterais de cima do torso,
+   * e não enterrados no peito. A boca de tiro da simulação (`muzzles` do chassi) acompanha a posição nova.
+   */
+  readonly canhaoNaCabeca?: boolean;
   readonly label: string;
   readonly referenceHeight: number;
   readonly torso: { readonly width: number; readonly height: number; readonly depth: number };
@@ -96,7 +101,7 @@ export const HEAVY_MECH_BLUEPRINT: MechBlueprint = {
  */
 export const COLOSSUS_01_BLUEPRINT: MechBlueprint = {
   encaixesDePeso: true,
-  id: 'colossus01', label: 'COLOSSUS-01', referenceHeight: 14,
+  id: 'colossus01', label: 'COLOSSUS-01', referenceHeight: 14, canhaoNaCabeca: true,
   torso: { width: 5.8, height: 3.8, depth: 4.2 },
   head: { width: 1.65, height: 1.05, depth: 1.5, antenna: 0 },
   shoulders: { width: 2.25, height: 1.75, depth: 2.15 }, hips: { width: 3.95, depth: 2.5 },
@@ -216,7 +221,9 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
 
   const head = group(torso, 0, torsoH * 1.25, -torsoD * 0.08);
   head.name = 'head';
-  if (blueprint.head.turret) {
+  if (blueprint.canhaoNaCabeca) {
+    // P295: sem cabeça; o canhão das costas ocupa o lugar dela (ver `back` abaixo). A zona de acerto da cabeça continua a mesma (módulos).
+  } else if (blueprint.head.turret) {
     // Torre + cano no lugar do rosto: mesmo espaço e posição da cabeça de sempre (a zona de acerto,
     // fração da altura total em combat/damage.ts, não olha pra malha — continua igual).
     cyl(head, blueprint.head.width * 0.58, blueprint.head.height * 0.85, M.armor, 0, blueprint.head.height * 0.55, 0);
@@ -281,9 +288,10 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   const nos: Partial<Record<ExtraSlot, THREE.Object3D>> = blueprint.encaixesDePeso
     ? {
         // atrás da traseira do tronco (a mochila termina a ~1,6 × a profundidade): a arma sai para trás, sem ficar enterrada no corpo
-        back: group(torso, 0, torsoH * 1.02, torsoD * 1.7),
-        rightShoulder: group(torso, torsoW * 0.32, torsoH * 1.02, 0),
-        leftShoulder: group(torso, -torsoW * 0.32, torsoH * 1.02, 0),
+        // P295: o Colossus leva o canhão das costas no lugar da cabeça (boca para a frente) e os ombros nas laterais de cima do torso.
+        back: blueprint.canhaoNaCabeca ? group(torso, 0, torsoH * 1.25, -torsoD * 0.08) : group(torso, 0, torsoH * 1.02, torsoD * 1.7),
+        rightShoulder: group(torso, blueprint.canhaoNaCabeca ? torsoW * 0.5 + 0.5 : torsoW * 0.32, torsoH * 1.02, blueprint.canhaoNaCabeca ? -torsoD * 0.14 : 0),
+        leftShoulder: group(torso, blueprint.canhaoNaCabeca ? -(torsoW * 0.5 + 0.5) : -torsoW * 0.32, torsoH * 1.02, blueprint.canhaoNaCabeca ? -torsoD * 0.14 : 0),
       }
     : {};
   // Onde cada extra leva a sua arma: a arma fica com a boca no nó e o corpo para trás (como nas mãos). Um ponto sem peso (o próprio nó) serve de boca.
@@ -396,7 +404,8 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
       shownLeft = loadout.secondary;
     }
     if (rightOriginal && rightGeometry && rightPlain) rightOriginal.geometry = rightModule ? rightPlain.geometry : rightGeometry;
-    const chuva = loadout.secondary?.id === 'barrage';
+    // A chuva fica no braço esquerdo (de antes) ou nas costas (P294): nos dois casos o morteiro da mochila aparece.
+    const chuva = loadout.secondary?.id === 'barrage' || loadout.back?.id === 'barrage';
     rack.visible = chuva;
     if (casuloArm && casuloGeometry && lisoArm) casuloArm.geometry = chuva || leftModule || !loadout.secondary ? lisoArm.geometry : casuloGeometry;
   };
