@@ -289,9 +289,10 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
     ? {
         // atrás da traseira do tronco (a mochila termina a ~1,6 × a profundidade): a arma sai para trás, sem ficar enterrada no corpo
         // P295: o Colossus leva o canhão das costas no lugar da cabeça (boca para a frente) e os ombros nas laterais de cima do torso.
+        // P296 (31/10): as três armas do Colossus ficam na PARTE DE CIMA do chassi, alinhadas para a frente (onde estava a cabeça): a das costas no centro e as dos ombros dos lados.
         back: blueprint.canhaoNaCabeca ? group(torso, 0, torsoH * 1.25, -torsoD * 0.08) : group(torso, 0, torsoH * 1.02, torsoD * 1.7),
-        rightShoulder: group(torso, blueprint.canhaoNaCabeca ? torsoW * 0.5 + 0.5 : torsoW * 0.32, torsoH * 1.02, blueprint.canhaoNaCabeca ? -torsoD * 0.14 : 0),
-        leftShoulder: group(torso, blueprint.canhaoNaCabeca ? -(torsoW * 0.5 + 0.5) : -torsoW * 0.32, torsoH * 1.02, blueprint.canhaoNaCabeca ? -torsoD * 0.14 : 0),
+        rightShoulder: blueprint.canhaoNaCabeca ? group(torso, torsoW * 0.34, torsoH * 1.25, -torsoD * 0.08) : group(torso, torsoW * 0.32, torsoH * 1.02, 0),
+        leftShoulder: blueprint.canhaoNaCabeca ? group(torso, -torsoW * 0.34, torsoH * 1.25, -torsoD * 0.08) : group(torso, -torsoW * 0.32, torsoH * 1.02, 0),
       }
     : {};
   // Onde cada extra leva a sua arma: a arma fica com a boca no nó e o corpo para trás (como nas mãos). Um ponto sem peso (o próprio nó) serve de boca.

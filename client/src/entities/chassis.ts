@@ -254,9 +254,8 @@ const COLOSSUS_PLAYER_STATS: MechStats = {
   loadout: { primary: weapon('cannon'), secondary: null, back: weapon('barrage'), rightShoulder: null, leftShoulder: null },
   triggers: TRIGGERS_COM_COSTAS,
   // Bocas dos encaixes extras medidas no rig procedural (um zz-medir de Vector09, 30/10): em metros a partir dos pés, virado para -Z. Mudou o desenho do Colossus? Meça de novo.
-  // P295: as bocas dos encaixes de peso do Colossus-01 saem de fora do corpo (o tiro antes nascia dentro do peito, e não aparecia):
-  // o canhão das costas, no lugar da cabeça, com a boca para a frente; os ombros, nas laterais de cima do torso.
-  muzzles: { back: [0, 11.25, -1.3], rightShoulder: [3.4, 10.38, -0.6], leftShoulder: [-3.4, 10.38, -0.6] },
+  // P296: as três bocas do Colossus-01 ficam na parte de cima do chassi, alinhadas para a frente (a cabeça saiu): a das costas no centro, as dos ombros nos lados.
+  muzzles: { back: [0, 11.25, -1.3], rightShoulder: [2.0, 11.25, -1.3], leftShoulder: [-2.0, 11.25, -1.3] },
 };
 
 /**
