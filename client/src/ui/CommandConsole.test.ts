@@ -79,9 +79,11 @@ describe('console de comando: o HTML', () => {
     expect(consoleHtml).toMatch(/id="btn-hangar"[^>]*data-tecla="H"/);
   });
 
-  it('os links do site (Sala de Controle e Oficina) moram só no monitor do Comandante', () => {
+  it('os links do site (Sala de Controle e Oficina) moram só no monitor do Comandante, e a Sala de Controle não se chama ESQUADRÃO (o nome é dos bots, P287)', () => {
     const comando = consoleHtml.slice(consoleHtml.indexOf('id="mon-comando"'));
     for (const id of ['cmd-sala', 'cmd-oficina']) expect(comando.includes(`id="${id}"`), id).toBe(true);
+    expect(comando).toMatch(/id="cmd-sala"[^>]*>\s*<a [^>]*><b>SALA DE CONTROLE<\/b>/);
+    expect([...comando.matchAll(/<b>ESQUADRÃO<\/b>/g)]).toHaveLength(0);
     expect(consoleHtml.slice(0, consoleHtml.indexOf('id="mon-comando"')).includes('../oficina/')).toBe(false);
   });
 
@@ -115,14 +117,15 @@ it('a tela de carregamento esconde os monitores com display none (guarda do boot
     for (const acao of ['copiar', 'abrir', 'fechar']) expect(comando.includes(`data-acao="${acao}"`), acao).toBe(true);
   });
 
-  it('o esquadrão (P91): o botão do monitor PILOTOS e a ficha do Comandante abrem a mesma janela, que mora fora dos monitores e começa fechada', () => {
+  it('o esquadrão (P91, P287): uma entrada só, o botão do monitor PILOTOS, abre a janela, que mora fora dos monitores e começa fechada', () => {
     const pilotos = monitores.find((m) => m.includes('id="mon-oponentes"'))!;
     expect(pilotos).toMatch(/id="btn-esquadrao"[^>]*data-esquadrao-open/);
     // O AJUSTAR continua (o `SettingsMenu` e o `OnlineSwitch` acham o #btn-settings), ao lado do ESQUADRÃO.
     expect(pilotos).toMatch(/id="btn-settings"/);
+    // P287 ("menos menus, menos redundância"): o item FICHA DE CADA BOT do COMANDO abria a mesma janela e saiu; uma entrada só.
     const comando = monitores.find((m) => m.includes('id="mon-comando"'))!;
-    expect(comando).toMatch(/<li id="cmd-ficha"><button type="button" data-esquadrao-open/);
-    expect([...consoleHtml.matchAll(/data-esquadrao-open/g)]).toHaveLength(2);
+    expect(comando).not.toContain('cmd-ficha');
+    expect([...consoleHtml.matchAll(/data-esquadrao-open/g)]).toHaveLength(1);
     expect(consoleHtml).toContain('<div id="squad-modal" class="hidden"></div>');
     for (const m of monitores) expect(m.includes('id="squad-modal"'), 'a janela dentro de um monitor').toBe(false);
   });

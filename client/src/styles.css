@@ -4570,30 +4570,57 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .outdoors-anuncio { display: flex; align-items: center; gap: 6px; cursor: pointer; }
 .outdoors-anuncio input { accent-color: var(--warn); }
 
-/* O painel WARGAME (P262): elenco + mapa clicável + lista de batidas, no mesmo molde de placa do seletor de lado. */
+/* O painel WARGAME (P262, refeito no P290): o mapa com os robôs numerados à esquerda; à direita, quem é quem e as batidas (QUEM faz o quê, ONDE), no mesmo molde de placa do seletor de lado. */
 .wargame-modal { z-index: 2100; }
-.wargame-placa { width: min(980px, 96vw); max-height: 92vh; display: flex; flex-direction: column; gap: 8px; }
+.wargame-placa { width: min(1080px, 96vw); max-height: 94vh; display: flex; flex-direction: column; gap: 8px; }
 .wargame-titulo { margin: 0; text-align: center; font-size: 14px; letter-spacing: 3px; color: var(--warn); }
-.wargame-nome { font: inherit; color: var(--ink); background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); padding: 4px 8px; }
-.wargame-elenco { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink); }
-.wargame-elenco-select { font: inherit; color: var(--ink); background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); padding: 2px 6px; }
-.wargame-elenco-resumo { color: var(--muted); }
-.wargame-corpo { display: grid; grid-template-columns: minmax(260px, 420px) 1fr; gap: 12px; min-height: 0; }
+.wargame-topo { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink); }
+.wargame-nome { flex: 1; min-width: 0; font: inherit; color: var(--ink); background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); padding: 4px 8px; }
+.wargame-rotulo { font-size: 10px; letter-spacing: 2px; color: var(--muted); }
+.wargame-elenco-select { font: inherit; color: var(--ink); background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); padding: 3px 6px; }
+.wargame-corpo { display: grid; grid-template-columns: minmax(280px, 400px) minmax(0, 1fr); gap: 12px; min-height: 0; }
+.wargame-coluna-mapa { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
 .wargame-mapa { position: relative; width: 100%; aspect-ratio: 1 / 1; background: var(--cc-screen); border: 1px solid rgba(0, 229, 255, 0.35); border-radius: 4px; overflow: hidden; }
 .wargame-mapa canvas { position: absolute; inset: 0; cursor: crosshair; }
-.wargame-lista { display: flex; flex-direction: column; gap: 6px; min-height: 0; max-height: calc(100vh - 340px); overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: rgba(0, 229, 255, 0.4) transparent; }
+.wargame-legenda { margin: 0; font-size: 10px; line-height: 1.4; color: var(--muted); }
+.wargame-coluna-batidas { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
+.wargame-quem { display: flex; flex-direction: column; gap: 5px; padding: 6px 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 3px; }
+.wargame-elenco-lado { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.wargame-elenco-lado .wargame-rotulo { width: 78px; }
+.wargame-lado-inimigo .wargame-rotulo { color: #ff7b88; }
+.wargame-lado-aliado .wargame-rotulo { color: #66f0ff; }
+.wargame-ficha { display: inline-flex; align-items: baseline; gap: 4px; font: inherit; font-size: 10px; color: var(--ink); background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 3px; padding: 2px 6px; cursor: pointer; }
+.wargame-ficha i { font-style: normal; font-weight: 700; }
+.wargame-ficha small { color: var(--muted); font-size: 9px; max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wargame-lado-inimigo .wargame-ficha { border-color: rgba(255, 77, 94, 0.55); }
+.wargame-lado-inimigo .wargame-ficha i { color: #ff7b88; }
+.wargame-lado-aliado .wargame-ficha { border-color: rgba(0, 229, 255, 0.5); }
+.wargame-lado-aliado .wargame-ficha i { color: #66f0ff; }
+.wargame-ficha:hover { background: rgba(255, 255, 255, 0.12); }
+.wargame-ficha-parada { opacity: 0.5; cursor: default; }
+.wargame-batidas-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.wargame-lista { display: flex; flex-direction: column; gap: 6px; min-height: 0; max-height: calc(100vh - 430px); overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: rgba(0, 229, 255, 0.4) transparent; }
 .wargame-vazio { margin: 0; font-size: 11px; color: var(--muted); }
-.wargame-linha { display: grid; grid-template-columns: 56px 1fr 1fr 1fr 22px; gap: 8px; align-items: start; padding: 6px; font-size: 11px; color: var(--ink); background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 3px; }
+.wargame-linha { display: flex; flex-direction: column; gap: 5px; padding: 6px 8px; font-size: 11px; color: var(--ink); background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 3px; cursor: pointer; }
+.wargame-linha.wargame-foco { border-color: rgba(0, 229, 255, 0.6); background: rgba(0, 229, 255, 0.06); }
 .wargame-linha.wargame-armada { border-color: var(--warn); box-shadow: 0 0 0 1px var(--warn); }
-.wargame-grupo { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
-.wargame-grupo b { font-size: 9px; letter-spacing: 1.5px; color: var(--muted); width: 100%; }
-.wargame-linha select, .wargame-linha input { font: inherit; font-size: 11px; color: var(--ink); background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.2); padding: 2px 4px; }
+.wargame-linha-topo { display: flex; align-items: center; gap: 8px; }
+.wargame-num { font-weight: 700; color: var(--warn); min-width: 24px; }
+.wargame-tempo { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); flex: 1; }
+.wargame-ordem { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 6px; }
+.wargame-onde { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.wargame-onde .lado-botao { padding: 2px 8px; font-size: 10px; white-space: nowrap; }
+.wargame-sem-ponto { color: var(--warn); }
+.wargame-extra summary { cursor: pointer; font-size: 10px; letter-spacing: 1px; color: var(--muted); }
+.wargame-grupo { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 4px; }
+.wargame-grupo b { font-size: 9px; letter-spacing: 1.5px; color: var(--muted); width: 56px; }
+.wargame-linha select, .wargame-linha input { font: inherit; font-size: 11px; color: var(--ink); background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.2); padding: 2px 4px; min-width: 0; }
 .wargame-campo-curto { width: 52px; }
 .wargame-campo-longo { flex: 1; min-width: 90px; }
-.wargame-ponto { color: var(--muted); white-space: nowrap; }
-.wargame-camera-valor { display: flex; gap: 4px; min-width: 0; }
+.wargame-ponto { color: var(--muted); }
+.wargame-camera-valor { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .wargame-camera-valor select { min-width: 0; text-overflow: ellipsis; }
-.wargame-remover { align-self: start; background: none; border: 1px solid rgba(255, 255, 255, 0.2); color: var(--muted); cursor: pointer; line-height: 1; padding: 2px 6px; }
+.wargame-remover { background: none; border: 1px solid rgba(255, 255, 255, 0.2); color: var(--muted); cursor: pointer; line-height: 1; padding: 2px 6px; }
 .wargame-remover:hover { color: var(--hot); border-color: var(--hot); }
 .wargame-mensagem { margin: 0; font-size: 11px; line-height: 1.4; color: var(--muted); min-height: 30px; }
 .wargame-rodape { flex-wrap: wrap; justify-content: center; }

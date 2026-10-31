@@ -65,7 +65,7 @@ import { atribuirPontos } from './DominioObjetivos';
 import { NASCIMENTOS_DO_DOMINIO, PONTOS_DO_DOMINIO } from './dominioMapa';
 import { ehTita } from '../entities/chassis';
 import { esquadraoDeFoes, planejarEsquadrao, sanearEsquadrao, type EsquadraoSpec, type PlanoDoEsquadrao, type SlotDoPlano } from './esquadrao';
-import { RoteiroStepper, type BeatDoRoteiro, type RoteiroSpec } from './Roteiro';
+import { posicaoNoSistema, RoteiroStepper, type BeatDoRoteiro, type RoteiroSpec } from './Roteiro';
 import type { GameMode } from './gameMode';
 import { ALLY_COUNT, ANDROID_SPAWNS, BOT_SPAWNS, COLOSSUS_SPAWN } from './nascimentos';
 import {
@@ -255,6 +255,8 @@ export class Match {
   readonly drones: DroneSystem | null;
   /** O WARGAME (P262): `null` fora de um roteiro ativo. */
   private readonly roteiroStepper: RoteiroStepper | null;
+  /** O esquadrão do roteiro: diz qual robô é o `alvo` de uma batida (P290). */
+  private readonly esquadraoDoRoteiro: EsquadraoSpec | null;
   private tickRoteiro = 0;
   /** P262: os bots nunca miram nos `players` quando o roteiro está rodando (ver `MatchOptions.espectador`). */
   private readonly espectador: boolean;
@@ -421,6 +423,7 @@ export class Match {
     this.physics = o.physics;
     this.espectador = o.espectador ?? false;
     this.roteiroStepper = o.roteiro ? new RoteiroStepper(o.roteiro.beats) : null;
+    this.esquadraoDoRoteiro = o.roteiro?.esquadrao ?? null;
     this.round = survival || ctf || dominio ? new Round(Number.POSITIVE_INFINITY) : o.roundS === undefined ? new Round() : new Round(o.roundS);
     this.scene = o.scene;
     this.debris = o.debris === false ? (new NoDebris() as unknown as DebrisSystem) : new DebrisSystem(o.scene, o.physics);
@@ -1580,7 +1583,7 @@ export class Match {
 
   /**
    * O WARGAME (P262): dispara as batidas do tick atual (`RoteiroStepper.tick`, vazio na maioria dos ticks — G4/G5).
-   * Para cada batida com `ordem`, manda o lado inteiro para o ponto (mesmo padrão de `dirigirLado`/a Resistência:
+   * Para cada batida com `ordem`, manda o lado inteiro para o ponto, ou **um robô só** quando a batida tem `alvo` (P290) (mesmo padrão de `dirigirLado`/a Resistência:
    * `brainOf(m)?.receiveOrder(...)`) — os bots continuam andando, mirando e errando sozinhos, a ordem só diz para
    * onde ir e o que fazer lá. Sempre avisa `onRoteiroEvento` (legenda e câmera são decisão de quem desenha, não da regra).
    */
@@ -1594,8 +1597,15 @@ export class Match {
         const sistema = b.lado === 'inimigo' ? this.bots : this.allies;
         if (sistema) {
           this._pontoDoRoteiro.set(b.ordem.ponto.x, 0, b.ordem.ponto.z);
-          for (const m of sistema.mechs) {
-            if (m.alive) sistema.brainOf(m)?.receiveOrder(b.ordem.tipo, this._pontoDoRoteiro, null);
+          if (b.alvo !== undefined && this.esquadraoDoRoteiro) {
+            // Uma ordem de UM robô (P290): só ele anda; o resto do lado segue como estava.
+            const pos = posicaoNoSistema(b.lado === 'inimigo' ? this.esquadraoDoRoteiro.inimigos : this.esquadraoDoRoteiro.aliados, b.alvo);
+            const m = pos === null ? undefined : sistema.mechs[pos];
+            if (m?.alive) sistema.brainOf(m)?.receiveOrder(b.ordem.tipo, this._pontoDoRoteiro, null);
+          } else {
+            for (const m of sistema.mechs) {
+              if (m.alive) sistema.brainOf(m)?.receiveOrder(b.ordem.tipo, this._pontoDoRoteiro, null);
+            }
           }
         }
       }

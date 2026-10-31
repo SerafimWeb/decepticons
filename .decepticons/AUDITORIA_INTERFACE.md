@@ -157,3 +157,19 @@ Uma janela por cima do console, do mesmo molde das do esquadrão e do servidor, 
 | UI-9 | Janela de câmeras ao vivo (monitor COMANDO → CÂMERAS AO VIVO) | **feito** (`claude/cameras-ao-vivo`, P88) |
 
 Território: `client/src/ui/`, `styles.css` e `index.html` são do Gemini (`ESTADO_ATUAL`, divisão de trabalho). O dono pediu esta revisão ao Claude diretamente em 10/10; o Gemini tem a tela de login (`gemini/tela-login`) em andamento, com CSS próprio no fim do `styles.css`: os dois PRs mexem em trechos diferentes. Quem chegar depois junta a `main` e roda o `npm run check`.
+
+## 4. Esquadrão, Wargame, Hangar e console: o que se cruza (P287, 30/10)
+
+> Pedido do Comandante (30/10): *"precisamos unificar essas infos, menus, acho que as camadas se cruzam… itens que se repetem e talvez se anulem… ou um acione errado… centralizar, coesão e coerência, menos menus"*. Olhado de perto (as telas do console, o Esquadrão, o Wargame e o Hangar, uma contra a outra) e de longe (quem escolhe o quê, e onde).
+
+| # | Achado | Estado |
+|---|---|---|
+| G1 | **ESQUADRÃO** era o nome da janela dos bots **e** do link da Sala de Controle (a equipe do projeto) no monitor COMANDO: o clique errado abria outra aba | Feito (P287): a Sala de Controle chama-se SALA DE CONTROLE |
+| G2 | **FICHA DE CADA BOT** (COMANDO) e **[ ESQUADRÃO ]** (PILOTOS) abriam a mesma janela | Feito (P287): uma entrada só, o botão do PILOTOS |
+| G3 | O título do **[ AJUSTAR ]** prometia "quantos atacam ao mesmo tempo e nomes", que já não estão nas Configurações | Feito (P287): diz o que há (idioma, dificuldade dos bots, conta) |
+| G4 | A lista de **chassis** do Esquadrão era a do Hangar menos o Andróide, e as ranhuras só tinham as duas mãos (os encaixes novos, costas e ombros, não existiam para o bot) | Feito (P288): um Chassi só (com andróide e técnico), as ranhuras do Hangar, o bot atira os ombros |
+| G5 | O **Wargame** dava a ordem ao lado inteiro, o elenco não dizia quem era quem e o mapa não mostrava os robôs; a grade de 5 colunas cortava a câmera | Feito (P290): robôs numerados no mapa, ordem de UM robô, QUEM / FAZ / ONDE, legenda e câmera recolhidas |
+| G6 | **Dificuldade** mora em três camadas: a da partida (Configurações), a de cada robô (ficha) e o nível das armas (Hangar). É de propósito (global + exceção), mas o texto da ficha ("Da partida (Normal)") é o único elo | Aberto: avaliar com o Comandante se o elo basta |
+| G7 | **[ AJUSTES DO JOGO ]**, dentro da janela ESQUADRÃO, repete o **[ AJUSTAR ]** do monitor; e o preset **PADRÃO** ainda lê as Configurações (que já não têm a contagem de inimigos) | Aberto: próximo corte |
+| G8 | **O botão de cada arma:** o Hangar só oferece os layouts de gatilho prontos do chassi (só o Marauder tem mais de um) | Aberto (P289): análise e plano em `ORDENS_DO_COMANDO.md`; muda contrato de rede e espera o ok do dono |
+| G9 | **Elenco do Wargame e etapa da Campanha** repetem a mesma escolha ("padrão" ou "o meu da tela ESQUADRÃO") em duas janelas | Aberto: é a mesma ideia nos dois lugares; unir quando o Wargame puder editar o elenco dentro da janela |

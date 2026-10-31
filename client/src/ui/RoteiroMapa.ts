@@ -1,28 +1,24 @@
-import type { LadoDoBot } from '../sim/esquadrao';
-import { TacticalRadar, transformeDoRadar, type RadarQuadro } from './TacticalRadar';
-
-export interface PontoDoMapa {
-  lado: LadoDoBot;
-  x: number;
-  z: number;
-}
+import { marcosDoMapa, TacticalRadar, transformeDoRadar, type RadarQuadro } from './TacticalRadar';
 
 /** A planta do mapa (prédios, zonas, rótulos), sem nenhuma unidade: o que o WARGAME precisa para desenhar o fundo. */
 export type PlantaEstatica = Pick<RadarQuadro, 'mapa' | 'meia' | 'meiaZ' | 'zonas' | 'rotulos' | 'mar' | 'caixas'>;
 
+/** O que o WARGAME põe por cima da planta (`desenhoDoMapa`, em `elencoDoWargame.ts`): os robôs onde nascem, as ordens como anéis numerados e as setas da batida em foco. */
+export type DesenhoDoMapa = Pick<RadarQuadro, 'aliados' | 'inimigos' | 'marcas' | 'setas'> & { rotulos: readonly { x: number; z: number; texto: string; cor: string }[] };
+
+const SEM_DESENHO: DesenhoDoMapa = { aliados: [], inimigos: [], rotulos: [], marcas: [], setas: [] };
+
 /**
  * O mapa clicável de autoria do WARGAME (P262): a mesma planta do radar tático (`TacticalRadar`, 100% reaproveitado
- * para o desenho — prédios, zonas, rótulos, anéis de distância), sem nenhuma unidade viva — só os pontos que o
- * roteiro já tem marcados (um por batida com ordem), desenhados na cor do lado (o próprio `TacticalRadar` já pinta
- * `aliados` de ciano e `inimigos` de vermelho). Clicar no mapa converte o pixel em ponto do mundo
- * (`transformeDoRadar`, a mesma conta que o radar usa para desenhar, invertida — sem raycasting 3D nenhum: é um
- * mapa plano) e chama `onClicar`; quem decide o que aquele clique vira (qual batida, qual lado) é o painel (G3).
+ * para o desenho — prédios, zonas, rótulos, anéis de distância) com, por cima, **os robôs onde nascem, numerados**, as ordens como anéis numerados e as setas de quem vai aonde (P290: "não sei qual mech vai
+ * em cada ponto"). Clicar no mapa converte o pixel em ponto do mundo (`transformeDoRadar`, a mesma conta que o radar usa para desenhar, invertida — sem raycasting 3D nenhum: é um mapa plano) e chama
+ * `onClicar`; quem decide o que aquele clique vira (qual batida, qual lado) é o painel (G3).
  */
 export class RoteiroMapa {
   readonly el: HTMLElement;
   private readonly canvas: HTMLCanvasElement;
   private readonly radar: TacticalRadar;
-  private pontos: readonly PontoDoMapa[] = [];
+  private desenho: DesenhoDoMapa = SEM_DESENHO;
   onClicar: ((x: number, z: number) => void) | null = null;
 
   constructor(private readonly planta: PlantaEstatica) {
@@ -42,12 +38,10 @@ export class RoteiroMapa {
   }
 
   private quadro(): RadarQuadro {
-    return {
-      ...this.planta,
-      voce: null,
-      aliados: this.pontos.filter((p) => p.lado === 'aliado'),
-      inimigos: this.pontos.filter((p) => p.lado === 'inimigo').map((p) => ({ x: p.x, z: p.z, grande: true })),
-    };
+    const d = this.desenho;
+    // Os números dos robôs vêm junto dos marcos da planta (VORCARIS, SERAFIM): uma lista só de rótulos.
+    const marcos = marcosDoMapa(this.planta);
+    return { ...this.planta, rotulos: [...marcos, ...d.rotulos], voce: null, aliados: d.aliados, inimigos: d.inimigos, ...(d.marcas ? { marcas: d.marcas } : {}), ...(d.setas ? { setas: d.setas } : {}) };
   }
 
   /** Liga o desenho (o painel chama ao abrir: o mapa só existe enquanto a janela está aberta). */
@@ -60,9 +54,9 @@ export class RoteiroMapa {
     this.radar.dispose();
   }
 
-  /** Os pontos marcados agora (um por batida com ordem); redesenha na hora (sem isto, a mudança só apareceria no próximo redimensionamento). */
-  atualizarPontos(pontos: readonly PontoDoMapa[]): void {
-    this.pontos = pontos;
+  /** O que desenhar agora; redesenha na hora (sem isto, a mudança só apareceria no próximo redimensionamento). */
+  atualizar(desenho: DesenhoDoMapa): void {
+    this.desenho = desenho;
     this.radar.desenhar();
   }
 }
