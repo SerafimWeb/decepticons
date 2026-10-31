@@ -3,7 +3,7 @@ import { isMetalShieldId, metalShieldMass, METAL_SHIELDS, type MetalShieldId } f
 import { weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { ARM_SLOTS, CHASSIS, CHASSIS_SIZE, METAL_SHIELD_CHASSIS, type ChassisId } from '../entities/chassis';
 import { triggersOf } from '../entities/MechBase';
-import { attackOf, shoulderMounts, type Attack, type MountId } from '../combat/mounts';
+import { attackOf, shoulderMounts, triggersComBotoes, weaponAt, type Attack, type MountId } from '../combat/mounts';
 import { classFor, WEAPON_CLASSES, type WeaponClass } from '../combat/weaponClass';
 import { EXTRA_SLOTS, MOUNT_DO_EXTRA, type ExtraSlot } from '../combat/encaixesExtras';
 
@@ -31,8 +31,13 @@ export interface ArmSpec {
   tier: Tier;
 }
 
+/** Os encaixes que o jogador pode mandar para o botão 1 ou 2 (P301): as mãos, os ombros e as costas. Na chave, cada um tem um código de duas letras. */
+export type BotaoSlot = 'rightHand' | 'leftHand' | 'rightShoulder' | 'leftShoulder' | 'back';
+export const BOTAO_SLOTS: readonly BotaoSlot[] = ['rightHand', 'leftHand', 'rightShoulder', 'leftShoulder', 'back'];
+const CODIGO_BOTAO: Readonly<Record<BotaoSlot, string>> = { rightHand: 'rh', leftHand: 'lh', rightShoulder: 'rs', leftShoulder: 'ls', back: 'bk' };
+
 export interface LoadoutSpec {
-  v: 1 | 2 | 3;
+  v: 1 | 2 | 3 | 4;
   /** O módulo extra: um gerador de energia ou os óculos de visão noturna (`visao`, P282). */
   module?: ModuloId | null;
   chassis: ChassisId;
@@ -51,6 +56,11 @@ export interface LoadoutSpec {
    * leva um último grupo `L<n>` quando é diferente de 0). Só os chassis com mais de um layout aceitam um valor diferente de 0.
    */
   layout?: number;
+  /**
+   * P301 (fase 2): o botão de cada encaixe, escolhido pelo jogador (1 = clique, 2 = clique direito). Ausente = o padrão do chassi. Só na versão 4 da chave:
+   * sem escolha, a montagem segue a versão de sempre (a chave do link e da rede não muda).
+   */
+  botoes?: Partial<Record<BotaoSlot, 1 | 2>>;
 }
 export type LoadoutError = 'formato' | 'chassi' | 'arma' | 'nível' | 'encaixe' | 'carga' | 'bloqueado';
 
@@ -71,9 +81,40 @@ export type ArmSlot = 'right' | 'left' | 'shoulders' | ExtraSlot;
 /** O encaixe que representa cada ranhura do Hangar (os dois ombros contam pelo direito: sempre atiram no mesmo ataque). */
 export const SLOT_MOUNT: Readonly<Record<ArmSlot, MountId>> = { right: 'rightHand', left: 'leftHand', shoulders: 'rightShoulder', ...MOUNT_DO_EXTRA };
 
-/** O ataque (1, o clique; 2, o clique direito) que aciona a ranhura neste chassi, pelo layout de gatilhos dele (`combat/mounts.ts`). */
-export function slotAttack(slot: ArmSlot, chassis: ChassisId, layout = 0): Attack | null {
-  return attackOf(triggersOf(CHASSIS[chassis], layout), SLOT_MOUNT[slot]);
+/** O ataque (1, o clique; 2, o clique direito) que aciona a ranhura neste chassi: a escolha do jogador (`botoes`) ou o layout de gatilhos do chassi. */
+export function slotAttack(slot: ArmSlot, chassis: ChassisId, layout = 0, botoes?: LoadoutSpec['botoes']): Attack | null {
+  return attackOf(triggersComBotoes(triggersOf(CHASSIS[chassis], layout), botoes), SLOT_MOUNT[slot]);
+}
+
+/** O encaixe existe neste chassi (um ombro do Vector-09 não existe; a secundária não é um ombro). */
+function encaixeExiste(chassis: ChassisId, slot: BotaoSlot): boolean {
+  if (slot === 'rightHand' || slot === 'leftHand') return true;
+  if (slot === 'back') return temEncaixeExtra(chassis, 'back');
+  return hasShoulderSlot(chassis) || temEncaixeExtra(chassis, slot);
+}
+
+/** Os encaixes da montagem que levam uma arma (o botão só se escolhe para eles). Montagem inválida: nenhum. */
+export function encaixesDeArma(spec: LoadoutSpec): BotaoSlot[] {
+  const c = validateLoadout({ ...spec, botoes: undefined });
+  if (!c.ok) return [];
+  return BOTAO_SLOTS.filter((slot) => encaixeExiste(spec.chassis, slot) && weaponAt(c.loadout, slot) != null);
+}
+
+/** Os presets de botão do Hangar (P301): o padrão do chassi; tudo no 1 com a principal no 2; mãos no 1 com o resto no 2. */
+export const PRESETS_DE_BOTAO = ['padrao', 'tudo1', 'maos1'] as const;
+export type PresetDeBotao = (typeof PRESETS_DE_BOTAO)[number];
+
+/** Os botões de um preset, sobre os encaixes que têm arma. A principal de "tudo no 1" é a das costas (quando há), senão a da mão direita. */
+export function botoesDoPreset(spec: LoadoutSpec, preset: PresetDeBotao): LoadoutSpec['botoes'] {
+  if (preset === 'padrao') return undefined;
+  const armados = encaixesDeArma(spec);
+  const principal: BotaoSlot = armados.includes('back') ? 'back' : 'rightHand';
+  const out: Partial<Record<BotaoSlot, 1 | 2>> = {};
+  for (const slot of armados) {
+    if (preset === 'tudo1') out[slot] = slot === principal ? 2 : 1;
+    else out[slot] = slot === 'rightHand' || slot === 'leftHand' ? 1 : 2;
+  }
+  return out;
 }
 
 /** Quantos layouts de gatilho o chassi oferece (1 = não há o que escolher). */
@@ -156,7 +197,7 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
   const fail = (error: LoadoutError, detail: string, mass = 0, capacity = 0): LoadoutCheck => ({ ok: false, error, detail, mass, capacity });
   if (typeof spec !== 'object' || spec === null) return fail('formato', 'montagem vazia');
   const s = spec as Partial<LoadoutSpec>;
-  if (s.v !== 1 && ((s.v !== 2 && s.v !== 3) || s.module === undefined)) return fail('formato', `versão ${String(s.v)} desconhecida`);
+  if (s.v !== 1 && ((s.v !== 2 && s.v !== 3 && s.v !== 4) || s.module === undefined)) return fail('formato', `versão ${String(s.v)} desconhecida`);
   if (typeof s.chassis !== 'string' || !Object.hasOwn(CHASSIS, s.chassis)) return fail('chassi', `chassi ${String(s.chassis)} não existe`);
   const chassis = CHASSIS[s.chassis];
   const capacity = chassis.weaponCapacity;
@@ -216,6 +257,17 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
     const arm = extrasSpec[slot];
     loadout[slot] = arm ? weapon(arm.id as WeaponId, arm.tier) : null;
   }
+  // P301: os botões escolhidos. Só encaixe com arma aceita, e só 1 ou 2; o resto é recusado (nada é aplicado pela metade).
+  if (s.botoes !== undefined && s.botoes !== null) {
+    if (s.v !== 4) return fail('formato', 'botões só na versão 4 da montagem');
+    for (const [mount, botao] of Object.entries(s.botoes)) {
+      if (!(BOTAO_SLOTS as readonly string[]).includes(mount) || (botao !== 1 && botao !== 2)) return fail('encaixe', `botão inválido para ${mount}`);
+      // O encaixe tem que existir no chassi (um ombro do Vector-09 não existe: `weaponAt` devolveria a secundária) e ter arma.
+      const existe = mount === 'rightHand' || mount === 'leftHand' ? true : mount === 'back' ? temEncaixeExtra(s.chassis, 'back') : hasShoulderSlot(s.chassis) || temEncaixeExtra(s.chassis, mount as ExtraSlot);
+      if (!existe || !weaponAt(loadout, mount as MountId)) return fail('encaixe', `${mount} não tem arma para ir ao botão ${botao}`);
+    }
+    loadout.botoes = { ...s.botoes };
+  }
   if (s.v !== 1) loadout.module = module;
   if (layout > 0) loadout.layout = layout;
   if (plate) loadout.metalShield = { id: plate.id, tier: plate.tier };
@@ -228,6 +280,10 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
  * `parseLoadoutKey` devolve null se o texto não for uma montagem.
  */
 export function loadoutKey(spec: LoadoutSpec): string {
+  // P301: com botão escolhido, a chave vai na versão 4: o corpo de sempre (nove grupos) e um grupo `B` com os botões (`rh1lh2`).
+  if (spec.botoes && Object.values(spec.botoes).some((b) => b === 1 || b === 2)) return loadoutKeyV4(spec);
+  // Versão 4 sem botão escolhido não é uma montagem válida à parte: sai como a de sempre (a versão 3 se tem encaixe extra, a 1 se não tem).
+  if (spec.v === 4) return loadoutKey({ ...spec, v: EXTRA_SLOTS.some((slot) => spec[slot]) ? 3 : 1 });
   const arm = (a: ArmSpec | null | undefined) => (a ? `${a.id}-${a.tier}` : '-');
   // Com algum encaixe extra cheio, a chave vai na versão 3 (as montagens antigas seguem iguais, e um cliente antigo lê a sua como antes).
   if (EXTRA_SLOTS.some((slot) => spec[slot])) return `v3.${spec.chassis}.${arm(spec.right)}.${arm(spec.left)}.${arm(spec.shoulders)}.${spec.module ?? '-'}.${arm(spec.back)}.${arm(spec.rightShoulder)}.${arm(spec.leftShoulder)}${spec.layout ? `.L${spec.layout}` : ''}`;
@@ -236,7 +292,34 @@ export function loadoutKey(spec: LoadoutSpec): string {
   return hasShoulderSlot(spec.chassis) ? `${base}.${arm(spec.shoulders)}` : base;
 }
 
+/** A chave da versão 4: `v4.<corpo de nove grupos>[.L<n>].B<rh1lh2…>`. O corpo é o da versão 3 (sempre nove grupos), para o texto ficar igual ao de sempre. */
+function loadoutKeyV4(spec: LoadoutSpec): string {
+  const arm = (a: ArmSpec | null | undefined) => (a ? `${a.id}-${a.tier}` : '-');
+  const corpo = `v4.${spec.chassis}.${arm(spec.right)}.${arm(spec.left)}.${arm(spec.shoulders)}.${spec.module ?? '-'}.${arm(spec.back)}.${arm(spec.rightShoulder)}.${arm(spec.leftShoulder)}${spec.layout ? `.L${spec.layout}` : ''}`;
+  const codigos = BOTAO_SLOTS.filter((slot) => spec.botoes?.[slot]).map((slot) => `${CODIGO_BOTAO[slot]}${spec.botoes![slot]}`).join('');
+  return `${corpo}.B${codigos}`;
+}
+
+/** O contrário de `loadoutKeyV4`: lê o corpo como o da versão 3 e os botões do grupo `B`; recusa a chave se qualquer parte não bater. */
+function parseLoadoutKeyV4(key: string): LoadoutSpec | null {
+  const m = /^(v4\..+)\.B((?:rh|lh|rs|ls|bk)[12]*)$/.exec(key);
+  if (!m) return null;
+  const base = parseLoadoutKey(`v3.${m[1]!.slice(3)}`);
+  if (!base) return null;
+  const codigos = m[2]!;
+  const botoes: Partial<Record<BotaoSlot, 1 | 2>> = {};
+  for (const par of codigos.match(/(?:rh|lh|rs|ls|bk)[12]/g) ?? []) {
+    const slot = (Object.keys(CODIGO_BOTAO) as BotaoSlot[]).find((k) => CODIGO_BOTAO[k] === par.slice(0, 2));
+    if (!slot) return null;
+    botoes[slot] = Number(par.slice(2)) as 1 | 2;
+  }
+  if (Object.keys(botoes).length === 0 || (codigos.match(/(?:rh|lh|rs|ls|bk)[12]/g) ?? []).join('') !== codigos) return null;
+  const spec: LoadoutSpec = { ...base, v: 4, botoes };
+  return validateLoadout(spec).ok ? spec : null;
+}
+
 export function parseLoadoutKey(key: string): LoadoutSpec | null {
+  if (key.trim().startsWith('v4.')) return parseLoadoutKeyV4(key.trim());
   if (key.trim().startsWith('v3.')) {
     const parts = key.trim().split('.');
     // v3.<chassi>.<direito>.<esquerdo>.<ombros>.<módulo>.<costas>.<ombro D>.<ombro E>[.L<n>]: nove grupos, o décimo é o layout.

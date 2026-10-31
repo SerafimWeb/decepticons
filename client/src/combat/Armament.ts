@@ -61,7 +61,11 @@ export class Armament {
    */
   private secondaryLaunchers: RocketLauncher[];
   get launcher(): RocketLauncher {
-    return this.secondaryLaunchers[1]!;
+    return this.secondaryLaunchers[this.secondaryButton() - 1]!;
+  }
+  /** O botão em que a arma secundária está agora (P301): o do grupo que tem os encaixes dela; sem nenhum, o 2 (o padrão). */
+  secondaryButton(): 1 | 2 {
+    return this.secondaryMounts(1).length > 0 ? 1 : 2;
   }
   /** Cadência de cada mão do gatilho principal. */
   private primaryLaunchers: RocketLauncher[];
@@ -97,7 +101,7 @@ export class Armament {
     return level;
   }
   get primaryCharge(): number { return Math.max(this.charge[0]!.progress, this.charge[1]!.progress); }
-  get secondaryCharge(): number { return this.secondaryCharges[1]!.progress; }
+  get secondaryCharge(): number { return this.secondaryCharges[this.secondaryButton() - 1]!.progress; }
 
   constructor(private readonly mech: MechBase) {
     this.secondaryLaunchers = [this.newLauncher(), this.newLauncher()];

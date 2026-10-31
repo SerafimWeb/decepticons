@@ -12,7 +12,7 @@ import { HeatSink, OVERHEAT_SPEED, type ChassisHeat, type HeatState } from '../c
 import { repairModules } from '../combat/repair';
 import { applyDamage, partAt, type DamageResult } from '../combat/damage';
 import { FLINCH_DECAY, FLINCH_MAX } from '../combat/reaction';
-import { DEFAULT_TRIGGERS, MOUNT_PART, MOUNTS, type MountId, type NamedLayout, type TriggerLayout, type Vec3 } from '../combat/mounts';
+import { DEFAULT_TRIGGERS, MOUNT_PART, MOUNTS, triggersComBotoes, type MountId, type NamedLayout, type TriggerLayout, type Vec3 } from '../combat/mounts';
 import type { DamageType, Loadout, WeaponStats } from '../combat/weapons';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 
@@ -270,6 +270,8 @@ export abstract class MechBase {
   readonly status = new StatusSet();
   /** Armas nos braços: as de fábrica do chassi ou as montadas no Hangar (`equip`). */
   private armed: Loadout;
+  /** O layout de gatilhos da montagem atual (P301), guardado com a montagem a que pertence. */
+  private triggersCache: { armed: Loadout; layout: TriggerLayout } | null = null;
   /** Segundos que faltam para o clarão do último tiro deixar de denunciar este Mech no escuro (`combat/visaoNoturna.ts`); só o tick fixo o gasta. */
   denunciadoS = 0;
   private leftRecoil = 0;
@@ -530,7 +532,10 @@ export abstract class MechBase {
 
   /** Como os botões se ligam aos encaixes deste chassi, no layout que a montagem escolheu (`Loadout.layout`). */
   get triggers(): TriggerLayout {
-    return triggersOf(this.stats, this.armed.layout);
+    // P301: o layout da montagem com os botões escolhidos; calculado quando a montagem muda (não a cada tick).
+    const a = this.armed;
+    if (this.triggersCache?.armed !== a) this.triggersCache = { armed: a, layout: triggersComBotoes(triggersOf(this.stats, a.layout), a.botoes) };
+    return this.triggersCache.layout;
   }
 
   /** O encaixe pode atirar agora: vivo, a parte do corpo dele de pé e as armas frias. Não olha se há arma nele. */
