@@ -120,8 +120,10 @@ it('a tela de carregamento esconde os monitores com display none (guarda do boot
   it('o esquadrão (P91, P287): uma entrada só, o botão do monitor PILOTOS, abre a janela, que mora fora dos monitores e começa fechada', () => {
     const pilotos = monitores.find((m) => m.includes('id="mon-oponentes"'))!;
     expect(pilotos).toMatch(/id="btn-esquadrao"[^>]*data-esquadrao-open/);
-    // O AJUSTAR continua (o `SettingsMenu` e o `OnlineSwitch` acham o #btn-settings), ao lado do ESQUADRÃO.
-    expect(pilotos).toMatch(/id="btn-settings"/);
+    // P293: o AJUSTAR saiu do PILOTOS (repetia o monitor CONFIGURAÇÕES). O #btn-settings (que o `SettingsMenu` acha) mora agora na lista de CONFIGURAÇÕES.
+    expect(pilotos).not.toMatch(/id="btn-settings"/);
+    const config = monitores.find((m) => m.includes('id="mon-config"'))!;
+    expect(config).toMatch(/id="btn-settings"[^>]*data-settings-open="jogo"/);
     // P287 ("menos menus, menos redundância"): o item FICHA DE CADA BOT do COMANDO abria a mesma janela e saiu; uma entrada só.
     const comando = monitores.find((m) => m.includes('id="mon-comando"'))!;
     expect(comando).not.toContain('cmd-ficha');

@@ -117,7 +117,9 @@ describe('o tamanho de cada chassi e o que cada encaixe oferece', () => {
   it('o Colossus do jogador sai da fábrica com as armas do tamanho dele (canhão pesado e chuva) e a montagem vale; o chefe segue com plasma e foguetes', () => {
     const fabrica = factorySpec('colossus01');
     expect(fabrica.right?.id).toBe('cannon');
-    expect(fabrica.left?.id).toBe('barrage');
+    // P294: a chuva foi para as costas (o morteiro das costas); o braço esquerdo fica livre.
+    expect(fabrica.left).toBeNull();
+    expect(fabrica.back?.id).toBe('barrage');
     expect(validateLoadout(fabrica).ok).toBe(true);
     expect(COLOSSUS_BOSS_STATS.loadout.primary?.id).toBe('plasma');
     expect(COLOSSUS_BOSS_STATS.loadout.secondary?.id).toBe('rockets');

@@ -40,7 +40,9 @@ export function fitsExtraSlot(id: WeaponId, teto: WeaponClass, size: RobotSize):
   if (fit.size > size) return false;
   if (WEAPON_CLASSES.indexOf(fit.class) > WEAPON_CLASSES.indexOf(teto)) return false;
   const w: WeaponStats = weapon(id);
-  return w.kind === 'energy' && !w.spin && !w.flame && !w.wave && !w.hook && !w.beam && !w.barrage && !w.cruise && !w.lob && !w.salvo && !w.guide;
+  // P294: a chuva de mísseis cabe nas costas (ela sobe do morteiro das costas e cai em volta da mira, como no braço).
+  if (w.barrage !== undefined) return true;
+  return w.kind === 'energy' && !w.spin && !w.flame && !w.wave && !w.hook && !w.beam && !w.cruise && !w.lob && !w.salvo && !w.guide;
 }
 
 /** Quais armas um encaixe extra oferece num robô de `size` com o teto `teto`, na ordem do catálogo (é a lista do Hangar). */

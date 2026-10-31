@@ -250,7 +250,8 @@ export const COLOSSUS_BOSS_STATS: MechStats = {
 const COLOSSUS_PLAYER_STATS: MechStats = {
   ...COLOSSUS_BOSS_STATS,
   // P282: três encaixes extras, um nas costas e um em cada ombro, de peso (armas pesadas, médias e leves). Saem vazios: o Comandante monta no Hangar.
-  loadout: { primary: weapon('cannon'), secondary: weapon('barrage'), back: null, rightShoulder: null, leftShoulder: null },
+  // P294 (31/10, o Comandante): a chuva de mísseis vai nas COSTAS (o morteiro das costas); o braço esquerdo fica livre.
+  loadout: { primary: weapon('cannon'), secondary: null, back: weapon('barrage'), rightShoulder: null, leftShoulder: null },
   triggers: TRIGGERS_COM_COSTAS,
   // Bocas dos encaixes extras medidas no rig procedural (um zz-medir de Vector09, 30/10): em metros a partir dos pés, virado para -Z. Mudou o desenho do Colossus? Meça de novo.
   muzzles: { back: [0, 10.38, 7.14], rightShoulder: [1.86, 10.38, 0], leftShoulder: [-1.86, 10.38, 0] },

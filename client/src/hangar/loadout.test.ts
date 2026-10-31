@@ -295,7 +295,8 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
       const c = validateLoadout(spec);
       expect(c.ok, id).toBe(true);
       if (!c.ok) continue;
-      expect(c.loadout, id).toEqual(stats.loadout);
+      // A montagem leva o campo `module` (null na versão 3): o que importa é que cada peça do chassi esteja lá.
+      expect(c.loadout, id).toMatchObject(stats.loadout);
       const plate = isMetalShield(spec.left) ? metalShieldMass(spec.left.id, spec.left.tier) : 0;
       expect(specWeapons(spec).reduce((s, w) => s + w.mass, 0) + plate, id).toBe(c.mass);
     }
