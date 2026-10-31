@@ -16,6 +16,8 @@ export interface MechBlueprint {
    * e não enterrados no peito. A boca de tiro da simulação (`muzzles` do chassi) acompanha a posição nova.
    */
   readonly canhaoNaCabeca?: boolean;
+  /** Tamanho das armas dos encaixes de peso em relação ao padrão (1). O Colossus leva armas do tamanho do corpo (P302). */
+  readonly escalaDosEncaixes?: number;
   readonly label: string;
   readonly referenceHeight: number;
   readonly torso: { readonly width: number; readonly height: number; readonly depth: number };
@@ -101,7 +103,7 @@ export const HEAVY_MECH_BLUEPRINT: MechBlueprint = {
  */
 export const COLOSSUS_01_BLUEPRINT: MechBlueprint = {
   encaixesDePeso: true,
-  id: 'colossus01', label: 'COLOSSUS-01', referenceHeight: 14, canhaoNaCabeca: true,
+  id: 'colossus01', label: 'COLOSSUS-01', referenceHeight: 14, canhaoNaCabeca: true, escalaDosEncaixes: 2.2,
   torso: { width: 5.8, height: 3.8, depth: 4.2 },
   head: { width: 1.65, height: 1.05, depth: 1.5, antenna: 0 },
   shoulders: { width: 2.25, height: 1.75, depth: 2.15 }, hips: { width: 3.95, depth: 2.5 },
@@ -326,12 +328,12 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   let leftModule: THREE.Object3D | undefined;
   let shownRight: Loadout['primary'] | undefined;
   let shownLeft: Loadout['secondary'] | undefined;
-  const attachModule = (w: Loadout['secondary'], arm: THREE.Object3D, mouth: THREE.Object3D): THREE.Object3D | undefined => {
+  const attachModule = (w: Loadout['secondary'], arm: THREE.Object3D, mouth: THREE.Object3D, escala = 1): THREE.Object3D | undefined => {
     if (!w || w.id === 'barrage' || (w.tier === 0 &&
         ((arm === rightArm && w.id === 'plasma') || (arm === leftArm && w.id === 'rockets')))) return undefined;
     const m = weaponModel(w);
     m.object.name = `weapon-${w.id}`;
-    const size = blueprint.arms.forearmWidth * 0.75;
+    const size = blueprint.arms.forearmWidth * 0.75 * escala;
     m.object.scale.setScalar(size);
     m.object.position.copy(mouth.position).addScaledVector(m.muzzle, -size);
     arm.add(m.object);
@@ -384,7 +386,7 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
       const w = loadout[slot] ?? null;
       if (mostrandoExtra[slot] === w) continue;
       extrasMontados[slot]?.removeFromParent();
-      extrasMontados[slot] = attachModule(w, no, bocaDoExtra);
+      extrasMontados[slot] = attachModule(w, no, bocaDoExtra, blueprint.escalaDosEncaixes ?? 1);
       mostrandoExtra[slot] = w;
     }
     if (loadout.metalShield) {

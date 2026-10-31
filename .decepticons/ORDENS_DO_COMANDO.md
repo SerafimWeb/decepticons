@@ -46,6 +46,12 @@
 | P301 | 31/10 | "poder clicar no próprio mech no hangar e dizer qual arma é botão 1 e qual é botão 2" | 🟡 | **Fase 2 feita (Claude, 31/10; falta o olho do Comandante).** No Hangar, a arma selecionada ganha **BOTÃO 1 · CLIQUE / BOTÃO 2 · CLIQUE DIREITO**, e três presets: PADRÃO DO CHASSI, TUDO NO 1 · PRINCIPAL NO 2 (a das costas, ou a da mão direita), MÃOS NO 1 · O RESTO NO 2. A escolha vai na montagem (`botoes`), é validada (só encaixe que tem arma, e o ombro tem que existir no chassi), e a chave vai na versão 4 quando há escolha; sem escolha, a chave é a de sempre. O motor compõe o layout com a escolha uma vez por montagem. HUD: o contador de foguetes segue o botão da secundária. Testes: 13 de contrato e presets, mais as suítes de Hangar, combate, entidades e partida (todas verdes). | o Hangar (clique no encaixe e nos presets) |
 | P302 | 31/10 | "mão esquerda no botão 1 para os mechs comuns" (sim, do Comandante) e "talvez jogadores profissionais tenham mouse com mais botões" | ⏸ | **Fase 3:** a mão esquerda do Vector-09 e dos mechs comuns pode ir ao botão 1 (a fase 1 já deixa o encaixe livre). Terceiro botão (mouse extra ou tecla) como botão 3 do encaixe, configurável como as outras. | o Hangar e o jogo |
 
+## P303 — O Colossus com 32 t e armas proporcionais (31/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P303 | 31/10 | "as armas ficaram lá atrás, teria que ser na frente… só canhões nesses slots, ou 3 slots heavy em cima e nas mãos do Colossus v1 slot médio… armas pequenas, proporcionais ao robô… o Colossus tem que aguentar uns 32 t" | 🟡 | **Feito o que é dado (Claude, 31/10; falta o olho do Comandante):** carga do Colossus-01 de 24 para **32 t**; as armas dos encaixes do Colossus saem **2,2 vezes maiores** (o corpo é grande, o tamanho acompanha). **Falta decidir (o Comandante):** (1) nos encaixes de costas e ombros, **só canhões** (cannon, railgun, cerco) ou todo o pesado; (2) as **mãos** do Colossus v1 passam a aceitar só armas **médias** (o canhão pesado sai da mão direita da fábrica). Hoje a mão aceita pesada. | o Hangar (Colossus-01) e o jogo |
+
 ## P286 a P290 — Esquadrão, Wargame e Hangar numa língua só; o microfone do Estúdio (30/10, Claude)
 
 > Uma mensagem só do Comandante (30/10, com duas capturas: a tela ESQUADRÃO com a lista de chassis aberta e a janela WARGAME · CIDADE NEON). Cada ordem vai no seu PR; o estado de cada uma se atualiza na linha dela.
