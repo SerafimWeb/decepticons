@@ -256,7 +256,7 @@ const COLOSSUS_PLAYER_STATS: MechStats = {
   triggers: TRIGGERS_COM_COSTAS,
   // Bocas dos encaixes extras medidas no rig procedural (um zz-medir de Vector09, 30/10): em metros a partir dos pés, virado para -Z. Mudou o desenho do Colossus? Meça de novo.
   // P296: as três bocas do Colossus-01 ficam na parte de cima do chassi, alinhadas para a frente (a cabeça saiu): a das costas no centro, as dos ombros nos lados.
-  muzzles: { back: [0, 11.25, -1.3], rightShoulder: [2.0, 11.25, -1.3], leftShoulder: [-2.0, 11.25, -1.3] },
+  muzzles: { back: [0, 11.25, -4.8], rightShoulder: [2.0, 11.25, -4.8], leftShoulder: [-2.0, 11.25, -4.8] },
 };
 
 /**
