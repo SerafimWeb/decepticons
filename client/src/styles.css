@@ -548,7 +548,7 @@ html, body {
   background: rgba(6, 8, 10, 0.75);
   pointer-events: none;
 }
-/* A abertura (3·2·1·COMBATE!) deixa a partida à vista; o painel de estatísticas continua escurecendo o fundo. */
+/* A abertura (3·2·1·COMBATE!) deixa a partida à vista. (O resultado da rodada é o placar com o cartão da recompensa: `.cartao-recompensa`, P304.) */
 .round-overlay.leve { justify-content: flex-start; padding-top: 44px; background: transparent; }
 .round-overlay.leve .ro-countdown { font-size: clamp(48px, 10vmin, 84px); line-height: 1.1; }
 .round-overlay.leve .ro-round-label { color: var(--hot); text-shadow: 0 0 10px var(--hot); }
@@ -558,45 +558,6 @@ html, body {
   color: var(--hot);
   text-shadow: 0 0 30px var(--hot);
   animation: ro-pulse 0.8s cubic-bezier(0.2, 0.9, 0.2, 1) infinite;
-}
-.ro-summary {
-  width: min(500px, 90vw);
-  padding: 24px 28px;
-  background: rgba(6, 8, 10, 0.94);
-  border: 1px solid var(--accent);
-  box-shadow: 0 0 30px rgba(57, 255, 106, 0.3);
-  text-align: center;
-  pointer-events: auto;
-}
-.ro-title {
-  font-size: 20px;
-  letter-spacing: 4px;
-  color: var(--hot);
-  text-shadow: 0 0 10px var(--hot);
-  margin-bottom: 20px;
-}
-.ro-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-.ro-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px;
-  background: rgba(57, 255, 106, 0.05);
-  border: 1px solid rgba(57, 255, 106, 0.2);
-}
-.ro-label {
-  font-size: 11px;
-  letter-spacing: 2px;
-  color: var(--muted);
-}
-.ro-val {
-  font-size: 22px;
-  letter-spacing: 1px;
-  color: var(--accent);
 }
 @keyframes ro-pulse {
   0% { transform: scale(0.85); opacity: 0; }
@@ -793,6 +754,42 @@ html, body {
 .rb-row span:nth-child(n + 3) { text-align: right; }
 .rb-head { font-size: 11px; color: var(--muted); border-bottom: 1px solid rgba(57, 255, 106, 0.3); }
 .rb-row.me { color: var(--hot); text-shadow: 0 0 6px var(--hot); }
+
+/* O cartão do fim da partida (P304, ui/CartaoDaRecompensa.ts): o XP linha por linha, a barra de nível que enche e as missões do dia prontas.
+   Mora no placar do intervalo, na tela do console (fim de missão, Bandeira, Domínio) ou, online, como aviso curto no topo (.compacto). */
+.cartao-recompensa { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(57, 255, 106, 0.3); letter-spacing: 2px; }
+.cartao-recompensa[hidden] { display: none; }
+.cr-topo { display: flex; align-items: baseline; gap: 14px; }
+.cr-titulo { flex: 1; font-size: 12px; color: var(--muted); }
+.cr-xp { font-size: 22px; color: var(--accent); text-shadow: 0 0 10px var(--accent); animation: cr-chega 0.6s cubic-bezier(0.2, 0.9, 0.2, 1) both; }
+.cr-creditos { font-size: 15px; color: var(--warn); text-shadow: 0 0 8px rgba(255, 225, 77, 0.6); animation: cr-chega 0.6s 0.15s cubic-bezier(0.2, 0.9, 0.2, 1) both; }
+.cr-linhas { list-style: none; margin: 8px 0 0; padding: 0; }
+.cr-linha, .cr-vazio { display: flex; justify-content: space-between; padding: 2px 0; font-size: 12px; color: #cfe8d5; }
+.cr-vazio { color: var(--muted); }
+.cr-linha-xp { color: var(--accent); }
+.cr-nivel { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; margin-top: 10px; font-size: 12px; }
+.cr-nivel-n { color: #cfe8d5; }
+.cr-subiu { color: var(--hot); text-shadow: 0 0 10px var(--hot); animation: cr-subiu 0.9s ease-in-out 3; }
+.cr-trilho { height: 8px; background: rgba(57, 255, 106, 0.12); border: 1px solid rgba(57, 255, 106, 0.35); overflow: hidden; }
+.cr-barra { height: 100%; background: var(--accent); box-shadow: 0 0 10px var(--accent); transform-origin: left center; transition: transform 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s; }
+.cartao-recompensa.subiu .cr-barra { background: var(--hot); box-shadow: 0 0 10px var(--hot); }
+.cr-nivel-xp { color: var(--muted); font-size: 11px; }
+.cr-missao { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 8px; padding: 6px 8px; font-size: 12px; background: rgba(255, 225, 77, 0.08); border: 1px solid rgba(255, 225, 77, 0.4); color: var(--warn); }
+.cr-missao-titulo { color: #fff; }
+.cr-missao-dica { flex-basis: 100%; font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+/* Online: o aviso curto no topo, que não tampa a luta nem pega o mouse. */
+.cartao-recompensa.compacto { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); width: min(420px, 90vw); margin: 0; padding: 10px 14px; background: rgba(6, 8, 10, 0.82); border: 1px solid var(--accent); box-shadow: 0 0 18px rgba(57, 255, 106, 0.25); pointer-events: none; z-index: 20; animation: cr-desce 0.4s ease-out both; }
+.cartao-recompensa.compacto .cr-nivel { margin-top: 6px; }
+/* Na tela do console: logo abaixo do resumo da partida, acima do mapa. */
+.teatro-screen > #round-summary { order: -2; }
+.teatro-screen > .cartao-recompensa { order: -1; flex: none; margin: 0; padding: 8px 12px 10px; background: rgba(6, 8, 10, 0.92); border-top: none; border-bottom: 1px solid rgba(57, 255, 106, 0.35); font-size: calc(12px * var(--k, 1)); }
+@keyframes cr-chega { from { opacity: 0; transform: scale(1.6); } to { opacity: 1; transform: scale(1); } }
+@keyframes cr-subiu { 50% { opacity: 0.45; } }
+@keyframes cr-desce { from { opacity: 0; transform: translate(-50%, -12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@media (prefers-reduced-motion: reduce) {
+  .cr-xp, .cr-creditos, .cr-subiu, .cartao-recompensa.compacto { animation: none; }
+  .cr-barra { transition: none; }
+}
 
 /* Estande de calibração do mouse (ui/MouseCalibration.ts): camada própria sobre a pausa e sobre
    a janela de configurações (z-index 2000). */

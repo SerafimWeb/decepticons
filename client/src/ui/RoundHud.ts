@@ -62,6 +62,11 @@ export class RoundHud {
     this.rows = el('ol', 'rb-rows', this.board);
   }
 
+  /** O quadro do placar (o cartão do fim da rodada entra nele, P304). */
+  get quadro(): HTMLElement {
+    return this.board;
+  }
+
   update(dt: number, round: Round, holdingTab: boolean): void {
     if (!this.visible) return;
     const text = round.playing ? `RODADA ${round.number} · ${clock(round.timeLeft)}` : `FIM DA RODADA ${round.number}`;

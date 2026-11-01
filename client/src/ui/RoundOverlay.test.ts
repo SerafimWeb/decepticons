@@ -6,25 +6,6 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('RoundOverlay (abertura da rodada e resumo)', () => {
-  it('nasce sem resumo de estatísticas', () => {
-    const overlay = new RoundOverlay();
-    expect(overlay.lastStats).toBeNull();
-  });
-
-  it('armazena e exibe o resumo de estatísticas no fim da rodada', () => {
-    const overlay = new RoundOverlay();
-    const stats = {
-      kills: 5,
-      damage: 1420,
-      streak: 3,
-      survivalSeconds: 120,
-    };
-    overlay.showSummary(stats);
-    expect(overlay.lastStats).toEqual(stats);
-  });
-});
-
 describe('a contagem de abertura lê o relógio do intervalo', () => {
   it('só os últimos 3 s viram número: 3, 2, 1; fora disso, nada', () => {
     expect(numeroDaContagem(10)).toBeNull();

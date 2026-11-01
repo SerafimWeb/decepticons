@@ -91,6 +91,12 @@ export class Onboarding {
     this.timer = 6;
   }
 
+  /** Tira a dica da tela agora (o fim da rodada: o placar e o cartão da recompensa ficam limpos, P304). A dica não volta: já foi mostrada. */
+  calar(): void {
+    this.timer = 0;
+    this.root.classList.remove('show');
+  }
+
   update(dt: number): void {
     if (this.timer > 0) {
       this.timer -= dt;

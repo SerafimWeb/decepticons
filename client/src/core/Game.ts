@@ -176,7 +176,9 @@ import { ModeSelector } from '../ui/ModeSelector';
 import { MissionHUD } from '../ui/MissionHUD';
 import { CtfHud } from '../ui/CtfHud';
 import { DominioHud, avisoDoPonto } from '../ui/DominioHud';
-import { DailyChallenges } from '../ui/DailyChallenges';
+import { DailyChallenges, XP_PER_LEVEL } from '../ui/DailyChallenges';
+import { CartaoDaRecompensa } from '../ui/CartaoDaRecompensa';
+import { recompensaDaPartida, venceuARodada, type DesempenhoDaPartida } from './recompensaDaPartida';
 import { LadoSelector } from '../ui/LadoSelector';
 import { ContaCliente } from '../net/auth';
 import { progressoLocalDoJogo } from '../net/progressoLocal';
@@ -383,6 +385,14 @@ export class Game {
   private campanhaHud: CampaignRunHud | null = null;
   /** A sequência de abates do jogador (P96): alimenta o aviso de abate. Só da tela (G1/G2). */
   private readonly sequencia = new SequenciaDeAbates();
+  /** O cartão do fim da partida (P304: XP, Créditos, nível, missões do dia). */
+  private readonly cartao = new CartaoDaRecompensa();
+  /** O que a partida em curso somou para a recompensa (zerado a cada rodada ou missão nova): o dano do jogador e o tempo jogado (ticks fixos, a pausa não conta). */
+  private danoDaPartida = 0;
+  private abatesDaPartida = 0;
+  private segundosDaPartida = 0;
+  /** Abre o console completo no fim de uma partida (o primeiro acesso, P133, mostra a tela enxuta, onde o resultado não aparece). */
+  private abrirConsoleNoFim: (() => void) | null = null;
   /** O narrador (P146): a voz e o sotaque das falas de partida. */
   private readonly narrador: Narrador;
   /** O "COMBATE!" da primeira rodada já apareceu (ao entrar na partida)? */
@@ -849,6 +859,7 @@ export class Game {
         onBank: (reply) => this.acceptBank(reply),
         onDamage: (amount, hit) => {
           this.playTelemetry.hit(amount);
+          this.danoDaPartida += amount;
           // Número de dano flutuante online (frente 2): o servidor manda o valor; o alvo dá o lugar.
           if (hit) {
             _dmgPos.copy(hit.position);
@@ -856,7 +867,10 @@ export class Game {
             this.damageNumbers.show(this.camera, _dmgPos, amount);
           }
         },
-        onRoundEnd: () => this.playTelemetry.finish('completed'),
+        onRoundEnd: () => {
+          this.playTelemetry.finish('completed');
+          this.fimDaRodadaOnline();
+        },
         onKill: (killer, dead, mine) => {
           this.killFeed.push(killer, dead, mine);
           if (dead === 'VOCÊ') { this.playTelemetry.death(); this.sequencia.zerar(); this.narrador.dizer('voce_morreu', 3); }
@@ -1260,6 +1274,7 @@ export class Game {
       radar: fonteDoRadar(mapa, this.match.arena.halfSize, this.match.arena.occluders, () => this.mech, () => this.bots.mechs, allies),
     });
     this.settings.onChange(() => cmd.atualizar());
+    this.abrirConsoleNoFim = () => cmd.partidaTerminou();
   }
 
   /** A faixa da etapa e o painel do fim, se esta partida é uma etapa de campanha (fase 4B). Os avisos de abate e de fim vêm dos callbacks do `Match` (abaixo). */
@@ -1546,11 +1561,82 @@ export class Game {
   /** Rodada nova: a partida já pôs todos de volta e restaurou a arena; aqui, o que é do jogador local. */
   private startRound(): void {
     this.hud.roundOverlay.combate(this.round.number);
-    this.sequencia.zerar();
+    this.novaPartida();
     this.equipPending();
     this.player.launcher.refill();
     this.hud.setScore(0, 0);
     this.onboarding.trigger('walk');
+  }
+
+  /** Partida nova (rodada, missão recomeçada): zera o que a recompensa soma e tira o cartão da partida anterior. */
+  private novaPartida(): void {
+    this.sequencia.reiniciar();
+    this.danoDaPartida = 0;
+    this.abatesDaPartida = 0;
+    this.segundosDaPartida = 0;
+    if (!this.cartao.el?.classList.contains('compacto')) this.cartao.esconder();
+  }
+
+  /**
+   * O fim de uma partida (P304, "toda partida rende"): soma o XP e os Créditos, conta a vitória na missão do dia e mostra o cartão em `onde`.
+   * O Wargame (IA contra IA, o Comandante só assiste) não rende nada.
+   */
+  private fecharPartida(d: DesempenhoDaPartida, onde: HTMLElement | null, compacto = false): void {
+    if (this.wargameAtivo) return;
+    const r = recompensaDaPartida(d);
+    const nivelAntes = this.dailyChallenges.level;
+    const xpAntes = this.dailyChallenges.xp;
+    this.dailyChallenges.addXp(r.xp);
+    this.dailyChallenges.addCredits(r.creditos);
+    if (d.venceu) this.dailyChallenges.trackWaveOrRound();
+    const progresso = { nivelAntes, xpAntes, nivel: this.dailyChallenges.level, xp: this.dailyChallenges.xp, xpPorNivel: XP_PER_LEVEL };
+    this.cartao.mostrar(onde, r, progresso, this.dailyChallenges.missoesProntas(), compacto);
+    if (progresso.nivel > nivelAntes) this.audio.playKillStreak(4);
+  }
+
+  /** Fim da rodada offline (todos contra todos): a posição no placar decide vitória e pódio; o cartão entra no placar do intervalo. */
+  private fimDaRodada(): void {
+    this.onboarding.calar();
+    const tabela = this.round.standings();
+    const i = tabela.findIndex((s) => s.mech === this.mech);
+    const posicao = i >= 0 ? i + 1 : null;
+    const abates = this.round.scoreOf(this.mech)?.kills ?? 0;
+    this.fecharPartida(
+      { abates, dano: this.danoDaPartida, maiorSequencia: this.sequencia.melhor, posicao, jogadores: tabela.length, venceu: venceuARodada(posicao, abates), segundos: this.segundosDaPartida, ondas: 0 },
+      this.roundHud.quadro,
+    );
+  }
+
+  /** Fim da rodada online: o servidor só avisa quando a SEGUINTE começa (o placar ainda é o da que acabou), então o cartão é o aviso curto do topo. */
+  private fimDaRodadaOnline(): void {
+    if (!this.online || this.gameMode !== 'deathmatch') return;
+    const tabela = this.online.standings();
+    const i = tabela.findIndex((s) => s.id === this.online!.myId);
+    const posicao = i >= 0 ? i + 1 : null;
+    const abates = i >= 0 ? tabela[i]!.kills : 0;
+    this.fecharPartida(
+      { abates, dano: this.danoDaPartida, maiorSequencia: this.sequencia.melhor, posicao, jogadores: tabela.length, venceu: venceuARodada(posicao, abates), segundos: this.segundosDaPartida, ondas: 0 },
+      document.getElementById('hud'),
+      true,
+    );
+    this.novaPartidaOnline();
+  }
+
+  /** Online a rodada seguinte já começou: zera a soma sem tirar o aviso que acabou de entrar. */
+  private novaPartidaOnline(): void {
+    this.sequencia.reiniciar();
+    this.danoDaPartida = 0;
+    this.abatesDaPartida = 0;
+    this.segundosDaPartida = 0;
+  }
+
+  /** Fim de missão, Bandeira ou Domínio: o cartão vai para a tela do console, ao lado do resumo da partida. */
+  private fimDePartidaNoConsole(venceu: boolean, ondas: number): void {
+    this.fecharPartida(
+      { abates: this.abatesDaPartida, dano: this.danoDaPartida, maiorSequencia: this.sequencia.melhor, posicao: null, jogadores: 1, venceu, segundos: this.segundosDaPartida, ondas },
+      document.getElementById('round-summary')?.parentElement ?? null,
+    );
+    this.abrirConsoleNoFim?.();
   }
 
   /** O composer guarda o próprio pixelRatio (render targets): os dois mudam juntos. */
@@ -1756,6 +1842,7 @@ export class Game {
       if (e.shooter === mech) {
         this.hud.showHit(e.result);
         this.dailyChallenges.trackDamage(e.result.applied);
+        this.danoDaPartida += e.result.applied;
         this.playTelemetry.hit(e.result.applied);
         // Confirmação auditiva de acerto (ouvida pelo jogador ao acertar): uma por tick, para os nove balins da escopeta (P160) não tocarem nove vezes juntos.
         if (this.hitSoundTick !== this.bankTick) {
@@ -1795,6 +1882,7 @@ export class Game {
 
       if (killer === mech && dead !== mech) {
         this.dailyChallenges.trackKill(dead instanceof Android ? 'android' : 'mech');
+        if (!(this.match.allies?.mechs ?? []).includes(dead)) this.abatesDaPartida++;
         this.playTelemetry.kill();
       }
 
@@ -1857,7 +1945,10 @@ export class Game {
       this.playTelemetry.onda(wave);
       this.hud.setMissionProgress(wave, killed, total, elapsedS);
     };
-    this.match.onWaveClear = (wave, elapsedS) => this.hud.showMissionClear(wave, elapsedS);
+    this.match.onWaveClear = (wave, elapsedS) => {
+      this.hud.showMissionClear(wave, elapsedS);
+      this.dailyChallenges.trackWaveOrRound(); // a missão do dia "RESISTÊNCIA TÁTICA" (antes nada a avançava: P304)
+    };
     this.match.onMissionEnd = (survived, waveReached, stats) => {
       if (this.match.nucleo) this.narrador.dizer(survived ? 'estacao_segura' : 'rede_caiu', 3);
       this.telemetry.enviar('partida_terminada', this.audiencia?.funil(this.contaDoFunil()));
@@ -1900,6 +1991,9 @@ export class Game {
           stats.survivalSeconds,
         );
       } else this.hud.setMissionEnd(survived, waveReached, stats.kills, stats.survivalSeconds, this.match.nucleo?.caiu === true);
+      // As ondas só rendem na Sobrevivência de ondas (o rio e o 8 de Janeiro contam pela vitória).
+      const deOndas = !this.match.rio && !this.match.missaoJaneiro;
+      this.fimDePartidaNoConsole(survived, deOndas ? (survived ? waveReached : Math.max(0, waveReached - 1)) : 0);
       this.setPlaying(false);
       this.input.exitLock();
       if (this.campanha) {
@@ -1922,6 +2016,7 @@ export class Game {
       this.playTelemetry.finish('completed');
       this.missionEnded = true;
       this.hud.setCtfEnd(winner, blue.captures, red.captures, blue.kills, red.kills);
+      this.fimDePartidaNoConsole(winner === 'blue', 0);
       this.setPlaying(false);
       this.input.exitLock();
       if (this.campanha) {
@@ -1937,6 +2032,7 @@ export class Game {
       this.playTelemetry.finish('completed');
       this.missionEnded = true;
       this.hud.setDominioEnd(vencedor, Math.floor(azul.pontos), Math.floor(vermelho.pontos));
+      this.fimDePartidaNoConsole(vencedor === 'blue', 0);
       this.setPlaying(false);
       this.input.exitLock();
     };
@@ -2088,6 +2184,7 @@ export class Game {
   private resume(): void {
     if (this.missionEnded) {
       this.missionEnded = false;
+      this.novaPartida();
       this.relatorioDaPraca = null;
       this.relatorioDoRio = null;
       this.mostrarChipDoRelatorio(false);
@@ -2319,7 +2416,11 @@ export class Game {
       steps++;
     }
     const tickMs = performance.now() - t0;
-    if (wasRoundPlaying && !this.round.playing && !this.online) this.playTelemetry.finish('completed');
+    this.segundosDaPartida += steps * FIXED_DT;
+    if (wasRoundPlaying && !this.round.playing && !this.online) {
+      this.playTelemetry.finish('completed');
+      if (this.gameMode === 'deathmatch') this.fimDaRodada();
+    }
     if (steps === MAX_STEPS_PER_FRAME) this.accumulator = 0;
     const alpha = this.accumulator / FIXED_DT;
 

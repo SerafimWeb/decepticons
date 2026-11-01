@@ -1,5 +1,5 @@
 /**
- * RoundOverlay — a abertura da rodada ("RODADA N · 3 · 2 · 1 · COMBATE!") e o painel de estatísticas do fim.
+ * RoundOverlay — a abertura da rodada ("RODADA N · 3 · 2 · 1 · COMBATE!"). O fim da rodada é o placar (`RoundHud`) com o cartão da recompensa (`CartaoDaRecompensa`, P304).
  * Vocabulário e textos centralizados para facilitar localização (ex: CTI/SERAFIM).
  *
  * **A contagem é só da tela** (G1/G2): ela lê o relógio do intervalo que a `Round` já tem (os últimos 3 s antes da rodada seguinte) e não segura ninguém no lugar.
@@ -7,13 +7,6 @@
  *
  * Custo: zero por quadro além de uma comparação (`contar` só mexe no DOM quando o número muda).
  */
-export interface RoundStatsSummary {
-  kills: number;
-  damage: number;
-  streak: number;
-  survivalSeconds: number;
-}
-
 /** O que o `Game` liga para a abertura soar. */
 export interface SonsDaAbertura {
   /** Um bipe por número (3, 2, 1). */
@@ -36,13 +29,11 @@ export function numeroDaContagem(restanteS: number): 1 | 2 | 3 | null {
 export class RoundOverlay {
   private readonly el: HTMLDivElement | null = null;
   private readonly countdownEl: HTMLDivElement | null = null;
-  private readonly summaryEl: HTMLDivElement | null = null;
   private readonly labelEl: HTMLElement | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private numeroAtual: number | null = null;
   /** O texto que a abertura mostra agora (para quem confere sem olhar o DOM). */
   public currentText = '';
-  public lastStats: RoundStatsSummary | null = null;
   /** Quem toca os sons da abertura; `null` = mudo. */
   public som: SonsDaAbertura | null = null;
   /** Quem anuncia a rodada e o combate (o narrador, P146: escolhe a fala, a voz e o sotaque); `null` = sem voz. */
@@ -61,21 +52,11 @@ export class RoundOverlay {
       el.innerHTML = `
         <div class="ro-round-label">// RODADA <span id="ro-round-num">1</span> //</div>
         <div class="ro-countdown"></div>
-        <div class="ro-summary" hidden>
-          <div class="ro-title">// FIM DA RODADA //</div>
-          <div class="ro-stats-grid">
-            <div class="ro-stat"><span class="ro-label">ABATES</span><span class="ro-val ro-kills">0</span></div>
-            <div class="ro-stat"><span class="ro-label">DANO CAUSADO</span><span class="ro-val ro-damage">0</span></div>
-            <div class="ro-stat"><span class="ro-label">MAIOR SEQUÊNCIA</span><span class="ro-val ro-streak">0x</span></div>
-            <div class="ro-stat"><span class="ro-label">TEMPO DE COMBATE</span><span class="ro-val ro-time">0s</span></div>
-          </div>
-        </div>
       `;
       p.appendChild(el);
     }
     this.el = el;
     this.countdownEl = el.querySelector('.ro-countdown');
-    this.summaryEl = el.querySelector('.ro-summary');
     this.labelEl = el.querySelector('.ro-round-label');
   }
 
@@ -106,18 +87,17 @@ export class RoundOverlay {
     this.timer = setTimeout(() => this.parar(), COMBATE_NA_TELA_MS);
   }
 
-  /** Apaga a abertura (a pausa, a troca de tela, o fim do "COMBATE!"). O painel de estatísticas, se aberto, fica. */
+  /** Apaga a abertura (a pausa, a troca de tela, o fim do "COMBATE!"). */
   parar(): void {
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = null;
     this.numeroAtual = null;
     this.currentText = '';
-    if (this.summaryEl?.hidden !== false && this.el) this.el.style.display = 'none';
+    if (this.el) this.el.style.display = 'none';
   }
 
   private mostrar(texto: string, rodada: number): void {
     this.currentText = texto;
-    if (this.summaryEl) this.summaryEl.hidden = true;
     if (this.countdownEl) {
       this.countdownEl.hidden = false;
       this.countdownEl.textContent = texto;
@@ -132,34 +112,12 @@ export class RoundOverlay {
     }
   }
 
-  /** Exibe o painel de fim de rodada com as estatísticas do jogador. */
-  showSummary(stats: RoundStatsSummary): void {
-    this.lastStats = stats;
-    if (this.timer !== null) clearTimeout(this.timer);
-    this.timer = null;
-    this.numeroAtual = null;
-    if (this.countdownEl) this.countdownEl.hidden = true;
-    if (this.summaryEl) this.summaryEl.hidden = false;
-    if (this.el) {
-      this.el.classList.remove('leve');
-      this.el.style.display = 'flex';
-    }
-
-    if (this.summaryEl) {
-      this.summaryEl.querySelector('.ro-kills')!.textContent = `${stats.kills}`;
-      this.summaryEl.querySelector('.ro-damage')!.textContent = `${Math.round(stats.damage)}`;
-      this.summaryEl.querySelector('.ro-streak')!.textContent = `${stats.streak}x`;
-      this.summaryEl.querySelector('.ro-time')!.textContent = `${Math.round(stats.survivalSeconds)}s`;
-    }
-  }
-
-  /** Esconde o overlay (inclusive o painel de estatísticas). */
+  /** Esconde o overlay. */
   hide(): void {
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = null;
     this.numeroAtual = null;
     this.currentText = '';
-    if (this.summaryEl) this.summaryEl.hidden = true;
     if (this.el) this.el.style.display = 'none';
   }
 }
