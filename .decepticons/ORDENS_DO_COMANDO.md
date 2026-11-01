@@ -14,6 +14,14 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P304 — Um jogo que gera desejo: o espetáculo, depois a construção (01/11, Claude)
+
+> Conversa do Comandante com o Brain Serafim (01/11), trazida ao Claude: o jogo tem combate e não tem um motivo para voltar. O Comandante escolheu **B (espetáculo) e depois A (construção)** e, ao Claude: **"faz logo… quero tornar o jogo mais gostoso de jogar"**. Leitura do Claude, dita ao Comandante: B = partidas de gente boas de jogar e de assistir (fim de partida com peso, clipe, modo streamer), não o Wargame dos bots como produto; A = progressão e identidade (cosmético, nunca combate: `VISAO.md`). Fura o congelamento do `LANCAMENTO.md` por ordem do Comandante. Um PR por passo.
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P304 | 01/11 | "quero que ele se torne um jogo que gera desejo, que as pessoas queiram ficar jogando e jogando… B, depois A… faz logo, hoje é domingo e podemos passar a noite iterando… quero tornar o jogo mais gostoso de jogar" | 🔧 | **Passo 1, "toda partida rende" (Claude, 01/11, `claude/partida-gostosa`):** cada partida dá XP e Créditos (abates, dano, sequência, pódio, vitória, ondas; antes só as 3 missões do dia davam XP) e o fim mostra o cartão com a conta, a barra de nível e as missões prontas; a missão "RESISTÊNCIA TÁTICA" passa a avançar (nada a chamava). **Próximos:** retorno de acerto e abate mais forte; clipe dos últimos segundos; Créditos com destino (pintura, decalque); modo streamer. | Jogar uma rodada da Cidade Neon até o fim (ou uma missão): o placar do intervalo traz SUA PARTIDA com o XP; online, o aviso curto no topo quando a rodada seguinte começa. Fotos `arte/recompensa-*-claude.jpg`. |
+
 ## P291 a P294 — O Wargame como DEMO, a câmera, o Colossus e as armas (31/10, Claude)
 
 > Mensagem do Comandante (31/10), depois de jogar o Wargame e o Colossus-01 no site. Cada ordem vai no seu PR; o estado de cada uma se atualiza na linha dela.

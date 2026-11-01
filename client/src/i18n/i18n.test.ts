@@ -9,6 +9,8 @@ import { TEXTO_CONVIDADO, TEXTO_GUARDANDO, TEXTO_IDADE_GUARDADA, TEXTO_LOGADO } 
 import { TEXTO_DA_ELEGIBILIDADE, TEXTO_DO_BOTAO_DA_VOZ, TEXTO_DO_MENOR_SO_OUVE } from '../voice/VozNasConfiguracoes';
 import { CUSTO_DO_CONSORCIO, LADOS, SELO_SEM_LADO, TEXTO_CONFIRMAR, TEXTO_CUSTO_RODAPE, TEXTO_CUSTO_TITULO, TEXTO_ELES_DIZEM, TEXTO_FECHAR, TEXTO_PERGUNTA, TEXTO_RODAPE, TEXTO_SEGUIR, TEXTO_SIGNIFICA, TEXTO_VOLTAR } from '../ui/LadoSelector';
 import { DICA_DA_ARMA } from '../ui/dicasDeArma';
+import { CARTAO_TEXTOS } from '../ui/CartaoDaRecompensa';
+import { ROTULOS } from '../core/recompensaDaPartida';
 import { IDIOMAS, carregarDicionario, idiomaInicial, idiomaValido, t, traduzir, type Dicionario } from './i18n';
 
 const RAIZ = resolve(__dirname, '../..');
@@ -236,6 +238,13 @@ describe('a cobertura: o que o jogo mostra e o dicionário traduz', () => {
       ...CUSTO_DO_CONSORCIO.flat(),
     ];
     expect(textos.filter((t) => !coberto(t))).toEqual([]);
+  });
+
+  it('o cartão do fim da partida (P304): cada frase e cada linha do XP, com o número já preenchido como o jogo mostra', () => {
+    const com = (modelo: string) => modelo.replace('{0}', '3').replace('{1}', '1000');
+    const textos = [...Object.values(CARTAO_TEXTOS), ...Object.values(ROTULOS)].map(com).filter((x) => /\p{L}{3,}/u.test(x.replace(/XP/g, '')));
+    expect(textos.length).toBeGreaterThan(10);
+    expect(textos.filter((x) => !coberto(x))).toEqual([]);
   });
 
   it('as dicas da tela de carregamento (a primeira coisa que um jogador novo lê)', () => {

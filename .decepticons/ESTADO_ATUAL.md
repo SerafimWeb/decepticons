@@ -1,3 +1,8 @@
+## EM BRANCH — NÃO ESTÁ NO AR: toda partida rende, XP, Créditos e o cartão do fim (Claude, P304 passo 1, branch `claude/partida-gostosa`)
+
+**O pedido (01/11):** "quero que ele se torne um jogo que gera desejo… B (espetáculo), depois A (construção)… faz logo, quero tornar o jogo mais gostoso de jogar". **Entrega:** cada partida (rodada, missão, Bandeira, Domínio) dá XP e Créditos, e o fim mostra SUA PARTIDA com a conta, a barra de nível e as missões prontas; online, um aviso curto no topo. A missão "RESISTÊNCIA TÁTICA" avança; o resumo morto do `RoundOverlay` saiu; o primeiro acesso abre o console completo no fim da partida. **Provas:** 12 testes da regra, 1 de idioma, bancada `medicoes/cartao-recompensa.mjs` no Chrome. **Falta:** o olho do Comandante e uma sala online de verdade.
+**Próxima sessão começa com:** o P304 passo 2, Créditos com destino (pinturas do Mech no Hangar), depois o clipe dos últimos segundos e o modo streamer.
+
 ## Wargame com modo e DEMO, um só lugar de configuração, a chuva nas costas (Claude, P292, P293, P294, branch `claude/console-ajustar`)
 
 **O pedido (31/10):** "o wargame como DEMO, com o modo que eu escolher; o AJUSTAR repetido; o canhão e a chuva do Colossus; resolva tudo". **Entrega:** o painel WARGAME tem MODO e [ DEMO ]; o console tem um só lugar de configuração (JOGO, CONTROLES, GRÁFICOS E SOM); a chuva de mísseis vai para as costas do Colossus-01, com o disparo pelo caminho do foguete. **Provas:** `Match.roteiroModo.test.ts` (os 4 modos rodam como espectador por 20 s), testes de encaixes (chuva nas costas dispara como foguete; fábrica volta igual do texto), CommandConsole e i18n, typecheck limpo. **Falta:** a prova no Chrome dos três (memória); o olho do Comandante no desenho das costas; SALVAR guardar o modo.

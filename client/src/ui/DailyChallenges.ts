@@ -30,7 +30,7 @@ export interface PilotProgressionData {
 }
 
 const STORAGE_KEY = 'cybermech_pilot_progression';
-const XP_PER_LEVEL = 1000;
+export const XP_PER_LEVEL = 1000;
 
 function getTodayKey(): string {
   const d = new Date();
@@ -138,6 +138,11 @@ export class DailyChallenges {
     if (amount > 0) {
       this._advanceChallenge('deal_damage', Math.round(amount));
     }
+  }
+
+  /** Os títulos das missões do dia prontas para resgatar (o cartão do fim da partida lembra o piloto: `ui/CartaoDaRecompensa`). */
+  missoesProntas(): string[] {
+    return this.data.challenges.filter((c) => !c.claimed && c.progress >= c.target).map((c) => c.title);
   }
 
   /** Registra vitória de rodada ou onda vencida. */

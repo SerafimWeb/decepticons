@@ -423,6 +423,11 @@ export class CommandConsole {
   }
 
   /** "Mais opções": o console completo, agora e nas próximas visitas. */
+  /** Uma partida terminou (missão, Bandeira, Domínio): quem jogou já não é visitante novo, e o resultado (e o cartão da recompensa, P304) mora no console completo. */
+  partidaTerminou(): void {
+    this.abrirConsoleCompleto();
+  }
+
   private abrirConsoleCompleto(): void {
     if (!this.primeira) return;
     this.primeira = false;
