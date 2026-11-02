@@ -156,6 +156,7 @@ import { OnlineSwitch } from '../ui/OnlineSwitch';
 import { ServerStatus } from '../ui/ServerStatus';
 import { type FabricaDeCadeiaDeVoz, GameRecorder } from './GameRecorder';
 import type { ClipRecorder } from '../clip/ClipRecorder';
+import type { MusicaDeCombate } from '../audio/MusicaDeCombate';
 import { Telemetry } from './telemetry';
 import { reloadWithout } from './url';
 import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
@@ -1614,6 +1615,18 @@ export class Game {
     else m.avisoDoClipe('este navegador não grava vídeo', 2400);
   }
 
+  /** P315: a música de combate, carregada na primeira partida (o `import()` fica fora do pacote de partida). */
+  private musica: MusicaDeCombate | null = null;
+  private musicaCarregando: Promise<void> | null = null;
+  private carregarMusica(): Promise<void> {
+    if (!this.musicaCarregando) {
+      this.musicaCarregando = import('../audio/MusicaDeCombate').then((m) => {
+        this.musica = new m.MusicaDeCombate(this.audio);
+      });
+    }
+    return this.musicaCarregando;
+  }
+
   /** P310: o modo streamer liga o clipe quando a partida começa (depois do primeiro clique, com o áudio já criado). */
   private async ligarClipeDoStreamer(): Promise<void> {
     const m = await this.carregarClipe();
@@ -1939,6 +1952,8 @@ export class Game {
       this.onboarding.armaEmUso(w); // a dica é da arma (granada, enxame, cruzador…), não a do foguete para todas
     };
     this.match.onMechHit = (e) => {
+      // P315: um acerto que envolve o jogador sobe a energia da música de combate.
+      if (e.shooter === mech || e.mech === mech) this.musica?.registrarAcerto();
       if (e.shooter === mech) {
         this.hud.showHit(e.result);
         this.dailyChallenges.trackDamage(e.result.applied);
@@ -1972,6 +1987,8 @@ export class Game {
       if (e.result.partDestroyed) this.audio.playPartDestroyed();
     };
     this.match.onMechKilled = (dead, at, killer) => {
+      // P315: um abate do jogador leva a música ao combate de uma vez.
+      if (killer === mech) this.musica?.registrarAbate();
       // P160: o Mech destruído explode de verdade (bola de fogo grande, fumaça preta, estilhaços), além dos destroços da carcaça.
       if (!(dead instanceof Android)) this.weaponFx.wreck(at, dead.stats.height);
       const falloff = 1 - at.distanceTo(mech.position) / 70;
@@ -2490,6 +2507,9 @@ export class Game {
   }
 
   private setPlaying(playing: boolean): void {
+    // P315: a música de combate toca enquanto a partida roda, e para quando ela pausa ou acaba.
+    if (playing) void this.carregarMusica().then(() => this.musica?.ligar());
+    else this.musica?.desligar();
     // O funil (P193): a primeira partida da página conta ao começar a jogar; as seguintes contam pelo `onRoundStart`. Achado ao ligar a audiência: antes, quem jogava uma rodada só nunca virava "partida iniciada".
     if (playing && !this.primeiraPartidaContada) {
       this.primeiraPartidaContada = true;
