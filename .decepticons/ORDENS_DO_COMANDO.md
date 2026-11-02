@@ -14,17 +14,27 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P311 a P313 — Missões com objetivo e recompensa, na conta; o fim dramático (02/11, Claude)
+
+> Mensagem do Comandante (02/11), depois da lista do que faltava para o jogo prender mais: "sim liberado, prossiga com essas tarefas. faça tudo, vai iterando até concluir, com inteligência, estratégia e coerência". "Essas tarefas" são as que propus: missões com objetivo e recompensa, sincronizadas com a conta; e depois o fim dramático. Liberado = as funcionalidades desta sequência nascem públicas, quando testadas.
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P311 | 02/11 | "missões com objetivo e recompensa, sincronizadas com a conta" | ⏸ | Próximo PR, depois da P310: catálogo de missões, três por dia, sorteadas pela data (iguais para todos), progresso e resgate guardados na conta. | CARREIRA (console): as missões do dia, com a barra de progresso e RESGATAR. |
+| P312 | 02/11 | (mesma ordem) | ⏸ | Interface das missões e aviso de missão cumprida durante a partida. | Cumprir uma missão numa partida: o aviso aparece. |
+| P313 | 02/11 | "o fim dramático" (proposto por mim; aprovado em "sim liberado") | ⏸ | Câmera orbita o vencedor por 4 s, com o título, no fim da rodada ou da missão. | Modo Comandante: forçar o fim da rodada. |
+
 ## P306 a P310 — O Colossus na arena, a chuva que sai das costas, a cor liberada, o clipe e o modo streamer (02/11, Claude)
 
 > Mensagem do Comandante (02/11), depois de jogar a cor nova: "mudei a cor do colossus mas nao apareceu na cor, na arena... o tiro pra cima do chuva de misseis está saindo da frente do ombro, e nao das costas... seria bom melhorarmos esse tipo de detalhe; prossiga liberando a cor, o clipe e modo streamer, na sequencia". Uma ordem por PR, na sequência.
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
 |---|---|---|---|---|---|
-| P306 | 02/11 | "mudei a cor do colossus mas nao apareceu na cor, na arena" | 🔧 | **Claude, 02/11, branch `claude/colossus-cor-costas`, PR a abrir.** A cor só pintava as partes de pintura (canelas, faixa do peito, placas dos ombros); no Colossus-01, quase tudo é aço. Agora a cor cobre o casco inteiro: 6,4% → 19,6% dos vértices do robô. A estrutura escura (braços, pinos, juntas) segue escura de propósito. Vale também para o Vector-09 comprado. | Cidade Neon (`?mapa=arena&comandante=1`) com o Colossus-01 e uma cor comprada no Hangar (seção COR DO CASCO). Fotos: `arte/colossus-cor-fabrica-claude.jpg` e `arte/colossus-cor-casco-claude.jpg`. |
+| P306 | 02/11 | "mudei a cor do colossus mas nao apareceu na cor, na arena" | 🔧 | **Claude, 02/11, PR #509, na main desde 02/11.** A cor só pintava as partes de pintura (canelas, faixa do peito, placas dos ombros); no Colossus-01, quase tudo é aço. Agora a cor cobre o casco inteiro: 6,4% → 19,6% dos vértices do robô. A estrutura escura (braços, pinos, juntas) segue escura de propósito. Vale também para o Vector-09 comprado. | Cidade Neon (`?mapa=arena&comandante=1`) com o Colossus-01 e uma cor comprada no Hangar (seção COR DO CASCO). Fotos: `arte/colossus-cor-fabrica-claude.jpg` e `arte/colossus-cor-casco-claude.jpg`. |
 | P307 | 02/11 | "o tiro pra cima do chuva de misseis está saindo da frente do ombro, e nao das costas... seria bom melhorarmos esse tipo de detalhe" | 🔧 | **No mesmo PR da P306.** O morteiro da chuva já ficava nas costas, mas o lançamento só saía dele com a chuva no botão secundário. Em outro botão, o tiro saía do ponto da frente (no Colossus-01, o encaixe das costas fica sobre a cabeça). Agora a boca do morteiro vale para a chuva em qualquer botão. Ver a pendência de origem da simulação em `STATUS_REAL.md`. | Colossus-01 com a chuva nas costas, disparada pelo botão direito: o lançamento sobe das costas. Foto: `arte/chuva-costas-colossus-claude.jpg`. |
-| P308 | 02/11 | "prossiga liberando a cor" | ⏸ | Próximo PR, depois que a P306 estiver no ar: a seção COR DO CASCO sai do restrito (catálogo `robo:pintura`). | VISIBILIDADE ▸ "Cor do casco · compra com Créditos" (ou o padrão público, no catálogo). |
-| P309 | 02/11 | "o clipe" | ⏸ | Próximo PR: gravação dos últimos 10 s em vertical (9:16), opt-in e com o custo de CPU medido; nasce restrita (P191). | Modo Comandante: tecla L liga o buffer, K salva o clipe. |
-| P310 | 02/11 | "modo streamer" | ⏸ | Depois do clipe: sala de código fixo (`?stream=1`), HUD limpo, nasce restrita (P191). | `?stream=1` no modo Comandante. Integração com Twitch/YouTube fica para depois (chaves e conta do canal). |
+| P308 | 02/11 | "prossiga liberando a cor" | 🔧 | **Claude, 02/11, PR a abrir.** Liberada ao público: o padrão do catálogo (`robo:pintura`) passa a público. Só uma exceção gravada pelo Comandante no painel esconde de novo. | Sem `?comandante=1`: Hangar (H), seção COR DO CASCO. Foto: `arte/cor-publica-hangar-claude.jpg`. |
+| P309 | 02/11 | "o clipe" | ⏸ | Próximo PR, depois da P308: gravação dos últimos 10 s em vertical (9:16), opt-in (L liga, K salva), custo de CPU medido. Nasce pública por ordem do Comandante. | Jogo na Cidade Neon: L, espera 10 s, K baixa o arquivo `.webm`. |
+| P310 | 02/11 | "modo streamer" | ⏸ | Depois do clipe: sala de código fixo (`?stream=1`), com o clipe ligado. Nasce pública por ordem do Comandante. A integração com Twitch e YouTube precisa da conta e da chave do canal, que são do Comandante. | `cybermech.online/jogar/?stream=1`, depois do deploy. |
 
 ## P305 — A cor do casco: comprada com Créditos e vista pelos outros pilotos (01/11, Claude)
 
