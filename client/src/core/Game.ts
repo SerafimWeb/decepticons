@@ -169,7 +169,9 @@ import { CODIGO_DA_FASE, faseDoChefe } from '../sim/FasesDoChefe';
 import { CODIGO_DO_ESTADO_DA_PORTA } from '../sim/PortasDaEstacao';
 import { CODIGO_DO_ESTADO_DO_QUADRO } from '../sim/QuadroDeLuz';
 import { Match } from '../sim/Match';
-import { gameModeFromSearch, waveFromSearch, type GameMode } from '../sim/gameMode';
+import { gameModeFromSearch, missaoFromSearch, waveFromSearch, type GameMode } from '../sim/gameMode';
+import { MarcadorDeAlvo } from '../ui/MarcadorDeAlvo';
+import { linhaDeStatus, motivoDoFim, objetivoDoBriefing, tituloDoFim } from '../ui/textosDaMissao';
 import { SURVIVAL_MAX_ANDROIDS, SURVIVAL_MAX_MECHS, SURVIVAL_WAVE_PLANS } from '../sim/SurvivalWaves';
 import { HangarMenu } from '../ui/HangarMenu';
 import { HangarScene } from '../hangar/HangarScene';
@@ -487,6 +489,8 @@ export class Game {
   private clipeCarregando: Promise<typeof import('../clip/ClipRecorder')> | null = null;
   /** P310: o modo streamer (`?stream=1`) na sala AO-VIVO: a faixa e o clipe ligado ao começar; `null` fora dele. */
   private streamer: { readonly sala: string; readonly link: string } | null = null;
+  /** P314: os losangos sobre os alvos da missão de combate (criados na largada da primeira missão). */
+  private marcadorDeAlvo: MarcadorDeAlvo | null = null;
   private readonly lobby = new OnlineLobby();
   private aimPracticeWeapon: WeaponStats | null = null;
   private savedPracticeLook: { yaw: number; pitch: number; mode: CameraModeId } | null = null;
@@ -619,7 +623,9 @@ export class Game {
     const streamerPedido = pedeModoStreamer(location.search) && funcionalidadeVisivel('modo:streamer');
     const net = onlineConfig(location.search, location.hostname, publicServer, streamerPedido);
     // O modo pedido (`?modo=`): online, só a Sobrevivência tem sala própria hoje (P243, o 8 de Janeiro); CTF e Domínio continuam só no Deathmatch online.
-    const modoPedido = gameModeFromSearch(location.search);
+    // A missão de combate (P314) é restrita (P191): sem a liberação do Comandante, o link `?modo=missao` cai no Deathmatch.
+    const modoDoLink = gameModeFromSearch(location.search);
+    const modoPedido = modoDoLink === 'missao' && !funcionalidadeVisivel('modo:missao') ? 'deathmatch' : modoDoLink;
     // O mapa da sala (P218, etapa O1): o mesmo que a partida local monta (`mapFromSearch` já aplica o lançamento: mapa restrito cai na Cidade Neon), para o servidor e o cliente jogarem no mesmo chão.
     // O modo da sala é o que o servidor roda (`modoEmSala`): um `modo=survival` esquecido na URL (o lobby só acrescenta `sala` e `nome`) não monta a missão local por cima da sala (P276).
     const mapaDaSala = mapFromSearch(location.search, true, 'deathmatch');
@@ -658,7 +664,8 @@ export class Game {
         return a ? tryInstantiateMechRig(a.url, CHASSIS[id].height) : null;
       },
       mode: this.gameMode,
-      map: roteiro && !online ? roteiro.mapa : mapFromSearch(location.search, !!online, this.gameMode),
+      missao: missaoFromSearch(location.search),
+      map: this.gameMode === 'missao' ? 'arena' : roteiro && !online ? roteiro.mapa : mapFromSearch(location.search, !!online, this.gameMode),
       startWave: waveFromSearch(location.search, SURVIVAL_WAVE_PLANS.length),
       bossMask: mascaraFromSearch(location.search), // a máscara do chefe (P165): `?mascara=0` a tira
       ...(visualDoChefe ? { visualDoChefe } : {}), // o desenho do Draga-01 (P180, parte C), já baixado
@@ -2029,6 +2036,32 @@ export class Game {
       this.telemetry.enviar('partida_iniciada', this.audiencia?.funil(this.contaDoFunil()));
       this.startRound();
     };
+    // A missão de combate (P314, corte 2): a linha de cima com o objetivo e o prazo, o losango sobre os alvos, e o fim com o resumo da partida.
+    this.match.onMissaoStart = (plano) => {
+      this.hud.setMissionMode(true);
+      if (!this.marcadorDeAlvo) this.marcadorDeAlvo = new MarcadorDeAlvo(this.scene);
+      this.audio.playWaveSiren();
+      this.hud.setMissaoText(objetivoDoBriefing(plano.tipo));
+    };
+    this.match.onMissaoProgresso = (alvosCaidos, alvos, restanteS) => {
+      const missao = this.match.missaoDeCombate;
+      if (!missao) return;
+      // Nos primeiros cinco segundos a linha mostra o objetivo; depois, os alvos caídos e o prazo que resta.
+      const decorrido = missao.plano.limiteS - restanteS;
+      this.hud.setMissaoText(decorrido < 5 ? objetivoDoBriefing(missao.plano.tipo) : linhaDeStatus(missao.plano.tipo, alvosCaidos, alvos, restanteS));
+    };
+    this.match.onMissaoFim = (desfecho, estatisticas) => {
+      const tipo = this.match.missaoDeCombate?.plano.tipo ?? 'caca';
+      const venceu = desfecho === 'cumprida';
+      this.missionEnded = true;
+      this.marcadorDeAlvo?.esconder();
+      this.playTelemetry.desfecho(venceu);
+      this.playTelemetry.finish('completed');
+      this.hud.setMissionEndTexto(venceu, tituloDoFim(desfecho, tipo), motivoDoFim(desfecho, tipo), estatisticas.abates, estatisticas.segundos);
+      this.fimDePartidaNoConsole(venceu, 0);
+      this.setPlaying(false);
+      this.input.exitLock();
+    };
     this.match.onWaveStart = (wave, total, _mechs, _androids, title, waves) => {
       this.hud.setMissionWave(wave, total, title, waves);
       if (wave >= 2) this.narrador.dizer('hostis_chegando', 1);
@@ -2902,6 +2935,8 @@ export class Game {
     this.composer.render(dt);
     // O clipe copia a cena que acabou de ser desenhada (P309); desligado, esta linha não faz nada.
     if (this.clips?.ligado) this.clips.frame(now / 1000, this.centroDoClipe());
+    // Os losangos da missão de combate (P314) acompanham os alvos a cada quadro; fora da missão, ficam escondidos.
+    if (this.marcadorDeAlvo) this.marcadorDeAlvo.atualizar(this.match.missaoDeCombate?.fase === 'ativa' ? this.match.missaoDeCombate.plano : null, this.match.bots.mechs, now / 1000);
     this.recorder.capturarQuadro();
 
     // Atualiza medidor de FPS depois do render
