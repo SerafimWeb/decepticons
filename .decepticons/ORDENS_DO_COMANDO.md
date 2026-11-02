@@ -14,6 +14,18 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P306 a P310 — O Colossus na arena, a chuva que sai das costas, a cor liberada, o clipe e o modo streamer (02/11, Claude)
+
+> Mensagem do Comandante (02/11), depois de jogar a cor nova: "mudei a cor do colossus mas nao apareceu na cor, na arena... o tiro pra cima do chuva de misseis está saindo da frente do ombro, e nao das costas... seria bom melhorarmos esse tipo de detalhe; prossiga liberando a cor, o clipe e modo streamer, na sequencia". Uma ordem por PR, na sequência.
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P306 | 02/11 | "mudei a cor do colossus mas nao apareceu na cor, na arena" | 🔧 | **Claude, 02/11, branch `claude/colossus-cor-costas`, PR a abrir.** A cor só pintava as partes de pintura (canelas, faixa do peito, placas dos ombros); no Colossus-01, quase tudo é aço. Agora a cor cobre o casco inteiro: 6,4% → 19,6% dos vértices do robô. A estrutura escura (braços, pinos, juntas) segue escura de propósito. Vale também para o Vector-09 comprado. | Cidade Neon (`?mapa=arena&comandante=1`) com o Colossus-01 e uma cor comprada no Hangar (seção COR DO CASCO). Fotos: `arte/colossus-cor-fabrica-claude.jpg` e `arte/colossus-cor-casco-claude.jpg`. |
+| P307 | 02/11 | "o tiro pra cima do chuva de misseis está saindo da frente do ombro, e nao das costas... seria bom melhorarmos esse tipo de detalhe" | 🔧 | **No mesmo PR da P306.** O morteiro da chuva já ficava nas costas, mas o lançamento só saía dele com a chuva no botão secundário. Em outro botão, o tiro saía do ponto da frente (no Colossus-01, o encaixe das costas fica sobre a cabeça). Agora a boca do morteiro vale para a chuva em qualquer botão. Ver a pendência de origem da simulação em `STATUS_REAL.md`. | Colossus-01 com a chuva nas costas, disparada pelo botão direito: o lançamento sobe das costas. Foto: `arte/chuva-costas-colossus-claude.jpg`. |
+| P308 | 02/11 | "prossiga liberando a cor" | ⏸ | Próximo PR, depois que a P306 estiver no ar: a seção COR DO CASCO sai do restrito (catálogo `robo:pintura`). | VISIBILIDADE ▸ "Cor do casco · compra com Créditos" (ou o padrão público, no catálogo). |
+| P309 | 02/11 | "o clipe" | ⏸ | Próximo PR: gravação dos últimos 10 s em vertical (9:16), opt-in e com o custo de CPU medido; nasce restrita (P191). | Modo Comandante: tecla L liga o buffer, K salva o clipe. |
+| P310 | 02/11 | "modo streamer" | ⏸ | Depois do clipe: sala de código fixo (`?stream=1`), HUD limpo, nasce restrita (P191). | `?stream=1` no modo Comandante. Integração com Twitch/YouTube fica para depois (chaves e conta do canal). |
+
 ## P305 — A cor do casco: comprada com Créditos e vista pelos outros pilotos (01/11, Claude)
 
 > Pedido do Comandante (01/11), logo depois do P304: "seria bom já podermos ver com os outros pilotos… fazer bem feito e completo logo. prossiga". A escolha entre as duas opções ficou com o Claude: a 2, a cor visível para os outros, não só no próprio robô.

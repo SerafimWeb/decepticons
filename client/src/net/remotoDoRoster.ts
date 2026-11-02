@@ -49,6 +49,6 @@ export function criarRemoto(e: RosterEntry, rigDe: (chassi: ChassisId) => MechRi
     return pronto(new ImportedMech(stats, rig, loadout));
   }
   const ia = e.kind === 'mech';
-  const tinta = ia ? PALETTE.enemyPaint : cor;
-  return { mech: new Vector09({ ...(tinta === null ? {} : { paint: tinta }), visor: ia ? PALETTE.signal : PALETTE.cyan, stats, loadout, blueprint: BLUEPRINT_BY_CHASSIS[chassi] }), pendente: temMalha(chassi) ? chassi : null };
+  // O inimigo (IA) leva a cor de inimigo; um piloto leva a cor do casco inteiro (P307: o aço e as partes de pintura juntos).
+  return { mech: new Vector09({ ...(ia ? { paint: PALETTE.enemyPaint } : cor === null ? {} : { casco: cor }), visor: ia ? PALETTE.signal : PALETTE.cyan, stats, loadout, blueprint: BLUEPRINT_BY_CHASSIS[chassi] }), pendente: temMalha(chassi) ? chassi : null };
 }

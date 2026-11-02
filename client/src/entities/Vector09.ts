@@ -10,6 +10,8 @@ export { VECTOR09_STATS };
 export interface Vector09Options {
   /** Cor da pintura (ex.: alvos e inimigos com cor diferente do jogador). */
   paint?: number;
+  /** A cor do casco inteiro (P305, a pintura comprada no Hangar): pinta o aço e as partes de pintura. Sem ela, o visual de fábrica. */
+  casco?: number;
   /** Cor do visor e das luzes: verde do jogador ou vermelho das IAs. */
   visor?: number;
   /** Armas nos braços (Hangar); sem isso, as de fábrica. */
@@ -28,6 +30,7 @@ export class Vector09 extends MechBase {
       options.stats ?? VECTOR09_STATS,
       buildMechBlueprintRig(blueprint, {
         paint: options.paint ?? PALETTE.playerPaint,
+        casco: options.casco,
         visor: options.visor ?? PALETTE.green,
         scaleToHeight: height / blueprint.referenceHeight,
       }),

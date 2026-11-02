@@ -433,14 +433,20 @@ export abstract class MechBase {
   }
 
   /**
-   * De onde a chuva de mísseis desse Mech sobe NO DESENHO: a boca do morteiro das costas, no mundo. `undefined` quando a arma
-   * do botão secundário não é a chuva ou o desenho não tem o morteiro (aí vale a boca do tiro). É só visual: o servidor e a
+   * De onde a chuva de mísseis desse Mech sobe NO DESENHO: a boca do morteiro das costas, no mundo. `undefined` quando o desenho não tem o morteiro. Vale para a chuva em qualquer botão (P307).
+   * É só visual: o servidor e a
    * simulação continuam com `simMuzzle`.
    */
   barrageMouth(target: THREE.Vector3): THREE.Vector3 | undefined {
     const mouth = this.rig.barrageMouth;
-    if (!mouth || this.armed.secondary?.id !== 'barrage') return undefined;
+    if (!mouth || !this.temChuva()) return undefined;
     return mouth.getWorldPosition(target);
+  }
+
+  /** A chuva de mísseis está em algum encaixe deste Mech, em qualquer botão: é ela que sobe do morteiro das costas (P307). */
+  private temChuva(): boolean {
+    const a = this.armed;
+    return [a.primary, a.secondary, a.offhand, a.back, a.rightShoulder, a.leftShoulder].some((w) => w?.id === 'barrage');
   }
 
   get isDashing(): boolean {
