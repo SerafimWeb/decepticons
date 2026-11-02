@@ -737,6 +737,10 @@ html, body {
 /* O aviso do clipe (P309, clip/ClipRecorder.ts avisoDoClipe): uma linha no canto, na cor do HUD; não toma o mouse. */
 .clip-aviso { position: fixed; left: 16px; top: 64px; z-index: 1800; padding: 6px 10px; font-size: 11px; letter-spacing: 2px; color: var(--accent); background: rgba(6, 8, 10, 0.82); border: 1px solid var(--accent); opacity: 0; transition: opacity 0.2s; pointer-events: none; }
 .clip-aviso.show { opacity: 1; }
+/* A faixa AO VIVO do modo streamer (P310): no canto de cima; só o botão recebe o mouse (o resto deixa o clique passar para o jogo). */
+.stream-faixa { position: fixed; left: 16px; top: 10px; z-index: 1800; display: flex; align-items: center; gap: 10px; padding: 6px 10px; font-size: 11px; letter-spacing: 2px; color: var(--accent); background: rgba(6, 8, 10, 0.82); border: 1px solid var(--accent); pointer-events: none; }
+.stream-faixa-marca { color: #ff4d6d; }
+.stream-faixa-copiar { pointer-events: auto; font: inherit; letter-spacing: 2px; color: inherit; background: transparent; border: 1px solid currentColor; padding: 3px 8px; cursor: pointer; }
 .round-board {
   position: absolute;
   left: 50%;

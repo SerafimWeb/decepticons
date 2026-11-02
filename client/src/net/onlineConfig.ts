@@ -1,5 +1,6 @@
 import { MAPA_PADRAO, MODO_PADRAO, modoDaSala, type MapaOnline, type SalaModo } from '../../../shared/net/mapa';
 import type { GameMode } from '../sim/gameMode';
+import { pedeModoStreamer, SALA_DO_STREAMER } from '../stream/modoStreamer';
 
 /** Porta padrão do servidor de jogo (`npm run server`). */
 export const DEFAULT_SERVER_PORT = 2567;
@@ -53,11 +54,12 @@ export function modoEmSala(pedido: GameMode, mapa: MapaOnline): GameMode {
 /**
  * Jogar online (M4): `/jogar/?sala=ARENA` entra na sala; `&servidor=wss://…` diz onde está o servidor (sem isso, o
  * servidor público do build ou, no próprio PC do servidor, `ws://localhost:2567`); `&nome=Dan` é o apelido.
- * Sem `sala`, o jogo é o de sempre (offline). Devolve `{ error }` quando pediu online e falta o servidor.
+ * Sem `sala`, o jogo é o de sempre (offline), salvo o modo streamer (P310): com `streamerPermitido` e `?stream=1`, o link cai na sala fixa
+ * `AO-VIVO`. Devolve `{ error }` quando pediu online e falta o servidor.
  */
-export function onlineConfig(search: string, hostname: string, publicServer?: string): OnlineConfig | { error: string } | null {
+export function onlineConfig(search: string, hostname: string, publicServer?: string, streamerPermitido = false): OnlineConfig | { error: string } | null {
   const q = new URLSearchParams(search);
-  const rawRoom = q.get('sala');
+  const rawRoom = q.get('sala') ?? (streamerPermitido && pedeModoStreamer(search) ? SALA_DO_STREAMER : null);
   if (rawRoom === null) return null;
   const room = rawRoom.trim().toUpperCase() || 'ARENA';
   if (!ROOM_RE.test(room)) return { error: 'código de sala inválido (use letras, números e hífen, até 12)' };

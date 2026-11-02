@@ -149,6 +149,8 @@ import { PALETTE } from './palette';
 import { PilotLabels } from '../ui/PilotLabels';
 import { PowerSettings } from '../ui/PowerSettings';
 import { defaultServer, modoEmSala, onlineConfig, urlComMapa, urlComModo } from '../net/onlineConfig';
+import { linkDoStreamer, pedeModoStreamer } from '../stream/modoStreamer';
+import { montarFaixaAoVivo } from '../stream/faixaAoVivo';
 import { rotuloDoBuild } from './buildInfo';
 import { OnlineSwitch } from '../ui/OnlineSwitch';
 import { ServerStatus } from '../ui/ServerStatus';
@@ -483,6 +485,8 @@ export class Game {
    */
   private clips: ClipRecorder | null = null;
   private clipeCarregando: Promise<typeof import('../clip/ClipRecorder')> | null = null;
+  /** P310: o modo streamer (`?stream=1`) na sala AO-VIVO: a faixa e o clipe ligado ao começar; `null` fora dele. */
+  private streamer: { readonly sala: string; readonly link: string } | null = null;
   private readonly lobby = new OnlineLobby();
   private aimPracticeWeapon: WeaponStats | null = null;
   private savedPracticeLook: { yaw: number; pitch: number; mode: CameraModeId } | null = null;
@@ -611,7 +615,9 @@ export class Game {
     // Online (M4): /jogar/?sala=CODIGO[&servidor=wss://…][&nome=Dan]. A partida local fica sem bots, sem dano e sem
     // rodada própria (quem decide é o servidor); o jogo prevê o seu Mech e desenha os outros.
     const publicServer = import.meta.env.VITE_GAME_SERVER;
-    const net = onlineConfig(location.search, location.hostname, publicServer);
+    // P310: `?stream=1` (modo streamer, catálogo `modo:streamer`) entra na sala fixa AO-VIVO; sem servidor, o link cai no jogo de sempre.
+    const streamerPedido = pedeModoStreamer(location.search) && funcionalidadeVisivel('modo:streamer');
+    const net = onlineConfig(location.search, location.hostname, publicServer, streamerPedido);
     // O modo pedido (`?modo=`): online, só a Sobrevivência tem sala própria hoje (P243, o 8 de Janeiro); CTF e Domínio continuam só no Deathmatch online.
     const modoPedido = gameModeFromSearch(location.search);
     // O mapa da sala (P218, etapa O1): o mesmo que a partida local monta (`mapFromSearch` já aplica o lançamento: mapa restrito cai na Cidade Neon), para o servidor e o cliente jogarem no mesmo chão.
@@ -619,6 +625,9 @@ export class Game {
     const mapaDaSala = mapFromSearch(location.search, true, 'deathmatch');
     const modoDaSalaOnline = modoEmSala(modoPedido, mapaDaSala);
     const online = net && !('error' in net) ? { ...net, url: urlComModo(urlComMapa(net.url, mapaDaSala), modoDaSalaOnline === 'survival' ? 'survival' : 'deathmatch') } : null;
+    // P310: a faixa AO VIVO só aparece quando a partida está mesmo na sala; o clipe liga no primeiro clique (`ligarClipeDoStreamer`).
+    this.streamer = streamerPedido && online ? { sala: online.room, link: linkDoStreamer(location.href) } : null;
+    if (this.streamer) montarFaixaAoVivo(this.streamer.sala, this.streamer.link);
     // O WARGAME (P262): o link `?wargame=` carrega um roteiro (os dois esquadrões, o mapa e as batidas) e vira um Deathmatch
     // espectador — o Comandante nunca controla o Mech, só troca de câmera (como o CFTV já faz); ver `espectador` abaixo.
     const roteiro = roteiroDoLink(location.search);
@@ -844,7 +853,8 @@ export class Game {
     this.match.onHookFx = (from, to, _w, hostile) => hookRay(this.match.beams, from, to, hostile);
     this.netStatus.className = 'net-status';
     
-    const shouldConnect = online && online.explicitName;
+    // P310: o modo streamer conecta sem nome explícito: quem abre o link cai na sala com o nome padrão, sem passar pelo lobby.
+    const shouldConnect = online && (online.explicitName || this.streamer !== null);
 
     if (shouldConnect) {
       this.online = new OnlineSession({
@@ -1597,6 +1607,13 @@ export class Game {
     else m.avisoDoClipe('este navegador não grava vídeo', 2400);
   }
 
+  /** P310: o modo streamer liga o clipe quando a partida começa (depois do primeiro clique, com o áudio já criado). */
+  private async ligarClipeDoStreamer(): Promise<void> {
+    const m = await this.carregarClipe();
+    const clips = this.clips;
+    if (clips && !clips.ligado && clips.ligar()) m.avisoDoClipe('● CLIPE LIGADO · K salva os últimos 10 s', 0);
+  }
+
   /** K: salva os últimos 5 a 10 s, em vertical, como arquivo no computador; nada sai do aparelho (P309). */
   private async salvarClipe(): Promise<void> {
     const m = await this.carregarClipe();
@@ -2285,6 +2302,7 @@ export class Game {
     if (!this.brandShown) {
       this.brandShown = true;
       this.audio.resume();
+      if (this.streamer) void this.ligarClipeDoStreamer(); // P310: o áudio já existe agora; o clipe liga com a partida
       this.hud.setPaused(false);
       this.splash.play(() => this.audio.playLogoSerafim(), () => this.afterBrand());
     }
