@@ -1,11 +1,14 @@
-/** Modos que a simulação entende. Sobrevivência estreia offline; o servidor continua em deathmatch. */
-export type GameMode = 'deathmatch' | 'survival' | 'ctf' | 'dominio';
+import type { TipoDeMissao } from './MissaoDeCombate';
+
+/** Modos que a simulação entende. Sobrevivência estreia offline; o servidor continua em deathmatch. A missão de combate (P314) é offline. */
+export type GameMode = 'deathmatch' | 'survival' | 'ctf' | 'dominio' | 'missao';
 
 /** Lê o modo do link sem depender de DOM, para o mesmo contrato funcionar em testes e no servidor. */
 export function gameModeFromSearch(search: string): GameMode {
   const value = new URLSearchParams(search).get('modo');
   if (value === 'ctf') return 'ctf';
   if (value === 'dominio') return 'dominio';
+  if (value === 'missao') return 'missao';
   return value === 'survival' || value === 'sobrevivencia' ? 'survival' : 'deathmatch';
 }
 
@@ -18,4 +21,10 @@ export function waveFromSearch(search: string, waves: number): number {
   const value = Number(new URLSearchParams(search).get('onda'));
   if (!Number.isFinite(value)) return 1;
   return Math.min(waves, Math.max(1, Math.trunc(value)));
+}
+
+/** O tipo da missão de combate (P314) no link: `?modo=missao&missao=destruicao`. Sem tipo, ou com um que não existe, é a caça. */
+export function missaoFromSearch(search: string): TipoDeMissao {
+  const value = new URLSearchParams(search).get('missao');
+  return value === 'destruicao' || value === 'aniquilacao' ? value : 'caca';
 }

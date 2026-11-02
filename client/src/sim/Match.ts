@@ -78,6 +78,7 @@ import {
   type MissionStats,
   type WavePlan,
 } from './SurvivalWaves';
+import { MissaoDeCombate, MISSOES_DE_COMBATE, type DesfechoDaMissao, type EstatisticasDaMissao, type PlanoDeMissao, type TipoDeMissao } from './MissaoDeCombate';
 
 /**
  * Os pontos de nascimento ficam em `nascimentos.ts` (o esquadrão e a partida leem os mesmos). IAs rebeldes da Arena sem esquadrão pedido:
@@ -146,6 +147,8 @@ export interface MatchOptions {
   roundS?: number;
   /** Regra da missão. `deathmatch` preserva a arena atual; os objetivos estreiam offline. */
   mode?: GameMode;
+  /** O tipo da missão de combate (P314), quando `mode` é `missao`: caça (padrão), destruição ou aniquilação. */
+  missao?: TipoDeMissao;
   /** Onda em que a missão começa (1 a 6). É o atalho de bancada `?onda=`; fora do intervalo, começa na 1. */
   startWave?: number;
   /** O chefe da missão (o Colossus) veste a máscara (P165)? Padrão sim; `Game` passa o `?mascara=` do link (`0` a tira). */
@@ -263,6 +266,12 @@ export class Match {
   readonly round: Round;
   /** Máquina da missão, presente apenas no modo Sobrevivência. */
   readonly waves: SurvivalWaves | null;
+  /** A missão de combate (P314): o objetivo com prazo, quando o modo é `missao`. */
+  readonly missaoDeCombate: MissaoDeCombate | null;
+  /** Avisos da missão de combate: a largada, o progresso (alvos caídos, alvos, segundos restantes) e o fim (desfecho, estatísticas). */
+  onMissaoStart?: (plano: PlanoDeMissao) => void;
+  onMissaoProgresso?: (alvosCaidos: number, alvos: number, restanteS: number) => void;
+  onMissaoFim?: (desfecho: DesfechoDaMissao, estatisticas: EstatisticasDaMissao, plano: PlanoDeMissao) => void;
   /** Regra pura de bandeiras, presente apenas no modo CTF. */
   readonly ctf: CaptureTheFlag | null;
   /** Regra pura dos pontos de controle, presente apenas no modo Domínio. */
@@ -420,11 +429,12 @@ export class Match {
     const survival = o.mode === 'survival';
     const ctf = o.mode === 'ctf';
     const dominio = o.mode === 'dominio';
+    const missao = o.mode === 'missao';
     this.physics = o.physics;
     this.espectador = o.espectador ?? false;
     this.roteiroStepper = o.roteiro ? new RoteiroStepper(o.roteiro.beats) : null;
     this.esquadraoDoRoteiro = o.roteiro?.esquadrao ?? null;
-    this.round = survival || ctf || dominio ? new Round(Number.POSITIVE_INFINITY) : o.roundS === undefined ? new Round() : new Round(o.roundS);
+    this.round = survival || ctf || dominio || missao ? new Round(Number.POSITIVE_INFINITY) : o.roundS === undefined ? new Round() : new Round(o.roundS);
     this.scene = o.scene;
     this.debris = o.debris === false ? (new NoDebris() as unknown as DebrisSystem) : new DebrisSystem(o.scene, o.physics);
     this.destructibles = new Destructibles(o.scene, o.physics, this.debris, o.particles);
@@ -540,7 +550,8 @@ export class Match {
     // O esquadrão (P91): quem nasce na Arena e no Bunker, um por um. Sem um pedido, o das configurações. Aliados (30/09, "sozinho tá
     // muito intenso"): só na Arena normal; o esquadrão das configurações dá a eles as vagas do pool de Mechs inimigos para não
     // estourar o teto de 8 personagens da sala (G11). Sobrevivência e CTF não usam esquadrão (pool e times próprios).
-    const arenaMode = !survival && !ctf;
+    // A missão de combate (P314) põe o elenco pelo pool, como a Sobrevivência: sem esquadrão.
+    const arenaMode = !survival && !ctf && !missao;
     const mapa: MapId = bunker ? 'bunker' : praia ? 'praia' : amazonia ? 'amazonia' : janeiro ? 'janeiro' : 'arena';
     const semAliados = o.allies === false;
     const pedido = o.squad ?? esquadraoDeFoes(o.foes, semAliados ? 0 : ALLY_COUNT);
@@ -614,7 +625,7 @@ export class Match {
       // ser justo contra um humano, não para parecer competente assistindo).
       ...(o.roteiro ? { skill: BOT_SKILLS.dificil } : {}),
       ...(o.bossMask === undefined ? {} : { mascaraDoChefe: o.bossMask }),
-      respawn: !survival,
+      respawn: !survival && !missao,
       respawnAtHome: ctf,
       // Na praia de 640 m as ondas marcham para os portões da estação (patrulham a rota de assalto): sem isso vagariam por pontos espalhados.
       waypoints: survival && praia ? PRAIA_ASSALTO : this.spawnPoints,
@@ -702,7 +713,17 @@ export class Match {
           onMissionEnd: (survived, stats) => this.onMissionEnd?.(survived, this.waves?.wave ?? 1, stats),
         }, o.startWave, praia)
       : null;
-    if (this.waves || this.missaoJaneiro) this.bots.setRoster(0, 0);
+    // A missão de combate (P314): o objetivo e o prazo. O elenco entra pelo pool (`applyMissaoRoster`), como na Sobrevivência.
+    const planoDaMissao: PlanoDeMissao = MISSOES_DE_COMBATE[o.missao ?? 'caca'];
+    this.missaoDeCombate = missao
+      ? new MissaoDeCombate(planoDaMissao, {
+          onRoster: (plano) => this.applyMissaoRoster(plano),
+          onStart: (plano) => this.onMissaoStart?.(plano),
+          onProgresso: (alvosCaidos, alvos, restanteS) => this.onMissaoProgresso?.(alvosCaidos, alvos, restanteS),
+          onFim: (desfecho, estatisticas) => this.onMissaoFim?.(desfecho, estatisticas, planoDaMissao),
+        })
+      : null;
+    if (this.waves || this.missaoJaneiro || this.missaoDeCombate) this.bots.setRoster(0, 0);
     this.ctf = ctf
       ? new CaptureTheFlag({
           onFlagPickup: (owner, carrier) => this.onCtfFlag?.('pickup', owner, carrier),
@@ -784,6 +805,7 @@ export class Match {
         this.waves.recordDamage(e.result.applied);
       }
       if (this.rio && e.shooter && this.players.includes(e.shooter) && this.bots.mechs.includes(e.mech)) this.rio.registrarDano(e.result.applied);
+      if (this.missaoDeCombate && e.shooter && this.players.includes(e.shooter) && this.bots.mechs.includes(e.mech)) this.missaoDeCombate.recordDamage(e.result.applied);
       this.onMechHit?.(e);
     };
     this.combat.onMechKilled = (dead, at, killer) => {
@@ -800,6 +822,7 @@ export class Match {
         this.beams.clear();
       }
       if (this.waves && this.players.includes(dead) && this.players.every((player) => !player.alive)) this.waves.fail();
+      if (this.missaoDeCombate && this.bots.mechs.includes(dead)) this.missaoDeCombate.recordEnemyKilled(this.missaoDeCombate.ehAlvo(this.bots.mechs.indexOf(dead)));
       if (this.rio && this.bots.mechs.includes(dead)) this.rio.registrarAbate();
       this.onMechKilled?.(dead, at, killer);
     };
@@ -1210,6 +1233,9 @@ export class Match {
       // A missão falha se o jogador cai OU se a estação cai (o núcleo chegou a zero no tick anterior).
       this.waves?.fixedUpdate(dt, this.players.some((player) => player.alive) && !this.nucleo?.caiu);
       if (this.waves?.ended) return false;
+      // A missão de combate (P314): o prazo corre; cumprida, vencida ou com o jogador caído, o mundo congela como nas ondas.
+      this.missaoDeCombate?.fixedUpdate(dt, this.players.some((player) => player.alive));
+      if (this.missaoDeCombate?.terminou) return false;
       // A missão do rio (P180, parte C): o Draga caiu (vitória) ou chegou à aldeia (derrota); acabou, o mundo congela como nas ondas.
       if (this.rio) {
         const chefe = this.bots.chefe;
@@ -1700,6 +1726,7 @@ export class Match {
     this.destructibles.restoreAll();
     this.round.resetScores();
     this.waves?.reset();
+    this.missaoDeCombate?.reset();
     this.rio?.reset();
     if (this.missaoJaneiro && this.multidao) {
       this.missaoJaneiro.reset();
@@ -1720,6 +1747,15 @@ export class Match {
     this.cabosReplanejaEm = 0;
     this.ctf?.reset();
     this.dominio?.reset();
+  }
+
+  /** O elenco da missão de combate: os Mechs e andróides do plano entram; `null` desliga todos. Nunca cria robôs (o pool já existe). */
+  private applyMissaoRoster(plano: PlanoDeMissao | null): void {
+    const active = this.bots.setRoster(plano?.mechs ?? 0, plano?.androids ?? 0);
+    if (plano) {
+      this.bots.maxAttackers = plano.maxAttackers;
+      if (active !== plano.mechs + plano.androids) throw new Error('Pool da missão não cobre o plano da missão');
+    }
   }
 
   private applyWaveRoster(plan: WavePlan | null): void {
