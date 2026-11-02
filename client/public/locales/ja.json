@@ -1026,5 +1026,11 @@
   "ROXO NEON": "ネオンパープル",
   "USAR": "使う",
   "COMPRAR {0} ₵": "{0} ₵で購入",
-  "Cor escolhida: clique em APLICAR MONTAGEM para vestir o robô.": "色を選びました。「APPLY LOADOUT」を押すとロボットに適用されます。"
+  "Cor escolhida: clique em APLICAR MONTAGEM para vestir o robô.": "色を選びました。「APPLY LOADOUT」を押すとロボットに適用されます。",
+  "CLIPE DESLIGADO": "クリップ OFF",
+  "● CLIPE LIGADO · K salva os últimos 10 s": "● クリップ ON · K で直近10秒を保存",
+  "este navegador não grava vídeo": "このブラウザでは動画を録画できません",
+  "● CLIPE DESLIGADO · tecla L liga": "● クリップ OFF · L で ON",
+  "ainda não há 5 s gravados": "まだ5秒録画されていません",
+  "CLIPE SALVO": "クリップを保存しました"
 }

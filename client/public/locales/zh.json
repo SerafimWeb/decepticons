@@ -1026,5 +1026,11 @@
   "ROXO NEON": "霓虹紫",
   "USAR": "使用",
   "COMPRAR {0} ₵": "{0} ₵ 购买",
-  "Cor escolhida: clique em APLICAR MONTAGEM para vestir o robô.": "已选择颜色：点击“APPLY LOADOUT”以应用到机器人。"
+  "Cor escolhida: clique em APLICAR MONTAGEM para vestir o robô.": "已选择颜色：点击“APPLY LOADOUT”以应用到机器人。",
+  "CLIPE DESLIGADO": "剪辑已关闭",
+  "● CLIPE LIGADO · K salva os últimos 10 s": "● 剪辑开启 · 按 K 保存最近 10 秒",
+  "este navegador não grava vídeo": "此浏览器无法录制视频",
+  "● CLIPE DESLIGADO · tecla L liga": "● 剪辑已关闭 · 按 L 开启",
+  "ainda não há 5 s gravados": "还没有录满 5 秒",
+  "CLIPE SALVO": "剪辑已保存"
 }

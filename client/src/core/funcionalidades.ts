@@ -31,6 +31,8 @@ const fixas: readonly Funcionalidade[] = [
   { id: 'arma:cacetete-poder', grupo: 'armas', nome: 'Cacetete de poder · prêmio do Evil', padrao: 'restrito', efeito: 'o golpe F conquistado na missão do 8 de Janeiro' },
   // P305: a cor do casco. Nasceu RESTRITA (regra P191); liberada ao público em 02/11 (P308), depois de o Colossus pintar o casco inteiro (P306).
   { id: 'robo:pintura', grupo: 'robos', nome: 'Cor do casco · compra com Créditos', padrao: 'publico', efeito: 'a cor do Mech: comprada no Hangar com Créditos e vista pelos outros pilotos online' },
+  // P309 (02/11): o clipe dos últimos 10 s em vertical. Nasce público por ordem do Comandante ("sim liberado"); opt-in (L liga, K salva) e custa CPU só ligado.
+  { id: 'clip:gravar', grupo: 'telas', nome: 'Clipe dos últimos 10 s (vertical)', padrao: 'publico', efeito: 'tecla L liga o buffer dos últimos 10 s em 9:16, K salva o trecho como arquivo (usa CPU enquanto ligado)' },
   // P269: o cérebro do time dos bots (pinça e reagrupar). Nasce RESTRITO: a bancada bot × bot não mostrou ganho de força (45% / 38% / 45% de vitória, 40 duelos por dificuldade), então o Comandante julga jogando e libera aqui. Também é o interruptor de segurança: restrito devolve os bots ao comportamento de antes, tick a tick (esquadraoPadrao.test.ts).
   { id: 'ia:time', grupo: 'modos', nome: 'IA de time dos bots (pinça e reagrupar)', padrao: 'restrito', efeito: 'os bots deixam de combinar pinça e reagrupamento e lutam como antes (o diretor de ataque e o rádio de contato continuam)' },
   // P282: a fase escura e a visão noturna. Nasce RESTRITA: o Comandante julga jogando (chip FASE ESCURA) e libera aqui. Restrita, o quadro de luz apagado só baixa as luzes da cidade, como antes.

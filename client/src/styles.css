@@ -734,6 +734,9 @@ html, body {
 }
 .net-status.bad { color: var(--alert); text-shadow: 0 0 6px var(--alert); }
 .round-clock.hurry { color: var(--hot); text-shadow: 0 0 10px var(--hot); animation: blink 1s steps(2) infinite; }
+/* O aviso do clipe (P309, clip/ClipRecorder.ts avisoDoClipe): uma linha no canto, na cor do HUD; não toma o mouse. */
+.clip-aviso { position: fixed; left: 16px; top: 64px; z-index: 1800; padding: 6px 10px; font-size: 11px; letter-spacing: 2px; color: var(--accent); background: rgba(6, 8, 10, 0.82); border: 1px solid var(--accent); opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+.clip-aviso.show { opacity: 1; }
 .round-board {
   position: absolute;
   left: 50%;
