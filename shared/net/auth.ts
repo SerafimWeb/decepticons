@@ -234,6 +234,8 @@ export interface DadosDaConta {
   entradasEmSalas: { apelido: string; sala: string; mapa: string; entrouEm: string; saiuEm: string | null }[];
 }
 
+import { MASCARA_PINTURAS, unirPinturas } from '../pinturas';
+
 // ---------------------------------------------------------------- progresso do piloto (P174)
 
 /** O teto do corpo de `PUT /conta/progresso` (bytes): o progresso é pequeno; o resto é abuso. */
@@ -256,6 +258,8 @@ export interface ProgressoPiloto {
   creditos: number;
   /** O JSON da montagem do Hangar (`cybermech.hangar.v1`), ou vazio. */
   montagem: string;
+  /** As cores do casco que o piloto comprou (P305): um bit por cor de `PINTURAS`; a de fábrica é sempre dele. Ausente = nenhuma comprada (o que manda um navegador antigo). */
+  pinturas?: number;
   /** Quando o navegador gravou (ms desde 1970): desempata quem tem o mesmo nível e XP. */
   atualizadoEm: number;
 }
@@ -273,7 +277,14 @@ export function validarProgresso(raw: unknown, sanitizar: (apelido: string) => s
   const atualizadoEm = typeof r.atualizadoEm === 'number' && Number.isFinite(r.atualizadoEm) && r.atualizadoEm >= 0 ? Math.floor(r.atualizadoEm) : null;
   if (nivel === null || xp === null || creditos === null || atualizadoEm === null) return null;
   if (typeof r.apelido !== 'string' || typeof r.montagem !== 'string' || r.montagem.length > MONTAGEM_MAX) return null;
-  return { apelido: r.apelido ? sanitizar(r.apelido) : '', nivel, xp, creditos, montagem: r.montagem, atualizadoEm };
+  let pinturas: number | undefined;
+  if (r.pinturas !== undefined) {
+    const p = inteiro(r.pinturas, 0, MASCARA_PINTURAS);
+    if (p === null) return null;
+    pinturas = p;
+  }
+  const base: ProgressoPiloto = { apelido: r.apelido ? sanitizar(r.apelido) : '', nivel, xp, creditos, montagem: r.montagem, atualizadoEm };
+  return pinturas === undefined ? base : { ...base, pinturas };
 }
 
 /**
@@ -288,13 +299,24 @@ export function mesclarProgresso(local: ProgressoPiloto | null, remoto: Progress
   const pesoR = remoto.nivel * 1000 + remoto.xp;
   const venceLocal = pesoL !== pesoR ? pesoL > pesoR : local.atualizadoEm > remoto.atualizadoEm;
   const [v, o] = venceLocal ? [local, remoto] : [remoto, local];
-  return { ...v, apelido: v.apelido || o.apelido, montagem: v.montagem || o.montagem, atualizadoEm: Math.max(local.atualizadoEm, remoto.atualizadoEm) };
+  const base: ProgressoPiloto = { ...v, apelido: v.apelido || o.apelido, montagem: v.montagem || o.montagem, atualizadoEm: Math.max(local.atualizadoEm, remoto.atualizadoEm) };
+  // As cores compradas em qualquer aparelho valem nos dois: a união dos bits, não a do que venceu (não há reembolso).
+  return local.pinturas === undefined && remoto.pinturas === undefined ? base : { ...base, pinturas: unirPinturas(local.pinturas ?? 0, remoto.pinturas ?? 0) };
 }
 
 /** Os dois progressos dizem a mesma coisa? (Para não mandar ao servidor o que ele já tem.) */
 export function progressoIgual(a: ProgressoPiloto | null, b: ProgressoPiloto | null): boolean {
   if (!a || !b) return a === b;
-  return a.apelido === b.apelido && a.nivel === b.nivel && a.xp === b.xp && a.creditos === b.creditos && a.montagem === b.montagem;
+  return a.apelido === b.apelido && a.nivel === b.nivel && a.xp === b.xp && a.creditos === b.creditos && a.montagem === b.montagem && (a.pinturas ?? 0) === (b.pinturas ?? 0);
+}
+
+/**
+ * O que o servidor grava quando o navegador manda o progresso: as cores compradas **nunca somem** (P305). Um navegador antigo não manda o campo, e o
+ * de outro aparelho pode ter comprado uma cor que este não conhece: a conta fica com a união do que chegou e do que já tinha. Pura (G14).
+ */
+export function progressoComPinturas(novo: ProgressoPiloto, guardado: ProgressoPiloto | null): ProgressoPiloto {
+  if (novo.pinturas === undefined && guardado?.pinturas === undefined) return novo;
+  return { ...novo, pinturas: unirPinturas(novo.pinturas ?? 0, guardado?.pinturas ?? 0) };
 }
 
 // ---------- esqueci a senha (P206) ----------

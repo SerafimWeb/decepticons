@@ -1016,5 +1016,15 @@
  "Visão noturna": "Ночное видение",
  "Visão noturna:": "Ночное видение:",
  "enxerga no escuro": "видит в темноте",
- "enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.": "видит в тёмной фазе (Арара, Лансер и андроиды получают его с завода) и занимает место генератора."
+ "enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.": "видит в тёмной фазе (Арара, Лансер и андроиды получают его с завода) и занимает место генератора.",
+  "COR DO CASCO": "ЦВЕТ КОРПУСА",
+  "GRAFITE": "ГРАФИТ",
+  "BRANCO ÓSSEO": "КОСТЯНОЙ БЕЛЫЙ",
+  "CIANO DE ENGENHARIA": "ИНЖЕНЕРНЫЙ ЦИАН",
+  "AZUL MARINHO": "ТЁМНО-СИНИЙ",
+  "LARANJA DE SINALIZAÇÃO": "СИГНАЛЬНЫЙ ОРАНЖЕВЫЙ",
+  "ROXO NEON": "НЕОНОВЫЙ ФИОЛЕТОВЫЙ",
+  "USAR": "ИСПОЛЬЗОВАТЬ",
+  "COMPRAR {0} ₵": "КУПИТЬ ЗА {0} ₵",
+  "Cor escolhida: clique em APLICAR MONTAGEM para vestir o robô.": "Цвет выбран: нажмите APPLY LOADOUT, чтобы надеть его на робота."
 }

@@ -1016,5 +1016,15 @@
  "Visão noturna": "暗視装置",
  "Visão noturna:": "暗視装置：",
  "enxerga no escuro": "暗闇で見える",
- "enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.": "暗闇フェーズで見えるようになります（アララ、ランサー、アンドロイドは標準装備）。ジェネレーターの枠を使います。"
+ "enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.": "暗闇フェーズで見えるようになります（アララ、ランサー、アンドロイドは標準装備）。ジェネレーターの枠を使います。",
+  "COR DO CASCO": "ボディカラー",
+  "GRAFITE": "グラファイト",
+  "BRANCO ÓSSEO": "ボーンホワイト",
+  "CIANO DE ENGENHARIA": "エンジニアリングシアン",
+  "AZUL MARINHO": "ネイビーブルー",
+  "LARANJA DE SINALIZAÇÃO": "セーフティオレンジ",
+  "ROXO NEON": "ネオンパープル",
+  "USAR": "使う",
+  "COMPRAR {0} ₵": "{0} ₵で購入",
+  "Cor escolhida: clique em APLICAR MONTAGEM para vestir o robô.": "色を選びました。「APPLY LOADOUT」を押すとロボットに適用されます。"
 }

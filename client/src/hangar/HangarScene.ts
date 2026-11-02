@@ -13,6 +13,7 @@ import type { MechBase } from '../entities/MechBase';
 import { COLOSSUS_01_BLUEPRINT, HEAVY_MECH_BLUEPRINT, LIGHT_MECH_BLUEPRINT, type MechBlueprint } from '../entities/mechBlueprint';
 import { Vector09 } from '../entities/Vector09';
 import { ImportedMech } from '../entities/ImportedMech';
+import { pintarCasco } from './pintura';
 import { IMPORTED_CHASSIS, tryInstantiateMechRig, whenMechAssetReady } from '../entities/importedMechAssets';
 import { AIM_TARGET_SPEED, aimTargetDirectionAt, aimTargetXAt } from './aimPractice';
 
@@ -248,6 +249,8 @@ export class HangarScene {
   private readonly scanner: THREE.Mesh;
   private readonly lampLights: THREE.PointLight[] = [];
   private readonly displays = new Map<ChassisId, MechBase>();
+  /** Com que cor (P305) cada robô de `displays` foi montado: trocar a cor refaz o robô, porque a cor do Vector-09 é fixada ao criá-lo. */
+  private readonly coresDosDisplays = new Map<ChassisId, number | null>();
   private shown: MechBase | null = null;
   private height = 5.3;
   private time = 0;
@@ -632,7 +635,10 @@ export class HangarScene {
   }
 
   /** O Mech do pedestal: o chassi e as armas da montagem (um modelo por chassi, feito na primeira vez). */
-  show(chassis: ChassisId, loadout: Loadout): void {
+  /** `cor`: a cor do casco da montagem (P305), ou `null` = a de fábrica. */
+  show(chassis: ChassisId, loadout: Loadout, cor: number | null = null): void {
+    // A cor mudou desde que este robô foi montado: refaz (um robô sem registro, o de antes deste recurso, conta como de fábrica).
+    if (this.displays.has(chassis) && (this.coresDosDisplays.get(chassis) ?? null) !== cor) this.displays.delete(chassis);
     const version = ++this.showVersion;
     this.pendingPreparation = null;
     let m = this.displays.get(chassis);
@@ -643,18 +649,20 @@ export class HangarScene {
         if (!rig) {
           // Ainda carregando (raro — o preload dispara no boot do jogo): tenta de novo assim que
           whenMechAssetReady(importedAsset.url, CHASSIS[chassis].height, importedAsset)
-            .then(() => { if (version === this.showVersion) this.show(chassis, loadout); })
+            .then(() => { if (version === this.showVersion) this.show(chassis, loadout, cor); })
             .catch((err: unknown) => console.warn('Hangar: não foi possível carregar o Mech selecionado', err));
           return;
         }
+        pintarCasco(rig.hullMaterials, cor);
         m = new ImportedMech(CHASSIS[chassis], rig, loadout);
       } else {
         m =
           chassis === 'android'
-            ? new Android({ stats: PILOT_ANDROID_STATS, paint: PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot', loadout })
-            : new Vector09({ stats: CHASSIS[chassis], loadout, blueprint: BLUEPRINT_BY_CHASSIS[chassis] });
+            ? new Android({ stats: PILOT_ANDROID_STATS, paint: cor ?? PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot', loadout })
+            : new Vector09({ stats: CHASSIS[chassis], loadout, blueprint: BLUEPRINT_BY_CHASSIS[chassis], ...(cor === null ? {} : { paint: cor }) });
       }
       this.displays.set(chassis, m);
+      this.coresDosDisplays.set(chassis, cor);
     }
     m.equip(loadout);
     if (m !== this.shown && this.prepareModel && !this.prepared.has(m.root)) {

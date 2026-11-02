@@ -10,6 +10,7 @@ import { TEXTO_DA_ELEGIBILIDADE, TEXTO_DO_BOTAO_DA_VOZ, TEXTO_DO_MENOR_SO_OUVE }
 import { CUSTO_DO_CONSORCIO, LADOS, SELO_SEM_LADO, TEXTO_CONFIRMAR, TEXTO_CUSTO_RODAPE, TEXTO_CUSTO_TITULO, TEXTO_ELES_DIZEM, TEXTO_FECHAR, TEXTO_PERGUNTA, TEXTO_RODAPE, TEXTO_SEGUIR, TEXTO_SIGNIFICA, TEXTO_VOLTAR } from '../ui/LadoSelector';
 import { DICA_DA_ARMA } from '../ui/dicasDeArma';
 import { CARTAO_TEXTOS } from '../ui/CartaoDaRecompensa';
+import { PINTURAS } from '../../../shared/pinturas';
 import { ROTULOS } from '../core/recompensaDaPartida';
 import { IDIOMAS, carregarDicionario, idiomaInicial, idiomaValido, t, traduzir, type Dicionario } from './i18n';
 
@@ -245,6 +246,15 @@ describe('a cobertura: o que o jogo mostra e o dicionário traduz', () => {
     const textos = [...Object.values(CARTAO_TEXTOS), ...Object.values(ROTULOS)].map(com).filter((x) => /\p{L}{3,}/u.test(x.replace(/XP/g, '')));
     expect(textos.length).toBeGreaterThan(10);
     expect(textos.filter((x) => !coberto(x))).toEqual([]);
+  });
+
+  it('a cor do casco (P305): o nome de cada cor, os rótulos do mostruário e a mensagem de escolha (o que o jogador lê antes de gastar os Créditos)', () => {
+    const textos = [
+      ...PINTURAS.map((p) => p.nome),
+      'COR DO CASCO', 'EM USO', 'DE FÁBRICA', 'USAR', `COMPRAR ${PINTURAS[1]!.preco} ₵`,
+      'Cor escolhida: clique em APLICAR MONTAGEM para vestir o robô.',
+    ];
+    expect(textos.filter((t) => !coberto(t))).toEqual([]);
   });
 
   it('as dicas da tela de carregamento (a primeira coisa que um jogador novo lê)', () => {

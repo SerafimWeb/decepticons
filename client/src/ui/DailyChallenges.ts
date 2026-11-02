@@ -10,6 +10,8 @@
  *  - DOM seguro com textContent em todas as variáveis dinâmicas.
  */
 
+import { comprarPintura as comprarPinturaNaConta, possuiPintura, unirPinturas } from '../../../shared/pinturas';
+
 export interface Challenge {
   id: string;
   title: string;
@@ -26,6 +28,8 @@ export interface PilotProgressionData {
   xp: number;
   credits: number;
   lastResetDate: string;
+  /** As cores do casco compradas (P305): um bit por cor de `PINTURAS`. Ausente = nenhuma (a de fábrica é sempre do piloto). */
+  pinturas?: number;
   challenges: Challenge[];
 }
 
@@ -85,15 +89,17 @@ export class DailyChallenges {
   onSave?: () => void;
 
   /** O que a conta do piloto guarda (os desafios do dia ficam só no navegador). */
-  snapshot(): { nivel: number; xp: number; creditos: number } {
-    return { nivel: this.data.level, xp: this.data.xp, creditos: this.data.credits };
+  snapshot(): { nivel: number; xp: number; creditos: number; pinturas: number } {
+    return { nivel: this.data.level, xp: this.data.xp, creditos: this.data.credits, pinturas: this.pinturas };
   }
 
   /** A conta tinha mais progresso: aplica nível, XP e créditos (limitados ao que o jogo aceita), salva no navegador e redesenha. Não chama `onSave` (não é mudança do jogador). */
-  restore(p: { nivel: number; xp: number; creditos: number }): void {
+  restore(p: { nivel: number; xp: number; creditos: number; pinturas?: number }): void {
     this.data.level = Math.max(1, Math.floor(p.nivel));
     this.data.xp = Math.min(XP_PER_LEVEL - 1, Math.max(0, Math.floor(p.xp)));
     this.data.credits = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(p.creditos)));
+    // As cores compradas só crescem: a conta e o navegador somam (não há reembolso).
+    this.data.pinturas = unirPinturas(this.pinturas, p.pinturas ?? 0);
     this._persist();
     this._updateUi();
   }
@@ -102,6 +108,25 @@ export class DailyChallenges {
   get xp(): number { return this.data.xp; }
   get credits(): number { return this.data.credits; }
   get challenges(): readonly Challenge[] { return this.data.challenges; }
+  /** As cores do casco que o piloto já tem (um bit por cor; a de fábrica é sempre dele). */
+  get pinturas(): number { return this.data.pinturas ?? 0; }
+
+  /** Tem esta cor do casco? (P305) */
+  possuiPintura(i: number): boolean { return possuiPintura(this.pinturas, i); }
+
+  /**
+   * Compra uma cor do casco com os Créditos (P305). `false` = não dá (cor que não existe, cor que já é dele, ou Créditos que não bastam); a regra
+   * é a de `shared/pinturas.ts`, testada lá. Grava na hora e a conta agenda o envio.
+   */
+  comprarPintura(i: number): boolean {
+    const r = comprarPinturaNaConta(this.pinturas, i, this.data.credits);
+    if (!r) return false;
+    this.data.pinturas = r.bits;
+    this.data.credits = r.creditos;
+    this._saveData();
+    this._updateUi();
+    return true;
+  }
 
   /** Adiciona XP e processa ganho de níveis. */
   addXp(amount: number): boolean {

@@ -7,7 +7,7 @@ import { mkdirSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
-import { chaveDeConfigValida, valorDeConfigValido, CONTA_APAGAR_PATH, CONTA_CRIAR_PATH, CONTA_DADOS_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_MEDICAO_PATH, CONTA_NASCIMENTO_PATH, CONTA_PROGRESSO_PATH, idadeDaConta, parseNascimento, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, POLITICA_VERSAO, PROGRESSO_MAX_BYTES, parseCredenciais, parseCriarConta, parseMedicao, parseSenhaDeConfirmacao, SESSAO_HEADER, validarProgresso } from '../shared/net/auth';
+import { chaveDeConfigValida, valorDeConfigValido, CONTA_APAGAR_PATH, CONTA_CRIAR_PATH, CONTA_DADOS_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_MEDICAO_PATH, CONTA_NASCIMENTO_PATH, CONTA_PROGRESSO_PATH, idadeDaConta, parseNascimento, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, POLITICA_VERSAO, PROGRESSO_MAX_BYTES, parseCredenciais, parseCriarConta, parseMedicao, parseSenhaDeConfirmacao, SESSAO_HEADER, validarProgresso, progressoComPinturas, type ProgressoPiloto } from '../shared/net/auth';
 import { CLOSE_REINICIO, REINICIO_AVISO_S, REINICIO_VOLTA_EM_S, ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
 import { CONTA_ESQUECI_PATH, CONTA_REDEFINIR_PATH, parseEsqueci, parseRedefinir, urlDeRedefinicao, type IdiomaEmail } from '../shared/net/auth';
 import { EMAILS_POR_DIA, MailerDaPasta, TetoDiario, type Mailer } from './email';
@@ -802,8 +802,17 @@ export async function startServer(
         enviarJson(400, { erro: 'progresso inválido' });
         return;
       }
-      contas.gravarProgresso(conta.id, JSON.stringify(progresso));
-      enviarJson(200, { progresso });
+      // As cores compradas não somem (P305): a conta fica com a união do que chegou e do que já tinha (um navegador antigo não manda o campo).
+      let antes: ProgressoPiloto | null = null;
+      try {
+        const guardado = contas.lerProgresso(conta.id);
+        antes = guardado ? validarProgresso(JSON.parse(guardado), sanitizeName) : null;
+      } catch {
+        antes = null;
+      }
+      const final = progressoComPinturas(progresso, antes);
+      contas.gravarProgresso(conta.id, JSON.stringify(final));
+      enviarJson(200, { progresso: final });
       return;
     }
     if (path === CONTA_EU_PATH && req.method === 'GET') {
