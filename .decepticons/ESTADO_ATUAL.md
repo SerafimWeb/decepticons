@@ -1,4 +1,8 @@
-## EM BRANCH — NÃO ESTÁ NO AR: o Colossus pinta o casco inteiro, e a chuva sai das costas (Claude, P306 e P307, branch `claude/colossus-cor-costas`)
+## EM BRANCH — NÃO ESTÁ NO AR: a cor do casco liberada ao público (Claude, P308, branch `claude/liberar-cor`)
+
+**O pedido (02/11):** "sim liberado, prossiga com essas tarefas. faça tudo, vai iterando até concluir". **Entrega desta parte:** a seção COR DO CASCO sai do restrito (padrão público). **Prova:** bancada como jogador comum: a seção aparece com as sete cores. **Próxima sessão começa com:** P309, o clipe (últimos 10 s, 9:16, opt-in, teclas L e K), numa branch nova a partir da `main`.
+
+## O Colossus pinta o casco inteiro, e a chuva sai das costas (Claude, P306 e P307, PR #509, na `main` desde 02/11; no ar após o deploy, a confirmar)
 
 **O pedido (02/11):** "mudei a cor do colossus mas nao apareceu na cor, na arena... o tiro pra cima do chuva de misseis está saindo da frente do ombro, e nao das costas... seria bom melhorarmos esse tipo de detalhe". **Entrega:** a cor da pintura comprada agora cobre o casco (o aço também), e não só as partes de pintura; o lançamento da chuva sai do morteiro das costas em qualquer botão. **Provas:** 3 testes novos; os 301 testes do desenho passam; duas bancadas no Chrome (a cor na arena e a boca da chuva atrás do robô). **Falta:** o olho do Comandante, e o PR. A cor continua restrita até a P308.
 **Próxima sessão começa com:** abrir o PR (`npm run publicar`); depois, liberar a cor ao público (P308), e só então o clipe (P309) e o modo streamer (P310).
