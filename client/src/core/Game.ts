@@ -181,6 +181,7 @@ import { CartaoDaRecompensa } from '../ui/CartaoDaRecompensa';
 import { recompensaDaPartida, venceuARodada, type DesempenhoDaPartida } from './recompensaDaPartida';
 import { LadoSelector } from '../ui/LadoSelector';
 import { ContaCliente } from '../net/auth';
+import { corDaMontagem, pintarCasco } from '../hangar/pintura';
 import { progressoLocalDoJogo } from '../net/progressoLocal';
 import { chaveDoToken, SessaoPiloto } from '../net/sessao';
 import type { IdadeDaConta } from '../../../shared/net/auth';
@@ -701,14 +702,18 @@ export class Game {
       // asset externo; entra com a silhueta procedural padrão em vez de quebrar.
       console.warn(`rig importado de "${chassisId}" ainda não estava pronto; entrando com o Vector-09 padrão`);
     }
+    // A cor do casco (P305): a que a montagem do Hangar leva; de fábrica = a de sempre. O importado tinge o próprio casco.
+    const corDoCasco = corDaMontagem(this.hangar.current);
+    if (importedRig && chassisId !== 'android') pintarCasco(importedRig.hullMaterials, corDoCasco);
     this.mech =
       chassisId === 'android'
-        ? new Android({ stats: poweredStats(PILOT_ANDROID_STATS, power, 'player'), paint: PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot', loadout: poweredLoadout(this.hangar.equipped, power, 'player') })
+        ? new Android({ stats: poweredStats(PILOT_ANDROID_STATS, power, 'player'), paint: corDoCasco ?? PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot', loadout: poweredLoadout(this.hangar.equipped, power, 'player') })
         : importedRig
         ? new ImportedMech(poweredStats(CHASSIS[chassisId], power, 'player'), importedRig, poweredLoadout(this.hangar.equipped, power, 'player'))
         : new Vector09({
             stats: poweredStats(CHASSIS[chassisId], power, 'player'),
             loadout: poweredLoadout(this.hangar.equipped, power, 'player'),
+            ...(corDoCasco === null ? {} : { paint: corDoCasco }),
             blueprint: BLUEPRINT_BY_CHASSIS[chassisId],
           });
     this.match.addPlayer(this.mech, 'VOCÊ', 0, () => this.equipPending());
@@ -953,10 +958,12 @@ export class Game {
         this.renderPass.scene = this.scene;
         this.renderPass.camera = this.camera;
       },
-      show: (chassis, loadout) => this.hangarScene?.show(chassis, loadout),
+      show: (chassis, loadout, cor) => this.hangarScene?.show(chassis, loadout, cor),
       rotate: (dx) => this.hangarScene?.rotate(dx),
       applied: () => this.applyHangarNow(),
       credits: () => this.dailyChallenges.credits,
+      pinturas: () => this.dailyChallenges.pinturas,
+      comprarPintura: (i) => this.dailyChallenges.comprarPintura(i),
       status: () => (online ? `ONLINE · SALA ${online.room}` : 'OFFLINE'),
       test: (data, arm) => this.hangarScene?.startTest(data, arm),
       stopTest: () => this.hangarScene?.stopTest(),
@@ -1749,7 +1756,7 @@ export class Game {
       const remainingMs = deadline - Date.now();
       if (remainingMs > 0) {
         this.hangarScene ??= new HangarScene();
-        this.hangarScene.show(this.hangar.current.chassis, this.hangar.equipped);
+        this.hangarScene.show(this.hangar.current.chassis, this.hangar.equipped, corDaMontagem(this.hangar.current));
         this.resizeHangar();
         const hangarResult = await warmUpShaders(this.renderer, this.composer.readBuffer, this.hangarScene.scene, this.hangarScene.camera, (done, total) => {
           if (cta) cta.textContent = `[ preparando Hangar ${done}/${total} ]`;

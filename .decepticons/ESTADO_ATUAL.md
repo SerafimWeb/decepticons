@@ -1,3 +1,8 @@
+## EM BRANCH — NÃO ESTÁ NO AR: a cor do casco, comprada com Créditos e vista pelos outros pilotos (Claude, P305, branch `claude/pintura-multijogador`)
+
+**O pedido (01/11):** "seria bom já podermos ver com os outros pilotos... fazer bem feito e completo logo. prossiga". **Entrega:** sete cores do casco (a de fábrica é grátis), compradas no Hangar; a cor vai na montagem e chega aos outros pilotos na entrada da sala; a conta guarda a posse, e o servidor nunca apaga uma compra. Seção restrita (P191): o Comandante libera em VISIBILIDADE. **Achados corrigidos:** o teto da montagem cortava a montagem cheia (80 → 128); o regex dos botões não lia dois botões. **Provas:** 43 testes novos, 8 mutações pegas, a bancada de dois pilotos no servidor de verdade (seis verificações). **Falta:** o olho do Comandante (na cor dos modelos importados, que são tingidos) e o PR.
+**Próxima sessão começa com:** abrir o PR com `npm run publicar`; liberar a seção ao público quando o Comandante aprovar a cor.
+
 ## Toda partida rende: XP, Créditos e o cartão do fim (Claude, P304 passo 1, PR #505, no ar em cybermech.online desde 01/11)
 
 **O pedido (01/11):** "quero que ele se torne um jogo que gera desejo… B (espetáculo), depois A (construção)… faz logo, quero tornar o jogo mais gostoso de jogar". **Entrega:** cada partida (rodada, missão, Bandeira, Domínio) dá XP e Créditos, e o fim mostra SUA PARTIDA com a conta, a barra de nível e as missões prontas; online, um aviso curto no topo. A missão "RESISTÊNCIA TÁTICA" avança; o resumo morto do `RoundOverlay` saiu; o primeiro acesso abre o console completo no fim da partida. **Provas:** 12 testes da regra, 1 de idioma, bancada `medicoes/cartao-recompensa.mjs` no Chrome. **Falta:** o olho do Comandante e uma sala online de verdade.

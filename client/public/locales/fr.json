@@ -1016,5 +1016,15 @@
  "Visão noturna": "Vision nocturne",
  "Visão noturna:": "Vision nocturne :",
  "enxerga no escuro": "voit dans le noir",
- "enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.": "voit pendant la phase sombre (l'Arara, le Lancer et les androïdes l'ont déjà d'origine) et prend la place du générateur."
+ "enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.": "voit pendant la phase sombre (l'Arara, le Lancer et les androïdes l'ont déjà d'origine) et prend la place du générateur.",
+  "COR DO CASCO": "COULEUR DE LA COQUE",
+  "GRAFITE": "GRAPHITE",
+  "BRANCO ÓSSEO": "BLANC OSSEUX",
+  "CIANO DE ENGENHARIA": "CYAN D'INGÉNIERIE",
+  "AZUL MARINHO": "BLEU MARINE",
+  "LARANJA DE SINALIZAÇÃO": "ORANGE DE SIGNALISATION",
+  "ROXO NEON": "VIOLET NÉON",
+  "USAR": "UTILISER",
+  "COMPRAR {0} ₵": "ACHETER {0} ₵",
+  "Cor escolhida: clique em APLICAR MONTAGEM para vestir o robô.": "Couleur choisie : cliquez sur APPLIQUER L'ASSEMBLAGE pour habiller le robot."
 }

@@ -14,6 +14,14 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P305 — A cor do casco: comprada com Créditos e vista pelos outros pilotos (01/11, Claude)
+
+> Pedido do Comandante (01/11), logo depois do P304: "seria bom já podermos ver com os outros pilotos… fazer bem feito e completo logo. prossiga". A escolha entre as duas opções ficou com o Claude: a 2, a cor visível para os outros, não só no próprio robô.
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P305 | 01/11 | "seria bom já podermos ver com os outros pilotos… fazer bem feito e completo logo. prossiga" | 🔧 | **Claude, 01/11, branch `claude/pintura-multijogador`, PR a abrir.** Sete cores do casco (a de fábrica é grátis; as outras custam de 150 a 600 ₵), compradas no Hangar com os Créditos. A cor vai na montagem (sufixo `.P<n>` da chave, protocolo 25) e aparece para os outros pilotos ao entrar na sala. A seção nasce **restrita** (P191): o Comandante libera em VISIBILIDADE. Achados no caminho, já corrigidos: a montagem cheia (Colossus com os cinco botões no 2) passava de 80 caracteres e era cortada no JOIN, o teto sobe para 128; o regex que lê os botões só lia um par. | No Hangar com `?comandante=1`: seção COR DO CASCO, comprar uma cor, APLICAR MONTAGEM, entrar numa sala online: os outros veem a cor ao entrar. Fotos: `arte/cor-do-casco-hangar-claude.jpg` e `arte/cor-do-casco-jogo-ana-claude.jpg`. Para liberar ao público: VISIBILIDADE ▸ "Cor do casco · compra com Créditos". |
+
 ## P304 — Um jogo que gera desejo: o espetáculo, depois a construção (01/11, Claude)
 
 > Conversa do Comandante com o Brain Serafim (01/11), trazida ao Claude: o jogo tem combate e não tem um motivo para voltar. O Comandante escolheu **B (espetáculo) e depois A (construção)** e, ao Claude: **"faz logo… quero tornar o jogo mais gostoso de jogar"**. Leitura do Claude, dita ao Comandante: B = partidas de gente boas de jogar e de assistir (fim de partida com peso, clipe, modo streamer), não o Wargame dos bots como produto; A = progressão e identidade (cosmético, nunca combate: `VISAO.md`). Fura o congelamento do `LANCAMENTO.md` por ordem do Comandante. Um PR por passo.

@@ -6,6 +6,7 @@ import { triggersOf } from '../entities/MechBase';
 import { attackOf, shoulderMounts, triggersComBotoes, weaponAt, type Attack, type MountId } from '../combat/mounts';
 import { classFor, WEAPON_CLASSES, type WeaponClass } from '../combat/weaponClass';
 import { EXTRA_SLOTS, MOUNT_DO_EXTRA, type ExtraSlot } from '../combat/encaixesExtras';
+import { pinturaValida } from '../../../shared/pinturas';
 
 /**
  * Contrato do Hangar (AGENTS, regra 5: o contrato entra antes da tela). Uma montagem é só ids e níveis
@@ -61,6 +62,11 @@ export interface LoadoutSpec {
    * sem escolha, a montagem segue a versão de sempre (a chave do link e da rede não muda).
    */
   botoes?: Partial<Record<BotaoSlot, 1 | 2>>;
+  /**
+   * A cor do casco (P305): o índice em `PINTURAS` (`shared/pinturas.ts`). Ausente ou 0 = de fábrica. Vai na chave como o sufixo `.P<n>`, só quando não é 0,
+   * então a montagem de sempre (o link, a conta, o roster) segue com a mesma chave. Comprada com Créditos; cosmética (nunca dano nem hitbox).
+   */
+  pintura?: number;
 }
 export type LoadoutError = 'formato' | 'chassi' | 'arma' | 'nível' | 'encaixe' | 'carga' | 'bloqueado';
 
@@ -197,6 +203,7 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
   const fail = (error: LoadoutError, detail: string, mass = 0, capacity = 0): LoadoutCheck => ({ ok: false, error, detail, mass, capacity });
   if (typeof spec !== 'object' || spec === null) return fail('formato', 'montagem vazia');
   const s = spec as Partial<LoadoutSpec>;
+  if (s.pintura !== undefined && !pinturaValida(s.pintura)) return fail('formato', 'cor do casco desconhecida');
   if (s.v !== 1 && ((s.v !== 2 && s.v !== 3 && s.v !== 4) || s.module === undefined)) return fail('formato', `versão ${String(s.v)} desconhecida`);
   if (typeof s.chassis !== 'string' || !Object.hasOwn(CHASSIS, s.chassis)) return fail('chassi', `chassi ${String(s.chassis)} não existe`);
   const chassis = CHASSIS[s.chassis];
@@ -279,11 +286,20 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
  * (encaixe vazio = `-`). Os chassis com ombros levam um terceiro grupo: `v1.marauder.blaster-0.blaster-0.rockets-0`.
  * `parseLoadoutKey` devolve null se o texto não for uma montagem.
  */
+/**
+ * A chave da montagem (o texto do link, da conta e do JOIN). A cor do casco (P305) entra no fim como `.P<n>`, só quando não é a de fábrica:
+ * a montagem sem cor sai exatamente como antes (um servidor ou um link antigo a lê igual).
+ */
 export function loadoutKey(spec: LoadoutSpec): string {
+  const corpo = loadoutKeyDoCorpo(spec);
+  return spec.pintura ? `${corpo}.P${spec.pintura}` : corpo;
+}
+
+function loadoutKeyDoCorpo(spec: LoadoutSpec): string {
   // P301: com botão escolhido, a chave vai na versão 4: o corpo de sempre (nove grupos) e um grupo `B` com os botões (`rh1lh2`).
   if (spec.botoes && Object.values(spec.botoes).some((b) => b === 1 || b === 2)) return loadoutKeyV4(spec);
   // Versão 4 sem botão escolhido não é uma montagem válida à parte: sai como a de sempre (a versão 3 se tem encaixe extra, a 1 se não tem).
-  if (spec.v === 4) return loadoutKey({ ...spec, v: EXTRA_SLOTS.some((slot) => spec[slot]) ? 3 : 1 });
+  if (spec.v === 4) return loadoutKeyDoCorpo({ ...spec, v: EXTRA_SLOTS.some((slot) => spec[slot]) ? 3 : 1 });
   const arm = (a: ArmSpec | null | undefined) => (a ? `${a.id}-${a.tier}` : '-');
   // Com algum encaixe extra cheio, a chave vai na versão 3 (as montagens antigas seguem iguais, e um cliente antigo lê a sua como antes).
   if (EXTRA_SLOTS.some((slot) => spec[slot])) return `v3.${spec.chassis}.${arm(spec.right)}.${arm(spec.left)}.${arm(spec.shoulders)}.${spec.module ?? '-'}.${arm(spec.back)}.${arm(spec.rightShoulder)}.${arm(spec.leftShoulder)}${spec.layout ? `.L${spec.layout}` : ''}`;
@@ -302,7 +318,8 @@ function loadoutKeyV4(spec: LoadoutSpec): string {
 
 /** O contrário de `loadoutKeyV4`: lê o corpo como o da versão 3 e os botões do grupo `B`; recusa a chave se qualquer parte não bater. */
 function parseLoadoutKeyV4(key: string): LoadoutSpec | null {
-  const m = /^(v4\..+)\.B((?:rh|lh|rs|ls|bk)[12]*)$/.exec(key);
+  // O grupo B é uma sequência de pares (rh2lh1…): o regex antigo casava um par só e recusava qualquer montagem com dois botões escolhidos (P305: achado ao medir o pior caso).
+  const m = /^(v4\..+)\.B((?:(?:rh|lh|rs|ls|bk)[12])+)$/.exec(key);
   if (!m) return null;
   const base = parseLoadoutKey(`v3.${m[1]!.slice(3)}`);
   if (!base) return null;
@@ -319,6 +336,15 @@ function parseLoadoutKeyV4(key: string): LoadoutSpec | null {
 }
 
 export function parseLoadoutKey(key: string): LoadoutSpec | null {
+  // A cor do casco (`.P<n>`, P305) vem por último: tira o sufixo, lê o corpo de sempre e confere a cor. `.P0` não existe (a de fábrica não leva sufixo).
+  const cor = /\.P([1-9][0-9]?)$/.exec(key.trim());
+  if (cor) {
+    const corpo = parseLoadoutKey(key.trim().slice(0, -cor[0].length));
+    const pintura = Number(cor[1]);
+    if (!corpo || !pinturaValida(pintura)) return null;
+    const spec: LoadoutSpec = { ...corpo, pintura };
+    return validateLoadout(spec).ok ? spec : null;
+  }
   if (key.trim().startsWith('v4.')) return parseLoadoutKeyV4(key.trim());
   if (key.trim().startsWith('v3.')) {
     const parts = key.trim().split('.');

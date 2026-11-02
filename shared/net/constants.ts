@@ -32,7 +32,9 @@
 // 24 (28/10): a Cidade Neon ganha a praça urbana (P268, `environment/ArenaUrbana.ts`): nove prédios, cinco contêineres, o playground e dois quiosques que quebram (ids 6 e 7 depois das seis barricadas de sempre).
 // Não muda mensagem nenhuma, mas muda o chão que os dois lados simulam: um cliente da versão 23 preveria o Mech atravessando um prédio que o servidor da 24 trata como sólido (o jogador "puxado de volta"
 // a cada passo) e não entenderia o `PROP_BROKEN` de um quiosque. Recusar a conexão e pedir para recarregar é o que o contador de versão existe para fazer.
-export const PROTOCOL_VERSION = 24;
+// 25 (01/11, P305): a cor do casco vai na montagem (o sufixo `.P<n>` da chave, `hangar/loadout.ts`), no JOIN e no roster; o teto da chave sobe para 128 caracteres (BUILD_MAX), porque a montagem mais cheia já passava de 80 (o Colossus com os 5 botões no 2 e a visão mede 94, e com a cor 97).
+// Um servidor da versão 24 recusaria a montagem pintada e não lê a chave maior; sem a subida, o jogador veria a cor de outro piloto como montagem inválida.
+export const PROTOCOL_VERSION = 25;
 
 /** Tick fixo da simulação, igual no cliente e no servidor (G1). */
 export const SIM_HZ = 60;
@@ -81,7 +83,11 @@ export const CLOSE_REINICIO = 4010;
 export const REINICIO_AVISO_S = 10;
 export const REINICIO_VOLTA_EM_S = 60;
 
-/** Apelido: até 16 caracteres. Montagem (`loadoutKey`): até 80. Código da sala: até 12. */
+/** Apelido: até 16 caracteres. Montagem (`loadoutKey`): até 128 (`BUILD_MAX`). Código da sala: até 12. */
 export const NAME_MAX = 16;
-export const BUILD_MAX = 80;
+/**
+ * O tamanho máximo da montagem no JOIN e no roster (a chave de texto de `hangar/loadout.ts`). 128 desde a versão 25 (P305). Medido: a pior montagem válida
+ * (Colossus-01, os cinco botões no 2, visão, railgun, cor 6) tem 97 caracteres. Acima do teto o `Writer` corta o texto em silêncio, então o teto tem folga.
+ */
+export const BUILD_MAX = 128;
 export const ROOM_MAX = 12;

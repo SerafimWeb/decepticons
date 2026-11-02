@@ -18,7 +18,7 @@ function fixture() {
   const displays = new Map<string, ReturnType<typeof model>>([['vector09', vector]]);
   const scene = Object.create(HangarScene.prototype) as HangarScene;
   Object.assign(scene, {
-    showVersion: 0, displays, turntable: new THREE.Group(), shown: null, frame: vi.fn(),
+    showVersion: 0, displays, coresDosDisplays: new Map(), turntable: new THREE.Group(), shown: null, frame: vi.fn(),
     prepared: new WeakSet(), pendingPreparation: null, preparing: false,
   });
   let resolve!: () => void;

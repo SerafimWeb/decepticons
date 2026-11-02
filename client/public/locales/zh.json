@@ -1016,5 +1016,15 @@
  "Visão noturna": "夜视",
  "Visão noturna:": "夜视：",
  "enxerga no escuro": "能在黑暗中视物",
- "enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.": "可在黑暗阶段视物（Arara、Lancer 和机器人出厂自带），并占用发生器的位置。"
+ "enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.": "可在黑暗阶段视物（Arara、Lancer 和机器人出厂自带），并占用发生器的位置。",
+  "COR DO CASCO": "机体颜色",
+  "GRAFITE": "石墨",
+  "BRANCO ÓSSEO": "骨白",
+  "CIANO DE ENGENHARIA": "工程青",
+  "AZUL MARINHO": "海军蓝",
+  "LARANJA DE SINALIZAÇÃO": "警示橙",
+  "ROXO NEON": "霓虹紫",
+  "USAR": "使用",
+  "COMPRAR {0} ₵": "{0} ₵ 购买",
+  "Cor escolhida: clique em APLICAR MONTAGEM para vestir o robô.": "已选择颜色：点击“APPLY LOADOUT”以应用到机器人。"
 }

@@ -2,6 +2,9 @@ import type { MountId } from '../combat/mounts';
 import { ehModulo } from '../combat/modulos';
 import { CLASS_LABEL_PLURAL } from '../combat/weaponClass';
 import { funcionalidadeVisivel } from '../core/Visibilidade';
+import { PALETTE } from '../core/palette';
+import { PINTURAS, possuiPintura, pinturaValida } from '../../../shared/pinturas';
+import { corDaMontagem } from '../hangar/pintura';
 import { TIERS, weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { reloadWithout } from '../core/url';
 import { CHASSIS, CHASSIS_SIZE, SHIELD_ARM, type ChassisId } from '../entities/chassis';
@@ -23,7 +26,11 @@ import { testAt, testFire, TEST_FIRE_S, type TestFire } from '../hangar/testFire
 export interface HangarPreview {
   open(): void;
   close(): void;
-  show?(chassis: ChassisId, loadout: Loadout): void;
+  /** `cor`: a cor do casco da montagem (P305), ou `null` = a de fábrica. */
+  show?(chassis: ChassisId, loadout: Loadout, cor?: number | null): void;
+  /** As cores do casco que o piloto já tem (um bit por cor, P305) e a compra de uma delas com Créditos. */
+  pinturas?(): number;
+  comprarPintura?(i: number): boolean;
   rotate?(dx: number): void;
   /** Montagem do mesmo chassi aplicada: o jogo troca as armas (ou explica por que não) e devolve o aviso. */
   applied?(): string;
@@ -280,6 +287,7 @@ export class HangarMenu {
         <div class="hg-head"><span>02</span> MONTAGEM</div>
         <div id="hangar-slot-list" class="hg-slots"></div>
         <div id="hangar-layout" class="hg-layout" role="group" aria-label="Como os ataques se dividem"></div>
+        <div id="hangar-pintura" class="hg-layout hg-pinturas" role="group" aria-label="Cor do casco" data-func="robo:pintura"></div>
         <div id="hangar-botoes" class="hg-layout" role="group" aria-label="Qual botão dispara cada arma"></div>
         <div id="hangar-weapon-editor" class="hg-editor"></div>
         <label class="hg-module"><span>MÓDULO EXTRA <i>(não ocupa os braços)</i></span><select id="hangar-module-select" aria-label="Módulo de energia"><option value="">Sem módulo</option><option value="frontal">Barreira frontal · 2,0 t · 5 s, 120°</option><option value="sphere">Esfera de energia · 4,0 t · 3,75 s, 360°</option><option value="fire">Anel de fogo · 3,0 t · 5 s, raio de 7 m</option><option value="visao">Visão noturna · 0,5 t · enxerga no escuro</option></select><small>Ctrl liga e desliga. Os impactos gastam a energia. <b>Anel de fogo:</b> não segura tiro; queima os inimigos num raio de 7 m e esquenta todos ali, inclusive você; derrete o inimigo congelado.</small><small><b>Visão noturna:</b> enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.</small></label>
@@ -595,6 +603,20 @@ export class HangarMenu {
       this.render();
       return;
     }
+    // A cor do casco (P305): uma que o piloto tem vira a do rascunho; uma nova é comprada com os Créditos e vira a do rascunho. O APLICAR MONTAGEM a veste.
+    const cor = target?.closest<HTMLButtonElement>('[data-pintura]')?.dataset.pintura;
+    if (cor !== undefined) {
+      const i = Number(cor);
+      if (pinturaValida(i) && (possuiPintura(this.preview.pinturas?.() ?? 0, i) || this.preview.comprarPintura?.(i))) {
+        const draft: LoadoutSpec = { ...this.draft, pintura: i };
+        if (i === 0) delete draft.pintura;
+        this.draft = draft;
+        this.message = i === 0 ? '' : 'Cor escolhida: clique em APLICAR MONTAGEM para vestir o robô.';
+        this.messageKind = 'info';
+      }
+      this.render();
+      return;
+    }
     const layoutAttr = target?.closest<HTMLButtonElement>('[data-layout]')?.dataset.layout;
     if (layoutAttr !== undefined) {
       const layout = Number(layoutAttr);
@@ -708,6 +730,21 @@ export class HangarMenu {
     this.renderMessage();
   }
 
+  /** As cores do casco (P305): as que o piloto tem e as que pode comprar. Sem crédito, a cor aparece travada com o preço. */
+  private renderPinturas(spec: LoadoutSpec): void {
+    const box = this.root.querySelector<HTMLElement>('#hangar-pintura');
+    if (!box) return;
+    const bits = this.preview.pinturas?.() ?? 0;
+    const creditos = this.preview.credits?.() ?? 0;
+    const atual = spec.pintura ?? 0;
+    box.innerHTML = '<span class="hg-layout-title">COR DO CASCO</span>' + PINTURAS.map((p, i) => {
+      const cor = p.cor ?? PALETTE.playerPaint;
+      const estado = i === atual ? 'EM USO' : possuiPintura(bits, i) ? 'USAR' : `COMPRAR ${p.preco} ₵`;
+      const travada = !possuiPintura(bits, i) && creditos < p.preco;
+      return `<button type="button" class="hg-pintura${i === atual ? ' selected' : ''}" data-pintura="${i}" style="--cor:#${cor.toString(16).padStart(6, '0')}" aria-pressed="${i === atual}"${travada ? ' disabled' : ''}><i aria-hidden="true"></i><span class="hg-pintura-nome">${p.nome}</span><small>${estado}</small></button>`;
+    }).join('');
+  }
+
   private render(): void {
     const spec = this.draft;
     const chassis = CHASSIS[spec.chassis];
@@ -723,8 +760,8 @@ export class HangarMenu {
     for (const b of this.root.querySelectorAll<HTMLButtonElement>('[data-tab-btn]')) b.classList.toggle('selected', b.dataset.tabBtn === this.tab);
 
     // O galpão 3D mostra a montagem do rascunho (a válida; fora da carga, as armas de fábrica do chassi).
-    if (report.check.ok) this.preview.show?.(spec.chassis, report.check.loadout);
-    else if (this.previewChassis !== spec.chassis) this.preview.show?.(spec.chassis, chassis.loadout);
+    if (report.check.ok) this.preview.show?.(spec.chassis, report.check.loadout, corDaMontagem(spec));
+    else if (this.previewChassis !== spec.chassis) this.preview.show?.(spec.chassis, chassis.loadout, corDaMontagem(spec));
     this.previewChassis = spec.chassis;
 
     this.setText('hg-top-credits', (this.preview.credits?.() ?? 0).toLocaleString('pt-BR') + ' ₵');
@@ -753,6 +790,7 @@ export class HangarMenu {
       })
       .join('');
 
+    this.renderPinturas(spec);
     const slotList = this.root.querySelector<HTMLElement>('#hangar-slot-list')!;
     const layoutBox = this.root.querySelector<HTMLElement>('#hangar-layout')!;
     const layouts = CHASSIS[spec.chassis].layouts;

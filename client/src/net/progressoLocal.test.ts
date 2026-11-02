@@ -88,9 +88,10 @@ describe('DailyChallenges: snapshot, restore e onSave (a ponte com a conta)', ()
   it('snapshot devolve nível, XP e créditos; restore aplica e limita (nível >= 1, XP < 1000, créditos >= 0)', () => {
     const dc = new DailyChallenges();
     dc.restore({ nivel: 6, xp: 250, creditos: 1234 });
-    expect(dc.snapshot()).toEqual({ nivel: 6, xp: 250, creditos: 1234 });
+    // P305: o snapshot leva também as cores compradas (nenhuma, aqui: a de fábrica não conta).
+    expect(dc.snapshot()).toEqual({ nivel: 6, xp: 250, creditos: 1234, pinturas: 0 });
     dc.restore({ nivel: 0, xp: 99999, creditos: -50 });
-    expect(dc.snapshot()).toEqual({ nivel: 1, xp: 999, creditos: 0 });
+    expect(dc.snapshot()).toEqual({ nivel: 1, xp: 999, creditos: 0, pinturas: 0 });
   });
 
   it('onSave dispara quando o jogador ganha XP ou créditos, e NÃO quando a conta restaura (não é mudança do jogador)', () => {

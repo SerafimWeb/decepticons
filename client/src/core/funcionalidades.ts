@@ -29,6 +29,8 @@ export const NOME_DO_GRUPO: Readonly<Record<GrupoDeFuncionalidade, string>> = {
 const fixas: readonly Funcionalidade[] = [
   { id: 'fase:chefes-janeiro', grupo: 'fases', nome: 'Trampado e Evil · 8 de Janeiro', padrao: 'restrito', efeito: 'o encontro dos dois chefes da missão offline' },
   { id: 'arma:cacetete-poder', grupo: 'armas', nome: 'Cacetete de poder · prêmio do Evil', padrao: 'restrito', efeito: 'o golpe F conquistado na missão do 8 de Janeiro' },
+  // P305: a cor do casco. Nasce RESTRITA (regra P191: controle novo); o Comandante libera no painel de visibilidade quando estiver pronta para o público.
+  { id: 'robo:pintura', grupo: 'robos', nome: 'Cor do casco · compra com Créditos', padrao: 'restrito', efeito: 'a cor do Mech: comprada no Hangar com Créditos e vista pelos outros pilotos online' },
   // P269: o cérebro do time dos bots (pinça e reagrupar). Nasce RESTRITO: a bancada bot × bot não mostrou ganho de força (45% / 38% / 45% de vitória, 40 duelos por dificuldade), então o Comandante julga jogando e libera aqui. Também é o interruptor de segurança: restrito devolve os bots ao comportamento de antes, tick a tick (esquadraoPadrao.test.ts).
   { id: 'ia:time', grupo: 'modos', nome: 'IA de time dos bots (pinça e reagrupar)', padrao: 'restrito', efeito: 'os bots deixam de combinar pinça e reagrupamento e lutam como antes (o diretor de ataque e o rádio de contato continuam)' },
   // P282: a fase escura e a visão noturna. Nasce RESTRITA: o Comandante julga jogando (chip FASE ESCURA) e libera aqui. Restrita, o quadro de luz apagado só baixa as luzes da cidade, como antes.

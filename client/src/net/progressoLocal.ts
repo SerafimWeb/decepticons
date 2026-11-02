@@ -8,7 +8,7 @@ export const CHAVE_APELIDO = 'cybermech-name';
 
 /** O que o jogo oferece à sessão: o nível, o XP e os créditos (`ui/DailyChallenges`) e a montagem do Hangar. */
 export interface FontesDoJogo {
-  daily: { snapshot(): { nivel: number; xp: number; creditos: number }; restore(p: { nivel: number; xp: number; creditos: number }): void };
+  daily: { snapshot(): { nivel: number; xp: number; creditos: number; pinturas?: number }; restore(p: { nivel: number; xp: number; creditos: number; pinturas?: number }): void };
   armazem: Armazem | null;
   /** Aplica a montagem que veio da conta (o Hangar valida e a agenda para o próximo renascimento). Opcional: sem ela só o armazenamento é atualizado. */
   aplicarMontagem?: (json: string) => void;
@@ -39,7 +39,7 @@ export function progressoLocalDoJogo(f: FontesDoJogo): ProgressoLocal {
       };
     },
     aplicar(p: ProgressoPiloto): void {
-      f.daily.restore({ nivel: p.nivel, xp: p.xp, creditos: p.creditos });
+      f.daily.restore({ nivel: p.nivel, xp: p.xp, creditos: p.creditos, pinturas: p.pinturas });
       try {
         if (p.apelido) f.armazem?.setItem(CHAVE_APELIDO, p.apelido);
         if (p.montagem) {
