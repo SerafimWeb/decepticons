@@ -32,6 +32,19 @@ describe('M4: endereço do jogo online', () => {
     expect(onlineConfig('?sala=x&servidor=https://abc.trycloudflare.com', 'cybermech.online')).toMatchObject({ url: 'wss://abc.trycloudflare.com/?sala=X', room: 'X' });
     expect(onlineConfig('?sala=<b>', 'localhost')).toMatchObject({ error: expect.any(String) });
   });
+
+  it('?stream=1 (modo streamer, P310) entra na sala fixa AO-VIVO, só com a funcionalidade liberada; com sala própria, vale a sala pedida', () => {
+    expect(onlineConfig('?stream=1', 'cybermech.online', 'wss://jogo.cybermech.online', true)).toEqual({
+      url: 'wss://jogo.cybermech.online/?sala=AO-VIVO',
+      room: 'AO-VIVO',
+      name: 'PILOTO',
+      explicitName: false,
+    });
+    // Sem a funcionalidade liberada (o Comandante a desligou), o link cai no jogo de sempre: offline.
+    expect(onlineConfig('?stream=1', 'cybermech.online', 'wss://jogo.cybermech.online')).toBeNull();
+    expect(onlineConfig('?sala=casa&stream=1', 'localhost', undefined, true)).toMatchObject({ room: 'CASA' });
+    expect(onlineConfig('?stream=1', 'localhost', undefined, true)).toMatchObject({ url: 'ws://localhost:2567/?sala=AO-VIVO' });
+  });
 });
 
 describe('M4: o jogo online contra o servidor de verdade', () => {
