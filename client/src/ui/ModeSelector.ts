@@ -41,9 +41,11 @@ const MODE_INFO: Record<GameMode, GameModeInfo> = {
     description: 'Enfrente hordas progressivas de andróides e mechs rebeldes.',
   },
   ctf: { id: 'ctf', label: 'CAPTURE A BANDEIRA', short: 'BANDEIRA', badge: 'TREINO SOLO', description: 'Roube a bandeira vermelha e retorne à base azul. Vitória com 3 capturas.' },
+  missao: { id: 'missao', label: 'MISSÃO DE COMBATE', short: 'MISSÃO', badge: 'OBJETIVO COM PRAZO', description: 'Caçar um alvo, destruir três Mechs marcados ou aniquilar o inimigo, contra o relógio.' },
   dominio: { id: 'dominio', label: 'DOMÍNIO', short: 'DOMÍNIO', badge: 'POR PONTOS', description: 'Domine os cinco pontos da Arena com seus aliados contra as IAs rebeldes. Vence quem chegar a 400 pontos.' },
 };
-export const GAME_MODES: GameModeInfo[] = Object.values(MODE_INFO);
+// A missão de combate (P314) só entra no seletor depois que o Comandante a libera (P191): até lá, fica fora da lista.
+export const GAME_MODES: GameModeInfo[] = Object.values(MODE_INFO).filter((m) => m.id !== 'missao');
 
 
 export class ModeSelector {

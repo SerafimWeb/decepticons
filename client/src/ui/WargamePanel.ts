@@ -35,7 +35,7 @@ export interface WargamePanelOptions {
 
 const ORDEM_ROTULO: Readonly<Record<TipoDeOrdem, string>> = { hold: 'Segurar a posição', follow: 'Avançar até lá' };
 /** Os modos que o WARGAME roda (P292): o mesmo rótulo que o seletor de modo do console. */
-const MODO_ROTULO: Readonly<Record<GameMode, string>> = { deathmatch: 'DEATHMATCH', survival: 'SOBREVIVÊNCIA', ctf: 'BANDEIRA', dominio: 'DOMÍNIO' };
+const MODO_ROTULO: Readonly<Record<GameMode, string>> = { deathmatch: 'DEATHMATCH', survival: 'SOBREVIVÊNCIA', ctf: 'BANDEIRA', dominio: 'DOMÍNIO', missao: 'MISSÃO' };
 const CAMERAS_DA_ARENA = camerasDoMapa('arena');
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', texto?: string): HTMLElementTagNameMap[K] {
