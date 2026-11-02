@@ -153,6 +153,7 @@ import { rotuloDoBuild } from './buildInfo';
 import { OnlineSwitch } from '../ui/OnlineSwitch';
 import { ServerStatus } from '../ui/ServerStatus';
 import { type FabricaDeCadeiaDeVoz, GameRecorder } from './GameRecorder';
+import type { ClipRecorder } from '../clip/ClipRecorder';
 import { Telemetry } from './telemetry';
 import { reloadWithout } from './url';
 import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
@@ -213,6 +214,8 @@ const DUST_COLOR = GLOW.dust;
 const UP = new THREE.Vector3(0, 1, 0);
 
 const _tmp = new THREE.Vector3();
+/** O ponto do robô do jogador, projetado na tela, para o enquadramento do clipe (P309): reutilizado, sem alocar por quadro (G4). */
+const _centroDoClipe = new THREE.Vector3();
 const _aimDir = new THREE.Vector3();
 const _aimFrom = new THREE.Vector3();
 const _lobFrom = new THREE.Vector3();
@@ -474,6 +477,12 @@ export class Game {
   private readonly addShadow = (r: { mech: MechBase }): void => this.shadows.add(r.mech);
   /** Gravação nativa de gameplay (dono, 28/09): tecla escondida, só para uso interno. */
   private readonly recorder: GameRecorder;
+  /**
+   * O clipe dos últimos 10 s em vertical (P309): L liga, K salva. Carregado só na primeira vez que alguém aperta L ou K (o pacote de partida não
+   * cresce para quem nunca grava); desligado, não custa nada.
+   */
+  private clips: ClipRecorder | null = null;
+  private clipeCarregando: Promise<typeof import('../clip/ClipRecorder')> | null = null;
   private readonly lobby = new OnlineLobby();
   private aimPracticeWeapon: WeaponStats | null = null;
   private savedPracticeLook: { yaw: number; pitch: number; mode: CameraModeId } | null = null;
@@ -1550,6 +1559,66 @@ export class Game {
    * "Aplicar montagem" no Hangar (mesmo chassi): offline, as armas trocam na hora, com o calor de agora. Online, o
    * servidor só conhece a montagem da entrada na sala: vale na próxima entrada. Devolve o aviso para a tela.
    */
+  /**
+   * Onde o robô do jogador está na tela, de 0 (borda esquerda) a 1 (direita), para o clipe enquadrar a ação (P309). Atrás da câmera (ou fora
+   * da projeção) devolve 0,5: o recorte fica no centro. Só desenho: nada aqui entra na simulação (G1).
+   */
+  private centroDoClipe(): number {
+    _centroDoClipe.copy(this.mech.root.position).project(this.camera);
+    if (!Number.isFinite(_centroDoClipe.x) || _centroDoClipe.z > 1 || _centroDoClipe.z < -1) return 0.5;
+    return (_centroDoClipe.x + 1) / 2;
+  }
+
+  /**
+   * Carrega o módulo do clipe na primeira vez que alguém aperta L ou K e cria o gravador (P309); depois devolve o mesmo, sem nova carga.
+   * Assim o clipe não entra no pacote de partida (500 KB): só baixa para quem grava.
+   */
+  private carregarClipe(): Promise<typeof import('../clip/ClipRecorder')> {
+    if (!this.clipeCarregando) {
+      this.clipeCarregando = import('../clip/ClipRecorder').then((m) => {
+        this.clips = new m.ClipRecorder(this.renderer.domElement, this.audio);
+        return m;
+      });
+    }
+    return this.clipeCarregando;
+  }
+
+  /** L: liga ou desliga o buffer do clipe (P309). */
+  private async alternarClipe(): Promise<void> {
+    const m = await this.carregarClipe();
+    const clips = this.clips;
+    if (!clips) return;
+    if (clips.ligado) {
+      clips.desligar();
+      m.avisoDoClipe('CLIPE DESLIGADO', 1500);
+      return;
+    }
+    if (clips.ligar()) m.avisoDoClipe('● CLIPE LIGADO · K salva os últimos 10 s', 0);
+    else m.avisoDoClipe('este navegador não grava vídeo', 2400);
+  }
+
+  /** K: salva os últimos 5 a 10 s, em vertical, como arquivo no computador; nada sai do aparelho (P309). */
+  private async salvarClipe(): Promise<void> {
+    const m = await this.carregarClipe();
+    const clips = this.clips;
+    if (!clips?.ligado) {
+      m.avisoDoClipe('● CLIPE DESLIGADO · tecla L liga', 2400);
+      return;
+    }
+    const formato = clips.formatoAtual;
+    const blob = await clips.exportar(performance.now() / 1000);
+    if (!blob) {
+      m.avisoDoClipe('ainda não há 5 s gravados', 2400);
+      return;
+    }
+    m.baixarClipe(blob, formato);
+    m.avisoDoClipe('CLIPE SALVO', 2400);
+    // Depois do aviso de salvo, o indicador de "ligado" volta (o buffer continua).
+    setTimeout(() => {
+      if (clips.ligado) m.avisoDoClipe('● CLIPE LIGADO · K salva os últimos 10 s', 0);
+    }, 2500);
+  }
+
   private applyHangarNow(): string {
     if (this.online) return 'Montagem salva · no online, vale ao entrar de novo na sala.';
     this.equipPending(true);
@@ -2085,6 +2154,12 @@ export class Game {
       // US-Internacional, em 'Quote'. Aceitar as duas cobre os dois teclados.
       if (code === 'Backquote' || code === 'Quote') {
         this.debugPanel.toggleDetailed();
+        return;
+      }
+      // O clipe (P309): L liga o buffer dos últimos 10 s; K salva o trecho em vertical. Só quando a funcionalidade está visível no painel.
+      if ((code === 'KeyL' || code === 'KeyK') && funcionalidadeVisivel('clip:gravar')) {
+        if (code === 'KeyL') void this.alternarClipe();
+        else void this.salvarClipe();
         return;
       }
       if (code === 'F1') {
@@ -2807,6 +2882,8 @@ export class Game {
     this.match.arena.telao?.renderizarCameras(this.renderer, this.scene);
     this.renderer.info.reset();
     this.composer.render(dt);
+    // O clipe copia a cena que acabou de ser desenhada (P309); desligado, esta linha não faz nada.
+    if (this.clips?.ligado) this.clips.frame(now / 1000, this.centroDoClipe());
     this.recorder.capturarQuadro();
 
     // Atualiza medidor de FPS depois do render

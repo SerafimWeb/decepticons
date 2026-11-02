@@ -1026,5 +1026,11 @@
   "ROXO NEON": "VIOLET NÉON",
   "USAR": "UTILISER",
   "COMPRAR {0} ₵": "ACHETER {0} ₵",
-  "Cor escolhida: clique em APLICAR MONTAGEM para vestir o robô.": "Couleur choisie : cliquez sur APPLIQUER L'ASSEMBLAGE pour habiller le robot."
+  "Cor escolhida: clique em APLICAR MONTAGEM para vestir o robô.": "Couleur choisie : cliquez sur APPLIQUER L'ASSEMBLAGE pour habiller le robot.",
+  "CLIPE DESLIGADO": "CLIP ÉTEINT",
+  "● CLIPE LIGADO · K salva os últimos 10 s": "● CLIP ACTIF · K enregistre les 10 dernières s",
+  "este navegador não grava vídeo": "ce navigateur ne peut pas enregistrer la vidéo",
+  "● CLIPE DESLIGADO · tecla L liga": "● CLIP ÉTEINT · L pour activer",
+  "ainda não há 5 s gravados": "pas encore 5 s enregistrées",
+  "CLIPE SALVO": "CLIP ENREGISTRÉ"
 }

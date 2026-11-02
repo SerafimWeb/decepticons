@@ -1026,5 +1026,11 @@
   "ROXO NEON": "НЕОНОВЫЙ ФИОЛЕТОВЫЙ",
   "USAR": "ИСПОЛЬЗОВАТЬ",
   "COMPRAR {0} ₵": "КУПИТЬ ЗА {0} ₵",
-  "Cor escolhida: clique em APLICAR MONTAGEM para vestir o robô.": "Цвет выбран: нажмите APPLY LOADOUT, чтобы надеть его на робота."
+  "Cor escolhida: clique em APLICAR MONTAGEM para vestir o robô.": "Цвет выбран: нажмите APPLY LOADOUT, чтобы надеть его на робота.",
+  "CLIPE DESLIGADO": "КЛИП ВЫКЛ",
+  "● CLIPE LIGADO · K salva os últimos 10 s": "● КЛИП ВКЛ · K сохраняет последние 10 с",
+  "este navegador não grava vídeo": "этот браузер не записывает видео",
+  "● CLIPE DESLIGADO · tecla L liga": "● КЛИП ВЫКЛ · L включает",
+  "ainda não há 5 s gravados": "пока нет 5 с записи",
+  "CLIPE SALVO": "КЛИП СОХРАНЁН"
 }
