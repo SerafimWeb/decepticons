@@ -659,7 +659,7 @@ export class HangarScene {
         m =
           chassis === 'android'
             ? new Android({ stats: PILOT_ANDROID_STATS, paint: cor ?? PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot', loadout })
-            : new Vector09({ stats: CHASSIS[chassis], loadout, blueprint: BLUEPRINT_BY_CHASSIS[chassis], ...(cor === null ? {} : { paint: cor }) });
+            : new Vector09({ stats: CHASSIS[chassis], loadout, blueprint: BLUEPRINT_BY_CHASSIS[chassis], ...(cor === null ? {} : { casco: cor }) });
       }
       this.displays.set(chassis, m);
       this.coresDosDisplays.set(chassis, cor);

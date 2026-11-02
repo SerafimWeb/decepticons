@@ -1,3 +1,8 @@
+## EM BRANCH — NÃO ESTÁ NO AR: o Colossus pinta o casco inteiro, e a chuva sai das costas (Claude, P306 e P307, branch `claude/colossus-cor-costas`)
+
+**O pedido (02/11):** "mudei a cor do colossus mas nao apareceu na cor, na arena... o tiro pra cima do chuva de misseis está saindo da frente do ombro, e nao das costas... seria bom melhorarmos esse tipo de detalhe". **Entrega:** a cor da pintura comprada agora cobre o casco (o aço também), e não só as partes de pintura; o lançamento da chuva sai do morteiro das costas em qualquer botão. **Provas:** 3 testes novos; os 301 testes do desenho passam; duas bancadas no Chrome (a cor na arena e a boca da chuva atrás do robô). **Falta:** o olho do Comandante, e o PR. A cor continua restrita até a P308.
+**Próxima sessão começa com:** abrir o PR (`npm run publicar`); depois, liberar a cor ao público (P308), e só então o clipe (P309) e o modo streamer (P310).
+
 ## A cor do casco, comprada com Créditos e vista pelos outros pilotos (Claude, P305, PR #507, no ar em cybermech.online desde 02/11)
 
 **O pedido (01/11):** "seria bom já podermos ver com os outros pilotos... fazer bem feito e completo logo. prossiga". **Entrega:** sete cores do casco (a de fábrica é grátis), compradas no Hangar; a cor vai na montagem e chega aos outros pilotos na entrada da sala; a conta guarda a posse, e o servidor nunca apaga uma compra. Seção restrita (P191): o Comandante libera em VISIBILIDADE. **Achados corrigidos:** o teto da montagem cortava a montagem cheia (80 → 128); o regex dos botões não lia dois botões. **Provas:** 43 testes novos, 8 mutações pegas, a bancada de dois pilotos no servidor de verdade (seis verificações). **Falta:** o olho do Comandante (na cor dos modelos importados, que são tingidos) e o PR.

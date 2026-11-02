@@ -122,6 +122,11 @@ export const MECH_BLUEPRINTS: readonly MechBlueprint[] = [
 export interface BlueprintRigOptions {
   readonly paint?: number;
   readonly visor?: number;
+  /**
+   * A cor do casco inteiro (P305, a pintura comprada): pinta o aço e as partes de pintura juntos. Sem ela, o visual de fábrica (aço escuro, e as
+   * partes de pintura na cor `paint`). Antes, só as partes de pintura mudavam: no Colossus (quase todo aço) a cor quase não aparecia.
+   */
+  readonly casco?: number;
   readonly scaleToHeight?: number;
 }
 
@@ -134,9 +139,9 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   // Mantém a sola no chão: offset do quadril + segmentos da perna + meio do pé.
   const hipHeight = (blueprint.legs.upperLength + blueprint.legs.lowerLength + 0.3) * scale;
   const M = {
-    armor: new THREE.MeshStandardMaterial({ color: PALETTE.armor, metalness: 0.6, roughness: 0.36 }),
+    armor: new THREE.MeshStandardMaterial({ color: options.casco ?? PALETTE.armor, metalness: 0.6, roughness: 0.36 }),
     frame: new THREE.MeshStandardMaterial({ color: PALETTE.frame, metalness: 0.72, roughness: 0.48 }),
-    paint: new THREE.MeshStandardMaterial({ color: options.paint ?? PALETTE.playerPaint, metalness: 0.36, roughness: 0.44 }),
+    paint: new THREE.MeshStandardMaterial({ color: options.casco ?? options.paint ?? PALETTE.playerPaint, metalness: 0.36, roughness: 0.44 }),
     visor: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: options.visor ?? PALETTE.green, emissiveIntensity: 4 }),
     rocket: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: PALETTE.sodium, emissiveIntensity: 3 }),
     thruster: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: PALETTE.sodium, emissiveIntensity: 2 }),
@@ -409,7 +414,8 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
     if (rightOriginal && rightGeometry && rightPlain) rightOriginal.geometry = rightModule ? rightPlain.geometry : rightGeometry;
     // A chuva fica no braço esquerdo (de antes) ou nas costas (P294): nos dois casos o morteiro da mochila aparece.
     const chuva = loadout.secondary?.id === 'barrage' || loadout.back?.id === 'barrage';
-    rack.visible = chuva;
+    // O morteiro aparece para a chuva em qualquer botão (P307): o tiro dela sai da boca do morteiro, não da frente do robô.
+    rack.visible = chuva || [loadout.primary, loadout.offhand, loadout.rightShoulder, loadout.leftShoulder].some((w) => w?.id === 'barrage');
     if (casuloArm && casuloGeometry && lisoArm) casuloArm.geometry = chuva || leftModule || !loadout.secondary ? lisoArm.geometry : casuloGeometry;
   };
   const setHeatVisual = (dt: number, heat: number, overheated: boolean, coolingBoost: boolean): void => {

@@ -713,7 +713,7 @@ export class Game {
         : new Vector09({
             stats: poweredStats(CHASSIS[chassisId], power, 'player'),
             loadout: poweredLoadout(this.hangar.equipped, power, 'player'),
-            ...(corDoCasco === null ? {} : { paint: corDoCasco }),
+            ...(corDoCasco === null ? {} : { casco: corDoCasco }),
             blueprint: BLUEPRINT_BY_CHASSIS[chassisId],
           });
     this.match.addPlayer(this.mech, 'VOCÊ', 0, () => this.equipPending());
