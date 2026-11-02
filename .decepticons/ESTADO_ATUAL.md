@@ -1,4 +1,4 @@
-## EM BRANCH — NÃO ESTÁ NO AR: toda partida rende, XP, Créditos e o cartão do fim (Claude, P304 passo 1, branch `claude/partida-gostosa`)
+## Toda partida rende: XP, Créditos e o cartão do fim (Claude, P304 passo 1, PR #505, no ar em cybermech.online desde 01/11)
 
 **O pedido (01/11):** "quero que ele se torne um jogo que gera desejo… B (espetáculo), depois A (construção)… faz logo, quero tornar o jogo mais gostoso de jogar". **Entrega:** cada partida (rodada, missão, Bandeira, Domínio) dá XP e Créditos, e o fim mostra SUA PARTIDA com a conta, a barra de nível e as missões prontas; online, um aviso curto no topo. A missão "RESISTÊNCIA TÁTICA" avança; o resumo morto do `RoundOverlay` saiu; o primeiro acesso abre o console completo no fim da partida. **Provas:** 12 testes da regra, 1 de idioma, bancada `medicoes/cartao-recompensa.mjs` no Chrome. **Falta:** o olho do Comandante e uma sala online de verdade.
 **Próxima sessão começa com:** o P304 passo 2, Créditos com destino (pinturas do Mech no Hangar), depois o clipe dos últimos segundos e o modo streamer.
