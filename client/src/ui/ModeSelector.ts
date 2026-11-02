@@ -44,8 +44,8 @@ const MODE_INFO: Record<GameMode, GameModeInfo> = {
   missao: { id: 'missao', label: 'MISSÃO DE COMBATE', short: 'MISSÃO', badge: 'OBJETIVO COM PRAZO', description: 'Caçar um alvo, destruir três Mechs marcados ou aniquilar o inimigo, contra o relógio.' },
   dominio: { id: 'dominio', label: 'DOMÍNIO', short: 'DOMÍNIO', badge: 'POR PONTOS', description: 'Domine os cinco pontos da Arena com seus aliados contra as IAs rebeldes. Vence quem chegar a 400 pontos.' },
 };
-// A missão de combate (P314) só entra no seletor depois que o Comandante a libera (P191): até lá, fica fora da lista.
-export const GAME_MODES: GameModeInfo[] = Object.values(MODE_INFO).filter((m) => m.id !== 'missao');
+// A missão de combate (P314) entra com data-func="modo:missao": a visibilidade (P191) esconde o botão até o Comandante liberar.
+export const GAME_MODES: GameModeInfo[] = Object.values(MODE_INFO);
 
 
 export class ModeSelector {

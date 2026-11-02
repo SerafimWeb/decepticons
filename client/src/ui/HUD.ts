@@ -208,6 +208,12 @@ export class HUD {
     this.setMissionText(`ONDA ${wave}/${this.missionWaves} · ALVOS ${killed}/${total} · ${Math.floor(elapsedS)} s`);
   }
 
+  /** A linha de cima da missão de combate (P314): o objetivo na largada e, depois, os alvos e o prazo que resta. */
+  setMissaoText(texto: string): void {
+    this.missionStatus.classList.remove('clear');
+    this.setMissionText(texto);
+  }
+
   showMissionClear(wave: number, elapsedS: number): void {
     this.missionStatus.classList.add('clear');
     this.setMissionText(`ONDA ${wave} ELIMINADA · ${elapsedS.toFixed(1)} s`);
