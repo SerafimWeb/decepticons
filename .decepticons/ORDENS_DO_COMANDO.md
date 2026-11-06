@@ -14,6 +14,14 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P316 a P318 — Sons e roteiro de gravação (com o rádio inimigo interceptado), o inacabado dos outros agentes e a higienização (06/11, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P316 | 06/11 | "auditoria de melhoria nos SONS: adiante os trabalhos dos sons das armas, trilha sonora, efeitos sonoros, pois amanhã eu vou entrar no estúdio pra testar e finalizar… crie os TEXTOS do que eu vou gravar (comandos… hacker, sci-fi, estratégico e gritos de guerra)… comandos e respostas entre os robôs, os androides, e interceptar o sinal do rádio dos inimigos (contando os planos deles)… referências como Kraftwerk, Daft Punk, Prodigy… sons de videogames antigos redesenhados pras nossas armas, vozes, comandos". | 🔧 | **Claude, 06/11, PR `claude/sons-e-roteiro`.** Feito: o rádio de campo (183 falas, 7 canais), o roteiro de gravação gerado, o Estúdio pronto (3 efeitos e 6 tratamentos de voz novos), a auditoria (`AUDITORIA_SONS.md`) e o kit retrô (72 candidatos de som). Falta: o jogo tocar o rádio, a mixagem e o que o ouvido do Comandante escolher. | `npm run roteiro`; Estúdio, abas VOZES e SONS. |
+| P317 | 06/11 | "pega o que está inacabado no gemini, no codex, e até no qwen ou deepseek, e conclua" | 🔧 | **Claude, 06/11: inventário feito, conclusão em PRs separados.** Já na `main` por outro caminho: os branches `gemini/sons-androides`, `setas-inimigos` e `primeira-partida`. Qwen e DeepSeek: nada pendente. Inacabado: a moldura de cockpit do Gemini (sem commit) e, do Codex, estações táticas, bunker, medição de GPU e brilho de arma. | `git branch -a`; `ESTADO_ATUAL`. |
+| P318 | 06/11 | "será que devemos dar uma higienizada/limpada/sanitizada nos nossos arquivos? reduzir, otimizar, minificar, resolver bugs e demandas pendentes, e eliminar dívidas técnicas?" | 🔧 | **Claude, 06/11: resposta no PR da higienização.** Achado que a abriu: a `node_modules` estava incompleta (faltavam 7 pacotes; `npm install` consertou) e nenhuma worktree rodava teste. | `ESTADO_ATUAL`. |
+
 ## P314 e P315 — Missões de combate no estilo GTA, e o áudio: música, sons e mixagem (02/11, Claude)
 
 > Mensagem do Comandante (02/11), depois de ver o streamer e o clipe: "ok pode continuar iterando as tarefas. quero ter missões tipo as do GTA por exemplo, porém, orientadas para combates de mechs... tipo caçar, siege, escolta de técnicos, proteção de pontos chave, destruição e aniquilação de inimigos, etc, coisas que o jogador tem q fazer no modo adequado de missões... e também quero melhorar os áudios, sons, música, etc".

@@ -116,6 +116,7 @@
 - [x] **Canais de voz: todos / time / jogador escolhido (P237 PR 3, 21/10):** T todos, segurar Y só o time, segurar U só o jogador escolhido, G troca o escolhido; porta por colega, falha fechada; medido no Chrome real (Claude) #ux
 - [ ] **O time de cada piloto na sala online (contrato de rede):** sem ele o canal do time não fala com ninguém; `VozOpcoes.timeDe` já espera (CTF online) #ux
 - [x] **Efeitos na voz (P231, 20/10):** Locutor militar, Lorde sombrio e Grande Irmão (cadeia de áudio sob demanda) na narração e na prévia do teste do microfone, afinável por tabela; medido no Chrome real; falta o ouvido do Comandante (Claude) #ux
+- [~] **Rádio de campo e sons retrô (P316, 06/11):** o catálogo de 183 falas (ordens, respostas, rádio inimigo interceptado, gritos), o roteiro de gravação gerado, o Estúdio pronto (3 efeitos e 6 tratamentos de voz) e o kit retrô de 72 candidatos de som; falta o Comandante gravar e ouvir, o jogo tocar o rádio e a mixagem #som
 - [x] Segundo piloto selecionável no Hangar: andróide A-1 com blaster e motosserra (troca recarrega a partida) #mechs
 - [x] Hangar 2.0, camada 1: galpão 3D próprio com pedestal de holograma, o Mech girando, armas aplicadas na hora #ux
 - [x] Hangar 2.0, camada 2: interface holográfica no desenho da referência, versão de celular #ux

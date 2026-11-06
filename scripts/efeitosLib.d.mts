@@ -12,6 +12,9 @@ export interface Efeitos {
   eco_decay?: number;
   reverso?: boolean;
   fade_in_ms?: number;
+  robo_hz?: number;
+  bitcrush?: number;
+  fase?: number;
 }
 
 export interface CapacidadesDoFfmpeg {

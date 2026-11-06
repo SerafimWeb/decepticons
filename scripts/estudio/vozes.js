@@ -12,14 +12,6 @@
     grito: 'Grito curto e explosivo, com raiva boa: a voz sobe no fim. Chegue perto do microfone (uns 15 cm) e solte.',
     seco: 'Seco, tenso e baixo, sem enfeite: um aviso.',
   };
-  /** Pontos de partida para a prévia (o gosto é de quem ouve; depois é só ajustar os números). */
-  const PREDEFINIDOS = [
-    ['Locutor grave', { pitch_st: -2, graves_db: 4, agudos_db: 2, passa_alta_hz: 70, compressor: 'forte', saturacao: 0.15, eco_ms: 90, eco_decay: 0.25 }],
-    ['Arena', { eco_ms: 180, eco_decay: 0.35, compressor: 'medio', graves_db: 3 }],
-    ['Rádio de comando', { passa_alta_hz: 400, passa_baixa_hz: 3400, saturacao: 0.3, compressor: 'forte' }],
-    ['Limpo', { passa_alta_hz: 80, ruido_db: 12, compressor: 'leve' }],
-    ['Demônio', { pitch_st: -6, graves_db: 5, saturacao: 0.25, eco_ms: 120, eco_decay: 0.4, compressor: 'forte' }],
-  ];
   const LIMITE_DA_GRAVACAO_S = 10;
 
   let V = null;            // o estado do módulo no servidor
@@ -61,6 +53,9 @@
     if (e.graves_db || e.agudos_db) r.push('equalização');
     if (e.passa_alta_hz || e.passa_baixa_hz) r.push('filtro');
     if (e.ruido_db) r.push('ruído');
+    if (e.robo_hz) r.push(`robô ${e.robo_hz} Hz`);
+    if (e.bitcrush) r.push('bitcrush');
+    if (e.fase) r.push('fase');
     if (e.saturacao) r.push('saturação');
     if (e.compressor) r.push(`comp. ${e.compressor}`);
     if (e.eco_ms) r.push('eco');
@@ -96,11 +91,23 @@
     if (onda.aparar()) { marcarSujo(); ajustarFade(true); campos(); sincronizarAlvo(); msg(`Corte ajustado para onde há voz: ${r2(onda.sel.de)} s a ${r2(onda.sel.ate)} s.`, 'ok'); }
     else msg('Não achei voz para aparar.', 'erro');
   });
-  for (const [nome, ef] of PREDEFINIDOS) {
-    const b = document.createElement('button');
-    b.className = 'pequeno'; b.textContent = nome;
-    b.addEventListener('click', () => { escreverEfeitos(ef); ajustarFade(true); marcarSujo(); if (buf) $('#vz-previa').click(); });
-    $('#vz-predefinidos').append(b);
+  /** Os pontos de partida vêm do servidor (`scripts/estudio/predefinidos-voz.json`, validados com o mesmo motor da prévia). O do canal da fala aberta fica destacado. */
+  function montarPredefinidos() {
+    const alvo = $('#vz-predefinidos');
+    alvo.replaceChildren();
+    for (const { nome, efeitos } of V.predefinidos ?? []) {
+      const b = document.createElement('button');
+      b.className = 'pequeno'; b.textContent = nome; b.dataset.nome = nome;
+      b.addEventListener('click', () => { escreverEfeitos(efeitos); ajustarFade(true); marcarSujo(); if (buf) $('#vz-previa').click(); });
+      alvo.append(b);
+    }
+  }
+  function marcarPredefinidoSugerido(nome) {
+    for (const b of $('#vz-predefinidos').children) {
+      const sugerido = b.dataset.nome === nome;
+      b.classList.toggle('sugerido', sugerido);
+      b.title = sugerido ? 'o tratamento sugerido para este canal' : '';
+    }
   }
 
   // ── sotaques e falas ────────────────────────────────────────────────────────────────────────────
@@ -120,12 +127,30 @@
     if (V.geradas[s]?.includes(c)) return ['◆', 'voz gerada (ElevenLabs)'];
     return ['○', 'sem áudio'];
   }
+  /** As falas que existem neste sotaque: as do rádio só existem em português (a voz do Comandante). */
+  const falasDoSotaque = () => V.falas.filter((f) => f.texto[sotaque] !== undefined);
   function listarFalas() {
     const ul = $('#vz-lista');
     ul.replaceChildren();
-    for (const f of V.falas) {
+    const falas = falasDoSotaque();
+    let canalAtual = null;
+    for (const f of falas) {
+      if (f.canal !== canalAtual) {
+        canalAtual = f.canal;
+        const doCanal = falas.filter((x) => x.canal === canalAtual);
+        const prontas = doCanal.filter((x) => situacao(sotaque, x.chave)[0] === '●').length;
+        const cab = document.createElement('li');
+        cab.className = 'grupo';
+        const titulo = document.createElement('span');
+        titulo.textContent = V.canais?.[canalAtual]?.rotulo ?? canalAtual;
+        const conta = document.createElement('small');
+        conta.textContent = `${prontas}/${doCanal.length}`;
+        conta.title = 'falas gravadas por você neste canal';
+        cab.append(titulo, conta);
+        ul.append(cab);
+      }
       const li = document.createElement('li');
-      if (f.chave === chave) li.className = 'ativo';
+      li.className = f.chave === chave ? 'fala ativo' : 'fala';
       const [marca, dica] = situacao(sotaque, f.chave);
       const n = document.createElement('span');
       n.textContent = `${marca} ${f.texto[sotaque]}`;
@@ -154,13 +179,30 @@
     onda.definir(buf, corte ?? { de: 0, ate: Math.min(buf.duration, 8) });
     sincronizarAlvo(); campos();
   }
+  /** Quem fala, a dica desta fala, o diálogo de que ela faz parte (o que se ouve antes e depois) e o tratamento sugerido: o que ensaiar antes de gravar. */
+  function contextoDaFala(f) {
+    const canal = V.canais?.[f.canal];
+    const linhas = [];
+    if (canal?.quem) linhas.push(`${canal.rotulo}: ${canal.quem}`);
+    if (f.nota) linhas.push(`Nota: ${f.nota}`);
+    if (f.cena) {
+      const cena = V.falas.filter((x) => x.cena === f.cena).sort((a, b) => a.turno - b.turno);
+      const antes = cena.filter((x) => x.turno < f.turno).map((x) => `«${x.texto.br}»`);
+      const depois = cena.filter((x) => x.turno > f.turno).map((x) => `«${x.texto.br}»`);
+      linhas.push(`Diálogo "${f.cena}": ${antes.length ? `responde a ${antes.join(' ')}` : 'abre a conversa'}${depois.length ? `; em seguida: ${depois.join(' ')}` : ''}`);
+    }
+    if (canal?.efeito) linhas.push(`Tratamento sugerido: ${canal.efeito}`);
+    return linhas.join('\n');
+  }
   async function abrirFala(c) {
     parar();
-    const f = V.falas.find((x) => x.chave === c) ?? V.falas[0];
+    const f = falasDoSotaque().find((x) => x.chave === c) ?? falasDoSotaque()[0];
     chave = f.chave;
     $('#vz-titulo').textContent = `${ROTULO[sotaque] ?? sotaque} · ${f.chave} · ${f.estilo}`;
     $('#vz-texto').textContent = f.texto[sotaque];
-    $('#vz-intencao').textContent = INTENCAO[f.estilo] ?? '';
+    $('#vz-intencao').textContent = f.intencao || INTENCAO[f.estilo] || '';
+    $('#vz-contexto').textContent = contextoDaFala(f);
+    marcarPredefinidoSugerido(V.canais?.[f.canal]?.efeito);
     const [marca, dica] = situacao(sotaque, f.chave);
     $('#vz-info').textContent = `${marca} ${dica}`;
     const e = entradaDe(sotaque, f.chave);
@@ -453,7 +495,7 @@
     try {
       V = (await api('/api/estado')).vozes;
       gravacoes = structuredClone(V.gravacoes);
-      montarSotaques(); listarFalas(); resumir();
+      montarPredefinidos(); montarSotaques(); listarFalas(); resumir();
       await abrirFala(V.falas.find((f) => f.chave === 'combate')?.chave ?? V.falas[0].chave);
     } catch (e) { msg(`Vozes: não consegui falar com o estúdio: ${e.message}`, 'erro'); }
   })();

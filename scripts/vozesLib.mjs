@@ -39,6 +39,14 @@ export function planejar({ falas, config, existentes, sotaques = SOTAQUES, so = 
   return { fazer, pulados, caracteres };
 }
 
+/**
+ * As falas que o jogo pode tocar, para o manifesto: as do narrador (`falas.json`) e as do rádio de campo (`radio.json`, P316). As do rádio só entram aqui, nunca no plano
+ * de geração (são a voz do Comandante, gravada no Estúdio): sem esta união, reescrever o manifesto apagaria do jogo todas as falas de rádio que ele gravou.
+ */
+export function falasDoManifesto(narrador, radio) {
+  return [...narrador.falas, ...(radio?.falas ?? []).map((f) => ({ chave: f.chave }))];
+}
+
 /** O manifesto `vozesGeradas.json`: para cada sotaque, as chaves do catálogo (na ordem dele) que têm `.mp3` na pasta. Arquivo fora do catálogo é ignorado. */
 export function montarManifesto(arquivos, falas, nota) {
   const manifesto = { _nota: nota };

@@ -75,6 +75,8 @@ e os robôs como componentes de um sistema que você supervisiona, não como sol
 
 ## 4. Onde isto vive no jogo hoje, e o que falta
 
+> **Atualização (06/11, P316):** os callouts da seção 3 e o glossário passaram a ser falas graváveis: estão em `client/src/audio/radio.json` (canal `controle`), com as respostas dos pilotos, o rádio inimigo e os gritos, e o roteiro para ensaiar é `ROTEIRO_DE_GRAVACAO.md`. Este arquivo segue sendo o glossário e a persona.
+
 - **Hoje:** é texto para o Comandante falar com a própria voz, ao vivo ou gravando com **F8**, com o efeito **Grande Irmão**
   ligado em Configurações > CHAT DE VOZ (prévia no teste de microfone). Não toca o chat de voz entre jogadores (decisão em
   aberto no `VOICE_CHAT.md` § 5e) nem o killfeed do HUD (`HUD.ts`, hoje em texto comum: "fulano abateu beltrano").

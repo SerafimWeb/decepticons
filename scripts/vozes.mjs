@@ -16,10 +16,11 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { API, linhasDeVozes, montarManifesto, planejar, resumoDoPlano, SOTAQUES, sintetizar } from './vozesLib.mjs';
+import { API, falasDoManifesto, linhasDeVozes, montarManifesto, planejar, resumoDoPlano, SOTAQUES, sintetizar } from './vozesLib.mjs';
 
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CATALOGO = join(raiz, 'client/src/audio/falas.json');
+const RADIO = join(raiz, 'client/src/audio/radio.json');
 const MANIFESTO = join(raiz, 'client/src/audio/vozesGeradas.json');
 const CONFIG = join(raiz, 'scripts/vozes.config.json');
 const PASTA = join(raiz, 'client/public/audio/vozes');
@@ -32,6 +33,9 @@ const lista = (n) => valor(n)?.split(',').map((s) => s.trim()).filter(Boolean) ?
 const lerJson = (arq) => JSON.parse(readFileSync(arq, 'utf8'));
 const catalogo = lerJson(CATALOGO);
 const config = lerJson(CONFIG);
+
+/** O rádio de campo (P316) só entra no **manifesto**: é a voz do Comandante, nunca gerada (o plano abaixo só lê o catálogo do narrador). */
+const radio = () => (existsSync(RADIO) ? lerJson(RADIO) : null);
 
 function arquivosGerados() {
   const porSotaque = {};
@@ -51,7 +55,7 @@ function protegidasDoEstudio() {
 
 function gravarManifesto() {
   const antigo = existsSync(MANIFESTO) ? lerJson(MANIFESTO) : {};
-  const novo = montarManifesto(arquivosGerados(), catalogo.falas, antigo._nota ?? '');
+  const novo = montarManifesto(arquivosGerados(), falasDoManifesto(catalogo, radio()), antigo._nota ?? '');
   writeFileSync(MANIFESTO, JSON.stringify(novo, null, 2) + '\n');
   const total = SOTAQUES.reduce((n, s) => n + novo[s].length, 0);
   console.log(`manifesto atualizado: ${total} fala(s) gerada(s) (${SOTAQUES.map((s) => `${s} ${novo[s].length}`).join(', ')})`);

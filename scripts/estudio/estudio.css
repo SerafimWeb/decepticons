@@ -20,6 +20,9 @@ section h2 { margin:0 0 8px; font-size:12px; letter-spacing:2px; color:var(--ver
 .lista li { padding:6px 8px; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
 .lista li:hover { background:#1b242b; }
 .lista li.ativo { background:#173222; outline:1px solid var(--verde); }
+.lista li.fala { flex-direction:column; align-items:flex-start; gap:1px; }
+.lista li.grupo { flex-wrap:wrap; cursor:default; background:#10171c; color:var(--suave); font-size:11px; letter-spacing:.08em; margin-top:6px; position:sticky; top:0; }
+.lista li.grupo:hover { background:#10171c; }
 .lista small { color:var(--suave); white-space:nowrap; }
 .lista .x { color:var(--vermelho); border:0; background:none; cursor:pointer; padding:0 4px; font-weight:700; }
 canvas { width:100%; display:block; background:#0a0e11; border:1px solid var(--linha); border-radius:6px; }
@@ -38,6 +41,7 @@ button.laranja { border-color:var(--laranja); color:var(--laranja); }
 button.laranja:hover:not(:disabled) { background:var(--laranja); color:#000; }
 button.forte { background:var(--verde); color:#000; }
 button.pequeno { padding:3px 8px; font-size:12px; }
+button.sugerido { outline:2px solid var(--verde); }
 .linha-botoes { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
 details.efeitos { margin-top:12px; border:1px solid var(--linha); border-radius:6px; padding:8px 12px; }
 details.efeitos summary { cursor:pointer; font-weight:600; color:var(--laranja); }
