@@ -1,7 +1,9 @@
 import type { CameraMode } from '../camera/CameraMode';
 import type { DamageResult } from '../combat/damage';
+import { funcionalidadeVisivel } from '../core/Visibilidade';
 import type { MechBase, MechPart } from '../entities/MechBase';
 import { KillBanner } from './KillBanner';
+import { moldaDoCockpit } from './moldaDoCockpit';
 import { NetHud } from './NetHud';
 import { pipFills } from './rocketPips';
 import { RoundOverlay } from './RoundOverlay';
@@ -89,6 +91,8 @@ export class HUD {
   private readonly death = $('death');
   private readonly deathTimer = $('death-timer');
   private cursorMode = false;
+  /** O id da câmera em uso (`tps`, `fps`, `tactical`): decide a moldura do cockpit. */
+  private modoDaCamera = '';
   private textTimer = 0;
   private hitTimer = 0;
   private labelTimer = 0;
@@ -410,10 +414,20 @@ export class HUD {
   setMode(mode: CameraMode): void {
     this.modeLabel.textContent = `VISTA ${mode.label}  [V]`;
     this.cursorMode = !mode.pointerLock;
+    this.modoDaCamera = mode.id;
+    this.aplicarMoldura();
     if (!this.cursorMode) {
       this.crosshair.style.left = '50%';
       this.crosshair.style.top = '50%';
     }
+  }
+
+  /**
+   * A moldura do cockpit (P317, obra do Gemini concluída): a classe `cam-fps` no `#hud` liga o CSS dela. Só na 1ª pessoa e só com `tela:cockpit` liberada (nasce restrita, P191): o `Game`
+   * chama de novo quando o painel de visibilidade muda, sem esperar a próxima troca de câmera. Custo: uma classe no DOM, só quando a câmera ou a liberação muda.
+   */
+  aplicarMoldura(): void {
+    this.root.classList.toggle('cam-fps', moldaDoCockpit(this.modoDaCamera, funcionalidadeVisivel('tela:cockpit')));
   }
 
   update(dt: number, mech: MechBase, cursorX: number, cursorY: number, primaryHeld = false, secondaryHeld = false, charge = 0): void {
