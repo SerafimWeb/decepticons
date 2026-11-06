@@ -110,7 +110,7 @@ export function renderizarRoteiro(radio, narrador = null) {
   if (narrador) {
     o.push('## 5. O narrador: as falas de partida');
     o.push('');
-    o.push(`Estas ${narrador.falas.length} falas (rodadas, abates, "Você morreu", missão) **já estão na lista do Estúdio**, no primeiro grupo (NARRADOR), nos quatro sotaques. Grave o **Brasileiro**. Só as que a lista marca com ◆ ou ● têm voz hoje; as marcadas com ○ ficam mudas na partida até você gravar. São as que o jogador mais ouve: vale gravá-las antes do rádio.`);
+    o.push(`Estas ${narrador.falas.length} falas (rodadas, abates, "Você morreu", missão) **já estão na lista do Estúdio**, no primeiro grupo (NARRADOR), nos quatro sotaques. Grave o **Brasileiro**. Só as que a lista marca com ◆ ou ● têm voz hoje; as marcadas com ○ não têm voz: as 9 rodadas caem na voz robótica do navegador e as outras 9 ficam mudas na partida até você gravar. São as que o jogador mais ouve: vale gravá-las antes do rádio.`);
     o.push('');
     o.push('| ☐ | Fala | Como dizer | Chave |');
     o.push('|---|---|---|---|');

@@ -3,7 +3,7 @@
 > **Gerado, não edite à mão.** A fonte é `client/src/audio/radio.json` (o Estúdio e o jogo leem o mesmo arquivo); para mudar uma fala, mude lá e rode `npm run roteiro`.
 > Um teste (`server/roteiroVoz.test.ts`) reprova o `check` se este documento se afastar do catálogo.
 
-**183 falas de rádio em 7 canais, mais as 19 do narrador** (uns 3 h 40 min de estúdio, só as do rádio, em duas ou três tomadas por fala: **grave em duas sessões**). Só português, na sua voz. Nada aqui é gerado pelo ElevenLabs.
+**189 falas de rádio em 7 canais, mais as 19 do narrador** (uns 3 h 47 min de estúdio, só as do rádio, em duas ou três tomadas por fala: **grave em duas sessões**). Só português, na sua voz. Nada aqui é gerado pelo ElevenLabs.
 
 **Se o tempo apertar, grave primeiro as 22 falas marcadas com ★:** são as que já têm, no jogo, o evento que as dispara (as chamadas de rádio do cérebro do time). As outras ficam guardadas até haver o gancho. Hoje o jogo ainda não toca nenhuma: gravar agora deixa o material pronto para o PR que liga o rádio.
 
@@ -41,7 +41,7 @@ As referências de timbre são **técnicas** (sintetizadores e vozes de máquina
 | # | Canal | Falas | Quem fala | Tratamento sugerido | Timbre de referência | O que ouvir na prévia |
 |---|---|---|---|---|---|---|
 | 1 | **SERAFIM CONTROLE** | 43 | A voz de comando (o Grande Irmão): fria, onipresente, em terceira pessoa. Fala com 'instâncias' e 'nós', nunca com 'vocês'. | Grande Irmão | Grande Irmão: voz grave, comprimida e com salão, de máquina que supervisiona (o vocoder frio dos álbuns de máquina e computador dos anos 70 e 80, em vez da voz de general) | a frase soa como uma ordem de sistema, não de gente |
-| 2 | **COMPUTADOR DE BORDO** | 19 | A voz do cockpit, de jogo e simulador antigo: plana, sem pressa, em frases de duas ou três palavras. Entre um aviso e outro tocam os bipes sintetizados. | Robô retrô | Robô retrô: modulação em anel e bitcrush leve, a voz de aviso de cabine dos arcades e simuladores dos anos 80 | cada palavra com a mesma altura, como se fosse montada de sílabas gravadas |
+| 2 | **COMPUTADOR DE BORDO** | 25 | A voz do cockpit, de jogo e simulador antigo: plana, sem pressa, em frases curtas, às vezes com um fiapo de ironia seca (a IA de bordo fria e sarcástica do METAGAME.md). Entre um aviso e outro tocam os bipes sintetizados. | Robô retrô | Robô retrô: modulação em anel e bitcrush leve, a voz de aviso de cabine dos arcades e simuladores dos anos 80 | cada palavra com a mesma altura, como se fosse montada de sílabas gravadas |
 | 3 | **PILOTOS DA SERAFIM** | 40 | Os pilotos das URIs aliadas respondendo ao Controle e entre si: profissionais, curtos, cansados quando o robô apanha. | Rádio de comando | Rádio de comando: faixa estreita (400 a 3400 Hz) e compressão pesada, o rádio tático de sempre | a voz presa no telefone, sem graves |
 | 4 | **RÁDIO INIMIGO INTERCEPTADO** | 29 | O que as IAs rebeldes dizem umas às outras e a SERAFIM escuta: o plano delas, em voz alta. O que elas dizem é o que o time inimigo realmente vai fazer. | Interceptação | Interceptação: rádio sujo com saturação, um pouco de bitcrush e um varrido de fase lento, como sinal pego no ar | o final das palavras se desfazendo, a cauda com chiado |
 | 5 | **ANDRÓIDES REBELDES** | 16 | O enxame (KUEN, DIPSIK, MISTRAU) e o técnico ENTRÓPICO: planos, sem emoção, como leitura de tela. | Androide | Androide: modulação robótica de 70 Hz, bitcrush e um eco curtíssimo que dá o "metal"; o enxame sem emoção | todas as falas no mesmo tom: é o efeito que faz a máquina |
@@ -59,12 +59,13 @@ As referências de timbre são **técnicas** (sintetizadores e vozes de máquina
 | **plano** | Plano, sem emoção, sem subida no fim, como leitura de tela. Mesmo tom, mesmo ritmo em todas as frases: o efeito dá o metal. |
 | **arrogante** | Calmo, debochado e superior, com um meio-sorriso na voz. A ameaça é a calma: nunca eleve o volume. |
 | **sujo** | Como um rádio sob interferência: rápido, apertado, meio abafado, com a pressa de quem teme ser ouvido. Pode comer o final das palavras. |
+| **ironico** | Plano e polido como uma IA de bordo, com uma ironia seca que só se percebe na segunda vez. Não faça piada de voz: a graça é o tom de manual, dito com a maior seriedade. |
 | **sussurro** | Quase um sussurro, perto do microfone (uns 5 cm). Segure o volume: o susto é o silêncio em volta. |
 | **grito** | Grito curto e explosivo, com raiva boa: a voz sobe no fim. Chegue perto do microfone (uns 15 cm) e solte. Uma só tomada por vez: a garganta cansa. |
 
 ## 5. O narrador: as falas de partida
 
-Estas 19 falas (rodadas, abates, "Você morreu", missão) **já estão na lista do Estúdio**, no primeiro grupo (NARRADOR), nos quatro sotaques. Grave o **Brasileiro**. Só as que a lista marca com ◆ ou ● têm voz hoje; as marcadas com ○ ficam mudas na partida até você gravar. São as que o jogador mais ouve: vale gravá-las antes do rádio.
+Estas 19 falas (rodadas, abates, "Você morreu", missão) **já estão na lista do Estúdio**, no primeiro grupo (NARRADOR), nos quatro sotaques. Grave o **Brasileiro**. Só as que a lista marca com ◆ ou ● têm voz hoje; as marcadas com ○ não têm voz: as 9 rodadas caem na voz robótica do navegador e as outras 9 ficam mudas na partida até você gravar. São as que o jogador mais ouve: vale gravá-las antes do rádio.
 
 | ☐ | Fala | Como dizer | Chave |
 |---|---|---|---|
@@ -142,9 +143,9 @@ Marque ☐ ao gravar e salvar. **★** = já existe, no jogo, o evento que dispa
 | ☐ | «Criptografia fraca. Conteúdo legível.» | frio |  | `rd_controle_intercepto_4` |
 | ☐ | «Fim da interceptação. Usem o que ouviram.» | frio |  | `rd_controle_intercepto_5` |
 
-### 6.2 COMPUTADOR DE BORDO (19)
+### 6.2 COMPUTADOR DE BORDO (25)
 
-*A voz do cockpit, de jogo e simulador antigo: plana, sem pressa, em frases de duas ou três palavras. Entre um aviso e outro tocam os bipes sintetizados.* Tratamento sugerido: **Robô retrô**.
+*A voz do cockpit, de jogo e simulador antigo: plana, sem pressa, em frases curtas, às vezes com um fiapo de ironia seca (a IA de bordo fria e sarcástica do METAGAME.md). Entre um aviso e outro tocam os bipes sintetizados.* Tratamento sugerido: **Robô retrô**.
 
 | ☐ | Fala | Estilo | Nota | Chave |
 |---|---|---|---|---|
@@ -167,6 +168,12 @@ Marque ☐ ao gravar e salvar. **★** = já existe, no jogo, o evento que dispa
 | ☐ | «Sistema reiniciando. Aguarde.» | plano |  | `rd_sistema_estado_5` |
 | ☐ | «Três. Dois. Um. Fogo.» | plano | Um número por batida, no mesmo ritmo de metrônomo; 'Fogo' é a única que cai. | `rd_sistema_contagem_1` |
 | ☐ | «Dez segundos.» | plano |  | `rd_sistema_contagem_2` |
+| ☐ | «Calor crítico. Sugestão: parar de atirar.» | ironico |  | `rd_sistema_ironia_1` |
+| ☐ | «Blindagem em vinte por cento. O otimismo não conta como defesa.» | ironico |  | `rd_sistema_ironia_2` |
+| ☐ | «Míssil travado em você. Boa sorte. Eu também vou precisar.» | ironico | A IA de bordo morre junto: a ironia é que ela também está no robô. | `rd_sistema_ironia_3` |
+| ☐ | «Perda de integridade confirmada. Registrando como aprendizado.» | ironico |  | `rd_sistema_ironia_4` |
+| ☐ | «Você ainda está vivo. Estatisticamente, é uma surpresa.» | ironico |  | `rd_sistema_ironia_5` |
+| ☐ | «Munição esgotada. A estratégia de apertar o gatilho não escala.» | ironico |  | `rd_sistema_ironia_6` |
 
 ### 6.3 PILOTOS DA SERAFIM (40)
 
@@ -384,7 +391,7 @@ Cada fala tem um **gatilho** no catálogo: `cerebro:<chamada>` toca quando o cé
 | `cerebro:posicao` | 5 |
 | `cerebro:reagrupar` | 5 |
 | `cerebro:vai` | 6 |
-| `futuro` | 161 |
+| `futuro` | 167 |
 
 ## 9. Cuidados com o texto
 

@@ -559,15 +559,13 @@ export class Game {
       preloadMechAsset(asset.url, CHASSIS[chassisId as ChassisId].height, asset);
     }
 
-    // Carrega samples de áudio (assíncrono)
+    // Carrega samples de áudio (assíncrono). Só o que o `AudioSystem` toca de verdade: `ui_bass`, `ambient_action` e `shot_heavy` (475 KB) eram baixados em toda abertura e nunca
+    // tocados, e saíram em 06/11 (P318); a trava está em `audio/amostrasDoJogo.test.ts` (nada se carrega sem se tocar).
     const base = import.meta.env.BASE_URL;
     this.audio.loadSample('logo_serafim', base + 'audio/logo_serafim.mp3');
     this.audio.loadSample('ui_transition', base + 'audio/ui_transition.mp3');
-    this.audio.loadSample('ui_bass', base + 'audio/ui_bass.mp3');
     this.audio.loadSample('ambient_bram', base + 'audio/ambient_bram.mp3');
-    this.audio.loadSample('ambient_action', base + 'audio/ambient_action.mp3');
     this.audio.loadSample('shot_plasma', base + 'audio/shot_plasma.wav');
-    this.audio.loadSample('shot_heavy', base + 'audio/shot_heavy.mp3');
     this.audio.loadSample('shot_futuristic', base + 'audio/shot_futuristic.wav');
     this.audio.loadSample('hit', base + 'audio/hit.mp3');
     this.audio.loadSample('step_mech', base + 'audio/step_mech.mp3');

@@ -92,7 +92,7 @@ O Comandante achou o **"Combate!" em português ruim**: *"desmotivado, falou com
 
 ## 7. O rádio de campo (P316)
 
-Além do narrador, há o **rádio de campo**: 183 falas (ordens do Controle, o computador de bordo, os pilotos, os androides, as IAs rebeldes, os gritos de guerra e o **rádio inimigo interceptado**) que o Comandante grava com a própria voz. O catálogo é `client/src/audio/radio.json`, o roteiro para ensaiar é `ROTEIRO_DE_GRAVACAO.md` e a decisão está no `HISTORICO_DE_DECISOES.md` de 06/11.
+Além do narrador, há o **rádio de campo**: 189 falas (ordens do Controle, o computador de bordo, os pilotos, os androides, as IAs rebeldes, os gritos de guerra e o **rádio inimigo interceptado**) que o Comandante grava com a própria voz. O catálogo é `client/src/audio/radio.json`, o roteiro para ensaiar é `ROTEIRO_DE_GRAVACAO.md` e a decisão está no `HISTORICO_DE_DECISOES.md` de 06/11.
 
 ## 5. Ligado a
 
