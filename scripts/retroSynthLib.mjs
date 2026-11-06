@@ -67,8 +67,6 @@ export const decaimento = (tau) => (t) => Math.exp(-t / tau);
 export const ataqueDecaimento = (ataque, tau) => (t) => (t < ataque ? t / ataque : Math.exp(-(t - ataque) / tau));
 /** Varredura exponencial de `f0` a `f1` em `dur` segundos (depois fica em `f1`): a curva do "pew" e do bumbo. */
 export const varredura = (f0, f1, dur) => (t) => f0 * Math.pow(f1 / f0, Math.min(t, dur) / dur);
-/** Segura a amplitude em 1 até `ate` e some em seguida (porta). */
-export const porta = (ate) => (t) => (t < ate ? 1 : 0);
 
 // ── efeitos ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 /** Bitcrush: `bits` de resolução e uma amostra segurada por `segura` (o som "de 8 bits" que nasce da perda). */

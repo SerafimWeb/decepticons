@@ -2,7 +2,7 @@
   "_nota": "O rádio de campo (P316): as falas que o Comandante GRAVA no Estúdio (aba VOZES, sotaque Brasileiro) e que o jogo toca por evento. Uma fonte só: o Estúdio, o jogo (client/src/audio/radio.ts) e o roteiro impresso (.decepticons/ROTEIRO_DE_GRAVACAO.md, gerado por `npm run roteiro`) leem este arquivo. Só português, na voz dele: nunca é gerado pelo ElevenLabs (o gerador só lê falas.json). Regras do texto: frases originais; arquétipos e codinomes fictícios (nunca nome real de pessoa, partido ou marca de franquia); vocabulário do VOCABULARIO_COMANDO.md (P244) e do UNIVERSO.md. `gatilho`: o que faz a fala tocar (`cerebro:<chamada>` = a chamada do cérebro do time, a mesma do rádio de texto; `futuro` = ainda sem gancho no jogo). `cena` + `turno`: o diálogo de comando e resposta, na ordem em que se fala.",
   "canais": {
     "controle": { "rotulo": "SERAFIM CONTROLE", "quem": "A voz de comando (o Grande Irmão): fria, onipresente, em terceira pessoa. Fala com 'instâncias' e 'nós', nunca com 'vocês'.", "efeito": "Grande Irmão" },
-    "sistema": { "rotulo": "COMPUTADOR DE BORDO", "quem": "A voz do cockpit, de jogo e simulador antigo: plana, sem pressa, em frases de duas ou três palavras. Entre um aviso e outro tocam os bipes sintetizados.", "efeito": "Robô retrô" },
+    "sistema": { "rotulo": "COMPUTADOR DE BORDO", "quem": "A voz do cockpit, de jogo e simulador antigo: plana, sem pressa, em frases curtas, às vezes com um fiapo de ironia seca (a IA de bordo fria e sarcástica do METAGAME.md). Entre um aviso e outro tocam os bipes sintetizados.", "efeito": "Robô retrô" },
     "piloto": { "rotulo": "PILOTOS DA SERAFIM", "quem": "Os pilotos das URIs aliadas respondendo ao Controle e entre si: profissionais, curtos, cansados quando o robô apanha.", "efeito": "Rádio de comando" },
     "intercepto": { "rotulo": "RÁDIO INIMIGO INTERCEPTADO", "quem": "O que as IAs rebeldes dizem umas às outras e a SERAFIM escuta: o plano delas, em voz alta. O que elas dizem é o que o time inimigo realmente vai fazer.", "efeito": "Interceptação" },
     "androide": { "rotulo": "ANDRÓIDES REBELDES", "quem": "O enxame (KUEN, DIPSIK, MISTRAU) e o técnico ENTRÓPICO: planos, sem emoção, como leitura de tela.", "efeito": "Androide" },
@@ -17,6 +17,7 @@
     "plano": { "intencao": "Plano, sem emoção, sem subida no fim, como leitura de tela. Mesmo tom, mesmo ritmo em todas as frases: o efeito dá o metal." },
     "arrogante": { "intencao": "Calmo, debochado e superior, com um meio-sorriso na voz. A ameaça é a calma: nunca eleve o volume." },
     "sujo": { "intencao": "Como um rádio sob interferência: rápido, apertado, meio abafado, com a pressa de quem teme ser ouvido. Pode comer o final das palavras." },
+    "ironico": { "intencao": "Plano e polido como uma IA de bordo, com uma ironia seca que só se percebe na segunda vez. Não faça piada de voz: a graça é o tom de manual, dito com a maior seriedade." },
     "sussurro": { "intencao": "Quase um sussurro, perto do microfone (uns 5 cm). Segure o volume: o susto é o silêncio em volta." },
     "grito": { "intencao": "Grito curto e explosivo, com raiva boa: a voz sobe no fim. Chegue perto do microfone (uns 15 cm) e solte. Uma só tomada por vez: a garganta cansa." }
   },
@@ -92,6 +93,12 @@
     { "chave": "rd_sistema_estado_5", "canal": "sistema", "situacao": "estado", "estilo": "plano", "texto": "Sistema reiniciando. Aguarde.", "gatilho": "futuro" },
     { "chave": "rd_sistema_contagem_1", "canal": "sistema", "situacao": "contagem", "estilo": "plano", "texto": "Três. Dois. Um. Fogo.", "nota": "Um número por batida, no mesmo ritmo de metrônomo; 'Fogo' é a única que cai.", "gatilho": "futuro" },
     { "chave": "rd_sistema_contagem_2", "canal": "sistema", "situacao": "contagem", "estilo": "plano", "texto": "Dez segundos.", "gatilho": "futuro" },
+    { "chave": "rd_sistema_ironia_1", "canal": "sistema", "situacao": "ironia", "estilo": "ironico", "texto": "Calor crítico. Sugestão: parar de atirar.", "gatilho": "futuro" },
+    { "chave": "rd_sistema_ironia_2", "canal": "sistema", "situacao": "ironia", "estilo": "ironico", "texto": "Blindagem em vinte por cento. O otimismo não conta como defesa.", "gatilho": "futuro" },
+    { "chave": "rd_sistema_ironia_3", "canal": "sistema", "situacao": "ironia", "estilo": "ironico", "texto": "Míssil travado em você. Boa sorte. Eu também vou precisar.", "nota": "A IA de bordo morre junto: a ironia é que ela também está no robô.", "gatilho": "futuro" },
+    { "chave": "rd_sistema_ironia_4", "canal": "sistema", "situacao": "ironia", "estilo": "ironico", "texto": "Perda de integridade confirmada. Registrando como aprendizado.", "gatilho": "futuro" },
+    { "chave": "rd_sistema_ironia_5", "canal": "sistema", "situacao": "ironia", "estilo": "ironico", "texto": "Você ainda está vivo. Estatisticamente, é uma surpresa.", "gatilho": "futuro" },
+    { "chave": "rd_sistema_ironia_6", "canal": "sistema", "situacao": "ironia", "estilo": "ironico", "texto": "Munição esgotada. A estratégia de apertar o gatilho não escala.", "gatilho": "futuro" },
 
     { "chave": "rd_piloto_confirma_1", "canal": "piloto", "situacao": "confirma", "estilo": "confirma", "texto": "Afirmativo. Em execução.", "cena": "alvo-priorizado", "turno": 2, "gatilho": "futuro" },
     { "chave": "rd_piloto_confirma_2", "canal": "piloto", "situacao": "confirma", "estilo": "confirma", "texto": "Recebido. Indo.", "gatilho": "futuro" },

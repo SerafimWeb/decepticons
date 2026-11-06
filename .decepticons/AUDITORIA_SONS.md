@@ -9,15 +9,15 @@
 | Camada | O que há | Estado |
 |---|---|---|
 | **Armas** (23) | 11 com amostra do Estúdio (`armasSom.json`); 5 com síntese própria (arco, gelo, canhão automático, sônico, laser); 3 de laço ou corpo a corpo (rotatória, lança-chamas, motosserra); **4 sem som nenhum: lançador de gás, canhão de trilho, lançador EMP e escopeta caem no tiro genérico do blaster** | as 4 sem som são a lacuna mais barata de fechar: há candidato para cada uma no kit retrô (§ 4) |
-| **Narrador** (19 falas × 4 sotaques) | o catálogo está pronto; o manifesto de vozes tem **1 fala por sotaque** (só o "Combate!"); as outras 18 (rodadas, abates, "Você morreu", missão) **ficam mudas na partida** | **a lacuna mais audível do jogo**: é o feedback que o jogador mais ouve. As falas estão no roteiro (§ 5) e na lista do Estúdio |
-| **Rádio de campo** | novo (P316): 183 falas em 7 canais, só português, na voz do Comandante (`radio.json`) | catálogo, roteiro e Estúdio prontos; **nenhuma gravada e o jogo ainda não as toca** |
+| **Narrador** (19 falas × 4 sotaques) | o catálogo está pronto; o manifesto de vozes tem **1 fala por sotaque** (só o "Combate!"); as 9 rodadas caem na **voz robótica do navegador** (só em português) e **9 ficam realmente mudas** (abates 2 a 6, "Você morreu", "Hostis chegando", "Estação segura", "A rede caiu") | **a lacuna mais audível do jogo**: é o feedback que o jogador mais ouve. As falas estão no roteiro (§ 5) e na lista do Estúdio |
+| **Rádio de campo** | novo (P316): 189 falas em 7 canais, só português, na voz do Comandante (`radio.json`) | catálogo, roteiro e Estúdio prontos; **nenhuma gravada e o jogo ainda não as toca** |
 | **Música** | a de combate é sintetizada no navegador (P315: Lá menor, 108 BPM, sobe com a ação); a trilha do 8 de Janeiro (berrante e trompetista) | **sem música nos menus; sem mixagem** (a música não abaixa quando o narrador fala) |
 | **Efeitos do mundo** | impacto, explosão, passos, pulo, investida, sirene, contagem, sequência de abates, estados (gelo, choque, fogo): todos sintetizados em `AudioSystem.ts` | sem amostra; nada medido de "gosto" |
 | **Arquivos antigos** (`client/public/audio/`, 11 arquivos, 3,8 MB) | todos carregados no `Game.ts` na abertura (vinheta, ambiente, passos, tiros antigos) | em uso; ~2 MB baixam na abertura (candidato a sob demanda, fora desta auditoria) |
 
 ## 2. As lacunas, por ordem de peso
 
-1. **O narrador mudo** (18 falas). Gravar amanhã: **roteiro § 5**. É o maior ganho por minuto de estúdio.
+1. **O narrador quase sem voz** (9 falas mudas e 9 na voz robótica do navegador). Gravar amanhã: **roteiro § 5**. É o maior ganho por minuto de estúdio.
 2. **As 4 armas sem som** (gás, trilho, EMP, escopeta). Escolher no Estúdio entre os candidatos `RETRO_*` e atribuir na tabela de armas.
 3. **O rádio tocar no jogo.** Depende das falas gravadas; o gancho já existe (`Match.onFala` entrega o lado: aliado ou inimigo). PR seguinte.
 4. **Mixagem:** abaixar a música quando alguém fala (narrador, rádio, chat de voz). PR seguinte.
@@ -46,7 +46,7 @@ As referências são **técnicas**. Nunca amostra, melodia ou letra de ninguém 
 ## 5. A pauta do Estúdio de amanhã (duas sessões)
 
 **Sessão 1: o que o jogador mais ouve (uns 40 minutos).**
-1. **Narrador** (roteiro § 5, 19 falas, sotaque Brasileiro): grave primeiro as 18 mudas. Comece por **Rodada um a nove** (grave e firme) e **Você morreu**; deixe as de grito (**Combate!**, **Abate duplo** a **Lendário**) para o fim da sessão.
+1. **Narrador** (roteiro § 5, 19 falas, sotaque Brasileiro): grave primeiro as 9 mudas e as 9 rodadas (que hoje usam a voz robótica do navegador). Comece por **Rodada um a nove** (grave e firme) e **Você morreu**; deixe as de grito (**Combate!**, **Abate duplo** a **Lendário**) para o fim da sessão.
 2. **Armas** (aba SONS): ouça os `RETRO_*` das **4 armas sem som** (gás, trilho, EMP, escopeta) e atribua. Depois, se quiser, compare os `8bit` e `rave` com o som atual de cada uma das outras.
 
 **Sessão 2: o rádio de campo (roteiro § 6; umas 3 horas se for tudo).** Grave **primeiro as falas com ★** (as 22 que já têm, no jogo, o evento que as dispara; o jogo ainda não as toca), do canal mais calmo para o mais gritado: Controle, Computador de bordo, Pilotos, Rádio inimigo interceptado, Androides, IAs rebeldes e, por último, os Gritos. Cada fala tem o botão do tratamento sugerido destacado; os números são ponto de partida.

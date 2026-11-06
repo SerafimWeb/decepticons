@@ -28,4 +28,3 @@ export function ruido(o: { dur: number; hz?: number | ((t: number) => number); m
 export const decaimento: (tau: number) => (t: number) => number;
 export const ataqueDecaimento: (ataque: number, tau: number) => (t: number) => number;
 export const varredura: (f0: number, f1: number, dur: number) => (t: number) => number;
-export const porta: (ate: number) => (t: number) => number;

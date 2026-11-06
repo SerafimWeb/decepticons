@@ -16,17 +16,16 @@ A pasta ignora tudo por padrão porque é também a bancada onde a matéria-prim
 do Elevenlabs com `#` e espaço no nome, versões descartadas, e uma vez um `.MOV` de 29 MB. Sem o
 filtro, um `git add -A` levaria dezenas de MB para o repositório e para o deploy.
 
-## O que está publicado hoje (11 samples, 2,2 MB)
+## O que está publicado hoje (8 samples, 1,7 MB)
+
+> `ui_bass`, `ambient_action` e `shot_heavy` (475 KB) saíram em 06/11 (P318): eram baixados em toda abertura e nunca tocados. O teste `client/src/audio/amostrasDoJogo.test.ts` trava a volta: o que o jogo baixa na abertura tem de ser tocado, e o arquivo avulso desta pasta tem de ser baixado.
 
 | Nome no código | Arquivo | Onde toca |
 |---|---|---|
 | `logo_serafim` | `logo_serafim.mp3` | vinheta da marca, no primeiro clique |
 | `ui_transition` | `ui_transition.mp3` | transição de tela |
-| `ui_bass` | `ui_bass.mp3` | grave de interface |
 | `ambient_bram` | `ambient_bram.mp3` | ambiência |
-| `ambient_action` | `ambient_action.mp3` | ambiência de combate |
 | `shot_plasma` | `shot_plasma.wav` | canhão de plasma |
-| `shot_heavy` | `shot_heavy.mp3` | tiro pesado |
 | `shot_futuristic` | `shot_futuristic.wav` | tiro do andróide |
 | `hit` | `hit.mp3` | impacto na blindagem |
 | `step_mech` | `step_mech.mp3` | passo do Mech |
