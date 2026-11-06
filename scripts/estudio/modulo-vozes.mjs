@@ -12,7 +12,7 @@ import { extname, join } from 'node:path';
 import { duracaoFinal, resumoDosEfeitos } from '../efeitosLib.mjs';
 import { REGRAS_DE_VOZ, validarMapa } from '../sonsLib.mjs';
 import { capacidadesDoFfmpeg, duracaoDoArquivo, picoDoArquivo, processarSom } from '../sonsRodar.mjs';
-import { montarManifesto, SOTAQUES } from '../vozesLib.mjs';
+import { falasDoManifesto, montarManifesto, SOTAQUES } from '../vozesLib.mjs';
 import { NOME_SEGURO, TETO_AUDIO, TIPOS, corpoJson, gravarJson, lerCorpo, lerJson } from './util.mjs';
 
 /** Abaixo disto o pico da tomada é só o zero de um aparelho mudo (o chiado de um microfone vivo fica acima de −70 dBFS): a tomada é recusada (P286). */
@@ -25,6 +25,8 @@ const EXTENSAO_DO_TIPO = { 'audio/webm': '.webm', 'video/webm': '.webm', 'audio/
 export function moduloVozes({ raiz, origemVozes, ffmpeg }) {
   const caminhos = {
     catalogo: join(raiz, 'client/src/audio/falas.json'),
+    radio: join(raiz, 'client/src/audio/radio.json'),
+    predefinidos: join(raiz, 'scripts/estudio/predefinidos-voz.json'),
     gravadas: join(raiz, 'scripts/vozes-gravadas.json'),
     manifesto: join(raiz, 'client/src/audio/vozesGeradas.json'),
     saidas: join(raiz, 'client/public/audio/vozes'),
@@ -36,7 +38,11 @@ export function moduloVozes({ raiz, origemVozes, ffmpeg }) {
   const duracoes = new Map();
 
   const catalogo = () => lerJson(caminhos.catalogo);
-  const chaves = () => new Set(catalogo().falas.map((f) => f.chave));
+  /** O rádio de campo (P316): falas só em português, na voz do Comandante, que o ElevenLabs nunca gera. Sem o arquivo, não há rádio. */
+  const radio = () => (existsSync(caminhos.radio) ? lerJson(caminhos.radio) : { canais: {}, estilos: {}, falas: [] });
+  const chavesDeRadio = () => new Set(radio().falas.map((f) => f.chave));
+  const chaves = () => new Set([...catalogo().falas.map((f) => f.chave), ...chavesDeRadio()]);
+  const predefinidos = () => (existsSync(caminhos.predefinidos) ? lerJson(caminhos.predefinidos).predefinidos : []);
   const gravadas = () => (existsSync(caminhos.gravadas) ? lerJson(caminhos.gravadas) : { alvo: { media_db: -16, pico_db: -1 }, gravacoes: [] });
 
   function listarTomadas() {
@@ -58,11 +64,20 @@ export function moduloVozes({ raiz, origemVozes, ffmpeg }) {
 
   function estado() {
     const cat = catalogo();
+    const rd = radio();
     const manifesto = existsSync(caminhos.manifesto) ? lerJson(caminhos.manifesto) : {};
     const g = gravadas();
     return {
       sotaques: SOTAQUES,
-      falas: cat.falas.map((f) => ({ chave: f.chave, estilo: f.estilo, texto: f.texto })),
+      falas: [
+        ...cat.falas.map((f) => ({ chave: f.chave, estilo: f.estilo, texto: f.texto, canal: 'narrador' })),
+        ...rd.falas.map((f) => ({
+          chave: f.chave, estilo: f.estilo, texto: { br: f.texto }, canal: f.canal, situacao: f.situacao, intencao: rd.estilos[f.estilo]?.intencao ?? '',
+          ...(f.nota ? { nota: f.nota } : {}), ...(f.cena ? { cena: f.cena, turno: f.turno } : {}),
+        })),
+      ],
+      canais: { narrador: { rotulo: 'NARRADOR', quem: 'As falas de partida: rodadas, abates, morte, missão. Existem nos quatro sotaques.', efeito: 'Locutor grave' }, ...rd.canais },
+      predefinidos: predefinidos(),
       gravacoes: g.gravacoes,
       alvo: g.alvo,
       geradas: Object.fromEntries(SOTAQUES.map((s) => [s, Array.isArray(manifesto[s]) ? manifesto[s] : []])),
@@ -82,6 +97,7 @@ export function moduloVozes({ raiz, origemVozes, ffmpeg }) {
       const quem = `${r?.sotaque}/${r?.chave}`;
       if (!SOTAQUES.includes(r?.sotaque)) { erros.push(`${quem}: sotaque desconhecido`); continue; }
       if (!existentes.has(r.chave)) { erros.push(`${quem}: fala que o catálogo não tem`); continue; }
+      if (chavesDeRadio().has(r.chave) && r.sotaque !== 'br') { erros.push(`${quem}: as falas do rádio só existem em português (br)`); continue; }
       if (vistos.has(quem)) erros.push(`${quem}: fala repetida`);
       vistos.add(quem);
       if (typeof r.fonte !== 'string' || !/^[a-z0-9_]+-\d+\.wav$/.test(r.fonte) || !existsSync(join(origemVozes, r.sotaque, r.fonte))) erros.push(`${quem}: a tomada "${r.fonte}" não está em ${join(origemVozes, r.sotaque)}`);
@@ -101,7 +117,7 @@ export function moduloVozes({ raiz, origemVozes, ffmpeg }) {
       porSotaque[s] = existsSync(dir) ? readdirSync(dir).filter((a) => a.endsWith('.mp3')).map((a) => a.slice(0, -4)) : [];
     }
     const antigo = existsSync(caminhos.manifesto) ? lerJson(caminhos.manifesto) : {};
-    gravarJson(caminhos.manifesto, montarManifesto(porSotaque, catalogo().falas, antigo._nota ?? ''));
+    gravarJson(caminhos.manifesto, montarManifesto(porSotaque, falasDoManifesto(catalogo(), radio()), antigo._nota ?? ''));
   }
 
   const pastasDoGit = ['client/public/audio/vozes', 'client/src/audio/vozesGeradas.json', 'scripts/vozes-gravadas.json'];
@@ -133,6 +149,7 @@ export function moduloVozes({ raiz, origemVozes, ffmpeg }) {
       const chave = url.searchParams.get('chave') ?? '';
       if (!SOTAQUES.includes(sotaque)) return responder(400, { erro: 'sotaque desconhecido' }), true;
       if (!chaves().has(chave)) return responder(400, { erro: 'fala que o catálogo não tem' }), true;
+      if (chavesDeRadio().has(chave) && sotaque !== 'br') return responder(400, { erro: 'as falas do rádio só existem em português (br)' }), true;
       const bytes = await lerCorpo(req, TETO_AUDIO);
       if (bytes.length < 200) return responder(400, { erro: 'gravação vazia' }), true;
       // O pedido errado é 400 em qualquer máquina; "sem ffmpeg" (503) só vale para o pedido certo (o runner do CI não tem ffmpeg e o teste de recusa tem que passar lá também).

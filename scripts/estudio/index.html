@@ -72,6 +72,9 @@
             <div class="campos">
               <label>Eco (ms, 0 = off)<input type="number" id="ef-eco-ms" min="0" max="400" step="10" value="0"></label>
               <label>Eco: intensidade (0–0,8)<input type="number" id="ef-eco-decay" min="0" max="0.8" step="0.05" value="0.3"></label>
+              <label>Robô (Hz, 0 = off)<input type="number" id="ef-robo" min="0" max="400" step="5" value="0"></label>
+              <label>Bitcrush (0–1)<input type="number" id="ef-bitcrush" min="0" max="1" step="0.05" value="0"></label>
+              <label>Fase (0–1)<input type="number" id="ef-fase" min="0" max="1" step="0.05" value="0"></label>
               <label>Fade de entrada (ms)<input type="number" id="ef-fade-in" min="0" max="2000" step="5" value="0"></label>
               <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="ef-reverso"> tocar ao contrário</label>
               <button id="btn-zerar-efeitos" class="pequeno laranja">zerar efeitos</button>
@@ -119,8 +122,8 @@
           <p class="dica" style="margin-top:8px">O sotaque é a voz: grave a fala do jeito que ela deve soar naquele sotaque.</p>
         </section>
         <section>
-          <h2>Falas do narrador</h2>
-          <p class="dica">Clique numa fala. <b>●</b> gravada por você · <b>◆</b> voz gerada (ElevenLabs) · <b>○</b> sem áudio.</p>
+          <h2>Falas</h2>
+          <p class="dica">Clique numa fala. <b>●</b> gravada por você · <b>◆</b> voz gerada (ElevenLabs) · <b>○</b> sem áudio. A ordem da lista é a de gravação sugerida: do mais calmo ao mais gritado.</p>
           <ul id="vz-lista" class="lista" style="max-height:520px"></ul>
         </section>
       </div>
@@ -129,6 +132,7 @@
           <h2>Gravar — <span id="vz-titulo" class="info">escolha uma fala</span></h2>
           <p style="font-size:26px;margin:4px 0 2px;font-weight:700" id="vz-texto">—</p>
           <p class="dica" id="vz-intencao"></p>
+          <p class="dica" id="vz-contexto" style="white-space:pre-line"></p>
           <div class="campos" id="vz-mic-bloco">
             <label>Microfone<select id="vz-mic" style="max-width:340px"></select></label>
             <label>Ganho (×)<input type="number" id="vz-mic-ganho" min="1" max="8" step="0.5" value="1"></label>

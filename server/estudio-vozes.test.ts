@@ -6,14 +6,16 @@ import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { criarEstudio } from '../scripts/estudio.mjs';
 import { acharFfmpeg } from '../scripts/sonsRodar.mjs';
-import { planejar, resumoDoPlano } from '../scripts/vozesLib.mjs';
+import { falasDoManifesto, montarManifesto, planejar, resumoDoPlano } from '../scripts/vozesLib.mjs';
+import narradorJson from '../client/src/audio/falas.json';
+import radioJson from '../client/src/audio/radio.json';
 
 const REAL = (p: string) => resolve(p);
 const ffmpeg = acharFfmpeg();
 const ARQUIVOS = [
   'scripts/sons-armas.json', 'client/src/audio/armasSom.json', 'scripts/estudio/armas-info.json',
   'scripts/estudio/index.html', 'scripts/estudio/estudio.css', 'scripts/estudio/nucleo.js', 'scripts/estudio/sons.js', 'scripts/estudio/microfone.js', 'scripts/estudio/vozes.js',
-  'client/src/audio/falas.json', 'client/src/audio/vozesGeradas.json', 'scripts/vozes-gravadas.json', 'client/public/audio/vozes/br/combate.mp3',
+  'client/src/audio/falas.json', 'client/src/audio/radio.json', 'scripts/estudio/predefinidos-voz.json', 'client/src/audio/vozesGeradas.json', 'scripts/vozes-gravadas.json', 'client/public/audio/vozes/br/combate.mp3',
 ];
 
 /** Um WAV de verdade (PCM 16 bits, 22,05 kHz, mono): uma senoide que decai, no lugar de uma fala gravada. */
@@ -80,10 +82,11 @@ describe('Estúdio, aba VOZES (P151, P155): o servidor', () => {
   const entrada = (extra: Record<string, unknown> = {}) => ({ sotaque: 'br', chave: 'combate', fonte: 'combate-1.wav', de: 0, ate: 0.8, fade_ms: 60, ...extra });
   const salvar = (gravacoes: unknown[]) => post('/api/vozes/salvar', { gravacoes });
 
-  it('o estado traz os sotaques, as 19 falas do catálogo, o que já foi gerado e nenhuma tomada ainda', async () => {
+  it('o estado traz os sotaques, as falas do narrador e do rádio, o que já foi gerado e nenhuma tomada ainda', async () => {
     const e = await estado();
     expect(e.sotaques).toEqual(['br', 'en', 'ru', 'cn']);
-    expect(e.falas).toHaveLength(19);
+    expect(e.falas).toHaveLength(narradorJson.falas.length + radioJson.falas.length);
+    expect(e.falas.filter((f: { canal: string }) => f.canal === 'narrador')).toHaveLength(19);
     expect(e.falas.find((f: { chave: string }) => f.chave === 'combate').texto.br).toBe('Combate!');
     expect(e.geradas.br).toContain('combate');
     expect(e.tomadas).toEqual([]);
@@ -91,6 +94,32 @@ describe('Estúdio, aba VOZES (P151, P155): o servidor', () => {
     expect((await http(porta, 'GET', '/estudio/vozes.js')).status).toBe(200);
     const modulos = json(await http(porta, 'GET', '/api/estado')).modulos;
     expect(modulos).toEqual([{ id: 'sons', titulo: 'SONS' }, { id: 'vozes', titulo: 'VOZES' }]);
+  });
+
+  it('as falas do rádio chegam só em português, com o canal, a intenção do estilo e o diálogo; o narrador segue nos quatro sotaques; os predefinidos vêm do servidor', async () => {
+    const e = await estado();
+    const radio = e.falas.filter((f: { canal: string }) => f.canal !== 'narrador');
+    expect(radio).toHaveLength(radioJson.falas.length);
+    for (const f of radio) {
+      expect(Object.keys(f.texto), f.chave).toEqual(['br']);
+      expect(f.intencao.length, f.chave).toBeGreaterThan(20);
+      expect(e.canais[f.canal], f.chave).toBeDefined();
+    }
+    const resposta = e.falas.find((f: { chave: string }) => f.chave === 'rd_piloto_confirma_4');
+    expect(resposta).toMatchObject({ cena: 'flanco', turno: 2 });
+    expect(e.falas.find((f: { chave: string }) => f.chave === 'combate').texto.en).toBe('Fight!');
+    expect(e.canais.narrador.efeito).toBe('Locutor grave');
+    expect(e.predefinidos.map((p: { nome: string }) => p.nome)).toEqual(expect.arrayContaining(['Grande Irmão', 'Androide', 'Interceptação', 'Robô retrô']));
+  });
+
+  it('as falas do rádio só existem em português: gravar ou salvar em outro sotaque é recusado, sem deixar arquivo', async () => {
+    const recusada = await gravar('en', 'rd_controle_abertura_1', wav(0.5));
+    expect(recusada.status).toBe(400);
+    expect(json(recusada).erro).toContain('só existem em português');
+    expect(existsSync(join(vozes, 'en', 'rd_controle_abertura_1-1.wav'))).toBe(false);
+    const salva = await salvar([entrada({ sotaque: 'ru', chave: 'rd_controle_abertura_1', fonte: 'rd_controle_abertura_1-1.wav' })]);
+    expect(salva.status).toBe(400);
+    expect(json(salva).erros.join()).toContain('só existem em português');
   });
 
   it.skipIf(!ffmpeg)('GRAVAR converte o áudio do navegador para WAV mono 44,1 kHz e numera as tomadas (webm, wav, mp3)', async () => {
@@ -254,6 +283,37 @@ describe('Estúdio, aba VOZES (P151, P155): o servidor', () => {
     expect((await post('/api/vozes/previa', { ...corpo, gravacao: { ...corpo.gravacao, fonte: 'combate-9.wav' } })).status).toBe(400);
     expect((await post('/api/vozes/previa', { ...corpo, gravacao: { ...corpo.gravacao, efeitos: { pitch_st: 99 } } })).status).toBe(400);
     expect((await post('/api/vozes/previa', {})).status).toBe(400);
+  });
+
+  it.skipIf(!ffmpeg)('uma fala do rádio gravada e processada entra no manifesto do jogo (só em br) sem tirar as do narrador, e reverter a tira', async () => {
+    const chave = 'rd_piloto_posicao_1';
+    expect((await gravar('br', chave, wav(0.9))).status).toBe(200);
+    const g = JSON.parse(readFileSync(join(raiz, 'scripts/vozes-gravadas.json'), 'utf8')).gravacoes;
+    const nova = entrada({ chave, fonte: `${chave}-1.wav`, efeitos: { robo_hz: 40, bitcrush: 0.2, fase: 0.3 } });
+    expect((await salvar([...g, nova])).status).toBe(200);
+    const processada = await post('/api/vozes/processar', { sotaque: 'br', chave });
+    expect(processada.status).toBe(200);
+    expect(json(processada).resultado.efeitos).toEqual(['robô 40 Hz', 'bitcrush 20%', 'fase 30%']);
+    const manifesto = () => JSON.parse(readFileSync(join(raiz, 'client/src/audio/vozesGeradas.json'), 'utf8'));
+    expect(manifesto().br).toContain(chave);
+    expect(manifesto().br).toContain('combate'); // o narrador não saiu
+    expect(manifesto().en).not.toContain(chave);
+    expect(existsSync(join(raiz, `client/public/audio/vozes/br/${chave}.mp3`))).toBe(true);
+    const r = await post('/api/vozes/reverter', { sotaque: 'br', chave });
+    expect(r.status).toBe(200);
+    expect(manifesto().br).not.toContain(chave);
+  });
+});
+
+describe('o manifesto das vozes inclui o rádio de campo (P316)', () => {
+  it('falasDoManifesto une o narrador e o rádio, e o manifesto guarda as chaves dos dois (sem o rádio, reescrevê-lo apagaria a voz gravada)', () => {
+    const falas = falasDoManifesto(narradorJson, radioJson);
+    expect(falas).toHaveLength(narradorJson.falas.length + radioJson.falas.length);
+    const manifesto = montarManifesto({ br: ['combate', 'rd_controle_abertura_1', 'sobra'], en: [], ru: [], cn: [] }, falas, 'nota');
+    expect(manifesto.br).toEqual(['combate', 'rd_controle_abertura_1']);
+    // sem o catálogo do rádio, a fala dele some do manifesto: é o defeito que a união evita
+    expect(montarManifesto({ br: ['rd_controle_abertura_1'], en: [], ru: [], cn: [] }, falasDoManifesto(narradorJson, null), 'nota').br).toEqual([]);
+    expect(falasDoManifesto(narradorJson, undefined)).toHaveLength(narradorJson.falas.length);
   });
 });
 

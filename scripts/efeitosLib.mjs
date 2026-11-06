@@ -26,6 +26,12 @@ export const LIMITES = {
   eco_decay: [0, 0.8],
   /** Fade de entrada em ms (o de saída é do próprio clipe, `fade_ms`). */
   fade_in_ms: [0, 2000],
+  /** Modulação robótica (a voz de máquina dos sintetizadores dos anos 70 e 80): a frequência da portadora em Hz (0 = desligado). De 30 a 80 Hz é o "robô"; acima de 200 vira sino metálico. */
+  robo_hz: [0, 400],
+  /** 0 a 1: bitcrush, o som "de videogame antigo" (menos bits por amostra e menos amostras por segundo). */
+  bitcrush: [0, 1],
+  /** 0 a 1: o varrido de fase (phaser) dos filtros de pista de dança. */
+  fase: [0, 1],
 };
 
 /** O compressor de dinâmica em três forças (nome → filtro): segura os picos e levanta o miolo. */
@@ -86,8 +92,8 @@ export function filtroDeTempoETom(velocidade, pitchSt, rubberband) {
 }
 
 /**
- * A cadeia de efeitos (depois do corte), na ordem que soa bem: reverso, limpeza (ruído, passa-alta, passa-baixa), tom e velocidade, equalização, saturação,
- * compressor e eco por último (para o compressor não "pisar" na cauda do eco). `caps.rubberband` diz se o ffmpeg tem o filtro de estúdio.
+ * A cadeia de efeitos (depois do corte), na ordem que soa bem: reverso, limpeza (ruído, passa-alta, passa-baixa), tom e velocidade, equalização, o timbre de
+ * máquina (robô, bitcrush, fase), saturação, compressor e eco por último (para o compressor não "pisar" na cauda do eco). `caps.rubberband` diz se o ffmpeg tem o filtro de estúdio.
  */
 export function filtrosDeEfeitos(e = {}, caps = { rubberband: false }) {
   const f = [];
@@ -100,6 +106,9 @@ export function filtrosDeEfeitos(e = {}, caps = { rubberband: false }) {
   if (velocidade !== 1 || pitch !== 0) f.push(...filtroDeTempoETom(velocidade, pitch, caps.rubberband));
   if (e.graves_db) f.push(`bass=g=${e.graves_db}:f=110:w=0.7`);
   if (e.agudos_db) f.push(`treble=g=${e.agudos_db}:f=3200:w=0.7`);
+  if (e.robo_hz > 0) f.push(`tremolo=f=${e.robo_hz}:d=1`);
+  if (e.bitcrush > 0) f.push(`acrusher=bits=${Math.round(16 - 12 * e.bitcrush)}:samples=${Math.round(1 + 23 * e.bitcrush)}:mode=lin:aa=0:mix=1`);
+  if (e.fase > 0) f.push(`aphaser=type=t:speed=${(0.4 + 1.6 * e.fase).toFixed(2)}:decay=${(0.3 + 0.5 * e.fase).toFixed(2)}`);
   if (e.saturacao > 0) f.push(`volume=${(e.saturacao * 14).toFixed(1)}dB`, 'asoftclip=type=tanh', `volume=${(-e.saturacao * 6).toFixed(1)}dB`);
   if (e.compressor) f.push(COMPRESSORES[e.compressor]);
   if (e.eco_ms > 0) f.push(`aecho=0.8:0.7:${Math.round(e.eco_ms)}:${(e.eco_decay ?? 0.3).toFixed(2)}`);
@@ -116,6 +125,9 @@ export function resumoDosEfeitos(e = {}) {
   if (e.passa_alta_hz > 0) r.push(`passa-alta ${e.passa_alta_hz} Hz`);
   if (e.passa_baixa_hz > 0) r.push(`passa-baixa ${e.passa_baixa_hz} Hz`);
   if (e.ruido_db > 0) r.push(`ruído −${e.ruido_db} dB`);
+  if (e.robo_hz > 0) r.push(`robô ${e.robo_hz} Hz`);
+  if (e.bitcrush > 0) r.push(`bitcrush ${Math.round(e.bitcrush * 100)}%`);
+  if (e.fase > 0) r.push(`fase ${Math.round(e.fase * 100)}%`);
   if (e.saturacao > 0) r.push(`saturação ${Math.round(e.saturacao * 100)}%`);
   if (e.compressor) r.push(`compressor ${e.compressor}`);
   if (e.eco_ms > 0) r.push(`eco ${e.eco_ms} ms`);

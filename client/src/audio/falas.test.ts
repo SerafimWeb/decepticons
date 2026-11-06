@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import catalogo from './falas.json';
 import geradas from './vozesGeradas.json';
+import { falaDeRadio } from './radio';
 import { caminhoDaFala, chaveDaRodada, chaveDaSequencia, FALAS, falaDe, falaGerada, NARRACOES, narracaoDaUrl, ROTULO_DA_NARRACAO, SOTAQUES } from './falas';
 
 describe('catálogo de falas (P146)', () => {
@@ -49,7 +50,8 @@ describe('catálogo de falas (P146)', () => {
   });
 
   it('o manifesto só lista falas que existem no catálogo, e falaGerada responde por ele', () => {
-    for (const s of SOTAQUES) for (const chave of geradas[s]) expect(falaDe(chave), `${s}/${chave}`).toBeDefined();
+    // o rádio de campo (P316) divide o manifesto com o narrador: as chaves dele só existem em português
+    for (const s of SOTAQUES) for (const chave of geradas[s]) expect(falaDe(chave) ?? (s === 'br' ? falaDeRadio(chave) : undefined), `${s}/${chave}`).toBeDefined();
     expect(falaGerada('br', 'combate', { br: ['combate'] })).toBe(true);
     expect(falaGerada('en', 'combate', { br: ['combate'] })).toBe(false);
     expect(falaGerada('br', 'rodada_1', { br: ['combate'] })).toBe(false);

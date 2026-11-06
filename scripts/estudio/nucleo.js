@@ -239,6 +239,9 @@
     ['compressor', 'Compressor', { opcoes: [['', 'desligado'], ['leve', 'leve'], ['medio', 'médio'], ['forte', 'forte']] }],
     ['eco-ms', 'Eco (ms, 0 = off)', { min: 0, max: 400, step: 10, valor: 0 }],
     ['eco-decay', 'Eco: intensidade (0–0,8)', { min: 0, max: 0.8, step: 0.05, valor: 0.3 }],
+    ['robo', 'Robô (Hz, 0 = off)', { min: 0, max: 400, step: 5, valor: 0 }],
+    ['bitcrush', 'Bitcrush (0–1)', { min: 0, max: 1, step: 0.05, valor: 0 }],
+    ['fase', 'Fase (0–1)', { min: 0, max: 1, step: 0.05, valor: 0 }],
     ['fade-in', 'Fade de entrada (ms)', { min: 0, max: 2000, step: 5, valor: 0 }],
     ['reverso', 'tocar ao contrário', { caixa: true }],
   ];
@@ -260,6 +263,9 @@
         if (num('passa-baixa') > 0) e.passa_baixa_hz = num('passa-baixa');
         if (num('ruido') > 0) e.ruido_db = num('ruido');
         if (num('saturacao') > 0) e.saturacao = num('saturacao');
+        if (num('robo') > 0) e.robo_hz = num('robo');
+        if (num('bitcrush') > 0) e.bitcrush = num('bitcrush');
+        if (num('fase') > 0) e.fase = num('fase');
         if ($(id('compressor')).value) e.compressor = $(id('compressor')).value;
         if (num('eco-ms') > 0) { e.eco_ms = num('eco-ms'); e.eco_decay = num('eco-decay') || 0.3; }
         if ($(id('reverso')).checked) e.reverso = true;
@@ -275,6 +281,9 @@
         $(id('passa-baixa')).value = e.passa_baixa_hz ?? 0;
         $(id('ruido')).value = e.ruido_db ?? 0;
         $(id('saturacao')).value = e.saturacao ?? 0;
+        $(id('robo')).value = e.robo_hz ?? 0;
+        $(id('bitcrush')).value = e.bitcrush ?? 0;
+        $(id('fase')).value = e.fase ?? 0;
         $(id('compressor')).value = e.compressor || '';
         $(id('eco-ms')).value = e.eco_ms ?? 0;
         $(id('eco-decay')).value = e.eco_decay ?? 0.3;

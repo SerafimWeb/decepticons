@@ -7,6 +7,7 @@
  *   node .decepticons/medicoes/estudio.mjs --origem <pasta>      # outra pasta de referências
  *   node .decepticons/medicoes/estudio.mjs --foto estudio.png    # onde salvar a captura (padrão: .tmp/estudio-e2e.png)
  *   node .decepticons/medicoes/estudio.mjs --foto-vozes vozes.png # a captura da aba VOZES (padrão: .tmp/estudio-vozes-e2e.png)
+ *   node .decepticons/medicoes/estudio.mjs --foto-radio radio.png # a captura da aba VOZES numa fala do rádio inimigo (padrão: .tmp/estudio-radio-e2e.png)
  *
  * A aba VOZES é provada com o microfone de MENTIRA do Chrome (`--use-fake-device-for-media-stream`): grava, converte, apara, trata, salva e volta para a voz gerada.
  */
@@ -20,6 +21,7 @@ const valor = (n, d) => (args.includes(`--${n}`) ? args[args.indexOf(`--${n}`) +
 const origemReal = resolve(valor('origem', '.tmp/SOUNDS/ARMAS'));
 const foto = resolve(valor('foto', '.tmp/estudio-e2e.png'));
 const fotoVozes = resolve(valor('foto-vozes', '.tmp/estudio-vozes-e2e.png'));
+const fotoRadio = resolve(valor('foto-radio', '.tmp/estudio-radio-e2e.png'));
 const { chromium } = await import('playwright-core');
 
 const falhas = [];
@@ -27,7 +29,7 @@ const confere = (ok, texto) => { console.log(`${ok ? '✓' : '✗'} ${texto}`); 
 
 mkdirSync(resolve('.tmp'), { recursive: true });
 const raiz = mkdtempSync(join(resolve('.tmp'), 'e2e-estudio-'));
-for (const rel of ['scripts/sons-armas.json', 'client/src/audio/armasSom.json', 'scripts/estudio/armas-info.json', 'scripts/estudio/index.html', 'scripts/estudio/estudio.css', 'scripts/estudio/nucleo.js', 'scripts/estudio/sons.js', 'scripts/estudio/microfone.js', 'scripts/estudio/vozes.js', 'client/src/audio/falas.json', 'client/src/audio/vozesGeradas.json', 'scripts/vozes-gravadas.json', 'client/public/audio/vozes/br/combate.mp3']) {
+for (const rel of ['scripts/sons-armas.json', 'client/src/audio/armasSom.json', 'scripts/estudio/armas-info.json', 'scripts/estudio/index.html', 'scripts/estudio/estudio.css', 'scripts/estudio/nucleo.js', 'scripts/estudio/sons.js', 'scripts/estudio/microfone.js', 'scripts/estudio/vozes.js', 'client/src/audio/falas.json', 'client/src/audio/radio.json', 'scripts/estudio/predefinidos-voz.json', 'client/src/audio/vozesGeradas.json', 'scripts/vozes-gravadas.json', 'client/public/audio/vozes/br/combate.mp3']) {
   mkdirSync(join(raiz, rel, '..'), { recursive: true });
   copyFileSync(resolve(rel), join(raiz, rel));
 }
@@ -153,10 +155,32 @@ confere(await p.locator('#tabela-armas tr', { hasText: 'Lança-chamas' }).locato
 // ── a aba VOZES: gravar com o microfone, tratar, salvar como a fala do jogo, e voltar para a voz gerada ──────────
 await p.click('#abas button[data-aba="vozes"]');
 await p.waitForSelector('#vz-lista li');
-const nFalas = await p.locator('#vz-lista li').count();
-confere(nFalas === 19 && (await p.locator('#vz-sotaques button').count()) === 4, `a aba VOZES lista as ${nFalas} falas e os 4 sotaques`);
+const radioCatalogo = JSON.parse(readFileSync(resolve('client/src/audio/radio.json'), 'utf8'));
+const nFalas = await p.locator('#vz-lista li:not(.grupo)').count();
+const nGrupos = await p.locator('#vz-lista li.grupo').count();
+confere(nFalas === 19 + radioCatalogo.falas.length && (await p.locator('#vz-sotaques button').count()) === 4, `a aba VOZES lista as ${nFalas} falas (19 do narrador e ${radioCatalogo.falas.length} do rádio) e os 4 sotaques`);
+confere(nGrupos === 1 + Object.keys(radioCatalogo.canais).length, `a lista tem ${nGrupos} cabeçalhos de canal (o narrador e os ${Object.keys(radioCatalogo.canais).length} do rádio), cada um com a contagem de gravadas`);
+confere(/0\/\d+$/.test((await p.locator('#vz-lista li.grupo').first().textContent()).trim()), 'o cabeçalho de canal traz a contagem de gravadas (n/total)');
 confere((await p.locator('#vz-texto').textContent()).trim() === 'Combate!', 'a fala "Combate!" abre com o texto grande para ler');
 confere(/◆/.test(await p.locator('#vz-lista li', { hasText: 'Combate!' }).textContent()), 'o "Combate!" brasileiro aparece como voz gerada (◆)');
+confere((await p.locator('#vz-predefinidos button').count()) >= 11, `os predefinidos vêm do servidor (${await p.locator('#vz-predefinidos button').count()} botões)`);
+await p.click('#vz-lista li:has-text("Assinatura hostil identificada")');
+await p.waitForFunction(() => document.querySelector('#vz-texto').textContent.startsWith('Assinatura hostil'));
+confere(/Frio e cadenciado/.test(await p.locator('#vz-intencao').textContent()), 'a fala do rádio mostra a intenção do estilo (frio) na tela');
+const contexto = await p.locator('#vz-contexto').textContent();
+confere(/Diálogo "alvo-priorizado": abre a conversa; em seguida: «Afirmativo\. Em execução\.»/.test(contexto), 'a fala mostra o diálogo de que faz parte e o que se ouve em seguida');
+confere(/Tratamento sugerido: Grande Irmão/.test(contexto) && /SERAFIM CONTROLE/.test(contexto), 'a fala diz quem fala (o canal) e o tratamento sugerido');
+confere(await p.locator('#vz-predefinidos button.sugerido').count() === 1 && (await p.locator('#vz-predefinidos button.sugerido').textContent()) === 'Grande Irmão', 'o botão do tratamento sugerido (Grande Irmão) fica destacado');
+await p.click('#vz-lista li:has-text("Afirmativo. Em execução.")');
+confere(/responde a «Assinatura hostil identificada\. Purguem o processo\.»/.test(await p.locator('#vz-contexto').textContent()), 'a resposta diz a que ela responde');
+await p.click('#vz-lista li:has-text("Reagrupar no ponto da rota")');
+confere((await p.locator('#vz-predefinidos button.sugerido').textContent()) === 'Interceptação', 'o rádio inimigo sugere o tratamento Interceptação');
+await p.screenshot({ path: fotoRadio });
+await p.click('#vz-sotaques button:has-text("Inglês")');
+confere((await p.locator('#vz-lista li:not(.grupo)').count()) === 19 && (await p.locator('#vz-lista li.grupo').count()) === 1, 'em outro sotaque a lista volta a ter só as 19 falas do narrador (o rádio é só em português)');
+await p.click('#vz-sotaques button:has-text("Brasileiro")');
+await p.click('#vz-lista li:has-text("Combate!")');
+confere((await p.locator('#vz-texto').textContent()).trim() === 'Combate!', 'de volta ao Brasileiro, o "Combate!" reabre (o resto da bancada segue com ele)');
 
 // ── o microfone (P286): testar com veredito, procurar o que funciona ─────────────────────────────────────────────
 await p.click('#vz-mic-testar');

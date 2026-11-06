@@ -1,0 +1,16 @@
+{
+  "_nota": "Os pontos de partida do tratamento de voz do Estúdio (aba VOZES). O gosto é de quem ouve: o botão aplica os números e o Comandante ajusta. O servidor valida cada um com o mesmo motor da prévia (server/estudioPredefinidos.test.ts), e o campo `efeito` de cada canal de client/src/audio/radio.json tem de ser o nome de um destes. Referências de timbre (técnicas, nunca amostras nem melodias): sintetizadores e vozes de máquina dos anos 70 e 80 (Kraftwerk), vocoder e talkbox da pista de dança dos anos 90 e 2000 (Daft Punk), distorção e ruído do rave dos anos 90 (Prodigy), e os canais de pulso, triângulo e ruído dos videogames de 8 bits.",
+  "predefinidos": [
+    { "nome": "Locutor grave", "efeitos": { "pitch_st": -2, "graves_db": 4, "agudos_db": 2, "passa_alta_hz": 70, "compressor": "forte", "saturacao": 0.15, "eco_ms": 90, "eco_decay": 0.25 } },
+    { "nome": "Arena", "efeitos": { "eco_ms": 180, "eco_decay": 0.35, "compressor": "medio", "graves_db": 3 } },
+    { "nome": "Rádio de comando", "efeitos": { "passa_alta_hz": 400, "passa_baixa_hz": 3400, "saturacao": 0.3, "compressor": "forte" } },
+    { "nome": "Limpo", "efeitos": { "passa_alta_hz": 80, "ruido_db": 12, "compressor": "leve" } },
+    { "nome": "Demônio", "efeitos": { "pitch_st": -6, "graves_db": 5, "saturacao": 0.25, "eco_ms": 120, "eco_decay": 0.4, "compressor": "forte" } },
+    { "nome": "Grande Irmão", "efeitos": { "pitch_st": -3, "graves_db": 5, "passa_alta_hz": 80, "saturacao": 0.1, "compressor": "forte", "eco_ms": 140, "eco_decay": 0.35 } },
+    { "nome": "Interceptação", "efeitos": { "passa_alta_hz": 500, "passa_baixa_hz": 2800, "saturacao": 0.45, "bitcrush": 0.12, "fase": 0.3, "compressor": "forte" } },
+    { "nome": "Androide", "efeitos": { "pitch_st": 2, "robo_hz": 70, "passa_alta_hz": 300, "bitcrush": 0.15, "saturacao": 0.2, "compressor": "forte", "eco_ms": 25, "eco_decay": 0.45 } },
+    { "nome": "Robô retrô", "efeitos": { "robo_hz": 40, "passa_alta_hz": 200, "passa_baixa_hz": 5000, "bitcrush": 0.25, "compressor": "medio", "eco_ms": 30, "eco_decay": 0.25 } },
+    { "nome": "Talkbox", "efeitos": { "fase": 0.6, "passa_alta_hz": 150, "graves_db": 2, "agudos_db": 3, "saturacao": 0.2, "compressor": "forte", "eco_ms": 60, "eco_decay": 0.2 } },
+    { "nome": "Chip 8-bit", "efeitos": { "bitcrush": 0.85, "passa_alta_hz": 200, "saturacao": 0.1, "compressor": "medio" } }
+  ]
+}

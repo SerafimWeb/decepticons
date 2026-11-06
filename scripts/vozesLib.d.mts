@@ -1,4 +1,5 @@
 export const SOTAQUES: readonly string[];
+export function falasDoManifesto(narrador: { falas: readonly { chave: string }[] }, radio?: { falas: readonly { chave: string }[] } | null): { chave: string }[];
 export const API: string;
 
 export interface FalaDoCatalogo {
@@ -37,7 +38,7 @@ export function planejar(o: {
   protegidas?: ReadonlySet<string>;
 }): Plano;
 
-export function montarManifesto(arquivos: Record<string, readonly string[]>, falas: readonly FalaDoCatalogo[], nota: string): Record<string, unknown>;
+export function montarManifesto(arquivos: Record<string, readonly string[]>, falas: readonly { chave: string }[], nota: string): Record<string, unknown>;
 
 export function sintetizar(o: {
   fetchFn: (url: string, init: { method: string; headers: Record<string, string>; body: string }) => Promise<{

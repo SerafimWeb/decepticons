@@ -77,6 +77,9 @@
     if (e.agudos_db) r.push('agudos');
     if (e.passa_alta_hz || e.passa_baixa_hz) r.push('filtro');
     if (e.ruido_db) r.push('ruído');
+    if (e.robo_hz) r.push(`robô ${e.robo_hz} Hz`);
+    if (e.bitcrush) r.push('bitcrush');
+    if (e.fase) r.push('fase');
     if (e.saturacao) r.push('saturação');
     if (e.compressor) r.push(`comp. ${e.compressor}`);
     if (e.eco_ms) r.push('eco');

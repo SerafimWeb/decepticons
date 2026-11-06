@@ -56,6 +56,26 @@ describe('efeitos do estúdio: a cadeia de filtros', () => {
     expect(filtrosDeEfeitos({ saturacao: 0.5 }).join()).toContain('asoftclip=type=tanh');
   });
 
+  it('o timbre de máquina (robô, bitcrush, fase) liga o filtro certo: tremolo de profundidade 1, acrusher que cai de 16 para 4 bits, aphaser que acelera', () => {
+    expect(filtrosDeEfeitos({ robo_hz: 45 })).toEqual(['tremolo=f=45:d=1']);
+    expect(filtrosDeEfeitos({ bitcrush: 0 })).toEqual([]);
+    expect(filtrosDeEfeitos({ bitcrush: 1 })).toEqual(['acrusher=bits=4:samples=24:mode=lin:aa=0:mix=1']);
+    expect(filtrosDeEfeitos({ bitcrush: 0.5 })).toEqual(['acrusher=bits=10:samples=13:mode=lin:aa=0:mix=1']);
+    expect(filtrosDeEfeitos({ fase: 1 })).toEqual(['aphaser=type=t:speed=2.00:decay=0.80']);
+    expect(filtrosDeEfeitos({ fase: 0.5 })).toEqual(['aphaser=type=t:speed=1.20:decay=0.55']);
+  });
+
+  it('o timbre de máquina entra depois da equalização e antes da saturação, do compressor e do eco', () => {
+    const f = filtrosDeEfeitos({ graves_db: 3, robo_hz: 40, bitcrush: 0.4, fase: 0.4, saturacao: 0.3, compressor: 'leve', eco_ms: 100 }).join('|');
+    const pos = (txt: string) => f.indexOf(txt);
+    expect(pos('bass=')).toBeLessThan(pos('tremolo'));
+    expect(pos('tremolo')).toBeLessThan(pos('acrusher'));
+    expect(pos('acrusher')).toBeLessThan(pos('aphaser'));
+    expect(pos('aphaser')).toBeLessThan(pos('asoftclip'));
+    expect(pos('asoftclip')).toBeLessThan(pos('acompressor'));
+    expect(pos('acompressor')).toBeLessThan(pos('aecho'));
+  });
+
   it('a ordem soa bem: limpeza, tom e velocidade, equalização, saturação, compressor e eco por último', () => {
     const f = filtrosDeEfeitos({ reverso: true, passa_alta_hz: 300, pitch_st: 2, graves_db: 3, saturacao: 0.3, compressor: 'leve', eco_ms: 100 }, { rubberband: true }).join('|');
     const pos = (txt: string) => f.indexOf(txt);
@@ -87,6 +107,7 @@ describe('efeitos do estúdio: a cadeia de filtros', () => {
   it('o resumo diz só o que está ligado', () => {
     expect(resumoDosEfeitos({})).toEqual([]);
     expect(resumoDosEfeitos({ pitch_st: -3, compressor: 'forte', eco_ms: 90, velocidade: 1 })).toEqual(['tom -3 st', 'compressor forte', 'eco 90 ms']);
+    expect(resumoDosEfeitos({ robo_hz: 45, bitcrush: 0.5, fase: 0.25 })).toEqual(['robô 45 Hz', 'bitcrush 50%', 'fase 25%']);
   });
 });
 
