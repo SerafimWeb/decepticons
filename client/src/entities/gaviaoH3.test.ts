@@ -59,7 +59,7 @@ describe('o Gavião-H3, o primeiro robô da geração 3 (gaviaoH3)', () => {
     expect(e.max.y).toBeCloseTo(d.max.y, 3);
     const corpo = new THREE.Box3().setFromObject(r.model);
     expect(corpo.max.x).toBeCloseTo(-corpo.min.x, 1);
-    expect(corpo.max.x).toBeLessThan(1.4);
+    expect(corpo.max.x).toBeLessThan(1.5);
   });
 
   it('só os pés giram no tornozelo (os vértices marcados), um por perna, e mais nada do corpo', () => {

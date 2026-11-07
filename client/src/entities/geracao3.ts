@@ -118,9 +118,24 @@ export const GERACAO3: Geracao3 = {
     e.airMix += (air - e.airMix) * k;
     // O peso só tira o robô do repouso sem estalo (a passada em si já cresce com a velocidade, `passoNaVelocidade`): cheio a 12% da velocidade do chassi.
     e.peso += ((1 - e.airMix) * Math.min(1, e.vSuave / (PESO_CHEIO * e.vTopo)) - e.peso) * k;
+
+    // A mola da pelve vem ANTES da pose: o quanto ela desce (o pouso, o agachar do dash) entra na conta das pernas (`queda`), que dobram para a pelve descer com a sola
+    // no chão. Somada depois, como era, ela descia a pelve com as pernas como estavam, e o pé entrava 10 a 15 cm no piso a cada pouso e a cada dash.
+    // Pouso: a queda mais forte desde que saiu do chão vira um tranco na mola da pelve (ela agacha e volta).
+    if (m.grounded) {
+      if (e.quedaVel > 0) {
+        e.molaPelve.v -= Math.min(12, e.quedaVel) * aj.amortecimentoDoPouso;
+        e.quedaVel = 0;
+      }
+    } else if (-m.velocity.y > e.quedaVel) e.quedaVel = -m.velocity.y;
+    // O agachar do dash é o alvo da mesma mola.
+    const agachar = m.isDashing ? -0.12 : 0;
+    const freq = e.freqCorpo * aj.rigidez;
+    const pelve = avancaMola(e.molaPelve, agachar, freq, 0.45 * aj.amortecimento, dt);
+
     const pose = e.pose;
     passoNaVelocidade(e.passo, e.vSuave, e.vTopo, e.passoAgora);
-    poseDaPassada(fase, e.peso, geo, e.passoAgora, pose, 1 - Math.max(0, lean) * 0.65, 1 - Math.max(0, -lean) * 0.65);
+    poseDaPassada(fase, e.peso, geo, e.passoAgora, pose, 1 - Math.max(0, lean) * 0.65, 1 - Math.max(0, -lean) * 0.65, Math.min(Math.max(0, -pelve), geo.dRest * 0.3));
     const hipL = pose.hipL + e.airMix * 0.55;
     const hipR = pose.hipR - e.airMix * 0.25;
     const kneeL = pose.kneeL - e.airMix * 1.0;
@@ -134,17 +149,6 @@ export const GERACAO3: Geracao3 = {
     const noAr = -0.3 * e.airMix;
     rig.setFootPitch?.(pose.phiL + noAr - (hipL + kneeL), pose.phiR + noAr - (hipR + kneeR));
 
-    // Pouso: a queda mais forte desde que saiu do chão vira um tranco na mola da pelve (ela agacha e volta).
-    if (m.grounded) {
-      if (e.quedaVel > 0) {
-        e.molaPelve.v -= Math.min(12, e.quedaVel) * aj.amortecimentoDoPouso;
-        e.quedaVel = 0;
-      }
-    } else if (-m.velocity.y > e.quedaVel) e.quedaVel = -m.velocity.y;
-    // O agachar do dash é o alvo da mesma mola.
-    const agachar = m.isDashing ? -0.12 : 0;
-    const freq = e.freqCorpo * aj.rigidez;
-    const pelve = avancaMola(e.molaPelve, agachar, freq, 0.45 * aj.amortecimento, dt);
     rig.pelvis.position.y = rig.hipHeight + (pose.dPelvis - geo.dRest) + pelve;
 
     // Inércia do tronco: a aceleração é a velocidade crua menos a suavizada, vezes a taxa (uma passagem de primeira ordem, sem alocar).

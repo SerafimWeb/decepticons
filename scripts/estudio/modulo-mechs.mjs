@@ -6,7 +6,8 @@
  * - `POST /montar`   monta a prévia em `.tmp/estudio/mechs/` (só se algum fonte é mais novo que a montagem anterior);
  * - `GET  /app/...`  serve os arquivos montados (a página abre em `/api/mechs/app/index.html`, dentro da aba);
  * - `GET  /app/models/<nome>.glb`  serve a malha dos robôs importados direto de `client/public/models/` (a prévia mostra TODOS os robôs do jogo; nada é copiado para a montagem);
- * - `PUT  /ajustes`  valida e grava os ajustes (todas as chaves, cada uma na faixa de `movimentoGen3.faixas.json`; nada de chave desconhecida).
+ * - `PUT  /ajustes`  valida e grava os ajustes (todas as chaves, cada uma na faixa de `movimentoGen3.faixas.json`; nada de chave desconhecida);
+ * - `PUT  /desenho`  o mesmo para os números de desenho do Gavião-H3 (`desenhoGaviao.json`, faixas em `desenhoGaviao.faixas.json`).
  *
  * O dado e as faixas moram no repositório (uma fonte só: o jogo, o teste e este módulo leem os mesmos arquivos). O Estúdio não publica: o que
  * ele grava aparece nas PENDÊNCIAS (commit e PR são do fluxo do projeto).
@@ -17,6 +18,9 @@ import { corpoJson, gravarJson, lerJson } from './util.mjs';
 
 const ARQ_AJUSTES = 'client/src/entities/movimentoGen3.json';
 const ARQ_FAIXAS = 'client/src/entities/movimentoGen3.faixas.json';
+/** O desenho do Gavião-H3 (os números que o painel DESENHO edita) e as faixas deles. */
+const ARQ_DESENHO = 'client/src/entities/desenhoGaviao.json';
+const ARQ_FAIXAS_DESENHO = 'client/src/entities/desenhoGaviao.faixas.json';
 const SAIDA = '.tmp/estudio/mechs';
 /** Onde o jogo guarda a malha dos robôs importados (`IMPORTED_CHASSIS`): a prévia a lê daqui pela rota `/app/models/`. */
 const MODELOS = 'client/public/models';
@@ -82,13 +86,15 @@ export function moduloMechs({ raiz, construir = montarComVite }) {
   const saida = resolve(raiz, SAIDA);
   const arquivoAjustes = join(raiz, ARQ_AJUSTES);
   const faixas = () => lerJson(join(raiz, ARQ_FAIXAS));
+  const arquivoDesenho = join(raiz, ARQ_DESENHO);
+  const faixasDoDesenho = () => lerJson(join(raiz, ARQ_FAIXAS_DESENHO));
   const pronta = () => existsSync(join(saida, 'index.html'));
   const desatualizada = () => !pronta() || FONTES.some((f) => maisNovo(join(raiz, f)) > statSync(join(saida, 'index.html')).mtimeMs);
   let montando = null;
 
   function estado() {
     try {
-      return { ajustes: lerJson(arquivoAjustes), faixas: faixas(), montado: pronta() };
+      return { ajustes: lerJson(arquivoAjustes), faixas: faixas(), desenho: lerJson(arquivoDesenho), faixasDoDesenho: faixasDoDesenho(), montado: pronta() };
     } catch (e) {
       // Um dado faltando ou quebrado não derruba o /api/estado dos outros módulos (sons, vozes): a aba mostra o erro.
       return { erro: String(e.message ?? e), montado: pronta() };
@@ -152,8 +158,19 @@ export function moduloMechs({ raiz, construir = montarComVite }) {
       responder(200, { ajustes: r.ajustes });
       return true;
     }
+    if (req.method === 'PUT' && caminho === '/desenho') {
+      const corpo = await corpoJson(req);
+      const r = validarAjustesDoMovimento(corpo?.desenho, faixasDoDesenho());
+      if (!r.ok) {
+        responder(400, { erro: r.erro });
+        return true;
+      }
+      gravarJson(arquivoDesenho, r.ajustes);
+      responder(200, { desenho: r.ajustes });
+      return true;
+    }
     return false;
   }
 
-  return { id: 'mechs', titulo: 'MECHS 3D', estado, rotas, pastasDoGit: [ARQ_AJUSTES] };
+  return { id: 'mechs', titulo: 'MECHS 3D', estado, rotas, pastasDoGit: [ARQ_AJUSTES, ARQ_DESENHO] };
 }
