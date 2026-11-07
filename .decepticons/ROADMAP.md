@@ -116,9 +116,10 @@
 - [x] **Canais de voz: todos / time / jogador escolhido (P237 PR 3, 21/10):** T todos, segurar Y só o time, segurar U só o jogador escolhido, G troca o escolhido; porta por colega, falha fechada; medido no Chrome real (Claude) #ux
 - [ ] **O time de cada piloto na sala online (contrato de rede):** sem ele o canal do time não fala com ninguém; `VozOpcoes.timeDe` já espera (CTF online) #ux
 - [x] **Efeitos na voz (P231, 20/10):** Locutor militar, Lorde sombrio e Grande Irmão (cadeia de áudio sob demanda) na narração e na prévia do teste do microfone, afinável por tabela; medido no Chrome real; falta o ouvido do Comandante (Claude) #ux
-- [~] **Rádio de campo e sons retrô (P316, 06/11):** o catálogo de 189 falas (ordens, respostas, rádio inimigo interceptado, gritos), o roteiro de gravação gerado, o Estúdio pronto (3 efeitos e 6 tratamentos de voz) e o kit retrô de 72 candidatos de som; falta o Comandante gravar e ouvir, o jogo tocar o rádio e a mixagem #som
+- [~] **Rádio de campo e sons retrô (P316, 06/11):** o catálogo de 189 falas (ordens, respostas, rádio inimigo interceptado, gritos), o roteiro de gravação gerado, o Estúdio pronto (3 efeitos e 6 tratamentos de voz) e o kit retrô de 72 candidatos de som; o jogo já toca o rádio (restrito) e a música abaixa sob a voz; falta o Comandante gravar, ouvir e liberar `audio:radio` #som
 - [x] **Higienização (P318, 06/11):** 8,7 MB sem uso saíram do deploy (2 modelos e 3 áudios) com duas travas em teste, `node_modules` consertada e documentos arquivados; falta o Comandante concluir a limpeza das worktrees velhas #base
 - [~] **Moldura do cockpit em primeira pessoa (P317, 06/11):** o rascunho do Gemini concluído atrás do HUD (0 elementos cobertos, medido na GPU real) e restrito em `tela:cockpit`; falta o olho do Comandante e a liberação #ux
+- [~] **Rever o Hangar passo a passo (P319, 06/11):** contrato da montagem, seleção de armas, botões, concorrência e redundância; passo 1 (a auditoria, `AUDITORIA_HANGAR.md`) feito, as correções seguem uma por PR #ux
 - [x] Segundo piloto selecionável no Hangar: andróide A-1 com blaster e motosserra (troca recarrega a partida) #mechs
 - [x] Hangar 2.0, camada 1: galpão 3D próprio com pedestal de holograma, o Mech girando, armas aplicadas na hora #ux
 - [x] Hangar 2.0, camada 2: interface holográfica no desenho da referência, versão de celular #ux

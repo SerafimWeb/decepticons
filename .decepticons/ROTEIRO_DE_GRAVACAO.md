@@ -5,7 +5,7 @@
 
 **189 falas de rádio em 7 canais, mais as 19 do narrador** (uns 3 h 47 min de estúdio, só as do rádio, em duas ou três tomadas por fala: **grave em duas sessões**). Só português, na sua voz. Nada aqui é gerado pelo ElevenLabs.
 
-**Se o tempo apertar, grave primeiro as 22 falas marcadas com ★:** são as que já têm, no jogo, o evento que as dispara (as chamadas de rádio do cérebro do time). As outras ficam guardadas até haver o gancho. Hoje o jogo ainda não toca nenhuma: gravar agora deixa o material pronto para o PR que liga o rádio.
+**Se o tempo apertar, grave primeiro as 22 falas marcadas com ★:** são as que já têm, no jogo, o evento que as dispara (as chamadas de rádio do cérebro do time). As outras ficam guardadas até haver o gancho. O jogo as toca assim que existirem, com o rádio de campo liberado no painel (VISIBILIDADE ▸ Rádio de campo).
 
 ## 1. Antes de gravar: aquecimento (3 minutos)
 

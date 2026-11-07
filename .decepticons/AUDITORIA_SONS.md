@@ -19,8 +19,8 @@
 
 1. **O narrador quase sem voz** (9 falas mudas e 9 na voz robótica do navegador). Gravar amanhã: **roteiro § 5**. É o maior ganho por minuto de estúdio.
 2. **As 4 armas sem som** (gás, trilho, EMP, escopeta). Escolher no Estúdio entre os candidatos `RETRO_*` e atribuir na tabela de armas.
-3. **O rádio tocar no jogo.** Depende das falas gravadas; o gancho já existe (`Match.onFala` entrega o lado: aliado ou inimigo). PR seguinte.
-4. **Mixagem:** abaixar a música quando alguém fala (narrador, rádio, chat de voz). PR seguinte.
+3. **O rádio tocar no jogo.** Feito em 06/11 e restrito em `audio:radio`: o piloto aliado e o rádio inimigo interceptado falam nas chamadas do cérebro do time (`Match.onFala` entrega o lado). Fica mudo até as falas serem gravadas.
+4. **Mixagem:** feita para o narrador e o rádio (a música desce para 35% durante a fala e volta em meio segundo); o chat de voz ainda não abaixa a música.
 5. **Música de menu e variedade de trilha:** dois candidatos de 4 compassos no kit (`tema_menu`, `tema_combate`).
 6. **Aviso de míssil travado:** não existe hoje; há a fala (`rd_sistema_alerta_2`) e o bipe (`alerta_missil`) para quando o jogo tiver o evento do travamento.
 
@@ -57,10 +57,10 @@ As referências são **técnicas**. Nunca amostra, melodia ou letra de ninguém 
 
 ## 6. O que esta entrega NÃO faz (R13)
 
-- **O jogo ainda não toca o rádio** nem o aviso de míssil, e **não troca nenhum som sintetizado** por um do kit: trocar som é decisão do ouvido do Comandante, feita no Estúdio.
+- O rádio já toca (restrito), mas **o aviso de míssil não existe no jogo**, e **não troca nenhum som sintetizado** por um do kit: trocar som é decisão do ouvido do Comandante, feita no Estúdio.
 - **Nada foi ouvido.** O Claude mede nível, pico, duração e forma; o gosto é do Comandante.
 - **O Estúdio não gera música:** os dois temas são candidatos de 4 compassos, não uma trilha completa.
-- **Mixagem** (abaixar a música sob a voz) e **música de menu no jogo** ficam para o PR seguinte.
+- **Música de menu no jogo** fica para depois (a mixagem sob a voz entrou com o rádio no jogo).
 
 ## 7. Ligado a
 

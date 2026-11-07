@@ -12,6 +12,8 @@ import { BAIXO, BUMBO, CAIXA, CHIMBAL, PASSOS_POR_COMPASSO, acordeDoCompasso, fr
 
 /** O volume da música no mix: abaixo dos efeitos (o Comandante ajusta o mix no Estúdio). */
 const VOLUME = 0.5;
+/** Quanto a música desce enquanto alguém fala (narrador, rádio de campo): 0,35 do volume, uns −9 dB (P316, a mixagem). */
+export const FATOR_DA_FALA = 0.35;
 const INTERVALO_MS = 40;
 const ANTECEDENCIA_S = 0.15;
 const VOZES_DO_PAD = 3;
@@ -78,8 +80,25 @@ export class MusicaDeCombate {
       clearTimeout(this.tentativa);
       this.tentativa = null;
     }
-    if (this.ctx && this.bus) this.bus.gain.setTargetAtTime(0, this.ctx.currentTime, 0.3);
+    if (this.ctx && this.bus) {
+      // Cancela antes a volta que uma fala possa ter agendado (`abaixar`): sem isto, pausar no meio de uma fala faria a música subir de novo com o jogo parado.
+      this.bus.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.bus.gain.setTargetAtTime(0, this.ctx.currentTime, 0.3);
+    }
     this.parada = setTimeout(() => this.parar(), 2500);
+  }
+
+  /**
+   * A mixagem (P316): alguém começou a falar (o narrador, o rádio de campo) por `duracaoS` segundos. A música desce rápido (60 ms) para `FATOR_DA_FALA` do volume, segura
+   * enquanto a fala dura e volta devagar (0,5 s). Tudo na linha do tempo do próprio áudio (sem timer); uma fala nova por cima recomeça o ciclo. Desligada, não faz nada.
+   */
+  abaixar(duracaoS: number): void {
+    if (!this.ligada || !this.ctx || !this.bus || !(duracaoS > 0)) return;
+    const t = this.ctx.currentTime;
+    const ganho = this.bus.gain;
+    ganho.cancelScheduledValues(t);
+    ganho.setTargetAtTime(VOLUME * FATOR_DA_FALA, t, 0.06);
+    ganho.setTargetAtTime(VOLUME, t + Math.max(0.3, duracaoS), 0.5);
   }
 
   /** O nível sonoro (RMS) do que a música manda agora, num pedaço curto. Só a bancada usa: a partida não lê isto. */

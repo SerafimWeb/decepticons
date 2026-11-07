@@ -74,7 +74,7 @@ export function renderizarRoteiro(radio, narrador = null) {
   o.push('');
   o.push(`**${falas.length} falas de rádio em ${canais.length} canais${narrador ? `, mais as ${narrador.falas.length} do narrador` : ''}** (uns ${estimativa} de estúdio, só as do rádio, em duas ou três tomadas por fala: **grave em duas sessões**). Só português, na sua voz. Nada aqui é gerado pelo ElevenLabs.`);
   o.push('');
-  o.push(`**Se o tempo apertar, grave primeiro as ${prioritarias} falas marcadas com ★:** são as que já têm, no jogo, o evento que as dispara (as chamadas de rádio do cérebro do time). As outras ficam guardadas até haver o gancho. Hoje o jogo ainda não toca nenhuma: gravar agora deixa o material pronto para o PR que liga o rádio.`);
+  o.push(`**Se o tempo apertar, grave primeiro as ${prioritarias} falas marcadas com ★:** são as que já têm, no jogo, o evento que as dispara (as chamadas de rádio do cérebro do time). As outras ficam guardadas até haver o gancho. O jogo as toca assim que existirem, com o rádio de campo liberado no painel (VISIBILIDADE ▸ Rádio de campo).`);
   o.push('');
   o.push('## 1. Antes de gravar: aquecimento (3 minutos)');
   o.push('');

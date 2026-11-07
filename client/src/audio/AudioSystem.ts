@@ -201,10 +201,17 @@ export class AudioSystem {
       .catch(() => {});
   }
 
+  /**
+   * Avisado a cada voz que começa (o narrador, o rádio de campo), com a duração em segundos: a mixagem (P316) abaixa a música por esse tempo. Um ponto só, para nenhuma voz
+   * futura esquecer de avisar.
+   */
+  aoFalar: ((duracao: number) => void) | null = null;
+
   /** Toca um clipe de voz com o ganho dado e devolve a duração em segundos (0 = não tocou: sem contexto, som desligado ou clipe ainda não carregado). */
   tocarVoz(name: string, gain = 1): number {
     const buffer = this.samples.get(name);
     if (!buffer || !this.playSample(name, gain)) return 0;
+    this.aoFalar?.(buffer.duration);
     return buffer.duration;
   }
 
@@ -819,6 +826,46 @@ export class AudioSystem {
     osc.start(now);
     osc.stop(now + duration + 0.01);
     osc.onended = () => gain.disconnect();
+  }
+
+  /**
+   * BIPE DO RÁDIO (P316): o tom curto que abre (2525 Hz) e que fecha (2475 Hz) o canal antes e depois de uma fala de rádio, com um estalo de ruído logo depois do tom
+   * (mais forte ao fechar, o "fim de transmissão"), como nos rádios de voo. Só sintetizado (zero asset): um oscilador e um ruído de 50 ms, uma vez por fala de rádio
+   * (poucas por minuto). O tom e o estalo somam 130 ms: é a abertura que o `RadioDeCampo` espera antes da voz.
+   */
+  playRadioBip(abrir: boolean): void {
+    const { ctx, masterGain, noiseBuffer } = this;
+    if (!ctx || !masterGain || !this.enabled) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(abrir ? 2525 : 2475, now);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.14, now + 0.006);
+    gain.gain.setValueAtTime(0.14, now + 0.07);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + 0.1);
+    osc.onended = () => gain.disconnect();
+    if (!noiseBuffer) return;
+    const src = ctx.createBufferSource();
+    src.buffer = noiseBuffer;
+    const filtro = ctx.createBiquadFilter();
+    filtro.type = 'bandpass';
+    filtro.frequency.value = 3200;
+    filtro.Q.value = 0.8;
+    const estalo = ctx.createGain();
+    estalo.gain.setValueAtTime(abrir ? 0.015 : 0.05, now + 0.09);
+    estalo.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+    src.connect(filtro);
+    filtro.connect(estalo);
+    estalo.connect(masterGain);
+    src.start(now + 0.09);
+    src.stop(now + 0.14);
+    src.onended = () => { estalo.disconnect(); filtro.disconnect(); };
   }
 
   /**
