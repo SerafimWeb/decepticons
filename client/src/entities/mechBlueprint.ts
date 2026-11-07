@@ -8,7 +8,11 @@ import { batchRigMeshes, beveledBox, box, cyl, frostShell, group, heatVapor, tap
 
 /** Parâmetros visuais apenas; não altera colisão, massa, vida, calor ou armas da simulação. */
 export interface MechBlueprint {
-  readonly id: 'ferret' | 'vector09' | 'heavy' | 'colossus01';
+  readonly id: 'ferret' | 'vector09' | 'heavy' | 'colossus01' | 'gaviao';
+  /** O corpo que não é o de blocos de sempre (a geração 3): o nome com que o pedaço sob demanda o registrou (`registrarCorpo`). Sem ele, ou se ainda não carregou, vale o corpo de blocos. */
+  readonly corpo?: string;
+  /** As cores de fábrica que diferem da paleta (o casco do Gavião é grafite). A cor do casco comprada no Hangar (`casco`) manda sobre elas. */
+  readonly cores?: { readonly armor?: number };
   /** Tem os encaixes extras de peso (P282: as costas e os dois ombros ao lado da cabeça): o rig cria os nós deles. */
   readonly encaixesDePeso?: boolean;
   /**
@@ -103,6 +107,44 @@ export const MECH_BLUEPRINTS: readonly MechBlueprint[] = [
   COLOSSUS_01_BLUEPRINT,
 ];
 
+/** Os materiais do rig (os que o lote de malhas funde): quem monta as peças de um corpo os recebe prontos. */
+export interface MateriaisDoRig {
+  readonly armor: THREE.MeshStandardMaterial;
+  readonly frame: THREE.MeshStandardMaterial;
+  readonly paint: THREE.MeshStandardMaterial;
+  readonly visor: THREE.MeshStandardMaterial;
+  readonly rocket: THREE.MeshStandardMaterial;
+  readonly thruster: THREE.MeshStandardMaterial;
+}
+
+/** O pé de um corpo, em metros: o eixo do tornozelo (y, no referencial do joelho), dele até a ponta e até o calcanhar, e a altura dele sobre a sola. */
+export interface PeDoCorpo {
+  readonly ankleY: number;
+  readonly frente: number;
+  readonly tras: number;
+  readonly tornozelo: number;
+}
+
+/**
+ * Um corpo de peças próprio (a geração 3, `gaviaoH3.ts`): quem monta o que há dentro de cada pivô do rig. O resto (os pivôs, as bocas de arma, o calor, o gelo,
+ * o dash e o lote de malhas) é o mesmo de todo Mech de código. O corpo mora num pedaço sob demanda: o pacote de partida não o carrega.
+ */
+export interface CorpoDoRig {
+  pe(bp: MechBlueprint, scale: number): PeDoCorpo;
+  pelve(pelvis: THREE.Object3D, bp: MechBlueprint, M: MateriaisDoRig, scale: number): void;
+  coxa(hip: THREE.Object3D, lado: number, bp: MechBlueprint, M: MateriaisDoRig, scale: number): void;
+  canela(knee: THREE.Object3D, lado: number, bp: MechBlueprint, M: MateriaisDoRig, scale: number): void;
+  torso(torso: THREE.Object3D, bp: MechBlueprint, M: MateriaisDoRig, scale: number): void;
+  cabeca(head: THREE.Object3D, bp: MechBlueprint, M: MateriaisDoRig, scale: number): void;
+  braco(g: THREE.Object3D, lado: number, ehEsquerdo: boolean, semCasulo: boolean, bp: MechBlueprint, M: MateriaisDoRig, scale: number): void;
+}
+
+const CORPOS = new Map<string, CorpoDoRig>();
+/** O pedaço sob demanda registra o corpo ao carregar; registrar o mesmo nome de novo o troca (a prévia do Estúdio recarrega). */
+export function registrarCorpo(nome: string, corpo: CorpoDoRig): void {
+  CORPOS.set(nome, corpo);
+}
+
 export interface BlueprintRigOptions {
   readonly paint?: number;
   readonly visor?: number;
@@ -122,8 +164,12 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   const torsoD = blueprint.torso.depth;
   // Mantém a sola no chão: offset do quadril + segmentos da perna + meio do pé.
   const hipHeight = (blueprint.legs.upperLength + blueprint.legs.lowerLength + 0.3) * scale;
+  const corpo = blueprint.corpo ? CORPOS.get(blueprint.corpo) : undefined;
+  const pePe: PeDoCorpo = corpo
+    ? corpo.pe(blueprint, scale)
+    : { ankleY: -blueprint.legs.lowerLength - 0.1 * scale, frente: blueprint.legs.footLength * 0.62, tras: blueprint.legs.footLength * 0.38, tornozelo: 0.1 * scale };
   const M = {
-    armor: new THREE.MeshStandardMaterial({ color: options.casco ?? PALETTE.armor, metalness: 0.6, roughness: 0.36 }),
+    armor: new THREE.MeshStandardMaterial({ color: options.casco ?? blueprint.cores?.armor ?? PALETTE.armor, metalness: 0.6, roughness: 0.36 }),
     frame: new THREE.MeshStandardMaterial({ color: PALETTE.frame, metalness: 0.72, roughness: 0.48 }),
     paint: new THREE.MeshStandardMaterial({ color: options.casco ?? options.paint ?? PALETTE.playerPaint, metalness: 0.36, roughness: 0.44 }),
     visor: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: options.visor ?? PALETTE.green, emissiveIntensity: 4 }),
@@ -136,15 +182,21 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   model.name = `mech-${blueprint.id}`;
   const pelvis = group(model, 0, hipHeight, 0);
   pelvis.name = 'pelvis';
-  box(pelvis, blueprint.hips.width, 0.5 * scale, blueprint.hips.depth, M.frame);
+  if (corpo) corpo.pelve(pelvis, blueprint, M, scale);
+  else box(pelvis, blueprint.hips.width, 0.5 * scale, blueprint.hips.depth, M.frame);
 
   const leg = (side: number): LegRig => {
     const hip = group(pelvis, side * blueprint.legs.hipWidth * 0.5, -0.1 * scale, 0);
     hip.name = side < 0 ? 'leftLeg' : 'rightLeg';
+    let knee: THREE.Group;
+    if (corpo) {
+      corpo.coxa(hip, side, blueprint, M, scale);
+      knee = group(hip, 0, -blueprint.legs.upperLength, 0);
+      corpo.canela(knee, side, blueprint, M, scale);
+    } else {
     taperedBox(hip, blueprint.legs.thighWidth, blueprint.legs.upperLength * 0.76, blueprint.legs.thighWidth * 1.08, 1.4, M.armor, 0, -blueprint.legs.upperLength * 0.35, 0);
     cyl(hip, blueprint.legs.thighWidth * 0.38, blueprint.legs.upperLength * 0.9, M.frame, 0, -blueprint.legs.upperLength * 0.48, 0);
-    const knee = group(hip, 0, -blueprint.legs.upperLength, 0);
-    knee.name = side < 0 ? 'leftLegLower' : 'rightLegLower';
+    knee = group(hip, 0, -blueprint.legs.upperLength, 0);
     // Pino do joelho: quebra a coxa e a canela em duas peças de verdade, não uma coluna contínua.
     const kneePin = cyl(knee, blueprint.legs.thighWidth * 0.3, blueprint.legs.thighWidth * 1.15, M.frame, 0, 0, 0);
     kneePin.rotation.z = Math.PI / 2;
@@ -152,7 +204,9 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
     const pe = box(knee, blueprint.legs.shinWidth * 1.2, 0.2 * scale, blueprint.legs.footLength, M.frame, 0, -blueprint.legs.lowerLength - 0.1 * scale, -blueprint.legs.footLength * 0.12);
     // O tornozelo (P322): o lote gira o pé em torno dele no shader (`batchRigMeshes`); o nó é só o ponto, sem malha e sem draw call.
     pe.userData.mechFoot = side;
-    const ankle = group(knee, 0, -blueprint.legs.lowerLength - 0.1 * scale, 0);
+    }
+    knee.name = side < 0 ? 'leftLegLower' : 'rightLegLower';
+    const ankle = group(knee, 0, pePe.ankleY, 0);
     ankle.name = side < 0 ? 'leftAnkle' : 'rightAnkle';
     // Tornozelo avançado cria a perna digitígrada sem adicionar junta nem draw call.
     if (blueprint.legs.digitigrade > 0) knee.position.z = -blueprint.legs.digitigrade * scale;
@@ -164,6 +218,8 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   const torso = group(pelvis, 0, 0.3 * scale, 0);
   torso.name = 'torso';
   const updateVapor = heatVapor(torso, blueprint.backPack.width * 0.32, torsoD * 0.78 + blueprint.backPack.depth * 0.5 + 0.08 * scale);
+  if (corpo) corpo.torso(torso, blueprint, M, scale);
+  else {
   // Torso em duas placas, não uma só: cintura estreita (perto do quadril) alargando pro peito/ombro —
   // silhueta em V, não um bloco reto. Referência War Robots (pedido do dono, 29/09): a leitura de "mech
   // de verdade" vem de placas que afunilam e quebram no meio, não de um retângulo grande e único.
@@ -182,11 +238,14 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
         side * (torsoW * 0.43), y, -torsoD * 0.52);
     }
   }
+  }
   const thrusters: THREE.Object3D[] = [];
   for (const side of [-1, 1]) {
     const x = side * blueprint.backPack.width * 0.32;
-    cyl(torso, blueprint.backPack.width * 0.19, blueprint.backPack.depth * 0.9, M.frame, x, torsoH * 0.48, torsoD * 0.74);
-    cyl(torso, blueprint.backPack.width * 0.15, 0.12 * scale, M.thruster, x, torsoH * 0.48, torsoD * 1.12);
+    if (!corpo) {
+      cyl(torso, blueprint.backPack.width * 0.19, blueprint.backPack.depth * 0.9, M.frame, x, torsoH * 0.48, torsoD * 0.74);
+      cyl(torso, blueprint.backPack.width * 0.15, 0.12 * scale, M.thruster, x, torsoH * 0.48, torsoD * 1.12);
+    }
     thrusters.push(group(torso, x, torsoH * 0.48, torsoD * 1.15));
   }
 
@@ -194,6 +253,8 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   head.name = 'head';
   if (blueprint.canhaoNaCabeca) {
     // P295: sem cabeça; o canhão das costas ocupa o lugar dela (ver `back` abaixo). A zona de acerto da cabeça continua a mesma (módulos).
+  } else if (corpo) {
+    corpo.cabeca(head, blueprint, M, scale);
   } else {
     beveledBox(head, blueprint.head.width, blueprint.head.height, blueprint.head.depth, Math.min(blueprint.head.width, blueprint.head.height, blueprint.head.depth) * 0.11, M.armor, 0, blueprint.head.height * 0.5, 0);
     box(head, blueprint.head.width * 0.78, 0.11 * scale, 0.06 * scale, M.visor, 0, blueprint.head.height * 0.56, -blueprint.head.depth * 0.52);
@@ -205,6 +266,10 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
    * fica nas costas): o rig guarda as duas geometrias do braço e `mountWeapons` troca uma pela outra, sem desenho a mais.
    */
   const armParts = (g: THREE.Object3D, side: number, isLeft: boolean, semCasulo: boolean): void => {
+    if (corpo) {
+      corpo.braco(g, side, isLeft, semCasulo, blueprint, M, scale);
+      return;
+    }
     const pad = beveledBox(g, blueprint.shoulders.width, blueprint.shoulders.height, blueprint.shoulders.depth, Math.min(blueprint.shoulders.width, blueprint.shoulders.height) * 0.1, M.paint, 0, 0, 0);
     // Ombreira angulada pra fora (pauldron), não um bloco plano alinhado ao corpo — referência War Robots.
     pad.rotation.z = -side * 0.16;
@@ -264,7 +329,7 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   const mostrandoExtra: Partial<Record<ExtraSlot, Loadout['secondary']>> = {};
 
   const batchedMaterial = batchRigMeshes(model, [M.armor, M.paint]);
-  batchedMaterial.userData.setAnkle(0, -blueprint.legs.lowerLength - 0.1 * scale, 0);
+  batchedMaterial.userData.setAnkle(0, pePe.ankleY, 0);
   /** O pé gira junto: o nó (para sondas e efeitos) e o desenho (o shader do lote). Positivo levanta a ponta. */
   const setFootPitch = (left: number, right: number): void => {
     if (leftLeg.ankle) leftLeg.ankle.rotation.x = left;
@@ -393,7 +458,7 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
     backMuzzle: nos.back,
     shoulderMuzzles: nos.rightShoulder && nos.leftShoulder ? { right: nos.rightShoulder, left: nos.leftShoulder } : undefined,
     thrusters, thrusterMaterial: batchedMaterial, setDashVisual: batchedMaterial.userData.setDash,
-    hullMaterials: [batchedMaterial], hipHeight, pe: { frente: blueprint.legs.footLength * 0.62, tras: blueprint.legs.footLength * 0.38, tornozelo: 0.1 * scale }, setFootPitch, setHeatVisual, setFrozenVisual: updateFrost, setGuardVisual, mountWeapons, barrageMouth,
+    hullMaterials: [batchedMaterial], hipHeight, pe: { frente: pePe.frente, tras: pePe.tras, tornozelo: pePe.tornozelo }, setFootPitch, setHeatVisual, setFrozenVisual: updateFrost, setGuardVisual, mountWeapons, barrageMouth,
   };
 }
 

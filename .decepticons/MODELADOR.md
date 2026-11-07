@@ -15,7 +15,7 @@ O modelo de um robô ou de uma arma **nasce em código, no repositório**, e se 
 4. **Crítica.** O Claude olha a folha e lista o que está duro, torto, solto ou pesado; o **Comandante julga no Estúdio** (o gosto é dele; o olho do Claude erra detalhe espacial, como o de qualquer crítico por visão: o estudo LL3M diz o mesmo). Medida sempre acompanha a foto.
 5. **Ajuste e de novo**, no máximo três rodadas antes de mostrar.
 
-Ferramentas: `npm run mech:movimento` (o corpo andando, geração 2 ao lado da 3, em número e em vídeo), a aba MECHS 3D, `npm run mech:inspecionar -- arquivo.glb` e `npm run mech:bocas -- <id>` (para malha importada).
+Ferramentas: `npm run mech:folha -- --modelo <id>` (a folha de seis tomadas de um modelo parado: o passo 3), `npm run mech:movimento` (o corpo andando, geração 2 ao lado da 3, em número e em vídeo), a aba MECHS 3D, `npm run mech:inspecionar -- arquivo.glb` e `npm run mech:bocas -- <id>` (para malha importada).
 
 ## 3. O orçamento (vale para todo modelo novo)
 
