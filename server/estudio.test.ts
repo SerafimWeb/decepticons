@@ -111,7 +111,7 @@ describe('Estúdio: o servidor', () => {
       expect(r.tipo, rota).toContain(tipo);
     }
     const e = await estado();
-    expect(e.modulos).toEqual([{ id: 'sons', titulo: 'SONS' }, { id: 'vozes', titulo: 'VOZES' }]);
+    expect(e.modulos).toEqual([{ id: 'sons', titulo: 'SONS' }, { id: 'vozes', titulo: 'VOZES' }, { id: 'mechs', titulo: 'MECHS 3D' }]);
     expect(e.sons.fontes.map((f: { nome: string }) => f.nome)).toEqual(['ref.wav']);
     expect(e.sons.mapa.sons.length).toBeGreaterThanOrEqual(6);
     expect(Object.keys(e.sons.armas)).toContain('blaster');

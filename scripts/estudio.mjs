@@ -1,7 +1,7 @@
 /**
  * O ESTÚDIO (P150, P155): a ferramenta local onde o Comandante edita o que o jogo toca e mostra, ao lado da Mesa de vídeo (`npm run mesa`). Hoje: SONS (cortar na onda,
- * efeitos, importar, escolher o som de cada arma) e VOZES (gravar e tratar as falas do narrador). Depois, no mesmo lugar: TIROS E ARMAS (cor, forma, cauda, explosão, força)
- * e MECHS 3D. Ver `.decepticons/ESTUDIO.md`: cada módulo é um arquivo de dados + validador + prévia + processador.
+ * efeitos, importar, escolher o som de cada arma), VOZES (gravar e tratar as falas do narrador) e MECHS 3D (o movimento, geração 2 ao lado da 3). Depois, no mesmo lugar: TIROS E ARMAS
+ * (cor, forma, cauda, explosão, força) e o resto do MECHS 3D (cores por parte, encaixes de arma, importar o .glb). Ver `.decepticons/ESTUDIO.md`: cada módulo é um arquivo de dados + validador + prévia + processador.
  *
  *   npm run estudio                    # abre http://127.0.0.1:5199 no navegador
  *   npm run estudio -- --porta 6000 --sem-abrir
@@ -14,6 +14,7 @@ import { createServer } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { moduloMechs } from './estudio/modulo-mechs.mjs';
 import { moduloSons } from './estudio/modulo-sons.mjs';
 import { moduloVozes } from './estudio/modulo-vozes.mjs';
 import { acharFfmpeg } from './sonsRodar.mjs';
@@ -44,7 +45,7 @@ export function pendenciasDoGit(raiz, caminhos) {
  * ficam indisponíveis). `modulos` troca a lista de módulos (os testes usam); o padrão é o de sons.
  */
 export function criarEstudio({ raiz, origem, origemVozes = join(raiz, '.tmp/SOUNDS/VOZ'), ffmpeg, modulos }) {
-  const lista = modulos ?? [moduloSons({ raiz, origem, ffmpeg }), moduloVozes({ raiz, origemVozes, ffmpeg })];
+  const lista = modulos ?? [moduloSons({ raiz, origem, ffmpeg }), moduloVozes({ raiz, origemVozes, ffmpeg }), moduloMechs({ raiz })];
   const porId = new Map(lista.map((m) => [m.id, m]));
   const pagina = join(raiz, 'scripts/estudio/index.html');
   const pastasDoGit = lista.flatMap((m) => m.pastasDoGit ?? []);

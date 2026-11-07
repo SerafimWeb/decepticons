@@ -1,7 +1,7 @@
 # ESTÚDIO — a ferramenta local onde o Comandante edita o que o jogo toca e mostra (P150, P155)
 
 > **Ordem do Comandante (16/10):** *"vamos evoluir mais essa interface do gerenciamento do som. Quero mais opções (eu enviar um novo som e ficar salvo e registrado corretamente como se tivesse sido adicionado por você); quero também aumentar ou diminuir o pitch e velocidade do som pra editar ele, além de poder cortar, esticar, comprimir, etc. Da mesma forma que temos a MESA pra editar vídeos, teremos também o ESTÚDIO pra editar os sons, e futuramente uma forma de editar os Mechs 3D, armas, tiros (cor, shape, cauda, explosão, força, etc)."*
-> **Estado:** os módulos **SONS** (§ 2) e **VOZES** (§ 3.1) estão prontos. **TIROS E ARMAS** e **MECHS 3D** estão desenhados (§ 3.2 e § 3.3), não construídos. Claude, 16/10.
+> **Estado:** os módulos **SONS** (§ 2) e **VOZES** (§ 3.1) estão prontos. **MECHS 3D** tem o primeiro corte pronto, o MOVIMENTO (§ 3.3, P321, 06/11); **TIROS E ARMAS** está desenhado (§ 3.2), não construído. Claude, 16/10 e 06/11.
 
 ## 1. A ideia
 
@@ -58,7 +58,11 @@ O que já existe no jogo para apoiar: `fx/muzzleFx.ts` (o clarão da boca), `fx/
 3. **Os números de força** (dano, alcance, recarga, calor) ficam em **um painel à parte, com o relatório de equilíbrio do `balance.ts` ao lado**: o Estúdio mostra o que o ajuste faz com a meta de equilíbrio, e **a regra do jogo continua protegida por teste de simulação (G14)**. Mexer na força muda a **jogabilidade**: não é só gosto, então a validação aqui é a do `balance.ts`, e uma mudança de força vai com o **teste de simulação** que já existe.
 4. **Custo de CPU:** só o que o jogo já paga hoje (os mesmos pools, G4/G5); o Estúdio roda fora do jogo.
 
-### 3.3 Depois: MECHS 3D
+### 3.3 MECHS 3D: o primeiro corte é o movimento (P321, 06/11); o resto vem depois
+
+**Pronto (a aba abre a prévia de verdade):** a geração 2 do movimento ao lado da geração 3 (`entities/geracao3.ts`, atrás de `mech:gen3`), com o `Vector09` e o `MechBase.render` do jogo (a regra 3 do módulo: a prévia usa o código do jogo final), os quatro chassis procedurais, os modos PARADO, ANDAR, CORRER e o ROTEIRO (`entities/roteiroDeMovimento.ts`, o mesmo da bancada `npm run mech:movimento`), a câmera, DESMONTAR (isolar parte, explodir), a **ficha lida do código** (alcance, agachamento, passos por segundo com o pé plantado e com o teto) e os **sete ajustes de gosto** (teto da cadência, agachamento, molejo do passo, inclinação do tronco, tranco do pouso, rigidez e amortecimento das molas) que o SALVAR grava em `client/src/entities/movimentoGen3.json` (as faixas seguras moram em `movimentoGen3.faixas.json`, lidas pelo jogo, pelo teste e pelo servidor). O módulo é `scripts/estudio/modulo-mechs.mjs` (a prévia é montada pelo Vite em `.tmp/estudio/mechs/`, só quando algum fonte muda) e a página é `scripts/estudio/mechs/`. **Falta:** cores por parte, encaixes de arma, escala e importar um `.glb` (o resto desta seção).
+
+**O desenho completo:**
 
 O que já existe: `entities/chassis.ts` (os números dos chassis), `entities/meshKit.ts` (o desenho dos Mechs gerados) e o contrato dos robôs importados (`.glb`: `.decepticons/MECHS_IMPORTADOS.md`, `npm run mech:inspecionar`, `npm run mech:bocas`). O caminho: um **visualizador 3D** (o mesmo `Hangar` já monta e gira o robô) com **cores por parte**, **encaixes de arma** (a boca de cada encaixe é medida e conferida), escala e animação, gravando num dado por chassi. **Importar um `.glb` novo** pelo Estúdio passaria pelo `mech:inspecionar` (o contrato do arquivo) antes de entrar. Cada robô já custou uma sessão de correção por falta desse contrato: o Estúdio o torna automático.
 

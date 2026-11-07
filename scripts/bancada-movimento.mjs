@@ -44,30 +44,17 @@ import { MEDIUM_MECH_BLUEPRINT } from '/src/entities/mechBlueprint.ts';
 import { MECH_GRAVITY } from '/src/entities/MechBase.ts';
 import { carregarGeracao3, setMovimentoGen3 } from '/src/entities/movimentoGen3.ts';
 import { medirGeometriaDaPerna } from '/src/entities/passadaRig.ts';
+import { comandoDoRoteiro, DT, integrar, novoEstado, QUADROS } from '/src/entities/roteiroDeMovimento.ts';
 
 const CHASSI = ${JSON.stringify(CHASSI)};
 const COM_VIDEO = ${JSON.stringify(COM_VIDEO)};
 const stats = CHASSIS[CHASSI];
 const bp = BLUEPRINT_BY_CHASSIS[CHASSI] || MEDIUM_MECH_BLUEPRINT;
 const ALTURA = stats.height;
-const W = 1600, H = 600, DT = 1 / 60;
+const W = 1600, H = 600;
 const F = (s) => Math.round(s / DT);
-const QUADROS = F(9.4);
 const VMAX = stats.moveSpeed;
-const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 const RAD = 180 / Math.PI;
-
-// O roteiro, por quadro: parado, arranca e corre, freia, pula, anda virando, dash, tiro, para.
-function roteiro(i) {
-  const e = { v: 0, giro: 0, pulo: false, dash: false, tiro: false };
-  if (i >= F(0.6) && i < F(4.0)) e.v = VMAX;
-  if (i === F(5.0)) e.pulo = true;
-  if (i >= F(6.6) && i < F(7.3)) e.v = VMAX * 0.5;
-  if (i >= F(6.8) && i < F(7.3)) e.giro = 1.5;
-  if (i === F(7.3)) e.dash = true;
-  if (i === F(8.2)) e.tiro = true;
-  return e;
-}
 
 const v3 = new THREE.Vector3();
 const pos = (o) => { o.getWorldPosition(v3); return { x: v3.x, y: v3.y, z: v3.z }; };
@@ -95,7 +82,7 @@ function criarLado(gen3, nome) {
   const cam = new THREE.PerspectiveCamera(30, (W / 2) / H, 0.1, 800);
   const lado = {
     gen3: gen3, nome: nome, mech: mech, scene: scene, cam: cam, i: 0, passos: [], prev: null, prevJ: null, prevPelve: 0,
-    sim: { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, grounded: true, dash: 0, voou: false, tPouso: -1 },
+    sim: novoEstado(),
     sondas: sondas(mech),
     m: { slip: [], pisoMin: Infinity, pelveMin: Infinity, pelveMax: -Infinity, torsoMin: Infinity, torsoMax: -Infinity,
          freioMin: Infinity, freioMax: -Infinity, alturaParado: 0, pousoMin: Infinity, saltoJunta: 0, tSaltoJunta: 0, saltoPelve: 0, tSaltoPelve: 0 },
@@ -108,23 +95,10 @@ function criarLado(gen3, nome) {
 function avancar(l, i) {
   setMovimentoGen3(l.gen3);
   l.i = i;
-  const e = roteiro(i);
+  const e = comandoDoRoteiro(i, VMAX);
   const s = l.sim, m = l.mech;
-  s.yaw += e.giro * DT;
-  if (e.dash) { s.dash = stats.dashDuration; m.dashTimeLeft = s.dash; }
-  const fx = -Math.sin(s.yaw), fz = -Math.cos(s.yaw);
-  let vAlvo = e.v;
-  if (s.dash > 0) { vAlvo = stats.dashSpeed; s.dash -= DT; m.dashTimeLeft = Math.max(0, s.dash); }
-  const acc = (s.grounded ? stats.groundAccel : stats.airAccel) * DT;
-  s.vx += clamp(fx * vAlvo - s.vx, -acc, acc);
-  s.vz += clamp(fz * vAlvo - s.vz, -acc, acc);
-  if (e.pulo && s.grounded) { s.vy = stats.jumpVelocity; s.grounded = false; s.voou = true; }
-  if (!s.grounded) {
-    s.vy -= MECH_GRAVITY * DT;
-    s.y += s.vy * DT;
-    if (s.y <= 0 && s.vy < 0) { s.y = 0; s.vy = 0; s.grounded = true; if (s.tPouso < 0) s.tPouso = i; }
-  }
-  s.x += s.vx * DT; s.z += s.vz * DT;
+  integrar(s, e, stats, MECH_GRAVITY, i);
+  m.dashTimeLeft = Math.max(0, s.dash);
   m.velocity.set(s.vx, s.vy, s.vz);
   m.grounded = s.grounded;
   m.applyFacing(s.yaw, 0);
