@@ -57,6 +57,16 @@ const mediaSonora = async (n, intervaloMs) => {
 try {
   await page.goto(`${base}?mapa=arena&depurar`);
   await page.waitForFunction(() => !!window.__game, null, { timeout: 180_000 });
+  // Cada voz que começa (o "Combate!" do narrador, o rádio) abaixa a música (P316): a bancada registra quando, para nunca medir o nível da música com uma voz por cima.
+  await page.evaluate(() => {
+    const audio = window.__game.audio;
+    const original = audio.aoFalar;
+    window.__vozes = [];
+    audio.aoFalar = (d) => {
+      window.__vozes.push({ t: performance.now(), d });
+      original?.(d);
+    };
+  });
   await dormir(3000);
   // O primeiro clique começa a partida (e o áudio): a música entra depois, quando o contexto de áudio existe.
   for (let i = 0; i < 6; i++) {
@@ -67,8 +77,21 @@ try {
   await page.waitForFunction(() => !!window.__game.musica?.tocando, null, { timeout: 120_000 }).catch(() => {});
   confere(await page.evaluate(() => !!window.__game.musica?.tocando), 'a música de combate liga com a partida');
   await dormir(2500);
+  // A abertura da rodada fala "Combate!" (o único clipe gravado do narrador): espera ela tocar e a música voltar, para o calmo e o combate serem medidos sem voz por cima.
+  await page.waitForFunction(() => window.__vozes.length > 0, null, { timeout: 10_000 }).catch(() => {});
+  const semVoz = () =>
+    page.waitForFunction(() => {
+      const ultima = window.__vozes[window.__vozes.length - 1];
+      return !ultima || performance.now() > ultima.t + ultima.d * 1000 + 1500;
+    }, null, { timeout: 15_000 });
+  await semVoz();
+  const vozesAntes = await page.evaluate(() => window.__vozes.length);
+  console.log(`vozes antes das medidas: ${vozesAntes} (a música só é medida 1,5 s depois da última)`);
 
-  const calmo = await mediaSonora(8, 150);
+  // O compasso da música dura 2,2 s (108 BPM): uma janela de 8 leituras (~0,7 s de som) cai em pontos diferentes do padrão a cada rodada e o RMS oscila (o mesmo código deu 1,11× e 1,23× no
+  // mesmo PC). A medida do calmo e do combate cobre dois compassos inteiros (30 leituras de 150 ms, ~4,5 s), para o RMS comparar o padrão inteiro com o padrão inteiro.
+  const LEITURAS_DE_DOIS_COMPASSOS = 30;
+  const calmo = await mediaSonora(LEITURAS_DE_DOIS_COMPASSOS, 150);
   confere((await page.evaluate(() => window.__game.musica.nivel)) === 0, 'no calmo, a música fica no nível 0 (só o colchão do pad)');
   confere(calmo > 0.001, `o colchão do pad é audível no calmo (RMS ${calmo.toFixed(4)})`);
 
@@ -78,15 +101,32 @@ try {
     g.match.onMechKilled(g.match.bots.mechs[0], g.mech.root.position, g.mech);
   });
   confere((await page.evaluate(() => window.__game.musica.nivel)) === 2, 'um abate do jogador leva a música ao nível 2 (o combate)');
+  // Uma morte só segura o combate por ~3 s (energia 6, meia-vida de 4 s, limiar 3,5) e a medida tem ~5 s: mais duas mortes, pelo caminho público da música, seguram o nível 2 até o fim.
+  await page.evaluate(() => { window.__game.musica.registrarAbate(); window.__game.musica.registrarAbate(); });
   await dormir(800);
-  const combate = await mediaSonora(8, 150);
-  confere(combate > calmo * 1.3, `no combate, a música soa mais cheia que no calmo (RMS ${combate.toFixed(4)} contra ${calmo.toFixed(4)})`);
+  const combate = await mediaSonora(LEITURAS_DE_DOIS_COMPASSOS, 150);
+  const vozesNoCombate = (await page.evaluate(() => window.__vozes.length)) - vozesAntes;
+  console.log(`vozes durante a medida do combate: ${vozesNoCombate}`);
+  confere((await page.evaluate(() => window.__game.musica.nivel)) === 2, 'o combate segurou o nível 2 até o fim da medida (a janela não atravessou uma descida de nível)');
+  confere(combate > calmo * 1.3, `no combate, a música soa mais cheia que no calmo (RMS ${combate.toFixed(4)} contra ${calmo.toFixed(4)}; ${vozesNoCombate} voz por cima)`);
 
-  // Pausa: a música cala.
+  // A mixagem (P316): toda voz que começa (narrador, rádio de campo) avisa o AudioSystem, e a música desce pelo tempo da fala e volta depois.
+  confere(await page.evaluate(() => typeof window.__game.audio.aoFalar === 'function'), 'o AudioSystem avisa a música quando uma voz começa (aoFalar ligado pelo Game)');
+  await page.evaluate(() => window.__game.audio.aoFalar(1.6));
+  await dormir(450);
+  const sobAVoz = await mediaSonora(5, 150);
+  confere(sobAVoz < combate * 0.6, `sob a voz, a música desce (RMS ${sobAVoz.toFixed(4)} contra ${combate.toFixed(4)} no combate)`);
+  await dormir(2600);
+  const depoisDaVoz = await mediaSonora(6, 150);
+  confere(depoisDaVoz > sobAVoz * 1.5, `depois da fala, a música volta (RMS ${depoisDaVoz.toFixed(4)} contra ${sobAVoz.toFixed(4)} sob a voz)`);
+
+  // Pausa no MEIO de uma fala: a música cala e a volta que a fala tinha agendado não a traz de novo com o jogo parado.
+  await page.evaluate(() => window.__game.audio.aoFalar(2.5));
+  await dormir(200);
   await page.evaluate(() => window.__game.setPlaying(false));
   await dormir(3500);
   const pausado = await mediaSonora(3, 200);
-  confere(!(await page.evaluate(() => window.__game.musica.tocando)) && pausado < calmo * 0.25, `na pausa a música cala (RMS ${pausado.toFixed(4)})`);
+  confere(!(await page.evaluate(() => window.__game.musica.tocando)) && pausado < calmo * 0.25, `na pausa (mesmo no meio de uma fala) a música cala e não volta (RMS ${pausado.toFixed(4)})`);
   confere(erros.length === 0, `sem erro de página${erros.length ? ` (${erros.join(' | ')})` : ''}`);
 } catch (e) {
   falhas.push(`a bancada quebrou: ${e.message}`);

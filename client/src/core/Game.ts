@@ -157,6 +157,7 @@ import { ServerStatus } from '../ui/ServerStatus';
 import { type FabricaDeCadeiaDeVoz, GameRecorder } from './GameRecorder';
 import type { ClipRecorder } from '../clip/ClipRecorder';
 import type { MusicaDeCombate } from '../audio/MusicaDeCombate';
+import type { RadioDeCampo } from '../audio/RadioDeCampo';
 import { Telemetry } from './telemetry';
 import { reloadWithout } from './url';
 import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
@@ -1051,6 +1052,8 @@ export class Game {
       reserva: (texto) => locucao.falar(texto),
     });
     this.narrador.preparar();
+    // A mixagem (P316): toda voz que começa (narrador, rádio de campo) abaixa a música de combate pelo tempo da fala.
+    this.audio.aoFalar = (duracao) => this.musica?.abaixar(duracao);
     this.hud.killBanner.som = (streak) => {
       this.audio.playKillStreak(streak);
       const chave = chaveDaSequencia(streak);
@@ -1613,6 +1616,37 @@ export class Game {
     else m.avisoDoClipe('este navegador não grava vídeo', 2400);
   }
 
+  /**
+   * P316: o rádio de campo, a voz gravada do Comandante nas chamadas do cérebro do time (o piloto aliado e o rádio inimigo interceptado). Só com `audio:radio` liberado e o
+   * narrador ligado; carregado sob demanda (o catálogo das falas fica fora do pacote de partida). A primeira chamada só dispara a carga; as seguintes já falam.
+   */
+  private radio: RadioDeCampo | null = null;
+  private radioCarregando: Promise<void> | null = null;
+  private radioLigado(): boolean {
+    return funcionalidadeVisivel('audio:radio') && (narracaoDaUrl() ?? this.settings.value.narracao) !== 'off';
+  }
+  private carregarRadio(): Promise<void> {
+    if (!this.radioCarregando) {
+      this.radioCarregando = import('../audio/RadioDeCampo').then((m) => {
+        this.radio = new m.RadioDeCampo({
+          player: {
+            pronto: (n) => this.audio.temAmostra(`voz:${n}`),
+            pedir: (n, url) => this.audio.pedirVoz(`voz:${n}`, url),
+            tocar: (n, ganho) => this.audio.tocarVoz(`voz:${n}`, ganho),
+          },
+          base: import.meta.env.BASE_URL,
+          agora: () => performance.now() / 1000,
+          ocupado: () => this.narrador.falando,
+          bipe: (abrir) => this.audio.playRadioBip(abrir),
+        });
+      });
+    }
+    return this.radioCarregando;
+  }
+  private prepararRadio(): void {
+    if (this.radioLigado()) void this.carregarRadio().then(() => this.radio?.preparar());
+  }
+
   /** P315: a música de combate, carregada na primeira partida (o `import()` fica fora do pacote de partida). */
   private musica: MusicaDeCombate | null = null;
   private musicaCarregando: Promise<void> | null = null;
@@ -2025,13 +2059,18 @@ export class Game {
       this.killFeed.push(`◈ ${from}: CONTATO`, name, false);
     };
     // O cérebro do time (P269): o que a pinça e o reagrupamento dizem no rádio aparece no feed, como o aviso de contato. O interruptor `ia:time` do painel de visibilidade liga e desliga a coordenação ao vivo.
-    this.match.onFala = (from, fala, target) => {
+    this.match.onFala = (from, fala, target, allied) => {
       if (this.online) return;
       const name = !target ? FALA_SEM_ALVO : target === mech ? 'VOCÊ' : this.round.scoreOf(target)?.name ?? 'ALVO';
       this.killFeed.push(`◈ ${from}: ${FALA_TEXTO[fala]}`, name, false);
+      // P316: a voz gravada da chamada: o piloto aliado, ou o rádio inimigo interceptado (o plano que o time inimigo vai executar).
+      if (!this.radioLigado()) return;
+      if (this.radio) this.radio.chamada(allied, fala);
+      else void this.carregarRadio();
     };
     this.match.setCoordenacao(funcionalidadeVisivel('ia:time'));
     aoMudarVisibilidade(() => this.match.setCoordenacao(funcionalidadeVisivel('ia:time')));
+    aoMudarVisibilidade(() => this.prepararRadio());
     // A fase escura (P282): restrita até o Comandante liberar; o chip dele a liga por cima, para testar.
     this.sincronizarFaseEscura();
     aoMudarVisibilidade(() => this.sincronizarFaseEscura());
@@ -2508,6 +2547,7 @@ export class Game {
     // P315: a música de combate toca enquanto a partida roda, e para quando ela pausa ou acaba.
     if (playing) void this.carregarMusica().then(() => this.musica?.ligar());
     else this.musica?.desligar();
+    if (playing) this.prepararRadio();
     // O funil (P193): a primeira partida da página conta ao começar a jogar; as seguintes contam pelo `onRoundStart`. Achado ao ligar a audiência: antes, quem jogava uma rodada só nunca virava "partida iniciada".
     if (playing && !this.primeiraPartidaContada) {
       this.primeiraPartidaContada = true;

@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { request } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { join, resolve } from 'node:path';
@@ -66,6 +66,12 @@ describe('Estúdio, aba VOZES (P151, P155): o servidor', () => {
       mkdirSync(join(raiz, rel, '..'), { recursive: true });
       copyFileSync(REAL(rel), join(raiz, rel));
     }
+    // O que o Comandante muda no Estúdio (as falas que grava e salva, o manifesto do jogo) NÃO entra no teste pelo conteúdo real: a base é fixa. Sem isto, gravar a primeira fala
+    // reprovaria o `npm run check` (e o "publica os sons" travaria): os testes cobram estrutura, nunca o gosto nem o estado da gravação dele. `_nota` e `alvo` vêm do arquivo real (o esquema).
+    const gravadasReal = JSON.parse(readFileSync(REAL('scripts/vozes-gravadas.json'), 'utf8')) as Record<string, unknown>;
+    writeFileSync(join(raiz, 'scripts/vozes-gravadas.json'), JSON.stringify({ ...gravadasReal, gravacoes: [] }, null, 2) + '\n');
+    const manifestoReal = JSON.parse(readFileSync(REAL('client/src/audio/vozesGeradas.json'), 'utf8')) as { _nota: string };
+    writeFileSync(join(raiz, 'client/src/audio/vozesGeradas.json'), JSON.stringify({ _nota: manifestoReal._nota, br: ['combate'], en: ['combate'], ru: ['combate'], cn: ['combate'] }, null, 2) + '\n');
     mkdirSync(join(raiz, 'origem'), { recursive: true });
     servidor = criarEstudio({ raiz, origem: join(raiz, 'origem'), origemVozes: vozes, ffmpeg });
     await new Promise<void>((ok) => servidor.listen(0, '127.0.0.1', ok));
@@ -86,7 +92,7 @@ describe('Estúdio, aba VOZES (P151, P155): o servidor', () => {
     const e = await estado();
     expect(e.sotaques).toEqual(['br', 'en', 'ru', 'cn']);
     expect(e.falas).toHaveLength(narradorJson.falas.length + radioJson.falas.length);
-    expect(e.falas.filter((f: { canal: string }) => f.canal === 'narrador')).toHaveLength(19);
+    expect(e.falas.filter((f: { canal: string }) => f.canal === 'narrador')).toHaveLength(narradorJson.falas.length);
     expect(e.falas.find((f: { chave: string }) => f.chave === 'combate').texto.br).toBe('Combate!');
     expect(e.geradas.br).toContain('combate');
     expect(e.tomadas).toEqual([]);

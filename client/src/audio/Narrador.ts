@@ -55,6 +55,11 @@ export class Narrador {
 
   constructor(private readonly o: OpcoesDoNarrador) {}
 
+  /** O narrador está falando agora (um clipe ou a voz de reserva ainda no ar)? O rádio de campo (P316) espera a vez dele e nunca fala por cima. */
+  get falando(): boolean {
+    return this.o.agora() < this.ocupadoAte;
+  }
+
   /** Os sotaques que o jogador pode ouvir agora: um, ou todos no modo mistura (`off` = nenhum). */
   private sotaquesAtivos(): readonly Sotaque[] {
     const n = this.o.narracao();

@@ -20,6 +20,8 @@ describe('AudioSystem - T5 Elemental Audio & Fallbacks', () => {
       audio.playAutocannonShot();
       audio.playSonicShot();
       audio.playKillStreak(1);
+      audio.playRadioBip(true);
+      audio.playRadioBip(false);
       audio.playKillStreak(4);
       audio.playKillStreak(99);
       audio.playKillStreak(0);
