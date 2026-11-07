@@ -45,14 +45,18 @@ export const DESENHO_DE_PROJETO: DesenhoDoGaviao = { ombreira: 1, inclinacao: 0.
 /** O desenho salvo (o painel DESENHO do Estúdio grava `desenhoGaviao.json`): é o que o jogo constrói. */
 export const DESENHO_SALVO: DesenhoDoGaviao = { ...DESENHO_DE_PROJETO, ...(desenhoSalvo as Partial<DesenhoDoGaviao>) };
 
-/** O blueprint do Gavião com os números de desenho dados (o corpo os lê de `estilo`). A perna não muda de comprimento: a passada da geração 3 não depende do desenho. */
-export function blueprintDoGaviao(d: DesenhoDoGaviao = DESENHO_SALVO): MechBlueprint {
+/**
+ * O blueprint do Gavião com os números de desenho dados (o corpo os lê de `estilo`). A perna não muda de comprimento: a passada da geração 3 não depende do desenho.
+ * `extra` são chaves de montagem que não são desenho: `peitoDeFora`, `cabecaDeFora` e `ombreiraDeFora` (1) deixam essa peça do corpo de fora, para a peça do Blender ocupar o lugar
+ * (a Prova Blender, P329: a aba MECHS 3D alterna entre o kit em código e o Blender no mesmo robô).
+ */
+export function blueprintDoGaviao(d: DesenhoDoGaviao = DESENHO_SALVO, extra: Readonly<Record<string, number>> = {}): MechBlueprint {
   return {
     id: 'gaviao',
     corpo: 'gaviao-h3',
     // Um aço de gunmetal claro: a luz da arena é fria e fraca (ambiente a 0,25), e um casco mais escuro que isto vira preto na tela do jogo (medido na prévia COMO NO JOGO).
     cores: { armor: 0x7d838b },
-    estilo: { ...d },
+    estilo: { ...d, ...extra },
     referenceHeight: 4.7,
     // O tronco tem 1,4: o topo do peito (1,39) fica na linha do ombro (a junta a 1,18 mais a tampa da ombreira), e o queixo pousa nele.
     torso: { width: 1.16 * d.peito, height: 1.4, depth: 0.78 },
@@ -152,24 +156,34 @@ export const CORPO_GAVIAO_H3: CorpoDoRig = {
     // O abdômen: o núcleo escuro desce para dentro do cinto da pelve, e as costelas se empilham por cima. Sem vão em nenhuma pose do tronco.
     box(torso, tw * 0.46 * d.cintura, 0.7, td * 0.5, M.frame, 0, 0.15, 0);
     for (let i = 0; i < 4; i++) placa(torso, tw * 0.52 * d.cintura, 0.08, td * 0.58, 0.02, M.armor, 0, 0.06 + 0.11 * i, 0);
-    placa(torso, tw * 0.8, 0.17, td * 0.7, 0.04, M.armor, 0, 0.535, -td * 0.02);
-    // O peito: o casco, as duas placas peitorais abertas em V, a crista do esterno e a gola que desce para os ombros.
-    casca(torso, [{ y: 0.6, w: tw * 0.74, d: td * 0.72 }, { y: 0.98, w: tw * 1.0, d: td * 0.92 }, { y: topo, w: tw * 1.02, d: td * 0.78 }], 0.09, M.armor, 0, 0, -td * 0.02);
+    // O peito (o diafragma, o casco, as placas peitorais, o esterno, a gola, o pescoço e a placa das costas): `peitoDeFora` o deixa de fora para a peça do Blender ocupar o lugar (P329).
+    const peito = (bp.estilo?.peitoDeFora ?? 0) <= 0;
+    if (peito) {
+      placa(torso, tw * 0.8, 0.17, td * 0.7, 0.04, M.armor, 0, 0.535, -td * 0.02);
+      // O casco do peito.
+      casca(torso, [{ y: 0.6, w: tw * 0.74, d: td * 0.72 }, { y: 0.98, w: tw * 1.0, d: td * 0.92 }, { y: topo, w: tw * 1.02, d: td * 0.78 }], 0.09, M.armor, 0, 0, -td * 0.02);
+    }
     for (const lado of [-1, 1]) {
-      const peitoral = placa(torso, tw * 0.4, 0.42, 0.12, 0.04, M.armor, lado * tw * 0.22, 1.02, -td * 0.47);
-      peitoral.rotation.set(0.2, -lado * 0.22, 0);
-      const gola = placa(torso, 0.3, 0.2, 0.3, 0.04, M.armor, lado * 0.36, topo - 0.02, 0);
-      gola.rotation.z = -lado * 0.45;
+      if (peito) {
+        // As duas placas peitorais abertas em V e a gola que desce para os ombros.
+        const peitoral = placa(torso, tw * 0.4, 0.42, 0.12, 0.04, M.armor, lado * tw * 0.22, 1.02, -td * 0.47);
+        peitoral.rotation.set(0.2, -lado * 0.22, 0);
+        const gola = placa(torso, 0.3, 0.2, 0.3, 0.04, M.armor, lado * 0.36, topo - 0.02, 0);
+        gola.rotation.z = -lado * 0.45;
+      }
       // O eixo escuro do ombro, entre o peito e a junta do braço.
       const eixo = cyl(torso, 0.14, 0.5, M.frame, lado * (bp.arms.mountX - 0.12), yOmbro, 0);
       eixo.rotation.z = Math.PI / 2;
-      if (d.acentos > 0.05) perigo(torso, lado * tw * 0.3, 0.86, -td * 0.47 - 0.07, M.paint, 0.8 * d.acentos, 3, 0.62 * lado);
+      if (peito && d.acentos > 0.05) perigo(torso, lado * tw * 0.3, 0.86, -td * 0.47 - 0.07, M.paint, 0.8 * d.acentos, 3, 0.62 * lado);
     }
-    box(torso, 0.1, 0.62, 0.05, M.frame, 0, 0.98, -td * 0.47 - 0.065);
-    cyl(torso, 0.17, 0.3, M.frame, 0, topo + 0.06, -0.03);
+    if (peito) {
+      // A crista do esterno e o pescoço.
+      box(torso, 0.1, 0.62, 0.05, M.frame, 0, 0.98, -td * 0.47 - 0.065);
+      cyl(torso, 0.17, 0.3, M.frame, 0, topo + 0.06, -0.03);
+    }
     // A mochila fina nas costas (com a placa de trás), os respiros (acendem com o calor) e os dois propulsores (a chama do dash).
     const pack = bp.backPack;
-    placa(torso, tw * 0.82, 0.8, 0.08, 0.04, M.armor, 0, 0.98, td * 0.5);
+    if (peito) placa(torso, tw * 0.82, 0.8, 0.08, 0.04, M.armor, 0, 0.98, td * 0.5);
     placa(torso, pack.width, pack.height, pack.depth, 0.05, M.frame, 0, th * 0.66, td * 0.78);
     for (const lado of [-1, 1]) {
       for (let i = 0; i < bp.vents.count; i++) box(torso, bp.vents.width, bp.vents.height / bp.vents.count, 0.05 * scale, M.rocket, lado * pack.width * 0.3, th * (0.5 + i * 0.2), td * 0.78 + pack.depth / 2 + 0.02);
@@ -179,6 +193,7 @@ export const CORPO_GAVIAO_H3: CorpoDoRig = {
   },
 
   cabeca(head, bp, M) {
+    if ((bp.estilo?.cabecaDeFora ?? 0) > 0) return; // o capacete é a peça do Blender (P329)
     const { width: hw, height: hh, depth: hd } = bp.head;
     // O pivô da cabeça fica a 1,75 do tronco; o queixo tem de pousar na linha do ombro (1,39): a base do crânio desce 0,25 do pivô.
     const y0 = -0.25;
@@ -196,7 +211,7 @@ export const CORPO_GAVIAO_H3: CorpoDoRig = {
     const d = desenhoDe(bp);
     const ar = bp.arms;
     const yAntebraco = -ar.upperLength * 1.5;
-    ombreira(g, lado, d.ombreira, d.inclinacao, M, d.acentos);
+    if ((bp.estilo?.ombreiraDeFora ?? 0) <= 0) ombreira(g, lado, d.ombreira, d.inclinacao, M, d.acentos); // `ombreiraDeFora`: a ombreira é a peça do Blender (P329)
     casca(g, [{ y: -0.1, w: ar.upperWidth * 1.1, d: ar.upperWidth * 1.1 }, { y: -ar.upperLength * 1.1, w: ar.upperWidth * 0.85, d: ar.upperWidth * 0.85 }], 0.04, M.armor, 0, 0, 0);
     cyl(g, ar.upperWidth * 0.28, ar.upperLength * 1.2, M.frame, 0, -ar.upperLength * 0.6, 0);
     cupula(g, ar.upperWidth * 0.7, ar.upperWidth * 0.7, ar.upperWidth * 0.7, M.frame, 0, -ar.upperLength * 1.42, 0);

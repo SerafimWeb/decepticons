@@ -169,6 +169,28 @@ describe('o módulo MECHS 3D no servidor do Estúdio', () => {
     }
   });
 
+  it('serve as peças do Blender (.glb) de .decepticons/pecas, com a mesma regra de nome simples dos modelos', async () => {
+    const pasta = join(raiz, '.decepticons/pecas');
+    mkdirSync(pasta, { recursive: true });
+    const bytes = Buffer.from([0x67, 0x6c, 0x54, 0x46, 2, 0, 0, 0]);
+    writeFileSync(join(pasta, 'peca.glb'), bytes);
+    writeFileSync(join(pasta, 'leia-me.txt'), 'não é peça');
+    const ok = await http(porta, 'GET', '/api/mechs/app/pecas/peca.glb');
+    expect(ok.status).toBe(200);
+    expect(ok.tipo).toBe('model/gltf-binary');
+    expect(ok.corpo.equals(bytes)).toBe(true);
+    for (const caminho of [
+      '/api/mechs/app/pecas/leia-me.txt', // não é .glb
+      '/api/mechs/app/pecas/nao-existe.glb',
+      '/api/mechs/app/pecas/', // sem nome
+      '/api/mechs/app/pecas/sub/peca.glb', // com barra
+      '/api/mechs/app/pecas/..%2fpeca.glb', // sobe uma pasta
+      '/api/mechs/app/pecas/%2e%2e%2f%2e%2e%2fpackage.json',
+    ]) {
+      expect((await http(porta, 'GET', caminho)).status, caminho).toBe(404);
+    }
+  });
+
   it('grava os ajustes válidos, na ordem das faixas, e o estado reflete', async () => {
     const novos = { ...ajustesDoJogo, ciclosMax: 1.9, rigidez: 1.25 };
     const r = await http(porta, 'PUT', '/api/mechs/ajustes', JSON.stringify({ ajustes: novos }));

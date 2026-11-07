@@ -38,6 +38,7 @@
     "mech:bocas": "node scripts/medir-bocas.mjs",
     "mech:movimento": "node scripts/bancada-movimento.mjs",
     "mech:folha": "node scripts/folha-modelo.mjs",
+    "mech:pecas": "node scripts/pecas-blender.mjs",
     "server": "node scripts/server.mjs",
     "fumaca": "node scripts/fumaca-servidor.mjs",
     "admin": "node scripts/admin.mjs",

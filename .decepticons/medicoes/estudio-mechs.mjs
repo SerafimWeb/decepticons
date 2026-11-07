@@ -137,6 +137,20 @@ try {
   const larguraGrande = await quadro.evaluate(() => window.mechsProva().lados[0].larguraX);
   ok('a ombreira no máximo alarga o robô (o desenho muda a geometria de verdade)', larguraGrande > larguraDeFabrica + 0.05, `${larguraDeFabrica.toFixed(2)} → ${larguraGrande.toFixed(2)} m`);
   await quadro.click('button:has-text("PADRÃO DO DESENHO")');
+
+  // As peças do Blender (a Prova Blender, P329): o botão troca o peito, a ombreira e o capacete do kit pelas peças .glb, no MESMO robô andando.
+  const pecasNoRig = () => quadro.evaluate(() => window.mechsProva().lados.map((l) => l.pecasNoRig));
+  ok('o Gavião começa com as peças do código (nenhuma malha do Blender no rig)', (await quadro.evaluate(() => window.mechsProva().pecas)) === 'codigo' && (await pecasNoRig()).every((n) => n === 0));
+  await quadro.click('button:text-is("DO BLENDER")');
+  await quadro.waitForFunction(() => { const p = window.mechsProva?.(); return p && p.pecas === 'blender' && p.lados.every((l) => l.pronto && l.pecasNoRig > 0); }, null, { timeout: 120_000 });
+  const comBlender = await pecasNoRig();
+  ok('DO BLENDER põe as peças nos pivôs do rig (peito, capacete e as duas ombreiras)', comBlender.every((n) => n >= 8 && n <= 12), 'malhas ' + comBlender.join(' / '));
+  const antesDasPecas = await quadro.evaluate(() => window.mechsProva().quadros);
+  await quadro.waitForFunction((q) => window.mechsProva().quadros > q + 60, antesDasPecas, { timeout: 120_000 });
+  ok('o robô com as peças do Blender anda (sem erro de página)', erros.length === 0, erros.slice(0, 2).join(' | '));
+  await quadro.click('button:text-is("DO CÓDIGO")');
+  await quadro.waitForFunction(() => { const p = window.mechsProva?.(); return p && p.pecas === 'codigo' && p.lados.every((l) => l.pronto && l.pecasNoRig === 0); }, null, { timeout: 120_000 });
+  ok('DO CÓDIGO devolve as peças do kit (nenhuma malha do Blender no rig)', true);
   await quadro.selectOption('select', 'vector09');
   await quadro.waitForFunction(() => { const p = window.mechsProva?.(); return p && p.chassi === 'vector09' && p.lados.every((l) => l.pronto); }, null, { timeout: 60_000 });
 
