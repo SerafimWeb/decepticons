@@ -18,18 +18,10 @@ export interface MechBlueprint {
   readonly canhaoNaCabeca?: boolean;
   /** Tamanho das armas dos encaixes de peso em relação ao padrão (1). O Colossus leva armas do tamanho do corpo (P302). */
   readonly escalaDosEncaixes?: number;
-  readonly label: string;
   readonly referenceHeight: number;
   readonly torso: { readonly width: number; readonly height: number; readonly depth: number };
   readonly head: {
     readonly width: number; readonly height: number; readonly depth: number; readonly antenna: number;
-    /**
-     * Canhão giratório no lugar da cabeça (pedido do dono, 29/09), em vez do rosto de sempre. Mesmo
-     * espaço, mesma posição — a zona de acerto da cabeça (`combat/damage.ts`, fração da altura total)
-     * não muda; só a forma muda. Gira devagar sozinho (ver `MechBase.animate`), decorativo, sem ligar
-     * com a mira real do jogador — a "arma" de verdade continua nos braços, como qualquer outro Mech.
-     */
-    readonly turret?: boolean;
   };
   readonly shoulders: { readonly width: number; readonly height: number; readonly depth: number };
   readonly hips: { readonly width: number; readonly depth: number };
@@ -37,14 +29,6 @@ export interface MechBlueprint {
   readonly arms: { readonly mountX: number; readonly upperWidth: number; readonly upperLength: number; readonly forearmWidth: number; readonly forearmDepth: number };
   readonly vents: { readonly count: number; readonly width: number; readonly height: number };
   readonly backPack: { readonly width: number; readonly height: number; readonly depth: number };
-  /**
-   * Cauda decorativa (opcional): 2–3 segmentos afunilando, presos na pelve, sem junta nem animação.
-   * Puramente visual — não move, não é uma parte de dano (`MechPart` continua com as 6 de sempre) e não
-   * participa da mira nem do meshKit é reaproveitado, então custa 0 alocação por quadro (G4/G5). Existe
-   * porque braço e cabeça já estão ligados à mira e à zona de acerto (ver achado de 29/09 no histórico);
-   * a cauda é o jeito seguro de dar identidade animal sem mexer nisso.
-   */
-  readonly tail?: { readonly segments: number; readonly baseRadius: number; readonly length: number; readonly droop: number };
 }
 
 /**
@@ -56,7 +40,7 @@ export interface MechBlueprint {
  * do médio e do pesado, não só o tamanho.
  */
 export const LIGHT_MECH_BLUEPRINT: MechBlueprint = {
-  id: 'ferret', label: 'LEVE', referenceHeight: 4.5,
+  id: 'ferret', referenceHeight: 4.5,
   torso: { width: 1.0, height: 0.85, depth: 0.72 },
   head: { width: 0.46, height: 0.38, depth: 0.5, antenna: 0.42 },
   shoulders: { width: 0.4, height: 0.4, depth: 0.46 }, hips: { width: 0.6, depth: 0.42 },
@@ -67,7 +51,7 @@ export const LIGHT_MECH_BLUEPRINT: MechBlueprint = {
 
 /** Vector-09: assalto médio, mantendo a proporção visual aprovada do modelo atual. */
 export const MEDIUM_MECH_BLUEPRINT: MechBlueprint = {
-  id: 'vector09', label: 'MÉDIO', referenceHeight: 5.3,
+  id: 'vector09', referenceHeight: 5.3,
   torso: { width: 2.0, height: 1.4, depth: 1.5 },
   head: { width: 0.75, height: 0.5, depth: 0.85, antenna: 0.3 },
   shoulders: { width: 0.7, height: 0.6, depth: 0.9 }, hips: { width: 1.3, depth: 0.9 },
@@ -83,11 +67,11 @@ export const MEDIUM_MECH_BLUEPRINT: MechBlueprint = {
  * de urso/felino agachado, não de humanoide P/M/G. Ver nota do Arara-B1 sobre o achado do dono (29/09).
  * **Sem cauda (29/09→29/09):** chegou a ganhar uma cauda decorativa (`tail`) no mesmo dia; o dono viu ao
  * vivo, achou fraca ("bosta") e não resolvia a queixa real (silhueta de blocos) — removida da mesma
- * sessão. A capacidade `tail` continua disponível no tipo e no builder pra quem precisar depois.
+ * sessão. (A capacidade `tail` saiu em 06/11 por falta de uso, P200; está no histórico do git.)
  */
 export const HEAVY_MECH_BLUEPRINT: MechBlueprint = {
   encaixesDePeso: true,
-  id: 'heavy', label: 'PESADO', referenceHeight: 6.5,
+  id: 'heavy', referenceHeight: 6.5,
   torso: { width: 3.1, height: 2.3, depth: 2.3 },
   head: { width: 0.7, height: 0.42, depth: 0.8, antenna: 0 },
   shoulders: { width: 1.4, height: 0.85, depth: 1.35 }, hips: { width: 2.15, depth: 1.55 },
@@ -103,7 +87,7 @@ export const HEAVY_MECH_BLUEPRINT: MechBlueprint = {
  */
 export const COLOSSUS_01_BLUEPRINT: MechBlueprint = {
   encaixesDePeso: true,
-  id: 'colossus01', label: 'COLOSSUS-01', referenceHeight: 14, canhaoNaCabeca: true, escalaDosEncaixes: 1.5,
+  id: 'colossus01', referenceHeight: 14, canhaoNaCabeca: true, escalaDosEncaixes: 1.5,
   torso: { width: 5.8, height: 3.8, depth: 4.2 },
   head: { width: 1.65, height: 1.05, depth: 1.5, antenna: 0 },
   shoulders: { width: 2.25, height: 1.75, depth: 2.15 }, hips: { width: 3.95, depth: 2.5 },
@@ -153,30 +137,6 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   const pelvis = group(model, 0, hipHeight, 0);
   pelvis.name = 'pelvis';
   box(pelvis, blueprint.hips.width, 0.5 * scale, blueprint.hips.depth, M.frame);
-
-  // Cauda decorativa (opcional, G4/G5: construída uma vez, sem junta animada, sem custo por quadro).
-  // Presa direto na pelve — nunca toca braço, cabeça ou pernas (ver nota no blueprint da Onça-B2).
-  // A raiz fica atrás do ponto mais traseiro de verdade (torso + mochila, a mesma referência do exaustor
-  // de calor logo abaixo): nascer só na borda do quadril a deixava por baixo do torso, escondida.
-  if (blueprint.tail) {
-    const { segments, baseRadius, length, droop } = blueprint.tail;
-    const segLen = (length / segments) * scale;
-    const rootZ = torsoD * 0.78 + blueprint.backPack.depth * 0.5 + 0.12 * scale;
-    // A raiz carrega o ângulo inicial uma vez só; cada segmento gira só o INCREMENTO (`step`) em relação
-    // ao pai — como cada segmento é filho do anterior (já girado), ângulos absolutos se somariam sozinhos
-    // a cada elo e a cauda dobraria sobre si mesma (achado real, 29/09: media a posição no mundo de cada
-    // segmento e via a curva ziguezaguear em vez de continuar). Incremento relativo é a conta certa.
-    let node: THREE.Object3D = group(pelvis, 0, 0.1 * scale, rootZ);
-    node.rotation.x = 1.42; // quase na horizontal, saindo pra trás — não pra cima, senão desaparece no corpo
-    const step = (droop * 1.6) / segments;
-    for (let i = 0; i < segments; i++) {
-      const seg = group(node, 0, 0, 0);
-      seg.rotation.x = step;
-      const r = baseRadius * scale * (1 - (i / segments) * 0.75);
-      cyl(seg, Math.max(0.015 * scale, r), segLen, M.frame, 0, segLen * 0.5, 0);
-      node = group(seg, 0, segLen, 0);
-    }
-  }
 
   const leg = (side: number): LegRig => {
     const hip = group(pelvis, side * blueprint.legs.hipWidth * 0.5, -0.1 * scale, 0);
@@ -230,14 +190,6 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   head.name = 'head';
   if (blueprint.canhaoNaCabeca) {
     // P295: sem cabeça; o canhão das costas ocupa o lugar dela (ver `back` abaixo). A zona de acerto da cabeça continua a mesma (módulos).
-  } else if (blueprint.head.turret) {
-    // Torre + cano no lugar do rosto: mesmo espaço e posição da cabeça de sempre (a zona de acerto,
-    // fração da altura total em combat/damage.ts, não olha pra malha — continua igual).
-    cyl(head, blueprint.head.width * 0.58, blueprint.head.height * 0.85, M.armor, 0, blueprint.head.height * 0.55, 0);
-    const barrel = blueprint.head.depth * 2.1 * scale;
-    cyl(head, blueprint.head.width * 0.13, barrel, M.frame, 0, blueprint.head.height * 0.55, -blueprint.head.depth * 0.4 * scale - barrel * 0.5, Math.PI / 2);
-    box(head, blueprint.head.width * 0.2, blueprint.head.width * 0.2, 0.05 * scale, M.visor, 0, blueprint.head.height * 0.55, -blueprint.head.depth * 0.42 * scale);
-    head.userData.turret = true; // MechBase.animate() usa isso pra girar devagar sozinho
   } else {
     beveledBox(head, blueprint.head.width, blueprint.head.height, blueprint.head.depth, Math.min(blueprint.head.width, blueprint.head.height, blueprint.head.depth) * 0.11, M.armor, 0, blueprint.head.height * 0.5, 0);
     box(head, blueprint.head.width * 0.78, 0.11 * scale, 0.06 * scale, M.visor, 0, blueprint.head.height * 0.56, -blueprint.head.depth * 0.52);
@@ -430,7 +382,7 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
     backMuzzle: nos.back,
     shoulderMuzzles: nos.rightShoulder && nos.leftShoulder ? { right: nos.rightShoulder, left: nos.leftShoulder } : undefined,
     thrusters, thrusterMaterial: batchedMaterial, setDashVisual: batchedMaterial.userData.setDash,
-    hullMaterials: [batchedMaterial], hipHeight, setHeatVisual, setFrozenVisual: updateFrost, setGuardVisual, mountWeapons, barrageMouth,
+    hullMaterials: [batchedMaterial], hipHeight, pe: { frente: blueprint.legs.footLength * 0.62, tras: blueprint.legs.footLength * 0.38 }, setHeatVisual, setFrozenVisual: updateFrost, setGuardVisual, mountWeapons, barrageMouth,
   };
 }
 

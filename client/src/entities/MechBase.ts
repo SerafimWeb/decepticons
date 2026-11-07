@@ -15,6 +15,8 @@ import { FLINCH_DECAY, FLINCH_MAX } from '../combat/reaction';
 import { DEFAULT_TRIGGERS, MOUNT_PART, MOUNTS, triggersComBotoes, type MountId, type NamedLayout, type TriggerLayout, type Vec3 } from '../combat/mounts';
 import type { DamageType, Loadout, WeaponStats } from '../combat/weapons';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
+import type { Estado3 } from './geracao3';
+import { geracao3 } from './movimentoGen3';
 
 /** Gravidade dos Mechs (mais alta que a do mundo: queda "pesada" e rápida, estilo arena shooter). */
 export const MECH_GRAVITY = 32;
@@ -155,6 +157,11 @@ export interface MechRig {
   /** Materiais do casco (por instância): piscam quando o Mech toma dano. */
   hullMaterials: THREE.MeshStandardMaterial[];
   hipHeight: number;
+  /**
+   * Do eixo da canela até a ponta e até o calcanhar do pé (m), só nos rigs que os sabem (os procedurais): a passada da geração 3 ergue o
+   * pé inclinado por eles, para a ponta não afundar no piso.
+   */
+  pe?: { frente: number; tras: number };
   /**
    * Só nos rigs com encaixe de arma nos pulsos (`weaponMount.ts`): monta no desenho as armas da montagem.
    * Idempotente e barata; o `MechBase` a chama ao nascer e a cada `equip`. Sem ela, a arma é parte do modelo.
@@ -297,6 +304,11 @@ export abstract class MechBase {
   };
   /** A 1ª pessoa esconde a cabeça do próprio Mech; parte destruída também some. */
   private headVisibleByCamera = true;
+  /**
+   * Geração 3 do movimento (P321, só desenho, `entities/geracao3.ts`): o estado dela neste Mech. `null` enquanto a geração 3 está desligada,
+   * o pedaço sob demanda não chegou, ou o rig não a suporta (o `.glb`): aí o Mech anda sempre pela passada de hoje.
+   */
+  private gen3?: Estado3 | null;
 
   protected constructor(
     readonly stats: MechStats,
@@ -972,9 +984,15 @@ export abstract class MechBase {
     const amt = this.grounded ? Math.min(1, hSpeed / this.stats.moveSpeed) : 0;
     const air = this.grounded ? 0 : 1;
     const k = 1 - Math.exp(-dt * 14);
+    // Geração 3 (P321): só roda com ela ligada e o pedaço sob demanda carregado; o estado nasce uma vez por Mech (o `.glb` não tem: fica na passada de hoje).
+    const G = geracao3();
+    if (G !== null && this.gen3 === undefined) this.gen3 = G.criarEstado(r, (this.stats.gait ?? DEFAULT_GAIT).hip, this.stats.height);
+    const e3 = (G !== null && this.gen3) || null;
 
     // Passada proporcional à perna: o Mech de 5,3 m dá passos lentos e pesados; o andróide, curtos e rápidos.
-    this.walkPhase += (hSpeed * dt * STRIDE) / this.stats.height;
+    // Geração 3: a fase anda com a velocidade pela taxa que deixa o pé plantado.
+    if (G !== null && e3 !== null) this.walkPhase += G.fasePorSegundo(e3, hSpeed) * dt;
+    else this.walkPhase += (hSpeed * dt * STRIDE) / this.stats.height;
     const sw = Math.sin(this.walkPhase);
     const cw = Math.cos(this.walkPhase);
     const side = sw >= 0 ? 1 : -1;
@@ -996,33 +1014,34 @@ export abstract class MechBase {
     const lKnee = -Math.max(0, cw) * gait.knee * amt - air * 1.0;
     const rKnee = -Math.max(0, -cw) * gait.knee * amt - air * 0.4;
 
-    r.leftLeg.hip.rotation.x = lerp(r.leftLeg.hip.rotation.x, lHip, k);
-    r.rightLeg.hip.rotation.x = lerp(r.rightLeg.hip.rotation.x, rHip, k);
-    r.leftLeg.knee.rotation.x = lerp(r.leftLeg.knee.rotation.x, lKnee, k);
-    r.rightLeg.knee.rotation.x = lerp(r.rightLeg.knee.rotation.x, rKnee, k);
+    let rolagem = 0;
+    if (G !== null && e3 !== null) rolagem = G.locomocao(e3, this, r, this.walkPhase, dt, hSpeed, air, lean, k);
+    else {
+      r.leftLeg.hip.rotation.x = lerp(r.leftLeg.hip.rotation.x, lHip, k);
+      r.rightLeg.hip.rotation.x = lerp(r.rightLeg.hip.rotation.x, rHip, k);
+      r.leftLeg.knee.rotation.x = lerp(r.leftLeg.knee.rotation.x, lKnee, k);
+      r.rightLeg.knee.rotation.x = lerp(r.rightLeg.knee.rotation.x, rKnee, k);
 
-    r.pelvis.position.y = r.hipHeight - Math.abs(sw) * (0.12 + Math.abs(lean) * 0.12) * amt;
-    r.pelvis.rotation.z = this.pelvisBaseRoll + lean * (0.06 + Math.abs(sw) * 0.08) * amt;
+      r.pelvis.position.y = r.hipHeight - Math.abs(sw) * (0.12 + Math.abs(lean) * 0.12) * amt;
+    }
+    r.pelvis.rotation.z = this.pelvisBaseRoll + lean * (0.06 + Math.abs(sw) * 0.08) * amt + rolagem;
     // O tranco do tiro: o torso volta sozinho (decai a e^-9 por segundo) e soma por cima da mira e do balanço da passada.
     const back = Math.exp(-dt * FLINCH_DECAY);
     this.flinchPitch = Math.abs(this.flinchPitch) < 1e-4 ? 0 : this.flinchPitch * back;
     this.flinchYaw = Math.abs(this.flinchYaw) < 1e-4 ? 0 : this.flinchYaw * back;
-    r.torso.rotation.x = this.pitch * 0.25 + this.flinchPitch;
+    r.torso.rotation.x = this.pitch * 0.25 + this.flinchPitch + (e3 !== null ? e3.molaTronco.x : 0);
     r.torso.rotation.y = sw * 0.06 * amt + this.flinchYaw;
 
     this.recoil = Math.max(0, this.recoil - dt * 9);
     this.leftRecoil = Math.max(0, this.leftRecoil - dt * 5);
-    const kickRight = this.recoil * 0.35;
-    const kickLeft = this.leftRecoil * 0.5;
+    // Geração 3: o coice é uma mola (recua, passa do ponto e volta) em vez da queda reta; o alvo continua sendo o coice decaído.
+    const kickRight = G !== null && e3 !== null ? G.coice(e3, false, this.recoil, dt) * 0.35 : this.recoil * 0.35;
+    const kickLeft = G !== null && e3 !== null ? G.coice(e3, true, this.leftRecoil, dt) * 0.5 : this.leftRecoil * 0.5;
     if (r.setRecoil) r.setRecoil(kickRight, kickLeft);
     else {
       r.rightArm.position.z = this.rightArmBaseZ + kickRight;
       r.leftArm.position.z = this.leftArmBaseZ + kickLeft;
     }
-
-    // Canhão-torre (Colossus e afins): gira devagar sozinho, decorativo — a mira de verdade continua
-    // nos braços. G4: um if e uma soma, sem alocação; só roda quando o blueprint marcou `head.turret`.
-    if (r.head.userData.turret) r.head.rotation.y += dt * 0.35;
 
     if (r.setDashVisual) r.setDashVisual(this.isDashing);
     else r.thrusterMaterial.emissiveIntensity = this.isDashing ? 14 : 2;

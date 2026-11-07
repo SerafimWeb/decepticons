@@ -49,7 +49,7 @@ As specs completas estão em `PROTOCOLO_UNIVERSAL.md`; este é só o índice.
 - **G15 (regra do dono):** nada salvo fora da pasta do projeto. Temporários, experimentos, capturas e repositórios de teste vão só para `.tmp/` (ignorado pelo git), nunca para o temp do sistema, outra pasta ou outro drive.
 - **Shader novo ou efeito aditivo (P130/P136):** a base de todo `pow`/`sqrt`/`log` em GLSL leva `max(…, 0.0)` ou `clamp` (o teste `ShadersSemNaN` trava) e o bloom tem rede de segurança (`fx/bloomSeguro.ts`): um NaN num pixel vira tela preta. **Só a GPU real vê isso** (o SwiftShader do smoke e do CI não): antes de entregar efeito visual, `npm run build && node .decepticons/medicoes/varrer-nan.mjs` (FERRAMENTAS.md § 4.1).
 - **Funcionalidade nova nasce RESTRITA (P191):** botão, tela, modo, fase, robô ou arma nova entra no catálogo `client/src/core/funcionalidades.ts` com `padrao: 'restrito'` e `data-func` no elemento; o Comandante a libera no painel de visibilidade (chip VISIBILIDADE ▸, modo Comandante) quando estiver pronta. Robô e arma saem de `CHASSIS` e `WEAPON_IDS` já públicos: restrinja no catálogo se for novo.
-- **Pacote de partida (500 KB gzip, o que todo jogador baixa):** antes de acrescentar código de cliente, `npm run peso` (o peso estimado por arquivo-fonte). O que só alguns usam (um mapa, um modo, uma tela, um dispositivo) entra **sob demanda** (`environment/mapasSobDemanda.ts`; o `import()` dentro de um pedaço de partida, nunca no `main.ts`). O teto não sobe: cada feature paga o que acrescenta (20/10: a Estação dos Cabos saiu do pacote, −46 KB).
+- **Pacote de partida (500 KB gzip, o que todo jogador baixa):** antes de acrescentar código de cliente, `npm run peso` (o peso estimado por arquivo-fonte; ele dá ~2,4 KB a mais que o `smoke`, que é quem reprova: confirme o número real com `npx vite build && node scripts/smoke.mjs` antes de cortar peso). O que só alguns usam (um mapa, um modo, uma tela, um dispositivo) entra **sob demanda** (`environment/mapasSobDemanda.ts`; o `import()` dentro de um pedaço de partida, nunca no `main.ts`). O teto não sobe: cada feature paga o que acrescenta (20/10: a Estação dos Cabos saiu do pacote, −46 KB).
 - **R2:** nada de secret em arquivo versionado. **R3:** nada de `_v2`, `_old`, `_bkp`.
 - **R13:** o que não funciona de ponta a ponta fica marcado como DEMO ou AUSENTE em `STATUS_REAL.md`.
 - **R17:** achou bug ou desalinhamento durante a tarefa? Corrija se for barato e seguro; senão, registre. **Higiene (P200):** código, documento ou dado sem uso na área que o PR tocou sai no mesmo PR; número que o site publica (testes, módulos) vem do repositório, nunca digitado.
@@ -89,7 +89,7 @@ O projeto é desenvolvido em partes por agentes diferentes (hoje: Claude, Codex,
 client/src/
   core/        Game.ts (monta os módulos + loop), InputManager.ts, Quality.ts (qualidade adaptativa, G12), rng.ts (aleatório com semente), Settings.ts (configurações do jogador: contrato da UI)
   physics/     PhysicsWorld.ts (Rapier, FIXED_DT)
-  entities/    MechBase.ts (controller, dash, dano modular, animação), chassis.ts (números dos chassis, sem 3D), Vector09.ts, Android.ts, meshKit.ts
+  entities/    MechBase.ts (controller, dash, dano modular, animação), chassis.ts (números dos chassis, sem 3D), Vector09.ts, Android.ts, meshKit.ts, geracao3.ts + passadaGen3.ts + molejo.ts + movimentoGen3.json (a passada com o pé plantado e o molejo da geração 3, atrás de mech:gen3, carregados sob demanda por movimentoGen3.ts)
   sim/         Match.ts (a partida inteira sem tela: o que o servidor roda; o Game desenha por cima)
   net/         adapters.ts (ponte entre a simulação e os contratos de rede)
   voice/       VoiceChat.ts (voz P2P por WebRTC, ligada ao Game por callbacks), MicController.ts (aberto/PTT), VoiceSpatial.ts (voz espacial), VoiceHud.ts, opus.ts (DTX no SDP)
@@ -137,6 +137,7 @@ npm run vozes      # as falas do narrador no ElevenLabs (chave só em $env:ELEVE
 npm run ouvir      # abre a página para ouvir os sons e as vozes
 npm run mech:inspecionar -- arquivo.glb   # confere um robô importado (contrato, convenção da animação, foto) e sugere o IMPORTED_CHASSIS
 npm run mech:bocas -- marauder            # mede a boca de cada encaixe de arma do robô importado e confere com o dado do chassi (roda no check)
+npm run mech:movimento -- --chassi vector09 --video   # a bancada do movimento (P321): o MechBase de verdade, geração 2 ao lado da 3, em números e em vídeo (FERRAMENTAS 4.13)
 npm run arquivar  # ensaio: quanto do ESTADO_ATUAL e do HISTORICO tem mais de dois dias; `-- --aplicar` move para .decepticons/arquivo/ sem perder linha
 npm run painel     # sala de controle (novidades, equipe, mesa do Dan, fluxo, fichas, evolução, rota, frentes, decisões) em .tmp/painel/painel.html
 npm run server     # servidor de jogo do multiplayer em ws://localhost:2567/?sala=ARENA (DEPLOY.md)
