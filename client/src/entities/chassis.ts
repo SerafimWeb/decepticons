@@ -530,9 +530,6 @@ export const ARM_SLOTS: Record<ChassisId, ArmSlots> = {
   marauder: { right: armasDoBracoDireito(CHASSIS_SIZE.marauder), left: armasDoBracoEsquerdo(CHASSIS_SIZE.marauder, true), shoulders: ['rockets', 'barrage', 'sonic', 'gas', 'seeker', 'swarm', 'cruise', 'grenade', 'harpoon'] },
 };
 
-/** Chassis cujo braço esquerdo leva um escudo (sem arma): o Hangar escreve ESCUDO onde os outros escrevem VAZIO. */
-export const SHIELD_ARM: readonly ChassisId[] = ['lancerL1'];
-
 /**
  * Chassis com suporte para o escudo metálico removível na mão esquerda (dono, 06/10: só chassis compatíveis, incluindo o
  * Lancer). Os procedurais desenham a chapa no antebraço; o Lancer já traz a dele na malha. Importados sem chapa ficam fora.

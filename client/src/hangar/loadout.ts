@@ -110,14 +110,17 @@ export function encaixesDeArma(spec: LoadoutSpec): BotaoSlot[] {
 export const PRESETS_DE_BOTAO = ['padrao', 'tudo1', 'maos1'] as const;
 export type PresetDeBotao = (typeof PRESETS_DE_BOTAO)[number];
 
-/** Os botões de um preset, sobre os encaixes que têm arma. A principal de "tudo no 1" é a das costas (quando há), senão a da mão direita. */
+/**
+ * Os botões de um preset, sobre os encaixes que têm arma. A principal de "tudo no 1" é a das costas (quando há), senão a da mão direita; **com uma arma só, ela fica no botão 1**
+ * (mandá-la para o 2 deixava o clique sem nada: o Lancer-L1 de fábrica só tem a da mão direita).
+ */
 export function botoesDoPreset(spec: LoadoutSpec, preset: PresetDeBotao): LoadoutSpec['botoes'] {
   if (preset === 'padrao') return undefined;
   const armados = encaixesDeArma(spec);
   const principal: BotaoSlot = armados.includes('back') ? 'back' : 'rightHand';
   const out: Partial<Record<BotaoSlot, 1 | 2>> = {};
   for (const slot of armados) {
-    if (preset === 'tudo1') out[slot] = slot === principal ? 2 : 1;
+    if (preset === 'tudo1') out[slot] = slot === principal && armados.length > 1 ? 2 : 1;
     else out[slot] = slot === 'rightHand' || slot === 'leftHand' ? 1 : 2;
   }
   return out;
