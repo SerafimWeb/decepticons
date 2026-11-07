@@ -16,6 +16,7 @@ const raiz = resolve('.');
 const TMP = resolve('.tmp', 'estudio-prova');
 const FOTO = resolve('.decepticons', 'arte', 'estudio-mechs-gen3.png');
 const FOTO_MALHA = resolve('.decepticons', 'arte', 'estudio-mechs-todos.png');
+const FOTO_GAVIAO = resolve('.decepticons', 'arte', 'gaviao-h3-correndo.png');
 rmSync(TMP, { recursive: true, force: true });
 mkdirSync(join(TMP, 'ARMAS'), { recursive: true });
 mkdirSync(join(TMP, 'VOZ'), { recursive: true });
@@ -97,12 +98,14 @@ try {
     const p = await quadro.evaluate(() => window.mechsProva());
     const [e, d] = p.lados;
     const regra = {
+      modelo: d.temGen3 && d.desmontavel,
       codigo: d.temGen3 && d.desmontavel && p.vista !== undefined,
       androide: !d.temGen3 && d.desmontavel && p.vista === 'g2',
       malha: !d.temGen3 && !d.desmontavel && p.vista === 'g2',
     }[p.origem];
     ok(id + ' (' + p.origem + ') monta, anda e respeita o que o corpo permite', Boolean(regra) && e.v > 1, 'geração 3 ' + d.temGen3 + ' · vista ' + p.vista + ' · desmontável ' + d.desmontavel + ' · v ' + e.v.toFixed(1));
     if (id === 'marauder') await page.screenshot({ path: FOTO_MALHA, clip: { x: 0, y: 0, width: 1600, height: 820 } });
+    if (id === 'gaviao') await page.screenshot({ path: FOTO_GAVIAO, clip: { x: 0, y: 0, width: 1600, height: 820 } });
   }
   await quadro.selectOption('select', 'vector09');
   await quadro.waitForFunction(() => { const p = window.mechsProva?.(); return p && p.chassi === 'vector09' && p.lados.every((l) => l.pronto); }, null, { timeout: 60_000 });

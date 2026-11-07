@@ -12,9 +12,10 @@ import { PALETTE } from '../../../client/src/core/palette';
 import { Android } from '../../../client/src/entities/Android';
 import { BLUEPRINT_BY_CHASSIS } from '../../../client/src/entities/blueprintByChassis';
 import { CHASSIS, CHASSIS_SIZE, type ChassisId } from '../../../client/src/entities/chassis';
+import { GAVIAO_H3_BLUEPRINT } from '../../../client/src/entities/gaviaoH3';
 import { IMPORTED_CHASSIS, tryInstantiateMechRig, whenMechAssetReady } from '../../../client/src/entities/importedMechAssets';
 import { ImportedMech } from '../../../client/src/entities/ImportedMech';
-import { MECH_GRAVITY, type MechBase, type MechRig } from '../../../client/src/entities/MechBase';
+import { MECH_GRAVITY, type MechBase, type MechRig, type MechStats } from '../../../client/src/entities/MechBase';
 import { carregarGeracao3, setMovimentoGen3 } from '../../../client/src/entities/movimentoGen3';
 import { parametrosDaPassada, taxaDaFase } from '../../../client/src/entities/passadaGen3';
 import { medirGeometriaDaPerna } from '../../../client/src/entities/passadaRig';
@@ -26,17 +27,25 @@ declare global {
     /** A prova no Chrome (`medicoes/estudio-mechs.mjs`) espera por isto. */
     pronto?: boolean;
     mechsProva?: () => unknown;
+    /** Aproxima (fator < 1) ou afasta (> 1) a câmera do alvo: a folha de fotos de um modelo (`npm run mech:folha`) o usa. */
+    mechsEnquadrar?: (fator: number, alvoY?: number) => void;
   }
 }
 
-/** De onde vem o corpo de cada chassi: código (os blueprints), o andróide (código à parte) ou malha importada (`.glb`, geração 2 só). */
-type Origem = 'codigo' | 'androide' | 'malha';
-const origemDe = (id: ChassisId): Origem => (id === 'android' ? 'androide' : IMPORTED_CHASSIS[id] ? 'malha' : 'codigo');
-const ORIGEM_ORDEM: Readonly<Record<Origem, number>> = { codigo: 0, androide: 1, malha: 2 };
-const ORIGEM_ROTULO: Readonly<Record<Origem, string>> = { codigo: 'código', androide: 'andróide, código', malha: 'malha importada' };
+/** Um modelo da prévia: um chassi do jogo ou um modelo em desenvolvimento que ainda não é chassi (o Gavião-H3, o primeiro da geração 3). */
+type ModeloId = ChassisId | 'gaviao';
+/** O Gavião-H3 anda com os números do Vector-09, na altura dele (4,5 m): os dele (vida, calor, armas) são um PR à parte, depois do Comandante aprovar o desenho. */
+const GAVIAO_STATS: MechStats = { ...CHASSIS.vector09, name: 'GAVIÃO-H3', height: GAVIAO_H3_BLUEPRINT.referenceHeight };
+const statsDe = (id: ModeloId): MechStats => (id === 'gaviao' ? GAVIAO_STATS : CHASSIS[id]);
+
+/** De onde vem o corpo de cada robô: código (os blueprints), o modelo novo (código, geração 3), o andróide (código à parte) ou malha importada (`.glb`, geração 2 só). */
+type Origem = 'modelo' | 'codigo' | 'androide' | 'malha';
+const origemDe = (id: ModeloId): Origem => (id === 'gaviao' ? 'modelo' : id === 'android' ? 'androide' : IMPORTED_CHASSIS[id] ? 'malha' : 'codigo');
+const ORIGEM_ORDEM: Readonly<Record<Origem, number>> = { modelo: -1, codigo: 0, androide: 1, malha: 2 };
+const ORIGEM_ROTULO: Readonly<Record<Origem, string>> = { modelo: 'modelo novo, geração 3', codigo: 'código', androide: 'andróide, código', malha: 'malha importada' };
 /** TODOS os robôs do jogo, sem lista digitada: chassi novo em `CHASSIS` aparece aqui sozinho (os de código primeiro, depois o andróide e os de malha). */
-const TODOS: readonly ChassisId[] = (Object.keys(CHASSIS) as ChassisId[]).sort(
-  (a, b) => ORIGEM_ORDEM[origemDe(a)] - ORIGEM_ORDEM[origemDe(b)] || CHASSIS_SIZE[a] - CHASSIS_SIZE[b] || CHASSIS[a].name.localeCompare(CHASSIS[b].name),
+const TODOS: readonly ModeloId[] = [...(Object.keys(CHASSIS) as ChassisId[]), 'gaviao' as const].sort(
+  (a, b) => ORIGEM_ORDEM[origemDe(a)] - ORIGEM_ORDEM[origemDe(b)] || (a === 'gaviao' || b === 'gaviao' ? 0 : CHASSIS_SIZE[a] - CHASSIS_SIZE[b]) || statsDe(a).name.localeCompare(statsDe(b).name),
 );
 const RAD = 180 / Math.PI;
 const TAU = Math.PI * 2;
@@ -99,6 +108,10 @@ function criarCena(): THREE.Scene {
   const contra = new THREE.DirectionalLight(0x88aaff, 1.5);
   contra.position.set(-6, 6, -8);
   scene.add(contra);
+  // Uma luz que acompanha a câmera (`desenhar` a posiciona): sem ela a frente do robô só pega o contraluz azul e a revisão do desenho fica às cegas.
+  const daCamera = new THREE.DirectionalLight(0xffffff, 1.4);
+  scene.add(daCamera, daCamera.target);
+  scene.userData.luzDaCamera = daCamera;
   scene.add(new THREE.GridHelper(400, 400, 0x2f414c, 0x2f414c));
   const grade5 = new THREE.GridHelper(400, 80, 0x86aabd, 0x86aabd);
   grade5.position.y = 0.004;
@@ -107,7 +120,7 @@ function criarCena(): THREE.Scene {
 }
 
 // ── O estado da prévia ─────────────────────────────────────────────────────────────────────────────────────────────
-let chassi: ChassisId = 'vector09';
+let chassi: ModeloId = 'vector09';
 let modo: ModoDeMovimento = 'correr';
 let vista: Vista = 'lado';
 let parte: Parte = 'tudo';
@@ -147,7 +160,7 @@ class Lado {
     try {
       mech = await criarMech(id);
     } catch (e) {
-      dizer(`Não consegui montar ${CHASSIS[id].name}: ${String(e)}`, true);
+      dizer(`Não consegui montar ${statsDe(id).name}: ${String(e)}`, true);
       return;
     }
     // Cliques rápidos no seletor: só a última montagem vale.
@@ -190,8 +203,9 @@ class Lado {
 }
 
 /** O corpo de um chassi: o blueprint de código, o andróide, ou a malha importada (espera o arquivo carregar; o jogo faz o mesmo no Hangar). */
-async function criarMech(id: ChassisId): Promise<MechBase> {
-  const st = CHASSIS[id];
+async function criarMech(id: ModeloId): Promise<MechBase> {
+  const st = statsDe(id);
+  if (id === 'gaviao') return new Vector09({ stats: st, blueprint: GAVIAO_H3_BLUEPRINT, paint: PALETTE.sodium, visor: 0xffa23a });
   if (id === 'android') return new Android({ stats: st, paint: PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot' });
   const malha = IMPORTED_CHASSIS[id];
   if (malha) {
@@ -213,7 +227,7 @@ function isolar(l: Lado): void {
 }
 
 function explodir(l: Lado): void {
-  const H = CHASSIS[chassi].height;
+  const H = statsDe(chassi).height;
   for (const p of l.pecas) {
     // `animate` só escreve a altura da pelve e o recuo (z) dos braços: x e y dos outros nós são da prévia.
     p.no.position.x = p.base.x + Math.sign(p.base.x || 1) * p.dx * H * explosao;
@@ -223,7 +237,7 @@ function explodir(l: Lado): void {
 
 // ── Um quadro de simulação (60 Hz fixos, o mesmo do jogo) ──────────────────────────────────────────────────────────
 function passo(): void {
-  const st = CHASSIS[chassi];
+  const st = statsDe(chassi);
   const c = comandoDoModo(modo, quadroN, st.moveSpeed);
   for (const l of lados) {
     if (!l.pronto) continue;
@@ -269,8 +283,8 @@ const controles = new OrbitControls(ctrlCam, tela);
 controles.enableDamping = true;
 controles.enablePan = false;
 
-function predefinida(nome: 'lateral' | 'tres-quartos' | 'frente' | 'cima'): void {
-  const H = CHASSIS[chassi].height;
+function predefinida(nome: 'lateral' | 'tres-quartos' | 'frente' | 'costas' | 'cima'): void {
+  const H = statsDe(chassi).height;
   controles.target.set(0, H * 0.45, 0);
   controles.minDistance = H * 0.8;
   controles.maxDistance = H * 8;
@@ -279,6 +293,7 @@ function predefinida(nome: 'lateral' | 'tres-quartos' | 'frente' | 'cima'): void
     lateral: [d, H * 0.55, 0],
     'tres-quartos': [d * 0.72, H * 0.6, -d * 0.72],
     frente: [0, H * 0.55, -d],
+    costas: [0, H * 0.55, d],
     cima: [0.001, H * 3.4, 0.001],
   };
   ctrlCam.position.set(...p[nome]);
@@ -296,6 +311,9 @@ function desenhar(): void {
     l.cam.updateProjectionMatrix();
     l.cam.position.set(l.sim.x + ctrlCam.position.x, ctrlCam.position.y, l.sim.z + ctrlCam.position.z);
     l.cam.lookAt(l.sim.x + controles.target.x, controles.target.y, l.sim.z + controles.target.z);
+    const luz = l.scene.userData.luzDaCamera as THREE.DirectionalLight;
+    luz.position.copy(l.cam.position);
+    luz.target.position.set(l.sim.x + controles.target.x, controles.target.y, l.sim.z + controles.target.z);
     renderer.setViewport(k * larg, 0, larg, h);
     renderer.setScissor(k * larg, 0, larg, h);
     renderer.render(l.scene, l.cam);
@@ -343,7 +361,7 @@ function linhaDeFicha(rotulo: string, valor: string): HTMLTableRowElement {
 
 /** A ficha: tudo lido do chassi e das funções da passada (`parametrosDaPassada` mede a perna do próprio rig). */
 function atualizarFicha(): void {
-  const st = CHASSIS[chassi];
+  const st = statsDe(chassi);
   const gen3 = lados[1];
   const linhas: [string, string][] = [
     ['Chassi', st.name],
@@ -491,10 +509,10 @@ async function desfazer(): Promise<void> {
 function montarPainel(): void {
   const painel = document.getElementById('painel') as HTMLElement;
   const seletor = el('select', {});
-  for (const id of TODOS) seletor.append(el('option', { value: id }, `${CHASSIS[id].name} · ${ORIGEM_ROTULO[origemDe(id)]}`));
+  for (const id of TODOS) seletor.append(el('option', { value: id }, `${statsDe(id).name} · ${ORIGEM_ROTULO[origemDe(id)]}`));
   seletor.addEventListener('change', () => {
-    chassi = seletor.value as ChassisId;
-    dizer(origemDe(chassi) === 'malha' ? `Carregando a malha de ${CHASSIS[chassi].name}…` : '');
+    chassi = seletor.value as ModeloId;
+    dizer(origemDe(chassi) === 'malha' ? `Carregando a malha de ${statsDe(chassi).name}…` : '');
     void montarTodos().then(() => {
       if (origemDe(chassi) === 'malha') dizer('');
       predefinida('lateral');
@@ -557,7 +575,7 @@ function montarPainel(): void {
     el('p', { class: 'dica' }, 'ROTEIRO: parado, corre, freia, pula, pousa, anda virando, dash, tiro (9,4 s em laço).'),
     el('h3', {}, 'Vista'),
     vistaBotoes,
-    el('div', { class: 'linha', style: 'margin-top:6px' }, ...(['lateral', 'tres-quartos', 'frente', 'cima'] as const).map((n) => {
+    el('div', { class: 'linha', style: 'margin-top:6px' }, ...(['lateral', 'tres-quartos', 'frente', 'costas', 'cima'] as const).map((n) => {
       const b = el('button', { type: 'button' }, n === 'tres-quartos' ? '3/4' : n.toUpperCase());
       b.addEventListener('click', () => predefinida(n));
       return b;
@@ -617,6 +635,14 @@ async function iniciar(): Promise<void> {
   await Promise.all(lados.map((l) => l.montar()));
   montarPainel();
   predefinida('lateral');
+  window.mechsEnquadrar = (fator, alvoY = 0.45) => {
+    // O alvo sobe (ou desce) com a câmera, na mesma altura relativa; depois a câmera se aproxima dele.
+    const dy = statsDe(chassi).height * alvoY - controles.target.y;
+    controles.target.y += dy;
+    ctrlCam.position.y += dy;
+    ctrlCam.position.sub(controles.target).multiplyScalar(fator).add(controles.target);
+    controles.update();
+  };
   window.mechsProva = () => ({
     chassi,
     origem: origemDe(chassi),
