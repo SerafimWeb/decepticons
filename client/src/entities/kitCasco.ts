@@ -9,7 +9,9 @@ import { beveledBox, box, cyl, group, taperedBox } from './meshKit';
  * - `casca`: uma casca que passa por várias seções (largura × profundidade a cada altura), de cantos chanfrados: a placa que afunila, alarga e quebra
  *   (coxa, canela, peito, capacete);
  * - `cupula`: um pedaço de elipsoide de poucos lados (ombreira, joelheira, ponta de bota);
- * - `listras`: a mesma faixa repetida (respiros, risco de perigo).
+ * - `listras`: a mesma faixa repetida (respiros, risco de perigo);
+ * - `ombreira` (a tampa em tronco de pirâmide e duas lâminas que caem junto do braço, nunca uma bola), `joelheira` (duas placas em ">") e `perigo` (os riscos
+ *   pequenos de acento): as peças de armadura da geração 3 (`MODELADOR.md` § 8). São malhas diretas do pivô: um grupo aninhado viraria um draw call a mais no lote.
  * As peças retas e chanfradas do `meshKit.ts` (`placa` é o `beveledBox`, mais `box`, `cyl`, `taperedBox`) valem e são reexportadas daqui.
  *
  * Toda face é plana (normal por face): o chanfro pega a luz e a aresta não "derrete". O lado de fora é conferido pelo centro da peça, então uma
@@ -138,6 +140,66 @@ export function cupula(parent: THREE.Object3D, rx: number, ry: number, rz: numbe
   mesh.rotation.set(opcoes.rotX ?? 0, opcoes.rotY ?? 0, opcoes.rotZ ?? 0);
   parent.add(mesh);
   return mesh;
+}
+
+/** Os materiais de uma armadura: o casco, o aço escuro de dentro e a cor de acento (a pintura do jogador). */
+export interface MateriaisDaArmadura {
+  readonly armor: THREE.Material;
+  readonly frame: THREE.Material;
+  readonly paint: THREE.Material;
+}
+
+/**
+ * O risco de perigo: `n` traços inclinados e pequenos (o acento raro do print 4, não a barra grande). Fica numa face de placa: `rotY` vira a marca para o
+ * lado (π/2 numa face que olha para +x ou -x). São malhas diretas do pivô (um grupo aninhado viraria um draw call a mais no lote).
+ */
+export function perigo(parent: THREE.Object3D, x: number, y: number, z: number, mat: THREE.Material, escala = 1, n = 3, rotZ = 0.62, rotY = 0): THREE.Mesh[] {
+  const cos = Math.cos(rotY);
+  const sen = Math.sin(rotY);
+  const riscos: THREE.Mesh[] = [];
+  for (let i = 0; i < n; i++) {
+    const passo = (i - (n - 1) / 2) * 0.034 * escala;
+    const m = box(parent, 0.018 * escala, 0.1 * escala, 0.012, mat, x + passo * cos, y, z - passo * sen);
+    m.rotation.set(0, rotY, rotZ);
+    riscos.push(m);
+  }
+  return riscos;
+}
+
+/**
+ * A ombreira angular da geração 3 (o ombro do print 4: placas sobrepostas, não uma bola): a tampa (um tronco de pirâmide de cantos chanfrados, a face de cima
+ * menor, caída para fora), duas lâminas que descem pelo lado de fora, cada uma mais inclinada, a guarda da frente e a junta escura por dentro. `lado` é +1 no braço
+ * direito (o de fora é +x) e -1 no esquerdo; (x, y, z) é a junta do ombro; `tamanho` multiplica tudo e `inclinacao` (rad) é a queda da tampa para fora.
+ */
+export function ombreira(parent: THREE.Object3D, lado: number, tamanho: number, inclinacao: number, M: MateriaisDaArmadura, acentos: number, x = 0, y = 0, z = 0): void {
+  const t = tamanho;
+  const w = 0.56 * t;
+  const h = 0.2 * t;
+  const d = 0.66 * t;
+  const queda = -lado * inclinacao;
+  // A tampa fica quase por cima da junta (a ombreira compacta do print 4, não asas abertas) e cai um pouco para fora.
+  const tampa = casca(parent, [{ y: 0, w, d }, { y: h * 0.5, w: w * 0.97, d: d * 0.97 }, { y: h, w: w * 0.7, d: d * 0.74 }], 0.07 * t, M.armor, x + lado * 0.05 * t, y + 0.03 * t, z);
+  tampa.rotation.z = queda;
+  // As lâminas caem junto do braço, quase em pé (a segunda mais que a primeira): o ombro em degraus, rente ao braço.
+  for (let i = 0; i < 2; i++) {
+    const lamina = placa(parent, (0.34 - 0.04 * i) * t, 0.1 * t, (0.62 - 0.05 * i) * t, 0.022 * t, M.armor, x + lado * (0.21 + 0.07 * i) * t, y - (0.05 + 0.12 * i) * t, z);
+    lamina.rotation.z = queda - lado * (0.6 + 0.4 * i);
+  }
+  // A guarda da frente: uma placa em pé na frente da tampa, com o risco de perigo.
+  const guarda = placa(parent, 0.26 * t, 0.18 * t, 0.06 * t, 0.02 * t, M.armor, x + lado * 0.1 * t, y + 0.05 * t, z - d * 0.5 - 0.02 * t);
+  guarda.rotation.z = queda;
+  if (acentos > 0.05) perigo(parent, x + lado * 0.1 * t, y + 0.05 * t, z - d * 0.5 - 0.058 * t, M.paint, 0.8 * t * acentos, 3, 0.62 * lado);
+  cupula(parent, 0.18 * t, 0.18 * t, 0.18 * t, M.frame, x, y - 0.08 * t, z);
+}
+
+/** A joelheira de placas (não uma bola): a de cima deitada para trás, a de baixo para a frente, e duas abas escuras nos lados. `(x, y, z)` é o centro da frente do joelho. */
+export function joelheira(parent: THREE.Object3D, largura: number, M: MateriaisDaArmadura, x = 0, y = 0, z = 0): void {
+  // Vistas de lado formam um ">": o topo da placa de cima fica para trás (+z) e o pé da de baixo também; o ápice, no meio, aponta para a frente.
+  const cima = placa(parent, largura * 0.82, 0.24, 0.14, 0.045, M.armor, x, y + 0.07, z);
+  cima.rotation.x = 0.32;
+  const baixo = placa(parent, largura * 0.7, 0.2, 0.12, 0.04, M.armor, x, y - 0.12, z - 0.03);
+  baixo.rotation.x = -0.28;
+  for (const lado of [-1, 1]) placa(parent, 0.06, 0.26, largura * 0.5, 0.02, M.frame, x + lado * largura * 0.46, y - 0.02, z + 0.1);
 }
 
 /** A mesma faixa `n` vezes, em fila ao longo de X (a cada `passo` m, centrada em `x`), cada uma girada `rotZ`: respiros e risco de perigo. */

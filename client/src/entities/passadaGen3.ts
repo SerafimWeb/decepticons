@@ -230,13 +230,16 @@ function sobeDoPe(geo: GeometriaDaPerna, phi: number): number {
 
 const _pe = { f: 0, lift: 0, balanco: -1 };
 const _juntas: Juntas = { hip: 0, knee: 0 };
+const _juntasDoRepouso: Juntas = { hip: 0, knee: 0 };
 
 /**
  * A pose inteira num instante. `fase` (rad) avança com `taxaDaFase·v·dt`; `peso` (0..1) mistura com a postura parada, que é a
  * pose de repouso do rig (pernas retas, pelve na altura de hoje). Sem passo, o robô sai e para sem tranco.
  * `escalaL` e `escalaR` (0..1) encurtam o passo de cada perna: a perna avariada manca (o `legDamageLean` do dano às pernas).
+ * `queda` (m, >= 0) é a descida EXTRA da pelve que a mola do pouso e o agachar do dash pedem (`geracao3.ts`): as pernas dobram por ela, e a pelve desce com a sola
+ * no chão (antes a mola descia a pelve sem a perna acompanhar, e o pé entrava 10 a 15 cm no piso a cada pouso e a cada dash).
  */
-export function poseDaPassada(fase: number, peso: number, geo: GeometriaDaPerna, p: ParametrosDaPassada, out: PoseDaPassada, escalaL = 1, escalaR = 1): PoseDaPassada {
+export function poseDaPassada(fase: number, peso: number, geo: GeometriaDaPerna, p: ParametrosDaPassada, out: PoseDaPassada, escalaL = 1, escalaR = 1, queda = 0): PoseDaPassada {
   const rMax = (geo.ue + geo.w) * PERNA_MAXIMA;
   const g = clamp(peso, 0, 1);
   const alcance = p.alcance;
@@ -268,20 +271,27 @@ export function poseDaPassada(fase: number, peso: number, geo: GeometriaDaPerna,
   );
   out.dPelvis = dPelvis;
   // O alvo da perna é o tornozelo: o pé plano o põe a `tornozelo` do chão; o pé no ar sobe `lift`, e inclinado, um pouco mais (`sobeDoPe`).
-  juntasDaPerna(geo, fL, dPelvis - liftL - sobeL, _juntas);
+  juntasDaPerna(geo, fL, dPelvis - queda - liftL - sobeL, _juntas);
   out.hipL = _juntas.hip;
   out.kneeL = _juntas.knee;
-  juntasDaPerna(geo, fR, dPelvis - liftR - sobeR, _juntas);
+  juntasDaPerna(geo, fR, dPelvis - queda - liftR - sobeR, _juntas);
   out.hipR = _juntas.hip;
   out.kneeR = _juntas.knee;
 
   // Mistura com o repouso (juntas em zero, pelve na altura de hoje) pelo peso. Mistura-se a POSE e não a tarefa (alcance, agachamento): o
   // repouso é a perna esticada, o ponto singular da conta de duas barras, onde um agachamento minúsculo pede um joelho grande (cresce com a
-  // raiz do agachamento) e a pose daria um estalo no primeiro quadro de movimento.
-  out.hipL *= g;
-  out.kneeL *= g;
-  out.hipR *= g;
-  out.kneeR *= g;
+  // raiz do agachamento) e a pose daria um estalo no primeiro quadro de movimento. Com `queda`, o repouso é a perna dobrada pelo que a pelve desceu.
+  let hipRepouso = 0;
+  let kneeRepouso = 0;
+  if (queda > 0) {
+    juntasDaPerna(geo, geo.f0, geo.dRest - queda, _juntasDoRepouso);
+    hipRepouso = _juntasDoRepouso.hip;
+    kneeRepouso = _juntasDoRepouso.knee;
+  }
+  out.hipL = hipRepouso + (out.hipL - hipRepouso) * g;
+  out.kneeL = kneeRepouso + (out.kneeL - kneeRepouso) * g;
+  out.hipR = hipRepouso + (out.hipR - hipRepouso) * g;
+  out.kneeR = kneeRepouso + (out.kneeR - kneeRepouso) * g;
   out.phiL = phiL * g;
   out.phiR = phiR * g;
   out.dPelvis = geo.dRest + (out.dPelvis - geo.dRest) * g;

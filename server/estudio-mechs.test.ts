@@ -5,11 +5,15 @@ import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import ajustesDoJogo from '../client/src/entities/movimentoGen3.json';
 import faixasDoJogo from '../client/src/entities/movimentoGen3.faixas.json';
+import desenhoDoJogo from '../client/src/entities/desenhoGaviao.json';
+import faixasDoDesenho from '../client/src/entities/desenhoGaviao.faixas.json';
 import { criarEstudio } from '../scripts/estudio.mjs';
 import { moduloMechs, validarAjustesDoMovimento } from '../scripts/estudio/modulo-mechs.mjs';
 
 const ARQ_AJUSTES = 'client/src/entities/movimentoGen3.json';
 const ARQ_FAIXAS = 'client/src/entities/movimentoGen3.faixas.json';
+const ARQ_DESENHO = 'client/src/entities/desenhoGaviao.json';
+const ARQ_FAIXAS_DESENHO = 'client/src/entities/desenhoGaviao.faixas.json';
 
 interface Resp {
   status: number;
@@ -34,6 +38,10 @@ describe('estrutura do dado (o que o jogo, o teste e o Estúdio leem)', () => {
   it('as faixas e os ajustes têm as mesmas chaves, e o arquivo está dentro das faixas', () => {
     expect(Object.keys(faixasDoJogo).sort()).toEqual(Object.keys(ajustesDoJogo).sort());
     expect(validarAjustesDoMovimento(ajustesDoJogo, faixasDoJogo as never).ok).toBe(true);
+  });
+  it('o desenho do Gavião-H3 também: as mesmas chaves nas faixas e no arquivo, e o arquivo dentro das faixas', () => {
+    expect(Object.keys(faixasDoDesenho).sort()).toEqual(Object.keys(desenhoDoJogo).sort());
+    expect(validarAjustesDoMovimento(desenhoDoJogo, faixasDoDesenho as never).ok).toBe(true);
   });
 });
 
@@ -67,7 +75,7 @@ describe('o módulo MECHS 3D no servidor do Estúdio', () => {
 
   beforeAll(async () => {
     mkdirSync(join(raiz, 'client/src/entities'), { recursive: true });
-    for (const a of [ARQ_AJUSTES, ARQ_FAIXAS]) copyFileSync(resolve(a), join(raiz, a));
+    for (const a of [ARQ_AJUSTES, ARQ_FAIXAS, ARQ_DESENHO, ARQ_FAIXAS_DESENHO]) copyFileSync(resolve(a), join(raiz, a));
     const modulo = moduloMechs({
       raiz,
       construir: async ({ saida }) => {
@@ -92,9 +100,11 @@ describe('o módulo MECHS 3D no servidor do Estúdio', () => {
   it('o estado traz os ajustes, as faixas e se a prévia já foi montada', async () => {
     const r = await http(porta, 'GET', '/api/estado');
     expect(r.status).toBe(200);
-    const mechs = json(r).mechs as { ajustes: object; faixas: object; montado: boolean };
+    const mechs = json(r).mechs as { ajustes: object; faixas: object; desenho: object; faixasDoDesenho: object; montado: boolean };
     expect(mechs.ajustes).toEqual(ajustesDoJogo);
     expect(mechs.faixas).toEqual(faixasDoJogo);
+    expect(mechs.desenho).toEqual(desenhoDoJogo);
+    expect(mechs.faixasDoDesenho).toEqual(faixasDoDesenho);
     expect(mechs.montado).toBe(false);
   });
 
@@ -178,5 +188,28 @@ describe('o módulo MECHS 3D no servidor do Estúdio', () => {
     }
     expect((await http(porta, 'PUT', '/api/mechs/ajustes', '{quebrado')).status).toBe(400);
     expect(readFileSync(join(raiz, ARQ_AJUSTES), 'utf8')).toBe(antes);
+  });
+
+  const desenhoLido = (): Record<string, number> => JSON.parse(readFileSync(join(raiz, ARQ_DESENHO), 'utf8')) as Record<string, number>;
+
+  it('grava o desenho válido do Gavião-H3, na ordem das faixas, e o estado reflete', async () => {
+    const novo = { ...desenhoDoJogo, ombreira: 1.2, inclinacao: 0.3 };
+    const r = await http(porta, 'PUT', '/api/mechs/desenho', JSON.stringify({ desenho: novo }));
+    expect(r.status).toBe(200);
+    expect(desenhoLido().ombreira).toBe(1.2);
+    expect(Object.keys(desenhoLido())).toEqual(Object.keys(faixasDoDesenho));
+    expect(existsSync(join(raiz, `${ARQ_DESENHO}.tmp`))).toBe(false);
+    const estado = json(await http(porta, 'GET', '/api/estado')).mechs as { desenho: Record<string, number> };
+    expect(estado.desenho.inclinacao).toBe(0.3);
+  });
+
+  it('recusa desenho fora da faixa, com chave a mais ou sem corpo, e o arquivo do desenho não muda', async () => {
+    const antes = readFileSync(join(raiz, ARQ_DESENHO), 'utf8');
+    for (const corpo of [{ desenho: { ...desenhoDoJogo, ombreira: 9 } }, { desenho: { ...desenhoDoJogo, intruso: 1 } }, { desenho: { ombreira: 1 } }, {}, { desenho: null }]) {
+      const r = await http(porta, 'PUT', '/api/mechs/desenho', JSON.stringify(corpo));
+      expect(r.status, JSON.stringify(corpo)).toBe(400);
+    }
+    expect((await http(porta, 'PUT', '/api/mechs/desenho', '{quebrado')).status).toBe(400);
+    expect(readFileSync(join(raiz, ARQ_DESENHO), 'utf8')).toBe(antes);
   });
 });

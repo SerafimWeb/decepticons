@@ -7,12 +7,14 @@
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { ajustesGen3, definirAjustesGen3, FAIXAS, PADRAO_GEN3, type AjustesDoMovimento } from '../../../client/src/entities/ajustesGen3';
 import { PALETTE } from '../../../client/src/core/palette';
 import { Android } from '../../../client/src/entities/Android';
 import { BLUEPRINT_BY_CHASSIS } from '../../../client/src/entities/blueprintByChassis';
 import { CHASSIS, CHASSIS_SIZE, type ChassisId } from '../../../client/src/entities/chassis';
-import { GAVIAO_H3_BLUEPRINT } from '../../../client/src/entities/gaviaoH3';
+import faixasDoDesenho from '../../../client/src/entities/desenhoGaviao.faixas.json';
+import { blueprintDoGaviao, DESENHO_DE_PROJETO, DESENHO_SALVO, GAVIAO_H3_BLUEPRINT, type DesenhoDoGaviao } from '../../../client/src/entities/gaviaoH3';
 import { IMPORTED_CHASSIS, tryInstantiateMechRig, whenMechAssetReady } from '../../../client/src/entities/importedMechAssets';
 import { ImportedMech } from '../../../client/src/entities/ImportedMech';
 import { MECH_GRAVITY, type MechBase, type MechRig, type MechStats } from '../../../client/src/entities/MechBase';
@@ -29,6 +31,12 @@ declare global {
     mechsProva?: () => unknown;
     /** Aproxima (fator < 1) ou afasta (> 1) a câmera do alvo: a folha de fotos de um modelo (`npm run mech:folha`) o usa. */
     mechsEnquadrar?: (fator: number, alvoY?: number) => void;
+    /**
+     * O pé no chão: avança `quadros` quadros de simulação (60 Hz, sem esperar o relógio) e devolve, por lado, o ponto mais baixo da malha (m; negativo é
+     * abaixo do chão). Geometria exata, com o esqueleto da malha importada; o giro do tornozelo da geração 3 é do shader e não entra aqui (o teste de
+     * `corpoGen3.contrato.test.ts` o emula).
+     */
+    mechsMedirPes?: (quadros: number) => { chassi: string; modo: string; lados: { gen3: boolean; pisoMin: number }[] };
   }
 }
 
@@ -47,6 +55,20 @@ const ORIGEM_ROTULO: Readonly<Record<Origem, string>> = { modelo: 'modelo novo, 
 const TODOS: readonly ModeloId[] = [...(Object.keys(CHASSIS) as ChassisId[]), 'gaviao' as const].sort(
   (a, b) => ORIGEM_ORDEM[origemDe(a)] - ORIGEM_ORDEM[origemDe(b)] || (a === 'gaviao' || b === 'gaviao' ? 0 : CHASSIS_SIZE[a] - CHASSIS_SIZE[b]) || statsDe(a).name.localeCompare(statsDe(b).name),
 );
+/** O desenho do Gavião-H3 na tela (começa no salvo; o painel DESENHO mexe nele e refaz os Mechs). */
+let desenho: DesenhoDoGaviao = { ...DESENHO_SALVO };
+const ROTULO_DO_DESENHO: Readonly<Record<keyof DesenhoDoGaviao, string>> = {
+  ombreira: 'Tamanho da ombreira',
+  inclinacao: 'Queda da ombreira para fora (rad)',
+  peito: 'Largura do peito',
+  cintura: 'Largura do abdômen',
+  quadril: 'Largura da pelve',
+  coxa: 'Grossura da coxa',
+  canela: 'Grossura da canela',
+  cabeca: 'Tamanho da cabeça',
+  bota: 'Comprimento da bota',
+  acentos: 'Tamanho dos riscos de perigo (0 apaga)',
+};
 const RAD = 180 / Math.PI;
 const TAU = Math.PI * 2;
 /** Os ajustes que viram parte da passada ao criar o Mech: mexer neles refaz os Mechs (os outros valem ao vivo). */
@@ -98,24 +120,56 @@ function descartar(raiz: THREE.Object3D): void {
   });
 }
 
+/**
+ * As duas luzes da prévia. ESTÚDIO é uma caixa de luz suave (ambiente forte, chave quente, contraluz frio e uma luz que acompanha a câmera) para julgar a FORMA.
+ * COMO NO JOGO é a luz da arena (`environment/Arena.ts` e `core/Game.ts`: hemisférica, sol e contraluz da `PALETTE`, ambiente a 0,25 e tom ACES a 1,1): o robô como o
+ * jogador o vê. O que o Comandante aprova no Estúdio tem de valer nos dois.
+ */
+type ModoDeLuz = 'estudio' | 'jogo';
+let modoDeLuz: ModoDeLuz = 'estudio';
+/** O ambiente de reflexo (o mesmo `RoomEnvironment` do jogo); nasce depois do renderer. */
+let ambiente: THREE.Texture | null = null;
+interface PredefinicaoDeLuz {
+  readonly exposicao: number;
+  readonly ambiente: number;
+  readonly hemisferica: readonly [number, number, number];
+  readonly chave: readonly [number, number, readonly [number, number, number]];
+  readonly contra: readonly [number, number, readonly [number, number, number]];
+  readonly daCamera: number;
+}
+const LUZES: Readonly<Record<ModoDeLuz, PredefinicaoDeLuz>> = {
+  estudio: { exposicao: 0.8, ambiente: 0.55, hemisferica: [0xdfe8f0, 0x2a2f35, 0.3], chave: [0xfff3e6, 1.7, [6, 10, -8]], contra: [0x9bbcff, 1.4, [-6, 6, 8]], daCamera: 0.45 },
+  jogo: { exposicao: 1.1, ambiente: 0.25, hemisferica: [PALETTE.skyLight, PALETTE.groundLight, 0.9], chave: [PALETTE.keyLight, 1.2, [40, 80, 30]], contra: [PALETTE.rimLight, 0.6, [-60, 40, -40]], daCamera: 0 },
+};
+
+/** Põe (ou troca) as luzes e o ambiente de uma cena conforme o modo de luz atual. */
+function aplicarLuz(scene: THREE.Scene): void {
+  for (const antiga of (scene.userData.luzes as THREE.Light[] | undefined) ?? []) scene.remove(antiga);
+  const p = LUZES[modoDeLuz];
+  const hemisferica = new THREE.HemisphereLight(p.hemisferica[0], p.hemisferica[1], p.hemisferica[2]);
+  const chave = new THREE.DirectionalLight(p.chave[0], p.chave[1]);
+  chave.position.set(...p.chave[2]);
+  const contra = new THREE.DirectionalLight(p.contra[0], p.contra[1]);
+  contra.position.set(...p.contra[2]);
+  scene.add(hemisferica, chave, contra);
+  scene.userData.luzes = [hemisferica, chave, contra];
+  scene.environment = ambiente;
+  scene.environmentIntensity = p.ambiente;
+  (scene.userData.luzDaCamera as THREE.DirectionalLight).intensity = p.daCamera;
+}
+
 function criarCena(): THREE.Scene {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x15191c);
-  scene.add(new THREE.AmbientLight(0xffffff, 1.1));
-  const luz = new THREE.DirectionalLight(0xffffff, 3);
-  luz.position.set(6, 10, 8);
-  scene.add(luz);
-  const contra = new THREE.DirectionalLight(0x88aaff, 1.5);
-  contra.position.set(-6, 6, -8);
-  scene.add(contra);
   // Uma luz que acompanha a câmera (`desenhar` a posiciona): sem ela a frente do robô só pega o contraluz azul e a revisão do desenho fica às cegas.
-  const daCamera = new THREE.DirectionalLight(0xffffff, 1.4);
+  const daCamera = new THREE.DirectionalLight(0xffffff, 1);
   scene.add(daCamera, daCamera.target);
   scene.userData.luzDaCamera = daCamera;
   scene.add(new THREE.GridHelper(400, 400, 0x2f414c, 0x2f414c));
   const grade5 = new THREE.GridHelper(400, 80, 0x86aabd, 0x86aabd);
   grade5.position.y = 0.004;
   scene.add(grade5);
+  aplicarLuz(scene);
   return scene;
 }
 
@@ -205,7 +259,7 @@ class Lado {
 /** O corpo de um chassi: o blueprint de código, o andróide, ou a malha importada (espera o arquivo carregar; o jogo faz o mesmo no Hangar). */
 async function criarMech(id: ModeloId): Promise<MechBase> {
   const st = statsDe(id);
-  if (id === 'gaviao') return new Vector09({ stats: st, blueprint: GAVIAO_H3_BLUEPRINT, paint: PALETTE.sodium, visor: 0xffa23a });
+  if (id === 'gaviao') return new Vector09({ stats: st, blueprint: blueprintDoGaviao(desenho), paint: PALETTE.sodium, visor: 0xffa23a });
   if (id === 'android') return new Android({ stats: st, paint: PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot' });
   const malha = IMPORTED_CHASSIS[id];
   if (malha) {
@@ -301,6 +355,7 @@ function predefinida(nome: 'lateral' | 'tres-quartos' | 'frente' | 'costas' | 'c
 }
 
 function desenhar(): void {
+  renderer.toneMappingExposure = LUZES[modoDeLuz].exposicao;
   const w = palco.clientWidth;
   const h = palco.clientHeight;
   const mostrar = vista === 'lado' ? lados : vista === 'g3' ? [lados[1]] : [lados[0]];
@@ -459,6 +514,7 @@ function aposMontar(): void {
   }
   vistaBotoes?.marcar();
   if (blocoDesmontar) blocoDesmontar.hidden = !desmontavel;
+  if (blocoDesenho) blocoDesenho.hidden = chassi !== 'gaviao';
   if (avisoDesmontar) avisoDesmontar.hidden = desmontavel;
 }
 
@@ -504,6 +560,78 @@ async function desfazer(): Promise<void> {
   } catch (e) {
     dizer(`Não consegui ler o arquivo: ${String(e)}`, true);
   }
+}
+
+const slidersDoDesenho = new Map<keyof DesenhoDoGaviao, { entrada: HTMLInputElement; saida: HTMLOutputElement }>();
+let blocoDesenho: HTMLElement | undefined;
+
+function mostrarDesenho(): void {
+  for (const [k, sl] of slidersDoDesenho) {
+    sl.entrada.value = String(desenho[k]);
+    sl.saida.textContent = desenho[k].toFixed(2);
+  }
+}
+
+async function salvarDesenho(): Promise<void> {
+  try {
+    const r = await fetch('/api/mechs/desenho', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ desenho }) });
+    const j = (await r.json()) as { erro?: string };
+    if (r.ok) dizer('Desenho salvo em client/src/entities/desenhoGaviao.json. Falta commitar: aparece nas PENDÊNCIAS do Estúdio.');
+    else dizer(`Não salvou o desenho: ${j.erro ?? r.status}`, true);
+  } catch (e) {
+    dizer(`Não salvou o desenho: ${String(e)}`, true);
+  }
+}
+
+async function desfazerDesenho(): Promise<void> {
+  try {
+    const j = (await (await fetch('/api/estado')).json()) as { mechs?: { desenho?: Partial<DesenhoDoGaviao> } };
+    desenho = { ...DESENHO_DE_PROJETO, ...(j.mechs?.desenho ?? {}) };
+    mostrarDesenho();
+    agendarRefazer();
+    dizer('O desenho voltou ao que está salvo no arquivo.');
+  } catch (e) {
+    dizer(`Não consegui ler o arquivo do desenho: ${String(e)}`, true);
+  }
+}
+
+/** O painel DESENHO: um slider por número de desenho do Gavião-H3; mexer refaz os robôs na hora. Só aparece no Gavião. */
+function montarDesenho(): HTMLElement {
+  const lista = el('div');
+  for (const k of Object.keys(faixasDoDesenho) as (keyof DesenhoDoGaviao)[]) {
+    const [min, max] = faixasDoDesenho[k] as [number, number];
+    const entrada = el('input', { type: 'range', min: String(min), max: String(max), step: String((max - min) / 200) });
+    const saida = el('output', {});
+    slidersDoDesenho.set(k, { entrada, saida });
+    entrada.addEventListener('input', () => {
+      desenho = { ...desenho, [k]: Number(entrada.value) };
+      mostrarDesenho();
+      agendarRefazer();
+    });
+    lista.append(el('div', { class: 'ajuste' }, el('label', {}, ROTULO_DO_DESENHO[k], saida), entrada));
+  }
+  const bSalvar = el('button', { type: 'button', class: 'forte' }, 'SALVAR DESENHO');
+  bSalvar.addEventListener('click', () => void salvarDesenho());
+  const bPadrao = el('button', { type: 'button' }, 'PADRÃO DO DESENHO');
+  bPadrao.addEventListener('click', () => {
+    desenho = { ...DESENHO_DE_PROJETO };
+    mostrarDesenho();
+    agendarRefazer();
+    dizer('Desenho de projeto na tela (ainda não salvo).');
+  });
+  const bDesfazer = el('button', { type: 'button' }, 'VOLTAR AO SALVO');
+  bDesfazer.addEventListener('click', () => void desfazerDesenho());
+  blocoDesenho = el(
+    'div',
+    {},
+    el('h3', {}, 'Desenho do Gavião-H3'),
+    lista,
+    el('div', { class: 'linha' }, bSalvar, bPadrao, bDesfazer),
+    el('p', { class: 'dica' }, 'Cada número refaz os robôs na hora. Salvar grava o dado que o jogo lê; a perna não muda de comprimento, então a passada da geração 3 não depende do desenho.'),
+  );
+  blocoDesenho.hidden = chassi !== 'gaviao';
+  mostrarDesenho();
+  return blocoDesenho;
 }
 
 function montarPainel(): void {
@@ -580,6 +708,12 @@ function montarPainel(): void {
       b.addEventListener('click', () => predefinida(n));
       return b;
     })),
+    el('h3', {}, 'Luz'),
+    botoes([['ESTÚDIO', 'estudio'], ['COMO NO JOGO', 'jogo']] as const, () => modoDeLuz, (v) => {
+      modoDeLuz = v;
+      for (const l of lados) aplicarLuz(l.scene);
+    }),
+    el('p', { class: 'dica' }, 'COMO NO JOGO é a luz da arena (ambiente a 0,25, tom ACES 1,1): o robô como o jogador o vê. ESTÚDIO é uma caixa de luz suave, para julgar a forma.'),
     el('h3', {}, 'Desmontar'),
     blocoDesmontar,
     avisoDesmontar,
@@ -590,6 +724,7 @@ function montarPainel(): void {
     el('p', { class: 'dica' }, 'Pelve: altura em relação ao repouso. Os gráficos mostram os últimos 3 s (amarelo: geração 2, verde: geração 3).'),
     graficos.pelve,
     graficos.tronco,
+    montarDesenho(),
     el('h3', {}, 'Ajustes da geração 3'),
     ajustes,
     el('div', { class: 'linha' }, bSalvar, bPadrao, bDesfazer),
@@ -626,12 +761,17 @@ async function iniciar(): Promise<void> {
   await carregarGeracao3();
   try {
     // O arquivo pode ter mudado desde a montagem: a prévia parte do que está salvo agora.
-    const j = (await (await fetch('/api/estado')).json()) as { mechs?: { ajustes?: Partial<AjustesDoMovimento> } };
+    const j = (await (await fetch('/api/estado')).json()) as { mechs?: { ajustes?: Partial<AjustesDoMovimento>; desenho?: Partial<DesenhoDoGaviao> } };
     if (j.mechs?.ajustes) definirAjustesGen3(j.mechs.ajustes);
+    if (j.mechs?.desenho) desenho = { ...DESENHO_DE_PROJETO, ...j.mechs.desenho };
   } catch {
     // Sem o servidor do Estúdio a prévia usa os ajustes montados no pacote.
   }
   renderer.setSize(palco.clientWidth, palco.clientHeight, false);
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  ambiente = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  pmrem.dispose();
+  for (const l of lados) aplicarLuz(l.scene);
   await Promise.all(lados.map((l) => l.montar()));
   montarPainel();
   predefinida('lateral');
@@ -643,12 +783,27 @@ async function iniciar(): Promise<void> {
     ctrlCam.position.sub(controles.target).multiplyScalar(fator).add(controles.target);
     controles.update();
   };
+  const caixaDoPe = new THREE.Box3();
+  window.mechsMedirPes = (quadros) => {
+    const minimo = lados.map(() => Infinity);
+    for (let q = 0; q < quadros; q++) {
+      passo();
+      lados.forEach((l, k) => {
+        if (!l.pronto) return;
+        l.mech.root.updateMatrixWorld(true);
+        caixaDoPe.setFromObject(l.mech.root, true);
+        minimo[k] = Math.min(minimo[k] ?? Infinity, caixaDoPe.min.y);
+      });
+    }
+    return { chassi, modo, lados: lados.map((l, k) => ({ gen3: l.gen3, pisoMin: minimo[k] ?? Infinity })) };
+  };
   window.mechsProva = () => ({
     chassi,
     origem: origemDe(chassi),
     opcoes: TODOS.length,
     vista,
     modo,
+    luz: modoDeLuz,
     quadros: quadroN,
     lados: lados.map((l) => ({
       gen3: l.gen3,
@@ -659,6 +814,7 @@ async function iniciar(): Promise<void> {
       passosPorSegundo: l.passos.length / 2,
       pelve: l.rig.pelvis.position.y - l.rig.hipHeight,
       tronco: l.rig.torso.rotation.x * RAD,
+      larguraX: new THREE.Box3().setFromObject(l.rig.model).getSize(new THREE.Vector3()).x,
     })),
   });
   requestAnimationFrame(quadro);

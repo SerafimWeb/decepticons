@@ -13,6 +13,8 @@ export interface MechBlueprint {
   readonly corpo?: string;
   /** As cores de fábrica que diferem da paleta (o casco do Gavião é grafite). A cor do casco comprada no Hangar (`casco`) manda sobre elas. */
   readonly cores?: { readonly armor?: number };
+  /** Os números de desenho do corpo próprio (a geração 3: tamanho da ombreira, largura da cintura…), que o `CorpoDoRig` lê e o painel de desenho do Estúdio edita. Sem eles, vale o padrão do corpo. */
+  readonly estilo?: Readonly<Record<string, number>>;
   /** Tem os encaixes extras de peso (P282: as costas e os dois ombros ao lado da cabeça): o rig cria os nós deles. */
   readonly encaixesDePeso?: boolean;
   /**

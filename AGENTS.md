@@ -138,7 +138,7 @@ npm run ouvir      # abre a página para ouvir os sons e as vozes
 npm run mech:inspecionar -- arquivo.glb   # confere um robô importado (contrato, convenção da animação, foto) e sugere o IMPORTED_CHASSIS
 npm run mech:bocas -- marauder            # mede a boca de cada encaixe de arma do robô importado e confere com o dado do chassi (roda no check)
 npm run mech:movimento -- --chassi vector09 --video   # a bancada do movimento (P321): o MechBase de verdade, geração 2 ao lado da 3, em números e em vídeo (FERRAMENTAS 4.13)
-npm run mech:folha -- --modelo gaviao   # a folha de seis tomadas de um modelo parado, tirada da aba MECHS 3D (MODELADOR.md § 2)
+npm run mech:folha -- --modelo gaviao [--luz jogo]   # a folha de seis tomadas de um modelo parado, tirada da aba MECHS 3D, na luz de estúdio ou na do jogo (MODELADOR.md §§ 2 e 9)
 npm run arquivar  # ensaio: quanto do ESTADO_ATUAL e do HISTORICO tem mais de dois dias; `-- --aplicar` move para .decepticons/arquivo/ sem perder linha
 npm run painel     # sala de controle (novidades, equipe, mesa do Dan, fluxo, fichas, evolução, rota, frentes, decisões) em .tmp/painel/painel.html
 npm run server     # servidor de jogo do multiplayer em ws://localhost:2567/?sala=ARENA (DEPLOY.md)
