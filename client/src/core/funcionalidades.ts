@@ -60,6 +60,8 @@ const fixas: readonly Funcionalidade[] = [
   { id: 'tela:chat', grupo: 'telas', nome: 'Pilotos da REDE: ver o Hangar do outro e conversar por texto (online)', padrao: 'restrito', efeito: 'a lista de pilotos no monitor REDE, a visita ao Hangar de outro piloto e o chat de texto (some junto o aviso de mensagem)' },
   { id: 'tela:lado', grupo: 'telas', nome: 'Seletor de lado (Aliança ou Consórcio)', padrao: 'restrito', efeito: 'o chip ESCOLHA O LADO' },
   { id: 'tela:relatorio', grupo: 'telas', nome: 'Relatório de Consequências', padrao: 'publico', efeito: 'o chip RELATÓRIO depois da missão' },
+  // P317 (06/11): a moldura do cockpit da câmera em 1ª pessoa (obra do Gemini, concluída e medida). Nasce RESTRITA (P191): o Comandante julga jogando (?comandante=1) e libera aqui. A restrição é por função (`ui/moldaDoCockpit.ts`), não por `data-func`: o selo TESTE colidiria com o ::after da moldura.
+  { id: 'tela:cockpit', grupo: 'telas', nome: 'Moldura do cockpit (câmera em primeira pessoa)', padrao: 'restrito', efeito: 'a câmera em primeira pessoa fica sem a moldura metálica do visor' },
 ];
 
 /** Os robôs e as armas vêm dos dados do jogo: robô ou arma nova aparece no painel sozinha, **já pública** (o padrão de hoje); o Comandante a restringe se quiser. */
