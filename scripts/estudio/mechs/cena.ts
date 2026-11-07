@@ -29,11 +29,12 @@ const PROCEDURAIS: readonly ChassisId[] = ['vector09', 'arara', 'onca', 'colossu
 const RAD = 180 / Math.PI;
 const TAU = Math.PI * 2;
 /** Os ajustes que viram parte da passada ao criar o Mech: mexer neles refaz os Mechs (os outros valem ao vivo). */
-const ASSADOS = new Set<keyof AjustesDoMovimento>(['ciclosMax', 'agachamento', 'molejoDoPasso']);
+const ASSADOS = new Set<keyof AjustesDoMovimento>(['ciclosMax', 'agachamento', 'molejoDoPasso', 'cadenciaLenta']);
 const ROTULO_DO_AJUSTE: Readonly<Record<keyof AjustesDoMovimento, string>> = {
   ciclosMax: 'Teto da cadência (ciclos/s de cada perna)',
-  agachamento: 'Agachamento ao andar (fração da perna)',
-  molejoDoPasso: 'Molejo do passo (fração da perna)',
+  agachamento: 'Agachamento na corrida (fração da perna)',
+  molejoDoPasso: 'Molejo do passo na corrida (fração da perna)',
+  cadenciaLenta: 'Cadência de marcha (fração do teto)',
   inclinacaoDoTronco: 'Inclinação do tronco (graus)',
   amortecimentoDoPouso: 'Tranco do pouso',
   rigidez: 'Rigidez das molas',
@@ -305,8 +306,8 @@ function atualizarFicha(): void {
     linhas.push(
       ['Perna (coxa + canela)', `${(geo.ue + geo.w).toFixed(2)} m`],
       ['Alcance do passo', `${p.alcance.toFixed(2)} m`],
-      ['Agacha ao andar', `${p.agachamento.toFixed(2)} m`],
-      ['Molejo do passo', `${p.bob.toFixed(3)} m`],
+      ['Agacha no topo da velocidade', `${p.agachamento.toFixed(2)} m`],
+      ['Molejo do passo no topo', `${p.bob.toFixed(3)} m`],
       ['Passos/s com o pé 100% plantado', (2 * plantado).toFixed(1)],
       ['Passos/s com o teto', (2 * comTeto).toFixed(1)],
       ['Escorrega com o teto', `${(st.moveSpeed * Math.max(0, 1 - comTeto / plantado)).toFixed(1)} m/s`],

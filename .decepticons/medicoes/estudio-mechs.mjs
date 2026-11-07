@@ -75,7 +75,7 @@ try {
   const a = await quadro.evaluate(() => window.mechsProva());
   const [g2, g3] = a.lados;
   ok('as duas gerações correm na velocidade do chassi', Math.abs(g2.v - g3.v) < 0.01 && g3.v > 5, `v ${g3.v.toFixed(1)} m/s`);
-  ok('a geração 3 anda agachada (a pelve abaixo do repouso) e a 2 não', g3.pelve < -0.15 && g2.pelve > -0.2, `pelve G2 ${g2.pelve.toFixed(2)} · G3 ${g3.pelve.toFixed(2)} m`);
+  ok('a geração 3 anda de pé (a pelve no máximo 0,3 m abaixo do repouso: o agachado era 0,3 m ou mais)', g3.pelve > -0.3 && g3.pelve < 0.02 && g2.pelve > -0.2, `pelve G2 ${g2.pelve.toFixed(2)} · G3 ${g3.pelve.toFixed(2)} m`);
   ok('as duas dão passos', g2.passosPorSegundo > 0.5 && g3.passosPorSegundo > 0.5, `passos/s G2 ${g2.passosPorSegundo} · G3 ${g3.passosPorSegundo}`);
 
   const ficha = await quadro.evaluate(() => [...document.querySelectorAll('table')][0]?.innerText ?? '');

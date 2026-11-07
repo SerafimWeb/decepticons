@@ -3,24 +3,27 @@ import {
   fasePorSegundo,
   juntasDaPerna,
   parametrosDaPassada,
+  passoNaVelocidade,
   peDaPerna,
+  PERNA_MAXIMA,
   poseDaPassada,
   taxaDaFase,
   type GeometriaDaPerna,
+  type PassadaMutavel,
   type PoseDaPassada,
 } from './passadaGen3';
 
 // Perna de um Vector-09 (5,3 m): coxa 1,15 m e canela 1,35 m (a conta de `MEDIUM_MECH_BLUEPRINT`), sem joelho deslocado.
-const VECTOR09: GeometriaDaPerna = { ue: 1.15, eps: 0, w: 1.35, f0: 0, dRest: 2.5, peFrente: 0.682, peTras: 0.418 };
+const VECTOR09: GeometriaDaPerna = { ue: 1.15, eps: 0, w: 1.25, f0: 0, dRest: 2.4, peFrente: 0.682, peTras: 0.418, tornozelo: 0.1 };
 // Perna digitígrada (Arara-B1): o joelho fica 0,55 m à frente da vertical, e o pé em repouso também.
-const ARARA: GeometriaDaPerna = { ue: Math.hypot(0.55, 1.35), eps: Math.atan2(0.55, 1.35), w: 1.75, f0: 0.55, dRest: 1.35 + 1.75, peFrente: 0.372, peTras: 0.228 };
+const ARARA: GeometriaDaPerna = { ue: Math.hypot(0.55, 1.35), eps: Math.atan2(0.55, 1.35), w: 1.65, f0: 0.55, dRest: 1.35 + 1.65, peFrente: 0.372, peTras: 0.228, tornozelo: 0.1 };
 // Pesado (Onça-B2): perna curta e pé grande.
-const ONCA: GeometriaDaPerna = { ue: 1.05, eps: 0, w: 1.15, f0: 0, dRest: 2.2, peFrente: 1.023, peTras: 0.627 };
+const ONCA: GeometriaDaPerna = { ue: 1.05, eps: 0, w: 1.05, f0: 0, dRest: 2.1, peFrente: 1.023, peTras: 0.627, tornozelo: 0.1 };
 // Perna de um titã (Colossus): alcance longo e passo lento.
-const COLOSSUS: GeometriaDaPerna = { ue: 3.05, eps: 0, w: 3.05, f0: 0, dRest: 6.1, peFrente: 2.015, peTras: 1.235 };
+const COLOSSUS: GeometriaDaPerna = { ue: 3.05, eps: 0, w: 2.95, f0: 0, dRest: 6, peFrente: 2.015, peTras: 1.235, tornozelo: 0.1 };
 const TODAS = [VECTOR09, ARARA, ONCA, COLOSSUS];
 
-const pose = (): PoseDaPassada => ({ hipL: 0, kneeL: 0, hipR: 0, kneeR: 0, dPelvis: 0 });
+const pose = (): PoseDaPassada => ({ hipL: 0, kneeL: 0, hipR: 0, kneeR: 0, dPelvis: 0, phiL: 0, phiR: 0 });
 
 describe('cinemática inversa da perna (passadaGen3)', () => {
   it('a ida e a volta batem: o pé calculado pelas juntas volta ao alvo', () => {
@@ -70,14 +73,14 @@ describe('parâmetros da passada (passadaGen3)', () => {
         const p = parametrosDaPassada(geo, angulo);
         const rMax = geo.ue + geo.w;
         const dAndar = geo.dRest - p.agachamento - p.bob;
-        const folga = Math.sqrt(Math.max(0, rMax * rMax - dAndar * dAndar)) - Math.abs(geo.f0);
+        const folga = Math.sqrt(Math.max(0, (PERNA_MAXIMA * rMax) ** 2 - dAndar * dAndar)) - Math.abs(geo.f0);
         expect(p.alcance).toBeGreaterThanOrEqual(0);
         expect(p.alcance).toBeLessThanOrEqual(folga + 1e-9);
       }
     }
   });
 
-  it('no Vector-09 o molejo do andar chega à amplitude de projeto (0,125 m): o alcance é o do limite da perna', () => {
+  it('no Vector-09 o vai e vem da pelve é o molejo de projeto: o alcance é o do limite da perna', () => {
     const p = parametrosDaPassada(VECTOR09, 0.7);
     const fundo = poseDaPassada(0, 1, VECTOR09, p, pose());
     let minimo = Infinity;
@@ -87,7 +90,7 @@ describe('parâmetros da passada (passadaGen3)', () => {
       minimo = Math.min(minimo, fundo.dPelvis);
       maximo = Math.max(maximo, fundo.dPelvis);
     }
-    expect(maximo - minimo).toBeCloseTo(p.bob, 3);
+    expect(maximo - minimo).toBeCloseTo(p.bob, 2);
   });
 });
 
@@ -139,29 +142,67 @@ describe('passada com o pé plantado (passadaGen3)', () => {
     for (const geo of TODAS) {
       const p = parametrosDaPassada(geo, 0.7);
       const topo = geo.dRest - p.agachamento;
+      const fundo = topo - p.bob;
       for (let i = 0; i < 1000; i++) {
         const q = poseDaPassada((i / 1000) * Math.PI * 2, 1, geo, p, pose());
         expect(q.dPelvis).toBeLessThanOrEqual(topo + 1e-9);
-        expect(q.dPelvis).toBeGreaterThanOrEqual(topo - p.bob - 1e-6);
+        expect(q.dPelvis).toBeGreaterThanOrEqual(fundo - 1e-6);
       }
     }
   });
 
-  it('o pé rígido não afunda no piso: a ponta (ou o calcanhar) mais funda fica a menos de 10% da distância do eixo à ponta abaixo do chão', () => {
+  it('o tornozelo mantém o pé plano no apoio e o ponto mais baixo do pé nunca fura o chão (nem no balanço, com a ponta inclinada)', () => {
     for (const geo of TODAS) {
       const p = parametrosDaPassada(geo, 0.7);
       const pe = { f: 0, d: 0 };
       let maisFundo = Infinity;
+      let apoioInclinado = 0;
       for (let i = 0; i < 2000; i++) {
-        const q = poseDaPassada((i / 2000) * Math.PI * 2, 1, geo, p, pose());
-        for (const [hip, knee] of [[q.hipL, q.kneeL], [q.hipR, q.kneeR]] as const) {
+        const fase = (i / 2000) * Math.PI * 2;
+        const q = poseDaPassada(fase, 1, geo, p, pose());
+        const ciclo = i / 2000;
+        for (const [hip, knee, phi, apoio] of [
+          [q.hipL, q.kneeL, q.phiL, ciclo < p.fracaoDeApoio],
+          [q.hipR, q.kneeR, q.phiR, (ciclo + 0.5) % 1 < p.fracaoDeApoio],
+        ] as const) {
           peDaPerna(geo, { hip, knee }, pe);
-          // O eixo do pé está a `pelve - d` do chão; o pé gira com a canela (hip + knee) e o canto que toca cai `a·|sen|` abaixo do eixo (calcanhar se o pé está à frente, ponta se está atrás).
-          const sn = Math.sin(hip + knee);
-          maisFundo = Math.min(maisFundo, q.dPelvis - pe.d - (sn > 0 ? geo.peTras : geo.peFrente) * Math.abs(sn));
+          // O tornozelo está a (pelve - d) acima do plano dele, que fica a "tornozelo" do chão com o pé plano; o ponto mais baixo do pé inclinado de phi
+          // fica a "tornozelo·cos + a·|sen|" abaixo do tornozelo (a = ponta, se a ponta desce; calcanhar, se sobe).
+          const s = Math.sin(phi);
+          const baixo = q.dPelvis - pe.d + geo.tornozelo - (geo.tornozelo * Math.cos(phi) + (s < 0 ? geo.peFrente : geo.peTras) * Math.abs(s));
+          maisFundo = Math.min(maisFundo, baixo);
+          if (apoio) apoioInclinado = Math.max(apoioInclinado, Math.abs(phi));
         }
       }
-      expect(maisFundo).toBeGreaterThan(-0.1 * geo.peFrente);
+      expect(maisFundo).toBeGreaterThan(-1e-6);
+      expect(apoioInclinado).toBe(0);
+    }
+  });
+
+  it('no balanço a ponta desce ao sair do chão e sobe antes de pisar, e o pé termina plano', () => {
+    const p = parametrosDaPassada(VECTOR09, 0.7);
+    let min = 0;
+    let max = 0;
+    for (let i = 0; i < 2000; i++) {
+      const q = poseDaPassada((i / 2000) * Math.PI * 2, 1, VECTOR09, p, pose());
+      min = Math.min(min, q.phiL);
+      max = Math.max(max, q.phiL);
+    }
+    expect(min).toBeLessThan(-0.1);
+    expect(max).toBeGreaterThan(0.1);
+    expect(Math.abs(poseDaPassada(0, 1, VECTOR09, p, pose()).phiL)).toBe(0);
+  });
+
+  it('o joelho do apoio não passa de 50° em nenhum chassi (o pé rígido pedia 70° a 110°: o robô andava agachado)', () => {
+    for (const geo of TODAS) {
+      const p = parametrosDaPassada(geo, 0.7);
+      let dobra = 0;
+      for (let i = 0; i < 2000; i++) {
+        const ciclo = i / 2000;
+        const q = poseDaPassada(ciclo * Math.PI * 2, 1, geo, p, pose());
+        if (ciclo < p.fracaoDeApoio) dobra = Math.max(dobra, -q.kneeL);
+      }
+      expect(dobra).toBeLessThan((50 * Math.PI) / 180);
     }
   });
 
@@ -244,6 +285,100 @@ describe('passada com o pé plantado (passadaGen3)', () => {
       const q = poseDaPassada((i / 500) * Math.PI * 2, 1, ARARA, p, pose());
       expect(Number.isFinite(q.hipL + q.kneeL + q.hipR + q.kneeR + q.dPelvis)).toBe(true);
       expect(q.dPelvis).toBeLessThanOrEqual(ARARA.dRest - p.agachamento + 1e-9);
+    }
+  });
+});
+
+/** Cada geometria com a velocidade de topo do chassi (m/s): a passada cresce até ela. */
+const COM_VELOCIDADE: readonly (readonly [GeometriaDaPerna, number])[] = [[VECTOR09, 9], [ARARA, 13], [ONCA, 6], [COLOSSUS, 4]];
+
+/** Anda 5 s numa velocidade fixa e devolve a altura média e a mínima da pelve (fração do repouso) e o deslizamento médio do pé no apoio (m/s). */
+function andarNaVelocidade(geo: GeometriaDaPerna, vTopo: number, fracao: number): { media: number; minimo: number; deslize: number } {
+  const base = parametrosDaPassada(geo, 0.7);
+  const p: PassadaMutavel = { ...base };
+  const v = fracao * vTopo;
+  const dt = 1 / 60;
+  const pe = { f: 0, d: 0 };
+  const q = pose();
+  let fase = 0, soma = 0, n = 0, minimo = Infinity, deslize = 0, apoios = 0, fAnterior = Number.NaN;
+  for (let i = 0; i < 300; i++) {
+    passoNaVelocidade(base, v, vTopo, p);
+    fase += fasePorSegundo(p, v) * dt;
+    poseDaPassada(fase, 1, geo, p, q);
+    peDaPerna(geo, { hip: q.hipL, knee: q.kneeL }, pe);
+    if (i > 60) {
+      soma += q.dPelvis / geo.dRest;
+      n++;
+      minimo = Math.min(minimo, q.dPelvis / geo.dRest);
+      if ((fase / (Math.PI * 2)) % 1 < p.fracaoDeApoio && !Number.isNaN(fAnterior)) {
+        deslize += Math.abs(v + (pe.f - fAnterior) / dt);
+        apoios++;
+      }
+    }
+    fAnterior = pe.f;
+  }
+  return { media: soma / n, minimo, deslize: apoios > 0 ? deslize / apoios : 0 };
+}
+
+describe('a passada cresce com a velocidade (passoNaVelocidade)', () => {
+  it('parado não há passo, pé no ar, agachamento nem molejo', () => {
+    for (const [geo, vTopo] of COM_VELOCIDADE) {
+      const p = passoNaVelocidade(parametrosDaPassada(geo, 0.7), 0, vTopo, { ...parametrosDaPassada(geo, 0.7) });
+      expect(p.alcance).toBe(0);
+      expect(p.altura).toBe(0);
+      expect(p.agachamento).toBe(0);
+      expect(p.bob).toBe(0);
+    }
+  });
+
+  it('o passo, o agachamento e o molejo crescem com a velocidade; no topo o agachamento vale o da base e o passo e o molejo não passam dos dela', () => {
+    for (const [geo, vTopo] of COM_VELOCIDADE) {
+      const base = parametrosDaPassada(geo, 0.7);
+      const p: PassadaMutavel = { ...base };
+      let anterior = { alcance: 0, agachamento: 0, bob: 0 };
+      for (const fracao of [0.1, 0.25, 0.5, 0.75, 1]) {
+        passoNaVelocidade(base, fracao * vTopo, vTopo, p);
+        expect(p.alcance).toBeGreaterThanOrEqual(anterior.alcance - 1e-12);
+        expect(p.alcance).toBeLessThanOrEqual(base.alcance + 1e-12);
+        expect(p.agachamento).toBeGreaterThan(anterior.agachamento);
+        expect(p.bob).toBeGreaterThanOrEqual(anterior.bob - 1e-12);
+        anterior = { alcance: p.alcance, agachamento: p.agachamento, bob: p.bob };
+      }
+      expect(p.agachamento).toBeCloseTo(base.agachamento, 12);
+      expect(p.bob).toBeLessThanOrEqual(base.bob + 1e-12);
+    }
+  });
+
+  it('a cadência cresce com a velocidade (de marcha dá menos passos) e nunca passa do teto', () => {
+    for (const [geo, vTopo] of COM_VELOCIDADE) {
+      const base = parametrosDaPassada(geo, 0.7);
+      const p: PassadaMutavel = { ...base };
+      let anterior = 0;
+      for (const fracao of [0.1, 0.25, 0.5, 0.75, 1, 3]) {
+        passoNaVelocidade(base, fracao * vTopo, vTopo, p);
+        const ciclos = fasePorSegundo(p, fracao * vTopo) / (Math.PI * 2);
+        expect(ciclos).toBeGreaterThan(anterior - 1e-9);
+        expect(ciclos).toBeLessThanOrEqual(base.ciclosMax + 1e-9);
+        anterior = ciclos;
+      }
+    }
+  });
+
+  it('de marcha o robô anda de pé: a pelve média fica a 95% do repouso ou mais a 30% da velocidade, e a 93% ou mais no topo', () => {
+    for (const [geo, vTopo] of COM_VELOCIDADE) {
+      expect(andarNaVelocidade(geo, vTopo, 0.3).media).toBeGreaterThan(0.95);
+      const topo = andarNaVelocidade(geo, vTopo, 1);
+      expect(topo.media).toBeGreaterThan(0.93);
+      // E nunca mais fundo que o agachamento e o molejo juntos (o piso da passada).
+      expect(topo.minimo).toBeGreaterThan(1 - (0.015 + 0.07) - 0.02);
+    }
+  });
+
+  it('o pé fica plantado enquanto o passo cabe na perna: até 30% da velocidade o deslizamento é menos de 5% da velocidade do corpo', () => {
+    for (const [geo, vTopo] of COM_VELOCIDADE) {
+      for (const fracao of [0.15, 0.3]) {
+        expect(andarNaVelocidade(geo, vTopo, fracao).deslize).toBeLessThan(0.05 * fracao * vTopo);
+      }
     }
   });
 });

@@ -1,7 +1,7 @@
 import { ajustesGen3 } from './ajustesGen3';
 import type { MechRig } from './MechBase';
 import { avancaMola, frequenciaDoCorpo, novaMola, type Mola } from './molejo';
-import { fasePorSegundo, parametrosDaPassada, poseDaPassada, type GeometriaDaPerna, type ParametrosDaPassada, type PoseDaPassada } from './passadaGen3';
+import { fasePorSegundo, parametrosDaPassada, passoNaVelocidade, poseDaPassada, type GeometriaDaPerna, type ParametrosDaPassada, type PassadaMutavel, type PoseDaPassada } from './passadaGen3';
 import { medirGeometriaDaPerna } from './passadaRig';
 
 /**
@@ -15,11 +15,26 @@ import { medirGeometriaDaPerna } from './passadaRig';
 
 /** Graus para radianos (os ajustes vêm em graus). */
 const GRAU = Math.PI / 180;
+/** A fração da velocidade de topo em que o peso da passada fica cheio (12%): abaixo disso a pose se mistura com o repouso. */
+const PESO_CHEIO = 0.12;
+/**
+ * A constante de tempo (s) da velocidade que alimenta a passada. O passo, o pé no ar e o agachamento são funções da velocidade e perto de zero
+ * (a perna quase esticada) cada pequeno passo pede um joelho grande: sem o filtro, o último quadro de uma freada derrubava a pose inteira de uma vez
+ * (1,1 rad no joelho). Com ele a passada entra e sai da velocidade sem tranco; o pé só escorrega durante o arranque e a freada, uma fração de segundo.
+ */
+const TAU_DA_VELOCIDADE = 0.1;
 
 /** O estado de um Mech na geração 3: a perna medida, a passada, a pose e as molas. */
 export interface Estado3 {
   readonly geo: GeometriaDaPerna;
+  /** A passada do topo da velocidade (o máximo); a de cada quadro sai dela por `passoNaVelocidade`. */
   readonly passo: ParametrosDaPassada;
+  /** A passada desta velocidade, reescrita a cada quadro. */
+  readonly passoAgora: PassadaMutavel;
+  /** A velocidade de topo do chassi (m/s): o passo, o agachamento e o molejo crescem até ela. */
+  readonly vTopo: number;
+  /** A velocidade horizontal suavizada (m/s): a que alimenta a passada (`TAU_DA_VELOCIDADE`). */
+  vSuave: number;
   readonly pose: PoseDaPassada;
   readonly molaTronco: Mola;
   readonly molaRolagem: Mola;
@@ -51,23 +66,30 @@ export interface Anfitriao3 {
 
 export interface Geracao3 {
   /** Mede a perna do rig e prepara o estado; `null` se o rig não dá uma perna medível (o `.glb`): aí o Mech anda como antes. */
-  criarEstado(rig: MechRig, anguloDoQuadril: number, altura: number): Estado3 | null;
-  /** Quanto a fase da passada avança por segundo (rad/s) à velocidade dada: pé plantado, até o teto da cadência. */
-  fasePorSegundo(e: Estado3, velocidade: number): number;
+  criarEstado(rig: MechRig, anguloDoQuadril: number, altura: number, velocidadeDeTopo: number): Estado3 | null;
+  /**
+   * Quanto a fase da passada avança por segundo (rad/s) à velocidade dada: pé plantado, até o teto da cadência. Chamada uma vez por quadro, antes de
+   * `locomocao`: é ela que filtra a velocidade (`Estado3.vSuave`) que a pose usa.
+   */
+  fasePorSegundo(e: Estado3, velocidade: number, dt: number): number;
   /** Pernas, pelve e tronco deste quadro. Devolve a rolagem da pelve (rad) para somar ao roll de sempre. */
-  locomocao(e: Estado3, m: Anfitriao3, rig: MechRig, fase: number, dt: number, hSpeed: number, air: number, lean: number, k: number): number;
+  locomocao(e: Estado3, m: Anfitriao3, rig: MechRig, fase: number, dt: number, air: number, lean: number, k: number): number;
   /** O coice de um braço como mola (recua, passa do ponto e volta); `alvo` é o coice decaído de sempre. */
   coice(e: Estado3, esquerdo: boolean, alvo: number, dt: number): number;
 }
 
 export const GERACAO3: Geracao3 = {
-  criarEstado(rig, anguloDoQuadril, altura) {
+  criarEstado(rig, anguloDoQuadril, altura, velocidadeDeTopo) {
     const geo = medirGeometriaDaPerna(rig);
     if (!geo) return null;
+    const passo = parametrosDaPassada(geo, anguloDoQuadril, ajustesGen3());
     return {
       geo,
-      passo: parametrosDaPassada(geo, anguloDoQuadril, ajustesGen3()),
-      pose: { hipL: 0, kneeL: 0, hipR: 0, kneeR: 0, dPelvis: 0 },
+      passo,
+      passoAgora: { ...passo },
+      vTopo: velocidadeDeTopo,
+      vSuave: 0,
+      pose: { hipL: 0, kneeL: 0, hipR: 0, kneeR: 0, dPelvis: 0, phiL: 0, phiR: 0 },
       molaTronco: novaMola(),
       molaRolagem: novaMola(),
       molaPelve: novaMola(),
@@ -83,22 +105,34 @@ export const GERACAO3: Geracao3 = {
     };
   },
 
-  fasePorSegundo: (e, velocidade) => fasePorSegundo(e.passo, velocidade),
+  fasePorSegundo(e, velocidade, dt) {
+    e.vSuave += (velocidade - e.vSuave) * (1 - Math.exp(-dt / TAU_DA_VELOCIDADE));
+    return fasePorSegundo(passoNaVelocidade(e.passo, e.vSuave, e.vTopo, e.passoAgora), e.vSuave);
+  },
 
-  locomocao(e, m, rig, fase, dt, hSpeed, air, lean, k) {
+  locomocao(e, m, rig, fase, dt, air, lean, k) {
     const aj = ajustesGen3();
     const geo = e.geo;
     // Os pés: a postura de ar entra suave. A passada no chão é direta, sem filtro: um filtro atrasa o pé e ele escorrega.
     // A perna avariada dá passo curto (o mancar do dano às pernas, igual à geração 2).
     e.airMix += (air - e.airMix) * k;
-    // O peso cresce com a velocidade (metade da velocidade do chassi já dá a passada cheia) e é suavizado, como a geração 2 (amplitude ∝ velocidade).
-    e.peso += ((1 - e.airMix) * Math.min(1, hSpeed / (0.5 * m.stats.moveSpeed)) - e.peso) * k;
+    // O peso só tira o robô do repouso sem estalo (a passada em si já cresce com a velocidade, `passoNaVelocidade`): cheio a 12% da velocidade do chassi.
+    e.peso += ((1 - e.airMix) * Math.min(1, e.vSuave / (PESO_CHEIO * e.vTopo)) - e.peso) * k;
     const pose = e.pose;
-    poseDaPassada(fase, e.peso, geo, e.passo, pose, 1 - Math.max(0, lean) * 0.65, 1 - Math.max(0, -lean) * 0.65);
-    rig.leftLeg.hip.rotation.x = pose.hipL + e.airMix * 0.55;
-    rig.rightLeg.hip.rotation.x = pose.hipR - e.airMix * 0.25;
-    rig.leftLeg.knee.rotation.x = pose.kneeL - e.airMix * 1.0;
-    rig.rightLeg.knee.rotation.x = pose.kneeR - e.airMix * 0.4;
+    passoNaVelocidade(e.passo, e.vSuave, e.vTopo, e.passoAgora);
+    poseDaPassada(fase, e.peso, geo, e.passoAgora, pose, 1 - Math.max(0, lean) * 0.65, 1 - Math.max(0, -lean) * 0.65);
+    const hipL = pose.hipL + e.airMix * 0.55;
+    const hipR = pose.hipR - e.airMix * 0.25;
+    const kneeL = pose.kneeL - e.airMix * 1.0;
+    const kneeR = pose.kneeR - e.airMix * 0.4;
+    rig.leftLeg.hip.rotation.x = hipL;
+    rig.rightLeg.hip.rotation.x = hipR;
+    rig.leftLeg.knee.rotation.x = kneeL;
+    rig.rightLeg.knee.rotation.x = kneeR;
+    // O tornozelo (P322): a pose dá a inclinação do pé em relação ao CHÃO (zero no apoio: pé plano) e, no ar, a ponta cai um pouco. O ângulo do tornozelo é o que falta
+    // para a canela (quadril + joelho) chegar a ela.
+    const noAr = -0.3 * e.airMix;
+    rig.setFootPitch?.(pose.phiL + noAr - (hipL + kneeL), pose.phiR + noAr - (hipR + kneeR));
 
     // Pouso: a queda mais forte desde que saiu do chão vira um tranco na mola da pelve (ela agacha e volta).
     if (m.grounded) {

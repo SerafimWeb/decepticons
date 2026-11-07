@@ -217,6 +217,10 @@ export function frostShell(parent: THREE.Object3D, w: number, h: number, d: numb
  * Combina as malhas estáticas filhas de cada pivô articulado. Cada pivô vira um draw call,
  * mantendo materiais por vértice (cor, metal, rugosidade e emissão) e a visibilidade da peça.
  * Chamado só ao construir o rig; o custo não entra no frame nem no tick.
+ *
+ * **O tornozelo (P322):** a malha marcada com `userData.mechFoot` (-1 o pé esquerdo, +1 o direito) gira em torno do eixo do tornozelo no vertex shader
+ * (`material.userData.setFootPitch`, `setAnkle`), sem pivô nem draw call a mais. É o que deixa o pé plano no chão com a canela inclinada: sem isso o pé
+ * rígido fazia a perna encurtar a cada passo e o robô andava agachado.
  */
 export function batchRigMeshes(root: THREE.Object3D, hullMaterials: readonly THREE.Material[]): THREE.MeshStandardMaterial {
   const hull = new Set(hullMaterials);
@@ -226,25 +230,35 @@ export function batchRigMeshes(root: THREE.Object3D, hullMaterials: readonly THR
   const flash = { value: new THREE.Color(0, 0, 0) };
   const dash = { value: 1 };
   const heat = { value: 0 };
+  /** A inclinação do pé esquerdo e do direito (rad; positivo levanta a ponta) e o eixo do tornozelo, no referencial do pivô onde o pé está. */
+  const footPitch = { value: new THREE.Vector2(0, 0) };
+  const ankle = { value: new THREE.Vector3(0, 0, 0) };
 
   material.onBeforeCompile = (shader) => {
     shader.uniforms.mechHitFlashColor = flash;
     shader.uniforms.mechDashScale = dash;
     shader.uniforms.mechHeatGlow = heat;
+    shader.uniforms.mechFootPitch = footPitch;
+    shader.uniforms.mechAnkle = ankle;
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute float mechHull;\nattribute float mechDash;\nattribute float mechRoughness;\nattribute float mechMetalness;\nattribute vec3 mechEmission;\nvarying float vMechHull;\nvarying float vMechDash;\nvarying float vMechRoughness;\nvarying float vMechMetalness;\nvarying vec3 vMechEmission;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvMechHull = mechHull;\nvMechDash = mechDash;\nvMechRoughness = mechRoughness;\nvMechMetalness = mechMetalness;\nvMechEmission = mechEmission;');
+      .replace('#include <common>', '#include <common>\nattribute float mechFoot;\nuniform vec2 mechFootPitch;\nuniform vec3 mechAnkle;\nvec3 mechFootRot(vec3 v) { float a = mechFoot < 0.0 ? mechFootPitch.x : mechFootPitch.y; float c = cos(a); float s = sin(a); return vec3(v.x, c * v.y - s * v.z, s * v.y + c * v.z); }\nattribute float mechHull;\nattribute float mechDash;\nattribute float mechRoughness;\nattribute float mechMetalness;\nattribute vec3 mechEmission;\nvarying float vMechHull;\nvarying float vMechDash;\nvarying float vMechRoughness;\nvarying float vMechMetalness;\nvarying vec3 vMechEmission;')
+      .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\nif (mechFoot != 0.0) objectNormal = mechFootRot(objectNormal);')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nif (mechFoot != 0.0) transformed = mechAnkle + mechFootRot(transformed - mechAnkle);\nvMechHull = mechHull;\nvMechDash = mechDash;\nvMechRoughness = mechRoughness;\nvMechMetalness = mechMetalness;\nvMechEmission = mechEmission;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\nuniform vec3 mechHitFlashColor;\nuniform float mechDashScale;\nuniform float mechHeatGlow;\nvarying float vMechHull;\nvarying float vMechDash;\nvarying float vMechRoughness;\nvarying float vMechMetalness;\nvarying vec3 vMechEmission;')
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = vMechRoughness;')
       .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = vMechMetalness;')
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vMechEmission * mix(1.0, mechDashScale, vMechDash) + mechHitFlashColor * vMechHull + vec3(1.0, 0.18, 0.015) * mechHeatGlow * vMechHull;');
   };
-  material.customProgramCacheKey = () => 'cybermech-articulated-batch-v2';
+  material.customProgramCacheKey = () => 'cybermech-articulated-batch-v3';
   /** Cor inteira somada à luz própria do casco: o flash de dano e a cor do estado (gelo, chamas, choque; `entities/statusTint.ts`). */
   material.userData.setTint = (r: number, g: number, b: number) => flash.value.setRGB(r, g, b);
   material.userData.setDash = (active: boolean) => { dash.value = active ? 7 : 1; };
   material.userData.setHeat = (value: number) => { heat.value = value; };
+  material.userData.setFootPitch = (left: number, right: number) => footPitch.value.set(left, right);
+  material.userData.setAnkle = (x: number, y: number, z: number) => ankle.value.set(x, y, z);
+  /** A inclinação dos pés agora (o mesmo vetor do shader): a bancada e os testes leem daqui. */
+  material.userData.footPitch = footPitch.value;
 
   const mergePart = (parent: THREE.Object3D): void => {
     for (const child of [...parent.children]) mergePart(child);
@@ -271,6 +285,7 @@ export function batchRigMeshes(root: THREE.Object3D, hullMaterials: readonly THR
       const metalness = new Float32Array(count);
       const hullMask = new Float32Array(count);
       const dashMask = new Float32Array(count);
+      const footMask = new Float32Array(count).fill(typeof mesh.userData.mechFoot === 'number' ? mesh.userData.mechFoot : 0);
       const color = sourceMaterial.color;
       const emission = sourceMaterial.emissive.clone().multiplyScalar(sourceMaterial.emissiveIntensity);
       for (let i = 0; i < count; i++) {
@@ -287,6 +302,7 @@ export function batchRigMeshes(root: THREE.Object3D, hullMaterials: readonly THR
       geometry.setAttribute('mechMetalness', new THREE.BufferAttribute(metalness, 1));
       geometry.setAttribute('mechHull', new THREE.BufferAttribute(hullMask, 1));
       geometry.setAttribute('mechDash', new THREE.BufferAttribute(dashMask, 1));
+      geometry.setAttribute('mechFoot', new THREE.BufferAttribute(footMask, 1));
       pieces.push(geometry);
     }
     if (!pieces.length) return;

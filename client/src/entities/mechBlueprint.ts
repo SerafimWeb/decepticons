@@ -149,10 +149,14 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
     const kneePin = cyl(knee, blueprint.legs.thighWidth * 0.3, blueprint.legs.thighWidth * 1.15, M.frame, 0, 0, 0);
     kneePin.rotation.z = Math.PI / 2;
     taperedBox(knee, blueprint.legs.shinWidth * 0.92, blueprint.legs.lowerLength * 0.94, blueprint.legs.shinWidth, 1.25, M.paint, 0, -blueprint.legs.lowerLength * 0.42, 0);
-    box(knee, blueprint.legs.shinWidth * 1.2, 0.2 * scale, blueprint.legs.footLength, M.frame, 0, -blueprint.legs.lowerLength - 0.1 * scale, -blueprint.legs.footLength * 0.12);
+    const pe = box(knee, blueprint.legs.shinWidth * 1.2, 0.2 * scale, blueprint.legs.footLength, M.frame, 0, -blueprint.legs.lowerLength - 0.1 * scale, -blueprint.legs.footLength * 0.12);
+    // O tornozelo (P322): o lote gira o pé em torno dele no shader (`batchRigMeshes`); o nó é só o ponto, sem malha e sem draw call.
+    pe.userData.mechFoot = side;
+    const ankle = group(knee, 0, -blueprint.legs.lowerLength - 0.1 * scale, 0);
+    ankle.name = side < 0 ? 'leftAnkle' : 'rightAnkle';
     // Tornozelo avançado cria a perna digitígrada sem adicionar junta nem draw call.
     if (blueprint.legs.digitigrade > 0) knee.position.z = -blueprint.legs.digitigrade * scale;
-    return { hip, knee };
+    return { hip, knee, ankle };
   };
   const leftLeg = leg(-1);
   const rightLeg = leg(1);
@@ -260,6 +264,13 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   const mostrandoExtra: Partial<Record<ExtraSlot, Loadout['secondary']>> = {};
 
   const batchedMaterial = batchRigMeshes(model, [M.armor, M.paint]);
+  batchedMaterial.userData.setAnkle(0, -blueprint.legs.lowerLength - 0.1 * scale, 0);
+  /** O pé gira junto: o nó (para sondas e efeitos) e o desenho (o shader do lote). Positivo levanta a ponta. */
+  const setFootPitch = (left: number, right: number): void => {
+    if (leftLeg.ankle) leftLeg.ankle.rotation.x = left;
+    if (rightLeg.ankle) rightLeg.ankle.rotation.x = right;
+    batchedMaterial.userData.setFootPitch(left, right);
+  };
   // Só depois do lote: `batchRigMeshes` varre e remove todo `THREE.Mesh` dos pivôs para fundir no casco —
   // criada antes, a capa de gelo seria varrida junto (ela é um `THREE.Mesh` comum, não um `THREE.Points` como
   // o vapor do calor). Cobre as duas placas do torso (cintura + peito, acima) com folga, não cada uma de perto.
@@ -382,7 +393,7 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
     backMuzzle: nos.back,
     shoulderMuzzles: nos.rightShoulder && nos.leftShoulder ? { right: nos.rightShoulder, left: nos.leftShoulder } : undefined,
     thrusters, thrusterMaterial: batchedMaterial, setDashVisual: batchedMaterial.userData.setDash,
-    hullMaterials: [batchedMaterial], hipHeight, pe: { frente: blueprint.legs.footLength * 0.62, tras: blueprint.legs.footLength * 0.38 }, setHeatVisual, setFrozenVisual: updateFrost, setGuardVisual, mountWeapons, barrageMouth,
+    hullMaterials: [batchedMaterial], hipHeight, pe: { frente: blueprint.legs.footLength * 0.62, tras: blueprint.legs.footLength * 0.38, tornozelo: 0.1 * scale }, setFootPitch, setHeatVisual, setFrozenVisual: updateFrost, setGuardVisual, mountWeapons, barrageMouth,
   };
 }
 
