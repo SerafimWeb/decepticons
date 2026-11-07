@@ -16,10 +16,15 @@
 
 ## Na `main` desde 06/11 (PR #517), no ar após o deploy: a higienização e o inacabado dos outros agentes (Claude, P317 e P318)
 
-## EM BRANCH — NÃO ESTÁ NO AR: a geração 3 do movimento dos Mechs, corte 1 (Claude, P321, branch `claude/movimento-gen3`)
+## EM BRANCH — NÃO ESTÁ NO AR: a aba MECHS 3D do Estúdio, primeiro corte: o movimento (Claude, P321, branch `claude/estudio-mechs`)
+
+**A pergunta do Comandante (06/11):** "será aonde que você vai colocar isso? no estúdio já tínhamos pensado em fazer a oficina dos mechs." **Resposta: no Estúdio**, não numa página do site. **Feito:** `npm run estudio` → MECHS 3D abre a geração 2 ao lado da 3 (código do jogo montado pelo Vite), a ficha lida do código, desmontar e explodir, o roteiro e os sete ajustes de gosto; SALVAR grava `movimentoGen3.json` (o servidor valida a faixa). A bancada `mech:movimento` e a aba usam o mesmo roteiro (`entities/roteiroDeMovimento.ts`). Prova no Chrome: `medicoes/estudio-mechs.mjs`; foto `arte/estudio-mechs-gen3.png`.
+**Ficou:** o olho do Comandante; cores por parte, encaixes de arma, escala e o `.glb` (o resto do `ESTUDIO.md` § 3.3); a vitrine pública do site saiu do plano. **Próxima sessão começa com:** o que o Comandante achar ao ajustar a geração 3 na aba.
+
+## Na `main` desde 06/11 (PR #520), no ar após o deploy e RESTRITA: a geração 3 do movimento dos Mechs, corte 1 (Claude, P321)
 
 **O pedido (06/11):** os Mechs andam "duros", sem molejo; evoluir para a geração 3 **sem pesar a renderização** (a skill teardown deu o método, não a geometria). **Feito:** `entities/passadaGen3.ts` (passada com o pé plantado, função pura), `molejo.ts`, `passadaRig.ts`, `movimentoGen3.ts` + `movimentoGen3.json` (interruptor e ajustes de gosto), ligados no `MechBase` atrás de `mech:gen3` (restrito: **desligado, cada Mech anda como antes**). A bancada nova `npm run mech:movimento` (FERRAMENTAS 4.13) mede o `MechBase` de verdade: no Vector-09 o escorregão do pé cai de 5,23 para 1,68 m/s, a ponta do pé no piso de −18 para −3 cm, o molejo é 0,125 m e a CPU custa +2 µs por Mech por quadro. Foto: `arte/gen3-vector09-folha.png`. **O código vai sob demanda** (`geracao3.ts`, só baixa quem tem `mech:gen3` liberada): pacote de partida real 497,6 de 500 KB (a estimativa do `npm run peso` conta ~2,4 KB a mais, por causa dos `.map`).
-**Ficou:** o olho do Comandante (a cadência de 3,3 passos por segundo no Vector-09 é a escolha a julgar; a Arara a 13 m/s escorrega mais que hoje); o `.glb` não foi fotografado; **a aba MECHS 3D do Estúdio** (prévia geração 2 × 3 e os controles que gravam o JSON) é o próximo PR. **Próxima sessão começa com:** a aba MECHS 3D (`ESTUDIO.md` § 3.3), partindo da `main` com este PR já dentro.
+**Ficou:** o olho do Comandante (a cadência de 3,3 passos por segundo no Vector-09 é a escolha a julgar; a Arara a 13 m/s escorrega mais que hoje); o `.glb` não foi fotografado; **a aba MECHS 3D do Estúdio** (prévia geração 2 × 3 e os controles que gravam o JSON) é o próximo PR. **Próxima sessão começa com:** o olho do Comandante na aba e no jogo, e o `.glb`.
 
 ## EM BRANCH — NÃO ESTÁ NO AR: a higienização e o inacabado dos outros agentes (Claude, P317 e P318, branch `claude/higiene-p317-p318`)
 

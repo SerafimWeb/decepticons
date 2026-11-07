@@ -130,7 +130,7 @@ npm run publicar -- --titulo "feat: ..." --corpo .tmp/pr.md   # push, PR, espera
 node scripts/gh.mjs pr list    # o gh, com fallback para a credencial do Git se o token do gh morrer
 npm run smoke:dev  # boot headless contra o dev server
 npm run peso       # o que pesa nos 500 KB do pacote de partida (gzip estimado por arquivo-fonte; monta em .tmp/peso/)
-npm run estudio    # o Estúdio (sons hoje; depois vozes, tiros e armas, Mechs 3D: .decepticons/ESTUDIO.md): cortar na onda, efeitos, importar, escolher o som de cada arma (só neste PC; dois cliques em scripts\ligar-estudio.cmd)
+npm run estudio    # o Estúdio (sons, vozes e o movimento dos Mechs 3D hoje; depois tiros e armas e o resto dos Mechs 3D: .decepticons/ESTUDIO.md): cortar na onda, efeitos, importar, escolher o som de cada arma (só neste PC; dois cliques em scripts\ligar-estudio.cmd)
 npm run anuncios   # gera as imagens dos outdoors da marca e a textura do holograma a partir de scripts/anuncios/*.html (.decepticons/MARCA_E_ANUNCIOS.md)
 npm run sons       # prepara os sons de arma (apara, normaliza, mp3) conforme scripts/sons-armas.json
 npm run vozes      # as falas do narrador no ElevenLabs (chave só em $env:ELEVENLABS_API_KEY; --custo antes de gastar); as falas que o Comandante GRAVOU no Estúdio nunca são regeradas

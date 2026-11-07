@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MECHS 3D · movimento</title>
+<style>
+  :root { --bg: #12161a; --pn: #1b2127; --ln: #2b343c; --tx: #e6edf3; --mut: #8b98a5; --g2: #ffd36b; --g3: #6dff9a; --ac: #ff8a2a; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--tx); font: 13px/1.4 Consolas, "Cascadia Mono", monospace; }
+  #app { display: grid; grid-template-columns: 1fr 370px; height: 100vh; }
+  #palco { position: relative; min-width: 0; }
+  #palco canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .rotulo { position: absolute; top: 10px; padding: 4px 10px; background: rgba(0, 0, 0, .55); border-radius: 4px; font-weight: 700; letter-spacing: .06em; }
+  #rotulo2 { left: 12px; color: var(--g2); }
+  #rotulo3 { right: 12px; color: var(--g3); }
+  aside { overflow-y: auto; padding: 4px 14px 28px; background: var(--pn); border-left: 1px solid var(--ln); }
+  h3 { margin: 16px 0 6px; font-size: 12px; letter-spacing: .12em; color: var(--mut); text-transform: uppercase; font-weight: 700; }
+  .linha { display: flex; flex-wrap: wrap; gap: 6px; }
+  button, select { background: #242c34; color: var(--tx); border: 1px solid var(--ln); border-radius: 4px; padding: 5px 9px; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--mut); }
+  button.on { background: #33414d; border-color: var(--ac); color: #fff; }
+  button.forte { background: var(--ac); color: #111; border-color: var(--ac); font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 2px 0; }
+  td + td { text-align: right; color: #fff; padding-left: 8px; }
+  th { text-align: right; font-weight: 700; padding-left: 8px; }
+  th:first-child { text-align: left; }
+  .ajuste { margin: 7px 0; }
+  .ajuste label { display: flex; justify-content: space-between; color: var(--mut); }
+  .ajuste output { color: #fff; }
+  .ajuste input { width: 100%; accent-color: var(--ac); }
+  canvas.graf { width: 100%; height: 66px; background: #0f1316; border: 1px solid var(--ln); border-radius: 4px; margin-top: 4px; }
+  #aviso { min-height: 2.8em; color: var(--g3); margin-top: 8px; }
+  #aviso.erro { color: #ff6b6b; }
+  .g2 { color: var(--g2); }
+  .g3 { color: var(--g3); }
+  .dica { color: var(--mut); font-size: 12px; margin: 4px 0 0; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="palco">
+    <canvas id="tela"></canvas>
+    <div class="rotulo" id="rotulo2">GERAÇÃO 2 · hoje</div>
+    <div class="rotulo" id="rotulo3">GERAÇÃO 3 · mech:gen3</div>
+  </div>
+  <aside id="painel"></aside>
+</div>
+<script type="module" src="./cena.ts"></script>
+</body>
+</html>

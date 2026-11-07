@@ -99,7 +99,7 @@ describe('Estúdio, aba VOZES (P151, P155): o servidor', () => {
     expect(e.gravacoes).toEqual([]);
     expect((await http(porta, 'GET', '/estudio/vozes.js')).status).toBe(200);
     const modulos = json(await http(porta, 'GET', '/api/estado')).modulos;
-    expect(modulos).toEqual([{ id: 'sons', titulo: 'SONS' }, { id: 'vozes', titulo: 'VOZES' }]);
+    expect(modulos).toEqual([{ id: 'sons', titulo: 'SONS' }, { id: 'vozes', titulo: 'VOZES' }, { id: 'mechs', titulo: 'MECHS 3D' }]);
   });
 
   it('as falas do rádio chegam só em português, com o canal, a intenção do estilo e o diálogo; o narrador segue nos quatro sotaques; os predefinidos vêm do servidor', async () => {

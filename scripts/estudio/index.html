@@ -14,7 +14,7 @@
     <button data-aba="sons" class="ativa">SONS</button>
     <button data-aba="vozes">VOZES</button>
     <button data-aba="tiros" class="embreve" title="Em breve: cor, forma, cauda, explosão e força dos tiros e das armas">TIROS E ARMAS · em breve</button>
-    <button data-aba="mechs" class="embreve" title="Em breve: editar os Mechs em 3D">MECHS 3D · em breve</button>
+    <button data-aba="mechs" title="O movimento dos Mechs: geração 2 ao lado da 3, com os ajustes de gosto">MECHS 3D</button>
   </nav>
   <span id="aviso-sujo"></span>
   <button id="btn-salvar" class="laranja">SALVAR TUDO</button>
@@ -191,11 +191,8 @@
     </section>
   </div>
   <div class="painel-aba" id="aba-mechs" hidden>
-    <section class="embreve-painel">
-      <h3>MECHS 3D</h3>
-      <p>Em breve: editar os Mechs em 3D (partes, cores, encaixes de arma), com prévia girando na tela.</p>
-      <p class="info">O desenho e a ordem de construção estão em ESTUDIO.md (na pasta de documentos do projeto).</p>
-    </section>
+    <p class="info" id="mechs-estado"></p>
+    <iframe id="mechs-quadro" title="MECHS 3D · movimento" style="width:100%;height:80vh;border:1px solid #2b343c;border-radius:6px;background:#12161a"></iframe>
   </div>
 
   <section style="margin-top:16px">
@@ -209,5 +206,6 @@
 <script src="/estudio/sons.js"></script>
 <script src="/estudio/microfone.js"></script>
 <script src="/estudio/vozes.js"></script>
+<script src="/estudio/mechs.js"></script>
 </body>
 </html>
