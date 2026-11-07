@@ -136,6 +136,29 @@ describe('o módulo MECHS 3D no servidor do Estúdio', () => {
     }
   });
 
+  it('serve a malha dos robôs importados (.glb) de client/public/models, e só ela: nome simples, tipo glb, dentro da pasta', async () => {
+    const pasta = join(raiz, 'client/public/models');
+    mkdirSync(pasta, { recursive: true });
+    const bytes = Buffer.from([0x67, 0x6c, 0x54, 0x46, 2, 0, 0, 0]);
+    writeFileSync(join(pasta, 'teste.glb'), bytes);
+    writeFileSync(join(pasta, 'leia-me.txt'), 'não é malha');
+    const ok = await http(porta, 'GET', '/api/mechs/app/models/teste.glb');
+    expect(ok.status).toBe(200);
+    expect(ok.tipo).toBe('model/gltf-binary');
+    expect(ok.corpo.equals(bytes)).toBe(true);
+    for (const caminho of [
+      '/api/mechs/app/models/leia-me.txt', // não é .glb
+      '/api/mechs/app/models/nao-existe.glb',
+      '/api/mechs/app/models/', // sem nome
+      '/api/mechs/app/models/sub/teste.glb', // com barra
+      '/api/mechs/app/models/..%2fteste.glb', // sobe uma pasta
+      '/api/mechs/app/models/%2e%2e%2f%2e%2e%2fpackage.json',
+      '/api/mechs/app/models/..glb', // começa com ponto
+    ]) {
+      expect((await http(porta, 'GET', caminho)).status, caminho).toBe(404);
+    }
+  });
+
   it('grava os ajustes válidos, na ordem das faixas, e o estado reflete', async () => {
     const novos = { ...ajustesDoJogo, ciclosMax: 1.9, rigidez: 1.25 };
     const r = await http(porta, 'PUT', '/api/mechs/ajustes', JSON.stringify({ ajustes: novos }));
