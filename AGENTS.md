@@ -109,7 +109,8 @@ server/        servidor de jogo (M3): Server.ts (ws, salas, laço de 60 Hz), Are
 shared/net/    contratos do multiplayer, sem dependência do cliente: constants.ts, codec.ts, input.ts, state.ts, events.ts, messages.ts, voz.ts (sinalização do chat de voz)
 scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), landing.mjs (landing do jogo), oficina.mjs (bancada de testes), painel.mjs (sala de controle: o case),
                site/dados.mjs + site/tema.mjs + site/graficos.mjs (dados, visual e gráficos das páginas), site.mjs (site + .htaccess + capturas + teste), install-hooks.mjs,
-               mapa-mundi.mjs (gera a grade e o contorno do mapa do console, do Natural Earth)
+               mapa-mundi.mjs (gera a grade e o contorno do mapa do console, do Natural Earth),
+               pecas-blender.mjs + blender/kit-gaviao.py (a Prova Blender: o Blender sem janela faz as peças do Gavião em .decepticons/pecas/*.glb)
 .githooks/     pre-commit (M5 + secrets), pre-push (npm run check)
 .github/       workflows/ci.yml (npm run check a cada push/PR; deploy do site a cada merge na main),
                workflows/etiquetas.yml + labeler.yml (etiqueta de frente e de agente em cada PR),
@@ -138,7 +139,8 @@ npm run ouvir      # abre a página para ouvir os sons e as vozes
 npm run mech:inspecionar -- arquivo.glb   # confere um robô importado (contrato, convenção da animação, foto) e sugere o IMPORTED_CHASSIS
 npm run mech:bocas -- marauder            # mede a boca de cada encaixe de arma do robô importado e confere com o dado do chassi (roda no check)
 npm run mech:movimento -- --chassi vector09 --video   # a bancada do movimento (P321): o MechBase de verdade, geração 2 ao lado da 3, em números e em vídeo (FERRAMENTAS 4.13)
-npm run mech:folha -- --modelo gaviao [--luz jogo]   # a folha de seis tomadas de um modelo parado, tirada da aba MECHS 3D, na luz de estúdio ou na do jogo (MODELADOR.md §§ 2 e 9)
+npm run mech:folha -- --modelo gaviao [--luz jogo] [--pecas blender]   # a folha de seis tomadas de um modelo parado, tirada da aba MECHS 3D, na luz de estúdio ou na do jogo (MODELADOR.md §§ 2 e 9)
+npm run mech:pecas   # o Blender sem janela faz o peito, a ombreira e o capacete do Gavião em .decepticons/pecas/*.glb (a Prova Blender: MODELADOR.md § 12; caminho absoluto sempre)
 npm run arquivar  # ensaio: quanto do ESTADO_ATUAL e do HISTORICO tem mais de dois dias; `-- --aplicar` move para .decepticons/arquivo/ sem perder linha
 npm run painel     # sala de controle (novidades, equipe, mesa do Dan, fluxo, fichas, evolução, rota, frentes, decisões) em .tmp/painel/painel.html
 npm run server     # servidor de jogo do multiplayer em ws://localhost:2567/?sala=ARENA (DEPLOY.md)

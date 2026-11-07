@@ -7,6 +7,7 @@
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { ajustesGen3, definirAjustesGen3, FAIXAS, PADRAO_GEN3, type AjustesDoMovimento } from '../../../client/src/entities/ajustesGen3';
 import { PALETTE } from '../../../client/src/core/palette';
@@ -113,7 +114,8 @@ function grupos(r: MechRig): Record<Exclude<Parte, 'tudo'>, THREE.Object3D[]> {
 function descartar(raiz: THREE.Object3D): void {
   raiz.traverse((o) => {
     const m = o as THREE.Mesh;
-    if (m.isMesh) {
+    // As peças do Blender são compartilhadas (a mesma geometria e os mesmos materiais em todo robô e em toda remontagem): não se descartam.
+    if (m.isMesh && !m.userData.pecaDoBlender) {
       m.geometry.dispose();
       for (const mat of Array.isArray(m.material) ? m.material : [m.material]) mat.dispose();
     }
@@ -257,9 +259,66 @@ class Lado {
 }
 
 /** O corpo de um chassi: o blueprint de código, o andróide, ou a malha importada (espera o arquivo carregar; o jogo faz o mesmo no Hangar). */
+/**
+ * AS PEÇAS DO BLENDER (a Prova Blender, P329): o peito, a ombreira e o capacete do Gavião feitos por script no Blender (`scripts/blender/kit-gaviao.py`, `npm run mech:pecas`), em `.decepticons/pecas/`.
+ * O botão PEÇAS troca, no MESMO robô andando e na mesma luz, o kit em código pelas peças do Blender: o corpo sobe sem aquelas três peças (`peitoDeFora`, `cabecaDeFora`, `ombreiraDeFora`) e
+ * cada peça vai no pivô do rig onde mora (o tronco, a cabeça, os dois braços; a esquerda é a direita espelhada). A cor, o metal e a rugosidade são do jogo (os quatro materiais nomeados da peça:
+ * armor, frame, paint, visor); a peça traz só a forma e a sombra (a cor do vértice, em cinza).
+ */
+type Pecas = 'codigo' | 'blender';
+let pecas: Pecas = 'codigo';
+const CHAVES_DO_BLENDER = { peitoDeFora: 1, cabecaDeFora: 1, ombreiraDeFora: 1 } as const;
+const carregadorDeGlb = new GLTFLoader();
+const pecasCarregadas = new Map<string, Promise<THREE.Object3D>>();
+function carregarPeca(nome: string): Promise<THREE.Object3D> {
+  let p = pecasCarregadas.get(nome);
+  if (!p) {
+    p = carregadorDeGlb.loadAsync(`/api/mechs/app/pecas/${nome}.glb`).then((g) => g.scene);
+    pecasCarregadas.set(nome, p);
+  }
+  return p;
+}
+/** Os quatro materiais do jogo, do jeito que o `buildMechBlueprintRig` os faz (o casco do Gavião, a estrutura, a pintura e o visor aceso); a cor do vértice (a sombra) multiplica. */
+const materiaisDasPecas: Readonly<Record<string, THREE.MeshStandardMaterial>> = {
+  armor: new THREE.MeshStandardMaterial({ color: GAVIAO_H3_BLUEPRINT.cores?.armor ?? PALETTE.armor, metalness: 0.6, roughness: 0.36, vertexColors: true }),
+  frame: new THREE.MeshStandardMaterial({ color: PALETTE.frame, metalness: 0.72, roughness: 0.48, vertexColors: true }),
+  paint: new THREE.MeshStandardMaterial({ color: PALETTE.sodium, metalness: 0.36, roughness: 0.44, vertexColors: true }),
+  visor: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffa23a, emissiveIntensity: 4, vertexColors: true }),
+};
+async function anexarPecasDoBlender(rig: MechRig): Promise<void> {
+  const [peito, capacete, ombreira] = await Promise.all([carregarPeca('gaviao-peito'), carregarPeca('gaviao-capacete'), carregarPeca('gaviao-ombreira')]);
+  const por = (no: unknown, modelo: THREE.Object3D, espelho = false): void => {
+    const c = modelo.clone(true);
+    c.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      m.material = materiaisDasPecas[(m.material as THREE.Material).name] ?? materiaisDasPecas.armor!;
+      m.userData.pecaDoBlender = true;
+    });
+    if (espelho) c.scale.x = -1;
+    (no as THREE.Object3D).add(c);
+  };
+  por(rig.torso, peito);
+  por(rig.head, capacete);
+  por(rig.rightArm, ombreira);
+  por(rig.leftArm, ombreira, true);
+}
+/** Quantas malhas de peça do Blender há neste robô (a prova confere que o botão trocou as peças de verdade). */
+function contarPecas(raiz: THREE.Object3D): number {
+  let n = 0;
+  raiz.traverse((o) => {
+    if ((o as THREE.Mesh).isMesh && o.userData.pecaDoBlender) n++;
+  });
+  return n;
+}
+
 async function criarMech(id: ModeloId): Promise<MechBase> {
   const st = statsDe(id);
-  if (id === 'gaviao') return new Vector09({ stats: st, blueprint: blueprintDoGaviao(desenho), paint: PALETTE.sodium, visor: 0xffa23a });
+  if (id === 'gaviao') {
+    const m = new Vector09({ stats: st, blueprint: blueprintDoGaviao(desenho, pecas === 'blender' ? CHAVES_DO_BLENDER : {}), paint: PALETTE.sodium, visor: 0xffa23a });
+    if (pecas === 'blender') await anexarPecasDoBlender((m as unknown as { rig: MechRig }).rig);
+    return m;
+  }
   if (id === 'android') return new Android({ stats: st, paint: PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot' });
   const malha = IMPORTED_CHASSIS[id];
   if (malha) {
@@ -625,6 +684,11 @@ function montarDesenho(): HTMLElement {
     'div',
     {},
     el('h3', {}, 'Desenho do Gavião-H3'),
+    el('div', { class: 'ajuste' }, el('label', {}, 'Peito, ombreira e capacete'), botoes([['DO CÓDIGO', 'codigo'], ['DO BLENDER', 'blender']] as const, () => pecas, (v) => {
+      pecas = v;
+      agendarRefazer();
+    })),
+    el('p', { class: 'dica' }, 'DO BLENDER troca, no mesmo robô andando, as três peças do kit em código pelas feitas no Blender por script (a Prova Blender).'),
     lista,
     el('div', { class: 'linha' }, bSalvar, bPadrao, bDesfazer),
     el('p', { class: 'dica' }, 'Cada número refaz os robôs na hora. Salvar grava o dado que o jogo lê; a perna não muda de comprimento, então a passada da geração 3 não depende do desenho.'),
@@ -804,6 +868,7 @@ async function iniciar(): Promise<void> {
     vista,
     modo,
     luz: modoDeLuz,
+    pecas,
     quadros: quadroN,
     lados: lados.map((l) => ({
       gen3: l.gen3,
@@ -815,6 +880,7 @@ async function iniciar(): Promise<void> {
       pelve: l.rig.pelvis.position.y - l.rig.hipHeight,
       tronco: l.rig.torso.rotation.x * RAD,
       larguraX: new THREE.Box3().setFromObject(l.rig.model).getSize(new THREE.Vector3()).x,
+      pecasNoRig: contarPecas(l.rig.model),
     })),
   });
   requestAnimationFrame(quadro);

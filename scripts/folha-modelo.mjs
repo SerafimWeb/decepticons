@@ -7,7 +7,9 @@ import { criarEstudio } from './estudio.mjs';
  * do Estúdio com o código do jogo, numa folha só. É o que o Claude olha para criticar o desenho (e o que o Comandante julga no Estúdio); o número vem da
  * ficha e dos testes do modelo, a foto não os substitui.
  *
- *   npm run mech:folha -- [--modelo gaviao] [--luz estudio|jogo] [--saida .tmp/modelo/<modelo>/folha.png]
+ *   npm run mech:folha -- [--modelo gaviao] [--luz estudio|jogo] [--pecas codigo|blender] [--saida .tmp/modelo/<modelo>/folha.png]
+ *
+ * `--pecas blender` (só no gaviao) fotografa o peito, a ombreira e o capacete feitos no Blender (a Prova Blender, P329) no lugar dos do kit em código.
  *
  * `--luz estudio` (o padrão) é a caixa de luz suave, para julgar a forma; `--luz jogo` é a luz da arena, o robô como o jogador o vê.
  *
@@ -20,9 +22,11 @@ const flag = (nome, padrao) => {
   return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : padrao;
 };
 const MODELO = flag('modelo', 'gaviao');
+const PECAS = flag('pecas', 'codigo');
+if (!['codigo', 'blender'].includes(PECAS)) throw new Error('--pecas é codigo (o kit em código) ou blender (as peças do Blender)');
 const LUZ = flag('luz', 'estudio');
 if (!['estudio', 'jogo'].includes(LUZ)) throw new Error('--luz é estudio (a caixa de luz suave) ou jogo (a luz da arena)');
-const SAIDA = resolve(flag('saida', `.tmp/modelo/${MODELO}/${LUZ === 'jogo' ? 'folha-jogo' : 'folha'}.png`));
+const SAIDA = resolve(flag('saida', `.tmp/modelo/${MODELO}/${PECAS === 'blender' ? 'blender-' : ''}${LUZ === 'jogo' ? 'folha-jogo' : 'folha'}.png`));
 const TMP = resolve('.tmp', 'folha-modelo');
 rmSync(TMP, { recursive: true, force: true });
 mkdirSync(join(TMP, 'ARMAS'), { recursive: true });
@@ -79,6 +83,13 @@ try {
     return p && p.chassi === x && p.lados.every((l) => l.pronto);
   }, MODELO, { timeout: 180_000 });
   if (LUZ === 'jogo') await quadro.click('button:has-text("COMO NO JOGO")');
+  if (PECAS === 'blender') {
+    await quadro.click('button:text-is("DO BLENDER")');
+    await quadro.waitForFunction(() => {
+      const p = window.mechsProva?.();
+      return p && p.pecas === 'blender' && p.lados.every((l) => l.pronto && l.pecasNoRig > 0);
+    }, null, { timeout: 120_000 });
+  }
   // Parado, só a geração 3 (o modelo novo) ou só a 2 (onde não há 3), um robô grande na tela.
   await quadro.click('button:has-text("PARADO")');
   const so3 = await quadro.evaluate(() => window.mechsProva().lados[1].temGen3);

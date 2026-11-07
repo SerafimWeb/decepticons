@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { GAVIAO_H3_BLUEPRINT } from './gaviaoH3';
+import { blueprintDoGaviao, DESENHO_SALVO, GAVIAO_H3_BLUEPRINT } from './gaviaoH3';
 import { buildMechBlueprintRig } from './mechBlueprint';
 import { fasePorSegundo, parametrosDaPassada, passoNaVelocidade, poseDaPassada, type PassadaMutavel, type PoseDaPassada } from './passadaGen3';
 import { medirGeometriaDaPerna } from './passadaRig';
@@ -118,5 +118,15 @@ describe('o Gavião-H3, o primeiro robô da geração 3 (gaviaoH3)', () => {
       expect(soma / n).toBeGreaterThan(0.93);
       expect(joelhoNoApoio).toBeLessThan((50 * Math.PI) / 180);
     }
+  });
+  it('as chaves de montagem (peitoDeFora, cabecaDeFora, ombreiraDeFora) deixam as peças do kit de fora para a peça do Blender ocupar o lugar: menos triângulos, o mesmo rig e as mesmas pernas', () => {
+    const inteiro = montar();
+    const vazado = buildMechBlueprintRig(blueprintDoGaviao(DESENHO_SALVO, { peitoDeFora: 1, cabecaDeFora: 1, ombreiraDeFora: 1 }));
+    const tris = (r: ReturnType<typeof montar>): number => malhasDoLote(r.model).reduce((soma, m) => soma + triangulos(m.geometry as THREE.BufferGeometry), 0);
+    expect(tris(vazado)).toBeLessThan(tris(inteiro) - 800);
+    expect(medirGeometriaDaPerna(vazado)).not.toBeNull();
+    expect(vazado.muzzle.position.z).toBeLessThan(-GAVIAO_H3_BLUEPRINT.arms.forearmDepth);
+    // a cabeça fica sem malha (o capacete é a peça do Blender): o pivô existe e gira, sem desenho próprio
+    expect(malhasDoLote(vazado.head as unknown as THREE.Object3D).length).toBe(0);
   });
 });
