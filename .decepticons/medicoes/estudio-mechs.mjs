@@ -110,6 +110,36 @@ try {
   await quadro.selectOption('select', 'vector09');
   await quadro.waitForFunction(() => { const p = window.mechsProva?.(); return p && p.chassi === 'vector09' && p.lados.every((l) => l.pronto); }, null, { timeout: 60_000 });
 
+  // A luz: ESTÚDIO (a caixa de luz suave) e COMO NO JOGO (a luz da arena), sem erro, e a troca vale.
+  ok('a luz da prévia começa no ESTÚDIO', (await quadro.evaluate(() => window.mechsProva().luz)) === 'estudio');
+  await quadro.click('button:has-text("COMO NO JOGO")');
+  ok('COMO NO JOGO troca a luz para a da arena', (await quadro.evaluate(() => window.mechsProva().luz)) === 'jogo');
+  await quadro.click('button:has-text("ESTÚDIO")');
+
+  // O pé no chão: o medidor avança a simulação sem esperar o relógio e devolve números finitos (a conta é geometria exata da malha).
+  const pes = await quadro.evaluate(() => window.mechsMedirPes(30));
+  ok('o medidor de pé no chão responde com um número por lado', pes.lados.length === 2 && pes.lados.every((l) => Number.isFinite(l.pisoMin)), pes.lados.map((l) => (l.pisoMin * 100).toFixed(1) + ' cm').join(' · '));
+
+  // O painel DESENHO só existe no Gavião, e mexer num slider muda a geometria (a largura do robô cresce com a ombreira).
+  const blocoDesenho = () => quadro.evaluate(() => { const h = [...document.querySelectorAll('h3')].find((x) => x.textContent === 'Desenho do Gavião-H3'); return h ? !h.parentElement.hidden : null; });
+  ok('o painel DESENHO fica escondido nos outros robôs', (await blocoDesenho()) === false);
+  await quadro.selectOption('select', 'gaviao');
+  await quadro.waitForFunction(() => { const p = window.mechsProva?.(); return p && p.chassi === 'gaviao' && p.lados.every((l) => l.pronto); }, null, { timeout: 60_000 });
+  ok('o painel DESENHO aparece no Gavião-H3', (await blocoDesenho()) === true);
+  const larguraDeFabrica = await quadro.evaluate(() => window.mechsProva().lados[0].larguraX);
+  await quadro.evaluate(() => {
+    const h = [...document.querySelectorAll('h3')].find((x) => x.textContent === 'Desenho do Gavião-H3');
+    const r = h.parentElement.querySelector('input[type=range]'); // o primeiro slider é o tamanho da ombreira
+    r.value = r.max;
+    r.dispatchEvent(new Event('input'));
+  });
+  await quadro.waitForFunction((l0) => { const p = window.mechsProva?.(); return p && p.lados.every((l) => l.pronto) && p.lados[0].larguraX > l0 + 0.05; }, larguraDeFabrica, { timeout: 60_000 });
+  const larguraGrande = await quadro.evaluate(() => window.mechsProva().lados[0].larguraX);
+  ok('a ombreira no máximo alarga o robô (o desenho muda a geometria de verdade)', larguraGrande > larguraDeFabrica + 0.05, `${larguraDeFabrica.toFixed(2)} → ${larguraGrande.toFixed(2)} m`);
+  await quadro.click('button:has-text("PADRÃO DO DESENHO")');
+  await quadro.selectOption('select', 'vector09');
+  await quadro.waitForFunction(() => { const p = window.mechsProva?.(); return p && p.chassi === 'vector09' && p.lados.every((l) => l.pronto); }, null, { timeout: 60_000 });
+
   // Desmontar, explodir, o roteiro e um ajuste que refaz os Mechs.
   await quadro.click('button:has-text("PERNAS")');
   await quadro.evaluate(() => {
