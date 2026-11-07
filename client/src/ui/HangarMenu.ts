@@ -1,5 +1,4 @@
 import type { MountId } from '../combat/mounts';
-import { ehModulo } from '../combat/modulos';
 import { CLASS_LABEL_PLURAL } from '../combat/weaponClass';
 import { funcionalidadeVisivel } from '../core/Visibilidade';
 import { PALETTE } from '../core/palette';
@@ -7,15 +6,16 @@ import { PINTURAS, possuiPintura, pinturaValida } from '../../../shared/pinturas
 import { corDaMontagem } from '../hangar/pintura';
 import { TIERS, weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { reloadWithout } from '../core/url';
-import { CHASSIS, CHASSIS_SIZE, SHIELD_ARM, type ChassisId } from '../entities/chassis';
+import { CHASSIS, CHASSIS_SIZE, type ChassisId } from '../entities/chassis';
 import { triggersOf } from '../entities/MechBase';
 import { METAL_SHIELD_IDS, METAL_SHIELDS, METAL_SHIELD_TIERS, metalShieldMass, type MetalShieldId } from '../combat/MetalShield';
 import type { DamageType } from '../combat/weapons';
 import type { Hangar } from '../hangar/Hangar';
-import { acceptsMetalShield, armGroups, armOptions, BOTAO_SLOTS, botoesDoPreset, type BotaoSlot, encaixesDeArma, extrasDoChassi, factorySpec, hasShoulderSlot, isMetalShield, layoutCount, loadoutKey, PRESETS_DE_BOTAO, type PresetDeBotao, SLOT_MOUNT, slotAttack, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
+import { acceptsMetalShield, armGroups, armOptions, encaixesDeArma, extrasDoChassi, factorySpec, hasShoulderSlot, isMetalShield, layoutCount, loadoutKey, PRESETS_DE_BOTAO, type PresetDeBotao, SLOT_MOUNT, slotAttack, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
 import { EXTRA_SLOTS, MOUNT_DO_EXTRA } from '../combat/encaixesExtras';
 import { shoulderMounts } from '../combat/mounts';
 import { PRESET_COUNT } from '../hangar/Hangar';
+import { aplicarPreset, copySpec, escolherBotao, trocarArma, trocarLayout, trocarModulo, trocarNivel } from '../hangar/edicao';
 import { AdminPanel } from './AdminPanel';
 import { traduzir } from '../i18n/i18n';
 import { carregarDicasDoHangar, dicaDoHangar } from './dicasDoHangar';
@@ -37,6 +37,8 @@ export interface HangarPreview {
   /** Linha de estado do topo: "OFFLINE" ou a sala online. */
   status?(): string;
   credits?(): number;
+  /** A tecla do escudo de energia como o jogador a remapeou (o texto do módulo diz "Ctrl" só quando é essa). */
+  teclaDoEscudo?(): string;
   /** Teste de disparo: o galpão mostra o Mech atirando no alvo, no ritmo do teste. */
   test?(data: TestFire, mounts: readonly MountId[]): void;
   stopTest?(): void;
@@ -290,7 +292,7 @@ export class HangarMenu {
         <div id="hangar-pintura" class="hg-layout hg-pinturas" role="group" aria-label="Cor do casco" data-func="robo:pintura"></div>
         <div id="hangar-botoes" class="hg-layout" role="group" aria-label="Qual botão dispara cada arma"></div>
         <div id="hangar-weapon-editor" class="hg-editor"></div>
-        <label class="hg-module"><span>MÓDULO EXTRA <i>(não ocupa os braços)</i></span><select id="hangar-module-select" aria-label="Módulo de energia"><option value="">Sem módulo</option><option value="frontal">Barreira frontal · 2,0 t · 5 s, 120°</option><option value="sphere">Esfera de energia · 4,0 t · 3,75 s, 360°</option><option value="fire">Anel de fogo · 3,0 t · 5 s, raio de 7 m</option><option value="visao">Visão noturna · 0,5 t · enxerga no escuro</option></select><small>Ctrl liga e desliga. Os impactos gastam a energia. <b>Anel de fogo:</b> não segura tiro; queima os inimigos num raio de 7 m e esquenta todos ali, inclusive você; derrete o inimigo congelado.</small><small><b>Visão noturna:</b> enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.</small></label>
+        <label class="hg-module"><span>MÓDULO EXTRA <i>(não ocupa os braços)</i></span><select id="hangar-module-select" aria-label="Módulo de energia"><option value="">Sem módulo</option><option value="frontal">Barreira frontal · 2,0 t · 5 s, 120°</option><option value="sphere">Esfera de energia · 4,0 t · 3,75 s, 360°</option><option value="fire">Anel de fogo · 3,0 t · 5 s, raio de 7 m</option><option value="visao">Visão noturna · 0,5 t · enxerga no escuro</option></select><small><span id="hangar-shield-hint">Ctrl liga e desliga. Os impactos gastam a energia.</span> <b>Anel de fogo:</b> não segura tiro; queima os inimigos num raio de 7 m e esquenta todos ali, inclusive você; derrete o inimigo congelado.</small><small><b>Visão noturna:</b> enxerga na fase escura (o Arara, o Lancer e os andróides já a trazem de fábrica) e ocupa o lugar do gerador.</small></label>
         <div class="hg-actions">
           <span id="hangar-message" role="status"></span>
           <button class="hg-btn hangar-apply" type="button" data-action="apply">APLICAR MONTAGEM ›</button>
@@ -448,7 +450,7 @@ export class HangarMenu {
     this.root.classList.add('hg-testing', 'hg-aim-training');
     this.root.querySelector<HTMLElement>('#hg-test')!.hidden = false;
     this.setText('hg-test-title', 'TREINO DE MIRA');
-    this.setText('hg-test-weapon', `ALVO MÓVEL · ${this.selectedSlot === 'right' ? 'BRAÇO D' : this.selectedSlot === 'left' ? 'BRAÇO E' : 'OMBROS'}`);
+    this.setText('hg-test-weapon', `ALVO MÓVEL · ${this.selectedSlot === 'right' ? 'BRAÇO D' : this.selectedSlot === 'left' ? 'BRAÇO E' : SLOT_LABEL[this.selectedSlot]}`);
     this.setText('hg-test-shots-label', 'DISPAROS');
     this.setText('hg-test-dmg-label', 'ACERTOS');
     this.setText('hg-test-heat-label', 'PRECISÃO');
@@ -582,22 +584,15 @@ export class HangarMenu {
       this.render();
       return;
     }
-    // P301: o botão de cada encaixe e os presets. Escolher um botão faz a montagem ir na versão 4 (a que leva os botões).
+    // P301: o botão de cada encaixe e os presets (`hangar/edicao.ts`: com botão escolhido a montagem vai na versão 4, a que leva os botões).
     const botaoAttr = target?.closest<HTMLButtonElement>('[data-botao]')?.dataset.botao;
     const presetAttr = target?.closest<HTMLButtonElement>('[data-botoes-preset]')?.dataset.botoesPreset;
     if (botaoAttr !== undefined || presetAttr !== undefined) {
-      const base = { ...this.draft, v: 4 as const, module: this.draft.module ?? null };
       if (botaoAttr !== undefined) {
         const b = Number(botaoAttr);
-        // Os ombros do Marauder são um encaixe só (`shoulders`): o botão vale para os dois lados.
-        const mounts = this.selectedSlot === 'shoulders' ? ['rightShoulder', 'leftShoulder'] : [SLOT_MOUNT[this.selectedSlot]];
-        if (b === 1 || b === 2) {
-          const botoes = { ...(this.draft.botoes ?? {}) };
-          for (const mount of mounts) if ((BOTAO_SLOTS as readonly string[]).includes(mount)) botoes[mount as BotaoSlot] = b;
-          this.draft = { ...base, botoes };
-        }
+        if (b === 1 || b === 2) this.draft = escolherBotao(this.draft, this.selectedSlot, b);
       } else if (presetAttr !== undefined && (PRESETS_DE_BOTAO as readonly string[]).includes(presetAttr)) {
-        this.draft = { ...base, botoes: botoesDoPreset(this.draft, presetAttr as PresetDeBotao) };
+        this.draft = aplicarPreset(this.draft, presetAttr as PresetDeBotao);
       }
       this.message = '';
       this.render();
@@ -621,9 +616,7 @@ export class HangarMenu {
     if (layoutAttr !== undefined) {
       const layout = Number(layoutAttr);
       if (Number.isInteger(layout) && layout >= 0 && layout < layoutCount(this.draft.chassis)) {
-        // O layout só vive na versão 2 do texto da montagem (que também leva o módulo).
-        this.draft = { ...this.draft, v: layout > 0 ? 2 : this.draft.v, module: layout > 0 ? (this.draft.module ?? null) : this.draft.module, layout };
-        if (layout === 0) delete this.draft.layout;
+        this.draft = trocarLayout(this.draft, layout); // o layout só vive da versão 2 em diante do texto da montagem: a `normalizar` cuida da versão
         this.message = '';
       }
       this.render();
@@ -632,7 +625,7 @@ export class HangarMenu {
     const tier = target?.closest<HTMLButtonElement>('[data-tier]')?.dataset.tier;
     if (tier === '0' || tier === '1' || tier === '2') {
       const selected = Number(tier) as Tier;
-      this.draft = withArm(this.draft, this.selectedSlot, (arm) => (arm ? { ...arm, tier: selected } : null));
+      this.draft = trocarNivel(this.draft, this.selectedSlot, selected);
       this.message = '';
       this.render();
       return;
@@ -687,10 +680,10 @@ export class HangarMenu {
     const target = event.target;
     if (!(target instanceof HTMLSelectElement)) return;
     if (this.visitando) { this.render(); return; } // o seletor volta ao que o outro piloto montou
-    if (target.id === 'hangar-module-select') { this.draft = { ...this.draft, v: 2, module: ehModulo(target.value) ? target.value : null }; this.render(); return; }
+    if (target.id === 'hangar-module-select') { this.draft = trocarModulo(this.draft, target.value); this.render(); return; }
     if (target.id !== 'hangar-weapon-select') return;
     const selected = target.value as WeaponId | MetalShieldId | '';
-    this.draft = withArm(this.draft, this.selectedSlot, () => (selected ? { id: selected, tier: this.draft[this.selectedSlot]?.tier ?? 0 } : null));
+    this.draft = trocarArma(this.draft, this.selectedSlot, selected ? { id: selected, tier: this.draft[this.selectedSlot]?.tier ?? 0 } : null);
     this.message = '';
     this.render();
   }
@@ -772,6 +765,7 @@ export class HangarMenu {
     this.setText('hangar-speed', `${num(chassis.moveSpeed, 1)} m/s`);
     this.setText('hangar-armor', `${chassis.maxModuleHealth.torso} HP`);
     this.setText('hangar-cooling', `${Math.round(chassis.heatCooling * 100)}% / s`);
+    this.setText('hangar-shield-hint', `${this.preview.teclaDoEscudo?.() ?? 'Ctrl'} liga e desliga. Os impactos gastam a energia.`); // a chave do dicionário é "{0} liga e desliga…": qualquer tecla casa
 
     const chassisList = this.root.querySelector<HTMLElement>('#hangar-chassis-list')!;
     const isOficina = new URLSearchParams(location.search).has('oficina');
@@ -813,7 +807,6 @@ export class HangarMenu {
         + '<span class="hg-layout-title">PRESETS</span>'
         + [['padrao', 'PADRÃO DO CHASSI'], ['tudo1', 'TUDO NO 1 · PRINCIPAL NO 2'], ['maos1', 'MÃOS NO 1 · O RESTO NO 2']].map(([p, t]) => `<button type="button" class="hg-layout-btn" data-botoes-preset="${p}">${t}</button>`).join('')
       : '';
-    const shield = SHIELD_ARM.includes(spec.chassis);
     const slots: readonly ArmSlot[] = [...(hasShoulderSlot(spec.chassis) ? ['right', 'left', 'shoulders'] : ['right', 'left']) as ArmSlot[], ...extrasDoChassi(spec.chassis)];
     // Trocou de chassi para um sem ombros com os ombros escolhidos: volta ao braço direito.
     if (!slots.includes(this.selectedSlot)) this.selectedSlot = 'right';
@@ -824,7 +817,7 @@ export class HangarMenu {
         const w = arm && !slotPlate ? weapon(arm.id as WeaponId, arm.tier) : null;
         const selected = slot === this.selectedSlot;
         const icon = w ? WEAPON_ICON[w.id] : slotPlate ? PLATE_ICON : '<path d="M6 12h12" />';
-        const name = w?.name ?? (slotPlate ? METAL_SHIELDS[slotPlate.id].name : slot === 'left' && shield ? 'ESCUDO' : 'VAZIO');
+        const name = w?.name ?? (slotPlate ? METAL_SHIELDS[slotPlate.id].name : 'VAZIO');
         const info = w ? TIERS[w.tier]!.label + ' · ' + num(w.mass * mountCopies(slot, spec.chassis, spec.layout ?? 0), 1) + ' t' : slotPlate ? METAL_SHIELD_TIERS[slotPlate.tier].label + ' · ' + num(metalShieldMass(slotPlate.id, slotPlate.tier), 1) + ' t' : '—';
         return `<button class="hg-slot${selected ? ' selected' : ''}${w || slotPlate ? '' : ' empty'}" type="button" data-slot="${slot}" aria-pressed="${selected}"><b class="hg-slot-num">${SLOT_NUM[slot]}</b><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg><span><small>${SLOT_LABEL[slot]} · ATAQUE ${slotAttack(slot, spec.chassis, spec.layout ?? 0, spec.botoes) ?? '—'}</small><b>${name}</b></span><em>${info}</em></button>`;
       })
@@ -847,12 +840,11 @@ export class HangarMenu {
     const options = CHASSIS_SIZE[spec.chassis] < 2
       ? armOptions(this.selectedSlot, spec.chassis).filter(aparece).map(option).join('')
       : grupos.map((g) => `<optgroup label="${CLASS_LABEL_PLURAL[g.cls]}">${g.ids.filter(aparece).map(option).join('')}</optgroup>`).join('');
-    const shieldArm = this.selectedSlot === 'left' && shield && !acceptsMetalShield(spec.chassis);
     const editor = this.root.querySelector<HTMLElement>('#hangar-weapon-editor')!;
     editor.innerHTML = `
       <label class="hg-label" for="hangar-weapon-select">${SLOT_LABEL[this.selectedSlot]} · ATAQUE ${slotAttack(this.selectedSlot, spec.chassis, spec.layout ?? 0, spec.botoes) ?? '—'}</label>
-      <select id="hangar-weapon-select"${shieldArm ? ' disabled' : ''}>${this.selectedSlot !== 'right' ? `<option value=""${arm ? '' : ' selected'}>${shieldArm ? 'ESCUDO (sem arma)' : 'VAZIO (menos carga)'}</option>` : ''}${options}${plateOptions}</select>
-      <p class="hg-hint">${plate ? `${traduzir(METAL_SHIELDS[plate.id].hint)}. ${traduzir(DICA_DA_CHAPA)}` : w ? traduzir(dicaDoHangar(w.id)) + (this.selectedSlot === 'shoulders' ? ` ${traduzir('· um lançador em cada ombro: a carga conta duas vezes')}` : '') + (nasCostas(w.id, this.selectedSlot) ? ` ${traduzir('· fica nas costas do Mech, apontando para cima; o antebraço fica liso')}` : '') + (CHASSIS_SIZE[spec.chassis] >= 3 ? ` ${traduzir('· tamanho 3: o que é pesado nos Mechs comuns é leve para ele')}` : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
+      <select id="hangar-weapon-select">${this.selectedSlot !== 'right' ? `<option value=""${arm ? '' : ' selected'}>VAZIO (menos carga)</option>` : ''}${options}${plateOptions}</select>
+      <p class="hg-hint">${plate ? `${traduzir(METAL_SHIELDS[plate.id].hint)}. ${traduzir(DICA_DA_CHAPA)}` : w ? traduzir(dicaDoHangar(w.id)) + (this.selectedSlot === 'shoulders' ? ` ${traduzir('· um lançador em cada ombro: a carga conta duas vezes')}` : '') + (nasCostas(w.id, this.selectedSlot) ? ` ${traduzir('· fica nas costas do Mech, apontando para cima; o antebraço fica liso')}` : '') + (CHASSIS_SIZE[spec.chassis] >= 3 ? ` ${traduzir('· tamanho 3: o que é pesado nos Mechs comuns é leve para ele')}` : '') : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
 ${!report.check.ok ? '<p class="hg-load-warning">Ajuste a carga para aplicar ou testar. A prévia mantém a última montagem válida.</p>' : ''}
       ${["genesis01", "lancerL1", "lr7lBastion", "quadraV2"].includes(spec.chassis) ? '<p class="hg-hint">Arma integrada ao casco: a aparência deste robô ainda não muda com a seleção.</p>' : ''}<div class="hg-label">NÍVEL DE POTÊNCIA</div>
       <div class="hg-tiers">${TIERS.map((t, i) => { const copies = mountCopies(this.selectedSlot, spec.chassis, spec.layout ?? 0); const mass = plate ? metalShieldMass(plate.id, i as Tier) : arm ? weapon(arm.id as WeaponId, i as Tier).mass * copies : 0; const total = report.mass - (plate ? metalShieldMass(plate.id, plate.tier) : (w?.mass ?? 0) * copies) + mass; const excess = Math.max(0, total - report.capacity); const hint = excess > 1e-9 ? `EXCEDE ${num(excess, 1)} t` : `${num(report.capacity - total, 1)} t livres`; return `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}${excess > 1e-9 ? ' over' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}" title="${hint}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : plate ? `+${Math.round((METAL_SHIELD_TIERS[i]!.integrity - 1) * 100)}% chapa` : `+${Math.round((t.damage - 1) * 100)}% dano`} · ${num(mass, 1)} t</small><small>${hint}</small></button>`; }).join('')}</div>
@@ -880,7 +872,7 @@ ${!report.check.ok ? '<p class="hg-load-warning">Ajuste a carga para aplicar ou 
       apply.disabled = !report.check.ok;
       apply.title = report.check.ok ? 'Salvar e aplicar a montagem' : report.check.detail;
     }
-    this.hotLeft.querySelector('span')!.innerHTML = `<b>02</b> ${isMetalShield(spec.left) || (!spec.left && shield) ? 'BRAÇO E · ESCUDO' : spec.left ? 'BRAÇO E' : 'BRAÇO E · VAZIO'}`;
+    this.hotLeft.querySelector('span')!.innerHTML = `<b>02</b> ${isMetalShield(spec.left) ? 'BRAÇO E · ESCUDO' : spec.left ? 'BRAÇO E' : 'BRAÇO E · VAZIO'}`;
     // Atalhos 1 a 4: vazio salva a montagem da tela; cheio carrega (e o SALVAR pequeno sobrescreve).
     const draftKey = loadoutKey(spec);
     this.root.querySelector<HTMLElement>('#hg-presets')!.innerHTML = this.hangar
@@ -944,18 +936,4 @@ function bar(s: StatRow, w: WeaponStats, was: WeaponStats | null): string {
   const better = s.lowerIsBetter ? delta < 0 : delta > 0;
   const mark = Math.abs(delta) < 1e-6 ? '' : `<em class="${better ? 'up' : 'down'}">${delta > 0 ? '▲' : '▼'}</em>`;
   return `<div class="hg-bar"><span>${s.label}</span><div class="hg-track"><i class="was" style="width:${old === null ? 0 : Math.min(100, (old / max) * 100)}%"></i><i class="now" style="width:${Math.min(100, (v / max) * 100)}%"></i></div><b>${num(v, s.digits)}${s.unit}</b>${mark}</div>`;
-}
-
-function copySpec(spec: LoadoutSpec): LoadoutSpec {
-  const copy: LoadoutSpec = { v: spec.v, chassis: spec.chassis, right: { ...spec.right }, left: spec.left ? { ...spec.left } : null };
-  if (spec.botoes) copy.botoes = { ...spec.botoes };
-  if (spec.module !== undefined) copy.module = spec.module;
-  if (spec.layout !== undefined) copy.layout = spec.layout;
-  if (spec.shoulders !== undefined) copy.shoulders = spec.shoulders ? { ...spec.shoulders } : null;
-  for (const slot of EXTRA_SLOTS) if (spec[slot] !== undefined) copy[slot] = spec[slot] ? { ...spec[slot]! } : null;
-  return copy;
-}
-
-function withArm(spec: LoadoutSpec, slot: ArmSlot, update: (arm: LoadoutSpec[ArmSlot]) => LoadoutSpec[ArmSlot]): LoadoutSpec {
-  return { ...spec, [slot]: update(spec[slot]) };
 }

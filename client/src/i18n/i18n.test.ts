@@ -347,6 +347,17 @@ describe('a cobertura das telas avançadas (auditoria de 17/10: o Hangar falava 
     expect(traduzir('MÉDIO · ASSALTO · Equilíbrio entre alcance e mobilidade.')).not.toMatch(/ASSALTO|Equilíbrio/);
   });
 
+  it('o módulo diz a tecla que o jogador remapeou (P319): a frase se traduz com qualquer tecla, nas seis línguas', () => {
+    for (const id of ['en', 'es', 'fr', 'ja', 'ru', 'zh']) {
+      carregarDicionario(ler(id));
+      for (const tecla of ['Ctrl', 'Q', 'F']) {
+        const feito = traduzir(`${tecla} liga e desliga. Os impactos gastam a energia.`);
+        expect(feito, `${id} ${tecla}`).not.toMatch(/liga e desliga|impactos gastam/);
+        expect(feito, `${id} ${tecla}`).toContain(tecla); // a tecla vai como o jogador a escolheu, não como a chave do dicionário
+      }
+    }
+  });
+
   it('o HUD da partida e o painel de ordens aos aliados', () => {
     const casos = ['VISTA 3ª PESSOA  [V]', 'VISTA 1ª PESSOA  [V]', 'VISTA TÁTICA  [V]', '1 · Acompanhar', '2 · Foco', '3 · Defender', '2/2 aliados · Escolta', '1/2 aliados · Fogo concentrado', '2/2 aliados · Defesa de posição', 'Equipe: concentrar fogo', 'Equipe: defender esta posição', '◈ ESCOLTA·PLASMA: CONTATO ▸ CLAWD·BRABO'];
     expect(casos.filter((c) => !coberto(c))).toEqual([]);

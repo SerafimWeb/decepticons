@@ -47,7 +47,7 @@ export class ShieldHUD {
     this.plate.hidden = !playing || !m.alive || !p.equipped;
     if (this.plate.hidden || !p.model) return;
     const pct = Math.round(p.fraction * 100);
-    const state = !p.intact ? " · ROMPIDO" : m.modules.leftArm <= 0 ? " · SEM BRAÇO" : p.raised ? " · LEVANTADO" : this.input.touchMode ? " · SEGURE FOGUETE" : " · SEGURE BOTÃO 2";
+    const state = !p.intact ? " · ROMPIDO" : m.modules.leftArm <= 0 ? " · SEM BRAÇO" : p.raised ? " · LEVANTADO" : this.input.touchMode ? " · SEGURE ATQ 2" : " · SEGURE BOTÃO 2";
     const text = p.model.name.toUpperCase() + " " + pct + "%" + state;
     if (this.plate.textContent !== text) this.plate.textContent = text;
     this.plate.dataset.raised = String(p.raised);

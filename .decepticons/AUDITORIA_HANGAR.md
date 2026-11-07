@@ -78,6 +78,10 @@ O layout L1 do Marauder (`mounts.ts:49`) faz o mesmo que `botoes {leftHand:2}`: 
 
 A troca rápida de chassi no pedestal é protegida (`HangarScene.ts:652` e `:688`, com testes) e **nenhum ouvinte é duplicado ao reabrir o Hangar** (todos nascem no construtor, `HangarMenu.ts:316-350`). Logo, a suspeita de "concorrência" do Comandante não se confirma nesses dois pontos; o que parece concorrência é o achado 6 (dois efeitos no mesmo botão) e o achado 8 (duas fontes da montagem: aparelho e conta).
 
+## 2.1 Feito (07/11, passo 1 do plano: achados 1, 3, 7 e 13)
+
+`hangar/edicao.ts` (novo, puro, com `edicao.test.ts`): `copySpec` copia **todo** campo (achado 1: a cor sumia); `normalizar` mantém versão, módulo e botões coerentes e tira o botão de encaixe vazio ou de chapa de escudo (achado 3); a tela chama `trocarArma`, `trocarNivel`, `trocarModulo`, `trocarLayout`, `escolherBotao` e `aplicarPreset` em vez de montar o objeto à mão. `botoesDoPreset` deixa a arma única no botão 1 (achado 7; a decisão 2 do § 4 foi tomada pela correção proposta, a ser confirmada). Rótulos (achado 13): o módulo diz a tecla do escudo que o jogador remapeou (`teclaDoEscudo`); o treino de mira diz o encaixe (COSTAS, OMBRO…); o toque diz "SEGURE ATQ 2"; o Lancer sem chapa diz VAZIO (`SHIELD_ARM` e o ramo "o escudo ainda não bloqueia dano" saíram: nunca rodavam). A frase do módulo é a chave `{0} liga e desliga…` nos seis dicionários (casa com qualquer tecla). **Prova no Chrome:** `medicoes/hangar-rascunho.mjs` (a cor continua EM USO ao reabrir, BOTÃO 2 + módulo aplica, a tecla Q aparece no texto, "TUDO NO 1" no Lancer fica no 1; 8 de 8), foto `arte/hangar-rascunho-claude.jpg`. **Efeito colateral bom:** com a `normalizar`, a montagem que o Hangar grava nunca é a "versão 4 sem botão", o caso A do achado 2 (o módulo some na chave) deixa de nascer pelo Hangar; a chave em si continua como está até o passo 2.
+
 ## 3. O plano (um PR por passo, na ordem do que o jogador sente)
 
 | # | Passo | Achados | Risco | Como se prova |
