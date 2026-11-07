@@ -40,7 +40,7 @@ describe('a geração 3 no MechBase de verdade', () => {
     expect(rig.torso.rotation.x).toBeCloseTo(0, 9);
   });
 
-  it('ligada, o Mech corre agachado e o tronco inclina ao arrancar', () => {
+  it('ligada, o Mech corre com o quadril um pouco mais baixo (não agachado) e o tronco inclina ao arrancar', () => {
     setMovimentoGen3(true);
     const m = new Vector09();
     andar(m, 10, 0); // arranca do repouso, como no jogo (a velocidade suavizada parte da de agora: sem aceleração não há inclinação)
@@ -50,11 +50,35 @@ describe('a geração 3 no MechBase de verdade', () => {
       troncoMin = Math.min(troncoMin, rigDe(m).torso.rotation.x);
     }
     const rig = rigDe(m);
-    // Corre com o quadril mais baixo do que a geração 2 jamais ficou (no máximo 0,12 abaixo do repouso): o agachamento do andar.
-    expect(rig.pelvis.position.y).toBeLessThan(rig.hipHeight - 0.2);
+    // Corre com o quadril abaixo do repouso, mas de pé: entre 0,02 m e 8% da altura do quadril abaixo dele (antes, 12,5% fixos e o robô andava agachado).
+    expect(rig.pelvis.position.y).toBeLessThan(rig.hipHeight - 0.02);
+    expect(rig.pelvis.position.y).toBeGreaterThan(rig.hipHeight * 0.92);
     expect(troncoMin).toBeLessThan(-0.02);
   });
 
+  it('ligada, o pé fica plano no apoio: o ângulo do tornozelo cancela a inclinação da canela, e desligada o pé não gira', () => {
+    setMovimentoGen3(true);
+    const m = new Vector09();
+    const par = rigDe(m).hullMaterials[0]?.userData.footPitch as { x: number; y: number };
+    let girou = false;
+    let planoNoApoio = false;
+    for (let i = 0; i < 120; i++) {
+      andar(m, 1, V);
+      const r = rigDe(m);
+      if (Math.abs(par.x) > 0.05) girou = true;
+      // O pé no chão (ângulo do tornozelo + canela = 0): o pé esquerdo fica plano em relação ao chão.
+      const mundo = par.x + r.leftLeg.hip.rotation.x + r.leftLeg.knee.rotation.x;
+      if (i > 60 && Math.abs(mundo) < 1e-6) planoNoApoio = true;
+    }
+    expect(girou).toBe(true);
+    expect(planoNoApoio).toBe(true);
+    setMovimentoGen3(false);
+    const velho = new Vector09();
+    const parVelho = rigDe(velho).hullMaterials[0]?.userData.footPitch as { x: number; y: number };
+    andar(velho, 60, V);
+    expect(parVelho.x).toBe(0);
+    expect(parVelho.y).toBe(0);
+  });
   it('ligada e parada, volta ao repouso sem restos: pernas esticadas e pelve na altura de hoje', () => {
     setMovimentoGen3(true);
     const m = new Vector09();
@@ -79,9 +103,9 @@ describe('a geração 3 no MechBase de verdade', () => {
   it('criarEstado devolve nulo para o rig sem o pé e um estado completo para o procedural', () => {
     const m = new Vector09();
     const rig = rigDe(m);
-    expect(GERACAO3.criarEstado(rig, 0.7, 5.3)).not.toBeNull();
+    expect(GERACAO3.criarEstado(rig, 0.7, 5.3, 9)).not.toBeNull();
     const semPe = { ...rig, pe: undefined } as MechRig;
-    expect(GERACAO3.criarEstado(semPe, 0.7, 5.3)).toBeNull();
+    expect(GERACAO3.criarEstado(semPe, 0.7, 5.3, 9)).toBeNull();
   });
 
   it('ligada, o coice vira uma mola: o braço não segue a queda reta de hoje', () => {

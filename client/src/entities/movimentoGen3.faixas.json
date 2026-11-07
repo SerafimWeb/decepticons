@@ -9,7 +9,11 @@
   ],
   "molejoDoPasso": [
     0,
-    0.12
+    0.15
+  ],
+  "cadenciaLenta": [
+    0.2,
+    1
   ],
   "inclinacaoDoTronco": [
     0,

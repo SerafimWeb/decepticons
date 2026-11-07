@@ -123,6 +123,8 @@ export interface RigJoint {
 export interface LegRig {
   hip: RigJoint;
   knee: RigJoint;
+  /** O tornozelo (só nos rigs procedurais): o nó onde o pé gira. A malha do pé gira junto, no shader do lote (`MechRig.setFootPitch`). */
+  ankle?: RigJoint;
 }
 
 /** Os gatilhos de um chassi no layout `layout` (índice em `MechStats.layouts`; fora da lista ou ausente = o padrão do chassi). */
@@ -158,10 +160,15 @@ export interface MechRig {
   hullMaterials: THREE.MeshStandardMaterial[];
   hipHeight: number;
   /**
-   * Do eixo da canela até a ponta e até o calcanhar do pé (m), só nos rigs que os sabem (os procedurais): a passada da geração 3 ergue o
-   * pé inclinado por eles, para a ponta não afundar no piso.
+   * O pé, só nos rigs que o sabem (os procedurais): do eixo do tornozelo até a ponta e até o calcanhar (m) e a altura do eixo sobre a sola (m). A passada da
+   * geração 3 mantém o pé plano e ergue o pé inclinado do balanço por estas medidas, para a ponta não afundar no piso.
    */
-  pe?: { frente: number; tras: number };
+  pe?: { frente: number; tras: number; tornozelo: number };
+  /**
+   * Gira o pé esquerdo e o direito em torno do tornozelo (rad, relativo à canela; positivo levanta a ponta): o nó (`LegRig.ankle`) e a malha, esta no shader do
+   * lote, sem pivô nem draw call a mais (`meshKit.ts:batchRigMeshes`). Só os rigs procedurais; sem ela o pé segue rígido com a canela.
+   */
+  setFootPitch?: (left: number, right: number) => void;
   /**
    * Só nos rigs com encaixe de arma nos pulsos (`weaponMount.ts`): monta no desenho as armas da montagem.
    * Idempotente e barata; o `MechBase` a chama ao nascer e a cada `equip`. Sem ela, a arma é parte do modelo.
@@ -986,12 +993,12 @@ export abstract class MechBase {
     const k = 1 - Math.exp(-dt * 14);
     // Geração 3 (P321): só roda com ela ligada e o pedaço sob demanda carregado; o estado nasce uma vez por Mech (o `.glb` não tem: fica na passada de hoje).
     const G = geracao3();
-    if (G !== null && this.gen3 === undefined) this.gen3 = G.criarEstado(r, (this.stats.gait ?? DEFAULT_GAIT).hip, this.stats.height);
+    if (G !== null && this.gen3 === undefined) this.gen3 = G.criarEstado(r, (this.stats.gait ?? DEFAULT_GAIT).hip, this.stats.height, this.stats.moveSpeed);
     const e3 = (G !== null && this.gen3) || null;
 
     // Passada proporcional à perna: o Mech de 5,3 m dá passos lentos e pesados; o andróide, curtos e rápidos.
     // Geração 3: a fase anda com a velocidade pela taxa que deixa o pé plantado.
-    if (G !== null && e3 !== null) this.walkPhase += G.fasePorSegundo(e3, hSpeed) * dt;
+    if (G !== null && e3 !== null) this.walkPhase += G.fasePorSegundo(e3, hSpeed, dt) * dt;
     else this.walkPhase += (hSpeed * dt * STRIDE) / this.stats.height;
     const sw = Math.sin(this.walkPhase);
     const cw = Math.cos(this.walkPhase);
@@ -1015,7 +1022,7 @@ export abstract class MechBase {
     const rKnee = -Math.max(0, -cw) * gait.knee * amt - air * 0.4;
 
     let rolagem = 0;
-    if (G !== null && e3 !== null) rolagem = G.locomocao(e3, this, r, this.walkPhase, dt, hSpeed, air, lean, k);
+    if (G !== null && e3 !== null) rolagem = G.locomocao(e3, this, r, this.walkPhase, dt, air, lean, k);
     else {
       r.leftLeg.hip.rotation.x = lerp(r.leftLeg.hip.rotation.x, lHip, k);
       r.rightLeg.hip.rotation.x = lerp(r.rightLeg.hip.rotation.x, rHip, k);

@@ -1,6 +1,12 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## EM BRANCH — NÃO ESTÁ NO AR: o robô anda de pé (a passada cresce com a velocidade e o tornozelo gira o pé) (Claude, P322, branch `claude/gen3-agachado`)
+
+**O pedido (07/11):** "acho que o andar do robô ficou muito agachado." **Causa, achada por número e não no olho:** não era a altura da pelve, era o **pé rígido**: sem tornozelo, a perna encurtava a cada passo inclinado (para a ponta e o calcanhar não furarem o piso) e o joelho dobrava **73° no apoio** no Vector-09 (109° na Onça). **Feito:** (1) a passada **cresce com a velocidade** (`passoNaVelocidade`: passo, pé no ar, agachamento e molejo; de marcha o robô anda de pé), e a velocidade que a alimenta passa por um filtro de 0,1 s (sem ele o último quadro da freada derrubava a pose); (2) o **tornozelo**: o pé do lote gira em torno do eixo dele no vertex shader (`batchRigMeshes`, atributo `mechFoot`; **zero draw call, pivô ou triângulo novo**), o pé fica plano no chão e a perna nunca estica por inteiro (`PERNA_MAXIMA`); (3) ajuste novo `cadenciaLenta` na aba.
+**Medido (`npm run mech:movimento`, Vector-09 a 9 m/s):** joelho do apoio 73° → 35°, pelve média 87,5% → 95% do repouso (a 30% da velocidade, 97%), ponta/calcanhar no piso −18 cm → 0, CPU +2 µs por Mech por quadro; pacote de partida real 498,0 de 500 KB (`smoke`). Folha: `arte/gen3-agachado-folha.png`.
+**Ficou:** a Arara a 13 m/s escorrega mais que hoje (uma passada de corrida com voo seria o passo seguinte, se incomodar); o `.glb` segue na passada antiga; **o olho do Comandante** na aba (CORRER, vista LATERAL). **Próxima sessão começa com:** o kit de modelagem e o humanoide do print 4 (P323).
+
 ## EM BRANCH — NÃO ESTÁ NO AR: o jogo toca o rádio gravado e a música abaixa sob a voz; e a auditoria do Hangar, passo 1 (Claude, P316 e P319, branch `claude/radio-no-jogo-p316`)
 
 **O rádio no jogo (P316, parte 2):** quando o cérebro do time chama (pinça, em posição, vai, reagrupar), toca a fala gravada: o **piloto aliado** ou o **rádio inimigo interceptado** (o plano que o time inimigo vai executar), com o bipe de rádio antes e depois, sem nunca falar por cima do narrador. `audio/RadioDeCampo.ts` (sob demanda), ligado no `Game` pelo `match.onFala`. **Restrito** (`audio:radio`) e **mudo enquanto o Comandante não gravar** as falas com ★ do roteiro. **A mixagem:** toda voz que começa (`AudioSystem.aoFalar`) abaixa a música de combate para 35% pelo tempo da fala; pausar no meio de uma fala não traz a música de volta (defeito achado e corrigido antes do teste). **Provas:** os testes do rádio (o lado, a rotação, o intervalo, a vez do narrador, o bipe antes e depois), do narrador e do áudio; a bancada `medicoes/musica-combate.mjs` no Chrome real (a música desce sob a voz e volta; a pausa no meio de uma fala a cala).
@@ -16,7 +22,7 @@
 
 ## Na `main` desde 06/11 (PR #517), no ar após o deploy: a higienização e o inacabado dos outros agentes (Claude, P317 e P318)
 
-## EM BRANCH — NÃO ESTÁ NO AR: a aba MECHS 3D do Estúdio, primeiro corte: o movimento (Claude, P321, branch `claude/estudio-mechs`)
+## Na `main` desde 06/11 (PR #521), no ar após o deploy: a aba MECHS 3D do Estúdio, primeiro corte: o movimento (Claude, P321)
 
 **A pergunta do Comandante (06/11):** "será aonde que você vai colocar isso? no estúdio já tínhamos pensado em fazer a oficina dos mechs." **Resposta: no Estúdio**, não numa página do site. **Feito:** `npm run estudio` → MECHS 3D abre a geração 2 ao lado da 3 (código do jogo montado pelo Vite), a ficha lida do código, desmontar e explodir, o roteiro e os sete ajustes de gosto; SALVAR grava `movimentoGen3.json` (o servidor valida a faixa). A bancada `mech:movimento` e a aba usam o mesmo roteiro (`entities/roteiroDeMovimento.ts`). Prova no Chrome: `medicoes/estudio-mechs.mjs`; foto `arte/estudio-mechs-gen3.png`.
 **Ficou:** o olho do Comandante; cores por parte, encaixes de arma, escala e o `.glb` (o resto do `ESTUDIO.md` § 3.3); a vitrine pública do site saiu do plano. **Próxima sessão começa com:** o que o Comandante achar ao ajustar a geração 3 na aba.

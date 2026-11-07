@@ -64,9 +64,10 @@ function sondas(mech) {
   if (!g) throw new Error('a perna do rig nao foi medida');
   const pe = bp.legs.footLength;
   const zc = -pe * 0.12; // o centro do pe no blueprint (mechBlueprint.ts)
-  const mk = (knee, z) => { const o = new THREE.Object3D(); o.position.set(0, -g.w, z); knee.add(o); return o; };
-  const de = (knee) => ({ c: mk(knee, zc), p: mk(knee, zc - pe / 2), t: mk(knee, zc + pe / 2) });
-  return { L: de(mech.rig.leftLeg.knee), R: de(mech.rig.rightLeg.knee) };
+  // O tornozelo gira o pe (P322): as sondas ficam no no dele, que acompanha a inclinacao do pe; a sola esta a altura do tornozelo abaixo do eixo.
+  const mk = (no, z) => { const o = new THREE.Object3D(); o.position.set(0, -g.tornozelo, z); no.add(o); return o; };
+  const de = (no) => ({ c: mk(no, zc), p: mk(no, zc - pe / 2), t: mk(no, zc + pe / 2) });
+  return { L: de(mech.rig.leftLeg.ankle), R: de(mech.rig.rightLeg.ankle) };
 }
 
 function criarLado(gen3, nome) {

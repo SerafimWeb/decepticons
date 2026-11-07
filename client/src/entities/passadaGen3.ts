@@ -8,6 +8,10 @@
  * Por que a altura da pelve é um mínimo: um pé de apoio só alcança o chão se a perna não passar do comprimento máximo
  * (`ue + w`). Quanto mais o pé se afasta do quadril, mais baixo o quadril tem de ficar. O mínimo dos limites dos dois pés é
  * contínuo, então a pelve não dá degrau no pouso nem na decolagem.
+ *
+ * **O tornozelo (P322):** a perna termina no tornozelo, e o pé gira nele (`MechRig.setFootPitch`). No apoio o pé fica plano no chão, qualquer que seja a
+ * inclinação da canela; no balanço ele desce a ponta ao sair do chão e a sobe antes de pisar. Com o pé rígido (a geração 3 de antes) a perna encurtava a
+ * cada passo inclinado para o calcanhar e a ponta não furarem o piso, e o joelho dobrava 70° no apoio: o robô andava agachado (Comandante, 07/11).
  */
 
 /** Medidas de uma perna no plano da passada, lidas do próprio rig (procedural ou importado). */
@@ -16,16 +20,18 @@ export interface GeometriaDaPerna {
   readonly ue: number;
   /** Ângulo do eixo do joelho em relação à vertical (rad). É zero nos Mechs cujo joelho não é deslocado (o digitígrado). */
   readonly eps: number;
-  /** Joelho até o chão, na vertical (m): a canela e o pé juntos. */
+  /** Joelho até o eixo do tornozelo, na vertical (m). */
   readonly w: number;
   /** Frente do pé em repouso, em relação ao quadril (m). */
   readonly f0: number;
-  /** Profundidade do quadril até o chão em repouso (m). É igual a `uv + w`. */
+  /** Profundidade do quadril até o eixo do tornozelo em repouso (m). É igual a `uv + w`; com o pé plano, o tornozelo está a `tornozelo` do chão. */
   readonly dRest: number;
-  /** Do eixo da canela até a ponta do pé (m). O pé é rígido com a canela (não há tornozelo): inclinado, a ponta ou o calcanhar afunda no piso. */
+  /** Do eixo do tornozelo até a ponta do pé (m): o pé inclinado do balanço tem a ponta tão mais baixa quanto maior ele é. */
   readonly peFrente: number;
-  /** Do eixo da canela até o calcanhar (m). Menor que `peFrente` quando o pé está deslocado para a frente, como nos blueprints (12% do comprimento). */
+  /** Do eixo do tornozelo até o calcanhar (m). Menor que `peFrente` quando o pé está deslocado para a frente, como nos blueprints (12% do comprimento). */
   readonly peTras: number;
+  /** Do eixo do tornozelo até a sola (m): a altura do tornozelo sobre o chão com o pé plano. */
+  readonly tornozelo: number;
 }
 
 export interface Juntas {
@@ -49,6 +55,8 @@ export interface ParametrosDaPassada {
   readonly bob: number;
   /** Teto da cadência: ciclos por segundo de cada perna. Acima dele, a fase para de acompanhar a velocidade e o pé escorrega um pouco. */
   readonly ciclosMax: number;
+  /** A cadência de quem mal anda, em fração do teto: ela cresce com a velocidade até o teto (`passoNaVelocidade`). */
+  readonly cadenciaLenta: number;
 }
 
 export interface PoseDaPassada {
@@ -56,8 +64,11 @@ export interface PoseDaPassada {
   kneeL: number;
   hipR: number;
   kneeR: number;
-  /** Profundidade do quadril até o chão nesta pose (m). `dPelvis - geo.dRest` é o quanto a pelve desce em relação ao repouso. */
+  /** Profundidade do quadril até o plano do tornozelo nesta pose (m). `dPelvis - geo.dRest` é o quanto a pelve desce em relação ao repouso. */
   dPelvis: number;
+  /** A inclinação do pé esquerdo e do direito em relação ao CHÃO (rad; positivo levanta a ponta): zero no apoio. Quem desenha a converte para o ângulo relativo à canela. */
+  phiL: number;
+  phiR: number;
 }
 
 const TAU = Math.PI * 2;
@@ -65,6 +76,13 @@ const TAU = Math.PI * 2;
 const FRACAO_DE_APOIO = 0.6;
 /** Altura do pé no balanço, em fração do alcance total: 12%. */
 const ALTURA_DO_PASSO_FRAC = 0.12;
+/** Quanto a ponta desce logo depois de o pé sair do chão, e sobe antes de pisar (rad, 12°): o pé chega plano ao apoio. */
+const INCLINACAO_DO_PE = 0.21;
+/**
+ * Até quanto do comprimento a perna de apoio estica (99%): ela nunca fica exatamente reta, e o joelho dobra pelo menos 16°. Reta, a conta de duas barras tem
+ * uma quina (o joelho cresce com a raiz da altura que o pé sobe), e o joelho dava um tranco a cada decolagem e a cada pouso.
+ */
+export const PERNA_MAXIMA = 0.99;
 
 /** O que o gosto muda na passada (o resto é geometria da perna). Os valores de verdade moram em `movimentoGen3.json` (`movimentoGen3.ts`). */
 export interface AjustesDaPassada {
@@ -73,13 +91,21 @@ export interface AjustesDaPassada {
    * passos por segundo, nervoso demais para um robô de 5 m; acima do teto o pé escorrega um pouco (a geração 2 escorregava mais da metade da velocidade do corpo).
    */
   readonly ciclosMax: number;
-  /** Agachamento ao andar, em fração do alcance total da perna (`ue + w`): 10%, o robô anda levemente agachado. */
+  /**
+   * O agachamento do joelho no topo da velocidade, em fração do alcance total da perna (`ue + w`): 1,5% (um joelho dobrado ~20° no meio do apoio, como
+   * o de quem anda). Cresce com a velocidade (de marcha o robô anda de pé). Era 10% fixo, a toda velocidade, e o robô andava agachado (Comandante, 07/11).
+   */
   readonly agachamento: number;
-  /** Amplitude do molejo a cada passo, em fração do alcance total: 5% (no Vector-09, 0,125 m: a mesma ordem do balanço antigo). */
+  /**
+   * Amplitude do molejo a cada passo, em fração do alcance total, no passo mais longo: 7% (no Vector-09, 0,17 m). É o quanto o quadril desce quando o pé mais
+   * longe pisa e define o passo mais longo: cresce com o quadrado do passo, então de marcha quase não balança.
+   */
   readonly molejoDoPasso: number;
+  /** A cadência de marcha, em fração do teto (0,5: de marcha o robô dá a metade dos passos do teto; a passada acelera até ele na velocidade de topo). */
+  readonly cadenciaLenta: number;
 }
 
-export const PASSADA_PADRAO: AjustesDaPassada = { ciclosMax: 1.6, agachamento: 0.1, molejoDoPasso: 0.05 };
+export const PASSADA_PADRAO: AjustesDaPassada = { ciclosMax: 1.6, agachamento: 0.015, molejoDoPasso: 0.07, cadenciaLenta: 0.5 };
 const clamp = (x: number, lo: number, hi: number): number => (x < lo ? lo : x > hi ? hi : x);
 const clampCos = (x: number): number => (x < -1 ? -1 : x > 1 ? 1 : x);
 
@@ -93,7 +119,7 @@ export function parametrosDaPassada(geo: GeometriaDaPerna, anguloDoQuadril: numb
   const bob = ajustes.molejoDoPasso * rMax;
   // A pelve mais baixa do andar: quando o pé mais longe (para a frente, com o deslocamento `f0`) está com a perna esticada.
   const dAndar = geo.dRest - agachamento - bob;
-  const aPeloLimite = Math.sqrt(Math.max(0, rMax * rMax - dAndar * dAndar)) - Math.abs(geo.f0);
+  const aPeloLimite = Math.sqrt(Math.max(0, (PERNA_MAXIMA * rMax) ** 2 - dAndar * dAndar)) - Math.abs(geo.f0);
   const aPeloChassi = rMax * Math.sin(clamp(anguloDoQuadril, 0.05, 1.2));
   return {
     fracaoDeApoio: FRACAO_DE_APOIO,
@@ -102,7 +128,38 @@ export function parametrosDaPassada(geo: GeometriaDaPerna, anguloDoQuadril: numb
     agachamento,
     bob,
     ciclosMax: ajustes.ciclosMax,
+    cadenciaLenta: ajustes.cadenciaLenta,
   };
+}
+
+/** A passada com os campos graváveis: o `Estado3` de cada Mech guarda uma e a reescreve a cada quadro (G4: sem alocar). */
+export type PassadaMutavel = { -readonly [K in keyof ParametrosDaPassada]: ParametrosDaPassada[K] };
+
+/**
+ * A passada na velocidade `v` (m/s) de um chassi com velocidade de topo `vTopo` (m/s): o passo, a altura do pé, o agachamento e o molejo
+ * **crescem com a velocidade**. De marcha o robô anda de pé, com o joelho quase esticado; só na corrida o quadril desce e o passo estica.
+ * `base` é a passada do topo da velocidade (`parametrosDaPassada`) e `saida` recebe a desta velocidade (sem alocar).
+ *
+ * O meio-curso do pé que o planta, numa cadência natural `c` (de `cadenciaLenta` a 1 vezes o teto `ciclosMax`, com a velocidade), é
+ * `fracaoDeApoio·v / (2c)`, até o alcance máximo da base; acima dele o pé escorrega um pouco (`fasePorSegundo` limita a cadência).
+ * Antes (P321) o passo era sempre o máximo e o quadril ficava 12,5% abaixo do repouso a partir de metade da velocidade, em todo chassi.
+ */
+export function passoNaVelocidade(base: ParametrosDaPassada, v: number, vTopo: number, saida: PassadaMutavel): PassadaMutavel {
+  const s = vTopo > 0 ? clamp(v / vTopo, 0, 1) : 1;
+  const cadencia = base.ciclosMax * (base.cadenciaLenta + (1 - base.cadenciaLenta) * s);
+  const necessario = (base.fracaoDeApoio * Math.max(0, v)) / (2 * Math.max(1e-6, cadencia));
+  const alcance = Math.min(base.alcance, necessario);
+  // O pé só sobe o quanto o passo pede: sem passo, sem balanço (o pé não fica pendurado no ar quando o robô para com a fase parada).
+  const passo = base.alcance > 0 ? alcance / base.alcance : 0;
+  saida.fracaoDeApoio = base.fracaoDeApoio;
+  saida.ciclosMax = base.ciclosMax;
+  saida.cadenciaLenta = base.cadenciaLenta;
+  saida.alcance = alcance;
+  saida.altura = base.altura * Math.sqrt(passo);
+  saida.agachamento = base.agachamento * s;
+  // O molejo é o quanto o quadril desce com o passo (a perna inclinada): cresce com o quadrado do passo, e o pé mais longe toca o chão sem puxar a pelve.
+  saida.bob = base.bob * passo * passo;
+  return saida;
 }
 
 /**
@@ -147,38 +204,32 @@ export function fasePorSegundo(p: ParametrosDaPassada, velocidade: number): numb
   return Math.min(taxaDaFase(p) * velocidade, p.ciclosMax * TAU);
 }
 
-/** Frente e altura de um pé no ciclo (`p` = fração 0..1 do ciclo). Apoio: o pé anda de +alcance a -alcance. Balanço: sobe e desce até o outro lado. */
-function passoDoPe(p: number, fracao: number, alcance: number, altura: number, out: { f: number; lift: number }): void {
+/** Frente, altura e andamento de um pé no ciclo (`p` = fração 0..1 do ciclo). Apoio: o pé anda de +alcance a -alcance. Balanço: sobe e desce até o outro lado; `balanco` vai de 0 a 1 nele (-1 no apoio). */
+function passoDoPe(p: number, fracao: number, alcance: number, altura: number, out: { f: number; lift: number; balanco: number }): void {
   if (p < fracao) {
     const s = p / fracao;
     out.f = alcance * (1 - 2 * s);
     out.lift = 0;
+    out.balanco = -1;
   } else {
     const s = (p - fracao) / (1 - fracao);
     out.f = -alcance * Math.cos(Math.PI * s);
     out.lift = altura * Math.sin(Math.PI * s);
+    out.balanco = s;
   }
 }
 
-const _pe = { f: 0, lift: 0 };
+/** A inclinação do pé em relação ao chão (rad) no balanço: a ponta desce e depois sobe, e o pé começa e termina plano. No apoio, plano. */
+const inclinacaoDoPe = (balanco: number): number => (balanco < 0 ? 0 : -INCLINACAO_DO_PE * Math.sin(TAU * balanco));
+
+/** Quanto o eixo do tornozelo sobe a mais, em relação ao pé plano, para a ponta (ou o calcanhar) do pé inclinado de `phi` não furar o chão. Zero com o pé plano. */
+function sobeDoPe(geo: GeometriaDaPerna, phi: number): number {
+  const s = Math.sin(phi);
+  return geo.tornozelo * (Math.cos(phi) - 1) + (s < 0 ? geo.peFrente : geo.peTras) * Math.abs(s);
+}
+
+const _pe = { f: 0, lift: 0, balanco: -1 };
 const _juntas: Juntas = { hip: 0, knee: 0 };
-/** Voltas do ponto fixo do pé rígido (o ângulo do pé depende da solução, que depende da altura do pé): duas bastam, a conta converge rápido. */
-const VOLTAS_DO_PE = 2;
-
-/**
- * Resolve a perna com o pé rígido: o ponto do pé no eixo da canela fica `a·|sen θ|` acima do chão, com θ = quadril + joelho da própria
- * solução (a inclinação da canela, que o pé acompanha) e `a` a distância do eixo até o canto que toca (o calcanhar se o pé está à
- * frente, a ponta se está atrás). `estimativa` é o ponto de partida da conta.
- */
-function juntasDoPe(geo: GeometriaDaPerna, f: number, profundidade: number, lift: number, estimativa: number, out: Juntas): Juntas {
-  let sobe = estimativa;
-  for (let k = 0; k < VOLTAS_DO_PE; k++) {
-    juntasDaPerna(geo, f, profundidade - lift - sobe, out);
-    const s = Math.sin(out.hip + out.knee);
-    sobe = (s > 0 ? geo.peTras : geo.peFrente) * Math.abs(s);
-  }
-  return juntasDaPerna(geo, f, profundidade - lift - sobe, out);
-}
 
 /**
  * A pose inteira num instante. `fase` (rad) avança com `taxaDaFase·v·dt`; `peso` (0..1) mistura com a postura parada, que é a
@@ -186,7 +237,7 @@ function juntasDoPe(geo: GeometriaDaPerna, f: number, profundidade: number, lift
  * `escalaL` e `escalaR` (0..1) encurtam o passo de cada perna: a perna avariada manca (o `legDamageLean` do dano às pernas).
  */
 export function poseDaPassada(fase: number, peso: number, geo: GeometriaDaPerna, p: ParametrosDaPassada, out: PoseDaPassada, escalaL = 1, escalaR = 1): PoseDaPassada {
-  const rMax = geo.ue + geo.w;
+  const rMax = (geo.ue + geo.w) * PERNA_MAXIMA;
   const g = clamp(peso, 0, 1);
   const alcance = p.alcance;
   const altura = p.altura;
@@ -200,29 +251,27 @@ export function poseDaPassada(fase: number, peso: number, geo: GeometriaDaPerna,
   passoDoPe(phaseL, p.fracaoDeApoio, alcance * escalaL, altura * escalaL, _pe);
   const fL = geo.f0 + _pe.f;
   const liftL = _pe.lift;
+  const phiL = inclinacaoDoPe(_pe.balanco);
+  const sobeL = sobeDoPe(geo, phiL);
   passoDoPe(phaseR, p.fracaoDeApoio, alcance * escalaR, altura * escalaR, _pe);
   const fR = geo.f0 + _pe.f;
   const liftR = _pe.lift;
+  const phiR = inclinacaoDoPe(_pe.balanco);
+  const sobeR = sobeDoPe(geo, phiR);
 
-  // O pé rígido gira junto com a canela: inclinado, a ponta (ou o calcanhar) afundaria no piso. O centro do pé sobe o que o pé
-  // inclinado pede para o canto que toca ficar no chão (a·|sen θ|, a = do eixo da canela ao canto). Aqui, a estimativa pelo ângulo da perna (ela limita a pelve);
-  // a solução das juntas, logo abaixo, usa o θ exato.
-  const dfL = fL - geo.f0;
-  const dfR = fR - geo.f0;
-  const rolL = ((dfL > 0 ? geo.peTras : geo.peFrente) * Math.abs(dfL)) / Math.hypot(dfL, dTopo);
-  const rolR = ((dfR > 0 ? geo.peTras : geo.peFrente) * Math.abs(dfR)) / Math.hypot(dfR, dTopo);
-
-  // O mínimo dos limites dos dois pés: o de apoio (folga só a do pé inclinado) e o do pé no ar (mais a altura dele). Contínuo no ciclo.
+  // O mínimo dos limites dos dois pés: o de apoio (folga só a do pé inclinado, que no apoio é zero: o pé é plano) e o do pé no ar (mais a altura dele).
+  // Contínuo no ciclo.
   const dPelvis = Math.min(
     dTopo,
-    liftL + rolL + Math.sqrt(Math.max(0, rMax * rMax - fL * fL)),
-    liftR + rolR + Math.sqrt(Math.max(0, rMax * rMax - fR * fR)),
+    liftL + sobeL + Math.sqrt(Math.max(0, rMax * rMax - fL * fL)),
+    liftR + sobeR + Math.sqrt(Math.max(0, rMax * rMax - fR * fR)),
   );
   out.dPelvis = dPelvis;
-  juntasDoPe(geo, fL, dPelvis, liftL, rolL, _juntas);
+  // O alvo da perna é o tornozelo: o pé plano o põe a `tornozelo` do chão; o pé no ar sobe `lift`, e inclinado, um pouco mais (`sobeDoPe`).
+  juntasDaPerna(geo, fL, dPelvis - liftL - sobeL, _juntas);
   out.hipL = _juntas.hip;
   out.kneeL = _juntas.knee;
-  juntasDoPe(geo, fR, dPelvis, liftR, rolR, _juntas);
+  juntasDaPerna(geo, fR, dPelvis - liftR - sobeR, _juntas);
   out.hipR = _juntas.hip;
   out.kneeR = _juntas.knee;
 
@@ -233,6 +282,8 @@ export function poseDaPassada(fase: number, peso: number, geo: GeometriaDaPerna,
   out.kneeL *= g;
   out.hipR *= g;
   out.kneeR *= g;
+  out.phiL = phiL * g;
+  out.phiR = phiR * g;
   out.dPelvis = geo.dRest + (out.dPelvis - geo.dRest) * g;
   return out;
 }
