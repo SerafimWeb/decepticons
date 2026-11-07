@@ -89,7 +89,7 @@ O projeto é desenvolvido em partes por agentes diferentes (hoje: Claude, Codex,
 client/src/
   core/        Game.ts (monta os módulos + loop), InputManager.ts, Quality.ts (qualidade adaptativa, G12), rng.ts (aleatório com semente), Settings.ts (configurações do jogador: contrato da UI)
   physics/     PhysicsWorld.ts (Rapier, FIXED_DT)
-  entities/    MechBase.ts (controller, dash, dano modular, animação), chassis.ts (números dos chassis, sem 3D), Vector09.ts, Android.ts, meshKit.ts, kitCasco.ts + gaviaoH3.ts (o kit de casco e o corpo do Gavião-H3, o primeiro robô da geração 3: P323), geracao3.ts + passadaGen3.ts + molejo.ts + movimentoGen3.json (a passada com o pé plantado e o molejo da geração 3, atrás de mech:gen3, carregados sob demanda por movimentoGen3.ts)
+  entities/    MechBase.ts (controller, dash, dano modular, animação), chassis.ts (números dos chassis, sem 3D), Vector09.ts, Android.ts, meshKit.ts, kitCasco.ts + gaviaoH3.ts (o kit de casco e o corpo do Gavião-H3, o primeiro robô da geração 3: P323), geracao3.ts + passadaGen3.ts + molejo.ts + movimentoGen3.json (a passada com o pé plantado e o molejo da geração 3, liberada em 07/11 (P330; mech:gen3 é o interruptor), carregados sob demanda por movimentoGen3.ts)
   sim/         Match.ts (a partida inteira sem tela: o que o servidor roda; o Game desenha por cima)
   net/         adapters.ts (ponte entre a simulação e os contratos de rede)
   voice/       VoiceChat.ts (voz P2P por WebRTC, ligada ao Game por callbacks), MicController.ts (aberto/PTT), VoiceSpatial.ts (voz espacial), VoiceHud.ts, opus.ts (DTX no SDP)

@@ -1,6 +1,10 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## [2026-11-07] A geração 3 do movimento é liberada para todo jogador (P330)
+
+**A ordem:** "sim, libera", depois de o Comandante ver os números do pé que afunda (12 cm no andróide a 3,4 m no Colossus v4 de malha; 18 a 51 cm nos robôs de código). **Decisão:** `mech:gen3` passa de `restrito` a `publico` no catálogo; o interruptor continua no painel de visibilidade (restringir devolve o andar da geração 2). **Por quê:** a geração 3 dá 0 cm na corrida (medido no `MechBase` de verdade e travado em `corpoGen3.contrato.test.ts`), custa ~2 µs por Mech por quadro e 2,4 KB gzip sob demanda. **Alternativas descartadas:** remover o andar da geração 2 (o andróide e a malha importada ainda dependem dele); deixar a liberação para depois da Arara (o escorregão dela a 13 m/s é conhecido e fica no ROADMAP). **O que falta:** a geração 3 para a malha importada.
+
 ## [2026-11-07] O padrão do corpo da geração 3: sem vão, sola no chão, ombro em placas; e a luz do jogo manda na cor (P325)
 
 **O pedido:** o Comandante achou o Gavião "razoável": ombro redondo, vão entre o tronco e as pernas, e "os pés dos mechs afundam". **Medido, não achado:** parado todo robô pisa o chão (0 cm); o afundamento é o **andar da geração 2** (o pé rígido gira com a canela): de −12 cm (andróide) e −18 cm (Vector-09) a −42 cm (Onça), −51 cm (Colossus-01) e −3,4 m (Colossus v4 de malha) ao correr; a geração 3 dá 0 na corrida. A medição pegou um defeito dela: no pouso e no dash a mola descia a pelve depois de a perna estar resolvida e o pé entrava 10 a 15 cm; `poseDaPassada` ganhou `queda` e a mola entra na conta da perna.

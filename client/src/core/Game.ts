@@ -2075,7 +2075,7 @@ export class Game {
     aoMudarVisibilidade(() => this.match.setCoordenacao(funcionalidadeVisivel('ia:time')));
     aoMudarVisibilidade(() => this.prepararRadio());
 
-    // P321: a geração 3 do movimento (molejo e pé plantado). Restrita até o Comandante liberar; o `MechBase` lê o interruptor a cada quadro.
+    // P321: a geração 3 do movimento (molejo e pé plantado). Liberada em 07/11 (P330); o painel de visibilidade ainda a desliga. O `MechBase` lê o interruptor a cada quadro.
     const sincronizarGen3 = (): void => setMovimentoGen3(funcionalidadeVisivel('mech:gen3'));
     sincronizarGen3();
     aoMudarVisibilidade(sincronizarGen3);
