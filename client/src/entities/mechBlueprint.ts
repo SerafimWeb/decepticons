@@ -430,7 +430,7 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
     backMuzzle: nos.back,
     shoulderMuzzles: nos.rightShoulder && nos.leftShoulder ? { right: nos.rightShoulder, left: nos.leftShoulder } : undefined,
     thrusters, thrusterMaterial: batchedMaterial, setDashVisual: batchedMaterial.userData.setDash,
-    hullMaterials: [batchedMaterial], hipHeight, setHeatVisual, setFrozenVisual: updateFrost, setGuardVisual, mountWeapons, barrageMouth,
+    hullMaterials: [batchedMaterial], hipHeight, pe: { frente: blueprint.legs.footLength * 0.62, tras: blueprint.legs.footLength * 0.38 }, setHeatVisual, setFrozenVisual: updateFrost, setGuardVisual, mountWeapons, barrageMouth,
   };
 }
 

@@ -15,10 +15,8 @@ import { FLINCH_DECAY, FLINCH_MAX } from '../combat/reaction';
 import { DEFAULT_TRIGGERS, MOUNT_PART, MOUNTS, triggersComBotoes, type MountId, type NamedLayout, type TriggerLayout, type Vec3 } from '../combat/mounts';
 import type { DamageType, Loadout, WeaponStats } from '../combat/weapons';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
-import { avancaMola, frequenciaDoCorpo, novaMola, type Mola } from './molejo';
-import { parametrosDaPassada, poseDaPassada, taxaDaFase, type GeometriaDaPerna, type ParametrosDaPassada, type PoseDaPassada } from './passadaGen3';
-import { medirGeometriaDaPerna } from './passadaRig';
-import { movimentoGen3Ligado } from './movimentoGen3';
+import type { Estado3 } from './geracao3';
+import { geracao3 } from './movimentoGen3';
 
 /** Gravidade dos Mechs (mais alta que a do mundo: queda "pesada" e rápida, estilo arena shooter). */
 export const MECH_GRAVITY = 32;
@@ -159,6 +157,11 @@ export interface MechRig {
   /** Materiais do casco (por instância): piscam quando o Mech toma dano. */
   hullMaterials: THREE.MeshStandardMaterial[];
   hipHeight: number;
+  /**
+   * Do eixo da canela até a ponta e até o calcanhar do pé (m), só nos rigs que os sabem (os procedurais): a passada da geração 3 ergue o
+   * pé inclinado por eles, para a ponta não afundar no piso.
+   */
+  pe?: { frente: number; tras: number };
   /**
    * Só nos rigs com encaixe de arma nos pulsos (`weaponMount.ts`): monta no desenho as armas da montagem.
    * Idempotente e barata; o `MechBase` a chama ao nascer e a cada `equip`. Sem ela, a arma é parte do modelo.
@@ -302,27 +305,11 @@ export abstract class MechBase {
   /** A 1ª pessoa esconde a cabeça do próprio Mech; parte destruída também some. */
   private headVisibleByCamera = true;
   /**
-   * Geração 3 do movimento (P319, só desenho): a perna medida no rig e os números da passada. `null` quando o rig não dá uma perna
-   * medível: aí o Mech anda sempre pela passada antiga, mesmo com `mech:gen3` ligado. Medidos uma vez, na criação.
+   * Geração 3 do movimento (P321, só desenho, `entities/geracao3.ts`): o estado dela neste Mech. `null` enquanto a geração 3 está desligada,
+   * o pedaço sob demanda não chegou, ou o rig não a suporta (o `.glb`): aí o Mech anda sempre pela passada de hoje.
    */
-  private readonly geoPerna: GeometriaDaPerna | null = null;
-  private readonly passo: { readonly params: ParametrosDaPassada; readonly taxa: number } | null = null;
-  private readonly poseG3: PoseDaPassada = { hipL: 0, kneeL: 0, hipR: 0, kneeR: 0, dPelvis: 0 };
-  /** As molas do molejo (P319): tronco que inclina, tronco que rola, pelve que assenta e os dois coices. */
-  private readonly molaTronco: Mola = novaMola();
-  private readonly molaRolagem: Mola = novaMola();
-  private readonly molaPelve: Mola = novaMola();
-  private readonly molaRecuoD: Mola = novaMola();
-  private readonly molaRecuoE: Mola = novaMola();
-  /** Frequência natural do corpo (rad/s), da altura do chassi: as molas do molejo andam nela. */
-  private readonly freqCorpo: number;
-  /** Velocidade suavizada: a diferença para a velocidade crua, vezes a taxa, é a aceleração do Mech (sem alocar). */
-  private lagX = 0;
-  private lagZ = 0;
-  /** 0 no chão, 1 no ar (suavizado): mistura a postura de ar na passada. */
-  private airMix = 0;
-  /** A queda mais forte desde que saiu do chão (m/s): o impacto que a pelve sente ao pousar. */
-  private quedaVel = 0;
+  private gen3: Estado3 | null = null;
+  private gen3Tentado = false;
 
   protected constructor(
     readonly stats: MechStats,
@@ -343,14 +330,6 @@ export abstract class MechBase {
     this.leftArmBaseZ = rig.leftArm.position.z;
     this.feetOffset = stats.height / 2 + CONTROLLER_OFFSET;
     this.root.updateMatrixWorld(true);
-    this.freqCorpo = frequenciaDoCorpo(stats.height);
-    // A geração 3 mede a perna depois de a árvore do rig estar atualizada (a medida lê as posições do mundo).
-    const geo = medirGeometriaDaPerna(rig);
-    if (geo) {
-      const params = parametrosDaPassada(geo, (stats.gait ?? DEFAULT_GAIT).hip);
-      this.geoPerna = geo;
-      this.passo = { params, taxa: taxaDaFase(params) };
-    }
     for (const mount of MOUNTS) {
       const fixed = stats.muzzles?.[mount];
       if (fixed) this.muzzlesLocal[mount].set(fixed[0], fixed[1], fixed[2]);
@@ -999,57 +978,6 @@ export abstract class MechBase {
     this.animate(dt);
   }
 
-  /**
-   * A locomoção da geração 3 (P319): a passada com o pé plantado, a pelve que assenta pela perna mais esticada, e as molas do
-   * tronco (inércia ao arrancar, frear e virar), da pelve (o impacto do pouso e o agachar do dash). Só desenho: nada aqui volta
-   * para a simulação, e nada aloca (G4/G5). O movimento antigo fica em `animate` para quando o interruptor estiver desligado.
-   */
-  private locomocaoGeracao3(dt: number, hSpeed: number, air: number, lean: number, amt: number, sw: number, k: number): void {
-    const geo = this.geoPerna;
-    const passo = this.passo;
-    if (!geo || !passo) return;
-    const r = this.rig;
-
-    // Os pés: a postura de ar entra suave. A passada no chão é direta, sem filtro: um filtro atrasa o pé e ele escorrega.
-    this.airMix += (air - this.airMix) * k;
-    const pose = this.poseG3;
-    poseDaPassada(this.walkPhase, (1 - this.airMix) * Math.min(1, hSpeed), geo, passo.params, pose);
-    r.leftLeg.hip.rotation.x = pose.hipL + this.airMix * 0.55;
-    r.rightLeg.hip.rotation.x = pose.hipR - this.airMix * 0.25;
-    r.leftLeg.knee.rotation.x = pose.kneeL - this.airMix * 1.0;
-    r.rightLeg.knee.rotation.x = pose.kneeR - this.airMix * 0.4;
-
-    // Pouso: a queda mais forte desde que saiu do chão vira um tranco na mola da pelve (ela agacha e volta).
-    if (this.grounded) {
-      if (this.quedaVel > 0) {
-        this.molaPelve.v -= Math.min(12, this.quedaVel) * 0.12;
-        this.quedaVel = 0;
-      }
-    } else if (-this.velocity.y > this.quedaVel) this.quedaVel = -this.velocity.y;
-    // O agachar do dash é o alvo da mesma mola.
-    const agachar = this.isDashing ? -0.12 : 0;
-    const pelve = avancaMola(this.molaPelve, agachar, this.freqCorpo, 0.45, dt);
-    r.pelvis.position.y = r.hipHeight + (pose.dPelvis - geo.dRest) + pelve;
-
-    // Inércia do tronco: a aceleração é a velocidade crua menos a suavizada, vezes a taxa (uma passagem de primeira ordem, sem alocar).
-    const tau = 6;
-    const vx = this.velocity.x;
-    const vz = this.velocity.z;
-    const ax = (vx - this.lagX) * tau;
-    const az = (vz - this.lagZ) * tau;
-    this.lagX += (vx - this.lagX) * (1 - Math.exp(-dt * tau));
-    this.lagZ += (vz - this.lagZ) * (1 - Math.exp(-dt * tau));
-    const yaw = this.yaw;
-    const aFrente = -(ax * Math.sin(yaw) + az * Math.cos(yaw));
-    const aLado = ax * Math.cos(yaw) - az * Math.sin(yaw);
-    // Arrancar para a frente inclina o tronco para a frente (rotação X negativa); frear faz o contrário e ele assenta com um tranco.
-    const alvoTronco = Math.min(0.07, Math.max(-0.07, -aFrente * 0.0035));
-    const alvoRolagem = Math.min(0.06, Math.max(-0.06, -aLado * 0.003));
-    avancaMola(this.molaTronco, alvoTronco, this.freqCorpo * 1.3, 0.35, dt);
-    const rolagem = avancaMola(this.molaRolagem, alvoRolagem, this.freqCorpo, 0.4, dt);
-    r.pelvis.rotation.z = this.pelvisBaseRoll + lean * (0.06 + Math.abs(sw) * 0.08) * amt + rolagem;
-  }
-
   /** Animação procedural: passada das pernas, bob do quadril, recuo do canhão. */
   private animate(dt: number): void {
     const r = this.rig;
@@ -1057,12 +985,17 @@ export abstract class MechBase {
     const amt = this.grounded ? Math.min(1, hSpeed / this.stats.moveSpeed) : 0;
     const air = this.grounded ? 0 : 1;
     const k = 1 - Math.exp(-dt * 14);
-    const passo = this.passo;
-    const g3 = passo !== null && this.geoPerna !== null && movimentoGen3Ligado();
+    // Geração 3 (P321): só roda com ela ligada e o pedaço sob demanda carregado; o estado nasce uma vez por Mech (o `.glb` não tem: fica na passada de hoje).
+    const G = geracao3();
+    if (G !== null && !this.gen3Tentado) {
+      this.gen3Tentado = true;
+      this.gen3 = G.criarEstado(r, (this.stats.gait ?? DEFAULT_GAIT).hip, this.stats.height);
+    }
+    const e3 = G !== null ? this.gen3 : null;
 
     // Passada proporcional à perna: o Mech de 5,3 m dá passos lentos e pesados; o andróide, curtos e rápidos.
-    // Geração 3 (P319): a fase anda com a velocidade pela taxa que deixa o pé plantado (`passadaGen3.ts`).
-    if (passo && g3) this.walkPhase += passo.taxa * hSpeed * dt;
+    // Geração 3: a fase anda com a velocidade pela taxa que deixa o pé plantado.
+    if (G !== null && e3 !== null) this.walkPhase += G.fasePorSegundo(e3, hSpeed) * dt;
     else this.walkPhase += (hSpeed * dt * STRIDE) / this.stats.height;
     const sw = Math.sin(this.walkPhase);
     const cw = Math.cos(this.walkPhase);
@@ -1085,7 +1018,8 @@ export abstract class MechBase {
     const lKnee = -Math.max(0, cw) * gait.knee * amt - air * 1.0;
     const rKnee = -Math.max(0, -cw) * gait.knee * amt - air * 0.4;
 
-    if (g3) this.locomocaoGeracao3(dt, hSpeed, air, lean, amt, sw, k);
+    let rolagem = 0;
+    if (G !== null && e3 !== null) rolagem = G.locomocao(e3, this, r, this.walkPhase, dt, hSpeed, air, lean, k);
     else {
       r.leftLeg.hip.rotation.x = lerp(r.leftLeg.hip.rotation.x, lHip, k);
       r.rightLeg.hip.rotation.x = lerp(r.rightLeg.hip.rotation.x, rHip, k);
@@ -1093,20 +1027,20 @@ export abstract class MechBase {
       r.rightLeg.knee.rotation.x = lerp(r.rightLeg.knee.rotation.x, rKnee, k);
 
       r.pelvis.position.y = r.hipHeight - Math.abs(sw) * (0.12 + Math.abs(lean) * 0.12) * amt;
-      r.pelvis.rotation.z = this.pelvisBaseRoll + lean * (0.06 + Math.abs(sw) * 0.08) * amt;
     }
+    r.pelvis.rotation.z = this.pelvisBaseRoll + lean * (0.06 + Math.abs(sw) * 0.08) * amt + rolagem;
     // O tranco do tiro: o torso volta sozinho (decai a e^-9 por segundo) e soma por cima da mira e do balanço da passada.
     const back = Math.exp(-dt * FLINCH_DECAY);
     this.flinchPitch = Math.abs(this.flinchPitch) < 1e-4 ? 0 : this.flinchPitch * back;
     this.flinchYaw = Math.abs(this.flinchYaw) < 1e-4 ? 0 : this.flinchYaw * back;
-    r.torso.rotation.x = this.pitch * 0.25 + this.flinchPitch + (g3 ? this.molaTronco.x : 0);
+    r.torso.rotation.x = this.pitch * 0.25 + this.flinchPitch + (e3 !== null ? e3.molaTronco.x : 0);
     r.torso.rotation.y = sw * 0.06 * amt + this.flinchYaw;
 
     this.recoil = Math.max(0, this.recoil - dt * 9);
     this.leftRecoil = Math.max(0, this.leftRecoil - dt * 5);
     // Geração 3: o coice é uma mola (recua, passa do ponto e volta) em vez da queda reta; o alvo continua sendo o coice decaído.
-    const kickRight = g3 ? avancaMola(this.molaRecuoD, this.recoil, 14, 0.3, dt) * 0.35 : this.recoil * 0.35;
-    const kickLeft = g3 ? avancaMola(this.molaRecuoE, this.leftRecoil, 14, 0.3, dt) * 0.5 : this.leftRecoil * 0.5;
+    const kickRight = G !== null && e3 !== null ? G.coice(e3, false, this.recoil, dt) * 0.35 : this.recoil * 0.35;
+    const kickLeft = G !== null && e3 !== null ? G.coice(e3, true, this.leftRecoil, dt) * 0.5 : this.leftRecoil * 0.5;
     if (r.setRecoil) r.setRecoil(kickRight, kickLeft);
     else {
       r.rightArm.position.z = this.rightArmBaseZ + kickRight;

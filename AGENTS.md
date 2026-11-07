@@ -89,7 +89,7 @@ O projeto é desenvolvido em partes por agentes diferentes (hoje: Claude, Codex,
 client/src/
   core/        Game.ts (monta os módulos + loop), InputManager.ts, Quality.ts (qualidade adaptativa, G12), rng.ts (aleatório com semente), Settings.ts (configurações do jogador: contrato da UI)
   physics/     PhysicsWorld.ts (Rapier, FIXED_DT)
-  entities/    MechBase.ts (controller, dash, dano modular, animação), chassis.ts (números dos chassis, sem 3D), Vector09.ts, Android.ts, meshKit.ts
+  entities/    MechBase.ts (controller, dash, dano modular, animação), chassis.ts (números dos chassis, sem 3D), Vector09.ts, Android.ts, meshKit.ts, geracao3.ts + passadaGen3.ts + molejo.ts + movimentoGen3.json (a passada com o pé plantado e o molejo da geração 3, atrás de mech:gen3, carregados sob demanda por movimentoGen3.ts)
   sim/         Match.ts (a partida inteira sem tela: o que o servidor roda; o Game desenha por cima)
   net/         adapters.ts (ponte entre a simulação e os contratos de rede)
   voice/       VoiceChat.ts (voz P2P por WebRTC, ligada ao Game por callbacks), MicController.ts (aberto/PTT), VoiceSpatial.ts (voz espacial), VoiceHud.ts, opus.ts (DTX no SDP)
@@ -137,6 +137,7 @@ npm run vozes      # as falas do narrador no ElevenLabs (chave só em $env:ELEVE
 npm run ouvir      # abre a página para ouvir os sons e as vozes
 npm run mech:inspecionar -- arquivo.glb   # confere um robô importado (contrato, convenção da animação, foto) e sugere o IMPORTED_CHASSIS
 npm run mech:bocas -- marauder            # mede a boca de cada encaixe de arma do robô importado e confere com o dado do chassi (roda no check)
+npm run mech:movimento -- --chassi vector09 --video   # a bancada do movimento (P321): o MechBase de verdade, geração 2 ao lado da 3, em números e em vídeo (FERRAMENTAS 4.13)
 npm run arquivar  # ensaio: quanto do ESTADO_ATUAL e do HISTORICO tem mais de dois dias; `-- --aplicar` move para .decepticons/arquivo/ sem perder linha
 npm run painel     # sala de controle (novidades, equipe, mesa do Dan, fluxo, fichas, evolução, rota, frentes, decisões) em .tmp/painel/painel.html
 npm run server     # servidor de jogo do multiplayer em ws://localhost:2567/?sala=ARENA (DEPLOY.md)

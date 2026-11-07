@@ -1,5 +1,5 @@
 /**
- * Molejo (P319, geração 3 dos Mechs): uma mola amortecida para o movimento secundário do robô (o tronco que inclina ao
+ * Molejo (P321, geração 3 dos Mechs): uma mola amortecida para o movimento secundário do robô (o tronco que inclina ao
  * arrancar e volta ao parar, a pelve que assenta depois de um pulo, o coice que recua e volta). Só desenho: roda no
  * render, nunca na simulação (G1/G2), e não toca em dano, mira nem bocas de tiro.
  *

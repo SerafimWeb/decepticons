@@ -1,0 +1,9 @@
+{
+  "ciclosMax": 1.6,
+  "agachamento": 0.1,
+  "molejoDoPasso": 0.05,
+  "inclinacaoDoTronco": 4,
+  "amortecimentoDoPouso": 0.12,
+  "rigidez": 1,
+  "amortecimento": 1
+}

@@ -11,8 +11,15 @@ describe('medição da perna no rig (passadaRig)', () => {
     expect(g.ue).toBeCloseTo(MEDIUM_MECH_BLUEPRINT.legs.upperLength, 2);
     expect(g.w).toBeCloseTo(MEDIUM_MECH_BLUEPRINT.legs.lowerLength + 0.2, 2);
     expect(g.dRest).toBeCloseTo(g.ue + g.w, 2);
+    expect(g.peFrente).toBeCloseTo(MEDIUM_MECH_BLUEPRINT.legs.footLength * 0.62, 6);
+    expect(g.peTras).toBeCloseTo(MEDIUM_MECH_BLUEPRINT.legs.footLength * 0.38, 6);
     expect(Math.abs(g.eps)).toBeLessThan(1e-3);
     expect(Math.abs(g.f0)).toBeLessThan(1e-3);
+  });
+
+  it('o rig que não informa o pé (o .glb) não é medido: devolve nulo e o Mech anda como antes', () => {
+    const rig = buildMechBlueprintRig(MEDIUM_MECH_BLUEPRINT);
+    expect(medirGeometriaDaPerna({ ...rig, pe: undefined })).toBeNull();
   });
 
   it('o Ferret (leve, digitígrado) mede o joelho deslocado para a frente pelo valor do blueprint', () => {

@@ -27,7 +27,7 @@ export const NOME_DO_GRUPO: Readonly<Record<GrupoDeFuncionalidade, string>> = {
 };
 
 const fixas: readonly Funcionalidade[] = [
-  // P319 (06/11): a geração 3 do movimento (passada com o pé plantado, tronco e pelve com molejo, coice que volta). Nasce RESTRITA: o Comandante compara com a geração 2 e libera.
+  // P321 (06/11): a geração 3 do movimento (passada com o pé plantado, tronco e pelve com molejo, coice que volta). Nasce RESTRITA: o Comandante compara com a geração 2 e libera.
   { id: 'mech:gen3', grupo: 'robos', nome: 'Geração 3 · movimento com molejo (todos os Mechs)', padrao: 'restrito', efeito: 'o andar dos Mechs volta ao da geração 2 (passada de sempre, sem molejo nem pé plantado)' },
   { id: 'fase:chefes-janeiro', grupo: 'fases', nome: 'Trampado e Evil · 8 de Janeiro', padrao: 'restrito', efeito: 'o encontro dos dois chefes da missão offline' },
   { id: 'arma:cacetete-poder', grupo: 'armas', nome: 'Cacetete de poder · prêmio do Evil', padrao: 'restrito', efeito: 'o golpe F conquistado na missão do 8 de Janeiro' },
