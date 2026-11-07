@@ -15,6 +15,7 @@ const quem = process.argv[2] ?? 'chrome';
 const raiz = resolve('.');
 const TMP = resolve('.tmp', 'estudio-prova');
 const FOTO = resolve('.decepticons', 'arte', 'estudio-mechs-gen3.png');
+const FOTO_MALHA = resolve('.decepticons', 'arte', 'estudio-mechs-todos.png');
 rmSync(TMP, { recursive: true, force: true });
 mkdirSync(join(TMP, 'ARMAS'), { recursive: true });
 mkdirSync(join(TMP, 'VOZ'), { recursive: true });
@@ -81,14 +82,30 @@ try {
   const ficha = await quadro.evaluate(() => [...document.querySelectorAll('table')][0]?.innerText ?? '');
   ok('a ficha lê os números do código (alcance, agachamento, passos por segundo)', /Alcance do passo/.test(ficha) && /Passos\/s com o teto/.test(ficha), ficha.split('\n').length + ' linhas');
 
-  // Trocar de chassi.
-  await quadro.selectOption('select', 'arara');
-  await quadro.waitForFunction(() => window.mechsProva?.().chassi === 'arara', null, { timeout: 60_000 });
-  ok('trocar de chassi refaz os Mechs (Arara)', true);
-  await quadro.selectOption('select', 'colossus01');
-  await quadro.waitForFunction(() => window.mechsProva?.().chassi === 'colossus01', null, { timeout: 60_000 });
-  ok('trocar de chassi refaz os Mechs (Colossus-01)', true);
+  // TODOS os robôs do jogo (P324): troca para cada um do seletor (o de malha leva um tempo para carregar o .glb) e confere o que cada corpo permite.
+  const opcoes = await quadro.$$eval('select option', (os) => os.map((o) => o.value));
+  const total = await quadro.evaluate(() => window.mechsProva().opcoes);
+  ok('o seletor lista TODOS os robôs do jogo (um por chassi, sem lista digitada)', opcoes.length === total && opcoes.length >= 11, opcoes.length + ' opções');
+  for (const id of opcoes) {
+    await quadro.selectOption('select', id);
+    await quadro.waitForFunction((x) => {
+      const p = window.mechsProva?.();
+      return p && p.chassi === x && p.lados.every((l) => l.pronto);
+    }, id, { timeout: 180_000 });
+    const antes = await quadro.evaluate(() => window.mechsProva().quadros);
+    await quadro.waitForFunction((q) => window.mechsProva().quadros > q + 90, antes, { timeout: 180_000 });
+    const p = await quadro.evaluate(() => window.mechsProva());
+    const [e, d] = p.lados;
+    const regra = {
+      codigo: d.temGen3 && d.desmontavel && p.vista !== undefined,
+      androide: !d.temGen3 && d.desmontavel && p.vista === 'g2',
+      malha: !d.temGen3 && !d.desmontavel && p.vista === 'g2',
+    }[p.origem];
+    ok(id + ' (' + p.origem + ') monta, anda e respeita o que o corpo permite', Boolean(regra) && e.v > 1, 'geração 3 ' + d.temGen3 + ' · vista ' + p.vista + ' · desmontável ' + d.desmontavel + ' · v ' + e.v.toFixed(1));
+    if (id === 'marauder') await page.screenshot({ path: FOTO_MALHA, clip: { x: 0, y: 0, width: 1600, height: 820 } });
+  }
   await quadro.selectOption('select', 'vector09');
+  await quadro.waitForFunction(() => { const p = window.mechsProva?.(); return p && p.chassi === 'vector09' && p.lados.every((l) => l.pronto); }, null, { timeout: 60_000 });
 
   // Desmontar, explodir, o roteiro e um ajuste que refaz os Mechs.
   await quadro.click('button:has-text("PERNAS")');

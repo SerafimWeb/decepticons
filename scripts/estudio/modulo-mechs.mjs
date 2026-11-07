@@ -5,6 +5,7 @@
  *
  * - `POST /montar`   monta a prévia em `.tmp/estudio/mechs/` (só se algum fonte é mais novo que a montagem anterior);
  * - `GET  /app/...`  serve os arquivos montados (a página abre em `/api/mechs/app/index.html`, dentro da aba);
+ * - `GET  /app/models/<nome>.glb`  serve a malha dos robôs importados direto de `client/public/models/` (a prévia mostra TODOS os robôs do jogo; nada é copiado para a montagem);
  * - `PUT  /ajustes`  valida e grava os ajustes (todas as chaves, cada uma na faixa de `movimentoGen3.faixas.json`; nada de chave desconhecida).
  *
  * O dado e as faixas moram no repositório (uma fonte só: o jogo, o teste e este módulo leem os mesmos arquivos). O Estúdio não publica: o que
@@ -17,6 +18,10 @@ import { corpoJson, gravarJson, lerJson } from './util.mjs';
 const ARQ_AJUSTES = 'client/src/entities/movimentoGen3.json';
 const ARQ_FAIXAS = 'client/src/entities/movimentoGen3.faixas.json';
 const SAIDA = '.tmp/estudio/mechs';
+/** Onde o jogo guarda a malha dos robôs importados (`IMPORTED_CHASSIS`): a prévia a lê daqui pela rota `/app/models/`. */
+const MODELOS = 'client/public/models';
+/** Só um nome simples terminado em `.glb` (sem barra, sem `..`): nada sai da pasta dos modelos. */
+const NOME_DE_MODELO = /^[A-Za-z0-9_][A-Za-z0-9_.-]*\.glb$/;
 /** Onde estão os fontes da prévia: se algum for mais novo que a montagem, monta de novo. */
 const FONTES = ['client/src', 'scripts/estudio/mechs', 'vite.config.ts'];
 
@@ -114,6 +119,16 @@ export function moduloMechs({ raiz, construir = montarComVite }) {
         rel = decodeURIComponent(caminho.slice('/app/'.length));
       } catch {
         responder(404, { erro: 'não existe' });
+        return true;
+      }
+      if (rel.startsWith('models/')) {
+        const nome = rel.slice('models/'.length);
+        const arquivo = join(resolve(raiz, MODELOS), nome);
+        if (!NOME_DE_MODELO.test(nome) || !existsSync(arquivo) || !statSync(arquivo).isFile()) {
+          responder(404, { erro: 'não existe' });
+          return true;
+        }
+        responder(200, readFileSync(arquivo), 'model/gltf-binary');
         return true;
       }
       const alvo = resolve(saida, rel === '' ? 'index.html' : rel);

@@ -1,6 +1,11 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## [2026-11-07] Todos os robôs na aba MECHS 3D: a lista sai do dado, e a geração 3 fica onde o corpo é de código (P324)
+
+**O pedido:** "quero também poder ver TODOS os robôs no estúdio". **Decisão:** o seletor lista o que está em `CHASSIS` (ordem: código, andróide, malha), sem lista digitada; o corpo vem do mesmo caminho do jogo (`Vector09` com o blueprint, `Android`, ou `ImportedMech` com a malha de `IMPORTED_CHASSIS`). A malha importada não tem geração 3 (sem `MechRig.pe` e sem tornozelo), então a aba mostra só a geração 2 e **diz** isso; "Desmontar" só vale onde o corpo é de peças. **Por quê:** o Comandante julga ao olho, e uma aba que esconde metade dos robôs não serve; esconder a geração 3 nos de malha, em vez de mostrar dois lados iguais, evita a conclusão errada de que ela "não mudou nada". **Alternativas rejeitadas:** copiar os `.glb` para a montagem do Vite (+14 MB a cada montagem; a rota lê direto de `client/public/models`); desenhar os de malha com o corpo do Vector-09 (mentiria sobre o robô).
+**Achado:** o Quadra-V2 não tem malha própria (o bloco está desligado desde `gemini/rig-fix`; ele usa o corpo do Vector-09), então é de código e já tem a geração 3.
+
 ## [2026-11-07] O agachado era o pé rígido: tornozelo no shader do lote e passada que cresce com a velocidade (P322)
 
 **Contexto:** o Comandante testou a aba MECHS 3D: "o andar do robô ficou muito agachado". A medida mostrou o que o olho via: a pelve média a 87,5% do repouso, mas o **joelho do apoio a 73°** (Vector-09), 109° (Onça) e 81° (Colossus). **Decisão:** (1) o agachamento, o molejo e o passo passam a crescer com a velocidade, e o molejo é o próprio rebaixamento do passo (a pelve desce o que o passo pede, sem ser puxada pelo alcance do pé); (2) o tornozelo é uma rotação **no vertex shader** do lote, só nos vértices marcados `mechFoot`, e não um pivô novo.
