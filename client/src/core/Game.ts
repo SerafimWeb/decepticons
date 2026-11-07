@@ -989,6 +989,7 @@ export class Game {
       rotate: (dx) => this.hangarScene?.rotate(dx),
       applied: () => this.applyHangarNow(),
       credits: () => this.dailyChallenges.credits,
+      teclaDoEscudo: () => keyLabel(this.settings.value.keys.shield),
       pinturas: () => this.dailyChallenges.pinturas,
       comprarPintura: (i) => this.dailyChallenges.comprarPintura(i),
       status: () => (online ? `ONLINE · SALA ${online.room}` : 'OFFLINE'),
