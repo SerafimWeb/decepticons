@@ -1,10 +1,10 @@
 import type { Geracao3 } from './geracao3';
 
 /**
- * O interruptor da geração 3 do movimento dos Mechs (P321, catálogo `mech:gen3`, nasce restrito) e o carregador do código dela.
+ * O interruptor da geração 3 do movimento dos Mechs (P321, catálogo `mech:gen3`; nasceu restrito e foi liberado em 07/11, P330) e o carregador do código dela.
  *
- * O código (`geracao3.ts`: a passada com o pé plantado, as molas e os ajustes) é um pedaço **sob demanda**: quem não tem a funcionalidade
- * liberada não baixa nada (o pacote de partida está no teto de 500 KB). Desligada, ou enquanto o pedaço ainda não chegou, cada Mech anda como
+ * O código (`geracao3.ts`: a passada com o pé plantado, as molas e os ajustes) é um pedaço **sob demanda** (2,4 KB gzip): baixa logo depois
+ * da partida, fora dos 500 KB do pacote de partida (que está no teto; o `smoke` conta só o de partida). Desligada (o painel de visibilidade a restringe), ou enquanto o pedaço ainda não chegou, cada Mech anda como
  * antes, byte a byte. O `Game` liga e desliga pelo painel de visibilidade; o `MechBase` pergunta `geracao3()` a cada quadro.
  */
 let ligado = false;
