@@ -33,6 +33,17 @@ function montar(opcoes: { narracao: Narracao; geradas?: string[]; prontos?: stri
 }
 
 describe('Narrador (P146)', () => {
+  it('diz se está falando (o rádio de campo, P316, espera a vez dele): só enquanto o clipe está no ar', () => {
+    const t = montar({ narracao: 'br', geradas: ['br/combate'], prontos: ['br/combate'], duracao: 1.5 });
+    expect(t.narrador.falando).toBe(false);
+    expect(t.narrador.dizer('combate', 3)).toBe(true);
+    expect(t.narrador.falando).toBe(true);
+    t.passa(1.4);
+    expect(t.narrador.falando).toBe(true);
+    t.passa(0.2);
+    expect(t.narrador.falando).toBe(false);
+  });
+
   it('sem narrador (off) não fala nada, nem pela reserva', () => {
     const t = montar({ narracao: 'off', geradas: ['br/combate'], prontos: ['br/combate'] });
     expect(t.narrador.dizer('combate', 3)).toBe(false);

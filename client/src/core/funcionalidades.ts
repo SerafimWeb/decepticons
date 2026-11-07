@@ -41,6 +41,8 @@ const fixas: readonly Funcionalidade[] = [
   { id: 'modo:missao', grupo: 'modos', nome: 'Missão de combate (caça, destruição e aniquilação)', padrao: 'restrito', efeito: 'o botão MISSÃO some do seletor de modo, e o link ?modo=missao cai no Deathmatch' },
   // P269: o cérebro do time dos bots (pinça e reagrupar). Nasce RESTRITO: a bancada bot × bot não mostrou ganho de força (45% / 38% / 45% de vitória, 40 duelos por dificuldade), então o Comandante julga jogando e libera aqui. Também é o interruptor de segurança: restrito devolve os bots ao comportamento de antes, tick a tick (esquadraoPadrao.test.ts).
   { id: 'ia:time', grupo: 'modos', nome: 'IA de time dos bots (pinça e reagrupar)', padrao: 'restrito', efeito: 'os bots deixam de combinar pinça e reagrupamento e lutam como antes (o diretor de ataque e o rádio de contato continuam)' },
+  // P316 (06/11): o rádio de campo com a voz gravada do Comandante: o piloto aliado e o rádio inimigo interceptado falam nas chamadas do cérebro do time (que é a `ia:time`). Nasce RESTRITO (P191) e carrega sob demanda: sem as falas gravadas ele fica mudo de qualquer jeito.
+  { id: 'audio:radio', grupo: 'modos', nome: 'Rádio de campo (as vozes gravadas: o piloto aliado e o rádio inimigo interceptado)', padrao: 'restrito', efeito: 'o rádio fica mudo; o texto das chamadas no feed continua' },
   // P282: a fase escura e a visão noturna. Nasce RESTRITA: o Comandante julga jogando (chip FASE ESCURA) e libera aqui. Restrita, o quadro de luz apagado só baixa as luzes da cidade, como antes.
   { id: 'modo:fase-escura', grupo: 'modos', nome: 'Fase escura e visão noturna (Cidade Neon)', padrao: 'restrito', efeito: 'o apagão do quadro de luz deixa de escurecer a cena e de cortar a visão dos robôs sem visão noturna: a cidade só baixa as luzes, como antes' },
   { id: 'mapa:arena', grupo: 'fases', nome: 'Cidade Neon (Arena)', padrao: 'publico', efeito: 'o pino vira EM BREVE no mapa-múndi e o link cai na Cidade Neon' },
@@ -62,6 +64,8 @@ const fixas: readonly Funcionalidade[] = [
   { id: 'tela:chat', grupo: 'telas', nome: 'Pilotos da REDE: ver o Hangar do outro e conversar por texto (online)', padrao: 'restrito', efeito: 'a lista de pilotos no monitor REDE, a visita ao Hangar de outro piloto e o chat de texto (some junto o aviso de mensagem)' },
   { id: 'tela:lado', grupo: 'telas', nome: 'Seletor de lado (Aliança ou Consórcio)', padrao: 'restrito', efeito: 'o chip ESCOLHA O LADO' },
   { id: 'tela:relatorio', grupo: 'telas', nome: 'Relatório de Consequências', padrao: 'publico', efeito: 'o chip RELATÓRIO depois da missão' },
+  // P317 (06/11): a moldura do cockpit da câmera em 1ª pessoa (obra do Gemini, concluída e medida). Nasce RESTRITA (P191): o Comandante julga jogando (?comandante=1) e libera aqui. A restrição é por função (`ui/moldaDoCockpit.ts`), não por `data-func`: o selo TESTE colidiria com o ::after da moldura.
+  { id: 'tela:cockpit', grupo: 'telas', nome: 'Moldura do cockpit (câmera em primeira pessoa)', padrao: 'restrito', efeito: 'a câmera em primeira pessoa fica sem a moldura metálica do visor' },
 ];
 
 /** Os robôs e as armas vêm dos dados do jogo: robô ou arma nova aparece no painel sozinha, **já pública** (o padrão de hoje); o Comandante a restringe se quiser. */
