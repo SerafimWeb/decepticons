@@ -28,6 +28,17 @@
     <div id="debug-panel"></div>
 
     <div id="hud">
+      <!-- Moldura do cockpit (1ª pessoa): visor angular metálico com gradientes e reflexos.
+           Puro CSS, custo zero: aparece só com .cam-fps no #hud. -->
+      <div id="cockpit-frame" aria-hidden="true">
+        <div class="cf-pillar cf-left"></div>
+        <div class="cf-pillar cf-right"></div>
+        <div class="cf-top"></div>
+        <div class="cf-bottom"></div>
+        <!-- Reflexos nos "vidros" laterais do visor -->
+        <div class="cf-glare cf-glare-l"></div>
+        <div class="cf-glare cf-glare-r"></div>
+      </div>
       <div id="offscreen-indicators"></div>
       <div id="crosshair">
         <div id="hitmarker"></div>

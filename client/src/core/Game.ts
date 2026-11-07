@@ -1116,6 +1116,8 @@ export class Game {
     aplicarGlobal(document);
     aoMudarVisibilidade(() => aplicarGlobal(document));
     aoMudarVisibilidade(() => this.aplicarVoz(this.settings.value));
+    // A moldura do cockpit (P317) acompanha a liberação em `tela:cockpit` sem esperar a próxima troca de câmera.
+    aoMudarVisibilidade(() => this.hud.aplicarMoldura());
     // O Relatório de Consequências (P179 camada 3): o chip só aparece depois da missão do rio; o painel e os textos são sob demanda como o Arquivo.
     document.getElementById('cc-relatorio')?.addEventListener('click', (e) => {
       e.stopPropagation();
