@@ -308,8 +308,7 @@ export abstract class MechBase {
    * Geração 3 do movimento (P321, só desenho, `entities/geracao3.ts`): o estado dela neste Mech. `null` enquanto a geração 3 está desligada,
    * o pedaço sob demanda não chegou, ou o rig não a suporta (o `.glb`): aí o Mech anda sempre pela passada de hoje.
    */
-  private gen3: Estado3 | null = null;
-  private gen3Tentado = false;
+  private gen3?: Estado3 | null;
 
   protected constructor(
     readonly stats: MechStats,
@@ -987,11 +986,8 @@ export abstract class MechBase {
     const k = 1 - Math.exp(-dt * 14);
     // Geração 3 (P321): só roda com ela ligada e o pedaço sob demanda carregado; o estado nasce uma vez por Mech (o `.glb` não tem: fica na passada de hoje).
     const G = geracao3();
-    if (G !== null && !this.gen3Tentado) {
-      this.gen3Tentado = true;
-      this.gen3 = G.criarEstado(r, (this.stats.gait ?? DEFAULT_GAIT).hip, this.stats.height);
-    }
-    const e3 = G !== null ? this.gen3 : null;
+    if (G !== null && this.gen3 === undefined) this.gen3 = G.criarEstado(r, (this.stats.gait ?? DEFAULT_GAIT).hip, this.stats.height);
+    const e3 = (G !== null && this.gen3) || null;
 
     // Passada proporcional à perna: o Mech de 5,3 m dá passos lentos e pesados; o andróide, curtos e rápidos.
     // Geração 3: a fase anda com a velocidade pela taxa que deixa o pé plantado.
@@ -1046,10 +1042,6 @@ export abstract class MechBase {
       r.rightArm.position.z = this.rightArmBaseZ + kickRight;
       r.leftArm.position.z = this.leftArmBaseZ + kickLeft;
     }
-
-    // Canhão-torre (Colossus e afins): gira devagar sozinho, decorativo — a mira de verdade continua
-    // nos braços. G4: um if e uma soma, sem alocação; só roda quando o blueprint marcou `head.turret`.
-    if (r.head.userData.turret) r.head.rotation.y += dt * 0.35;
 
     if (r.setDashVisual) r.setDashVisual(this.isDashing);
     else r.thrusterMaterial.emissiveIntensity = this.isDashing ? 14 : 2;

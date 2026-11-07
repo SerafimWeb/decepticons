@@ -13,14 +13,7 @@ let carregando: Promise<Geracao3> | null = null;
 
 /** Carrega o código da geração 3 (uma vez) e o devolve. A bancada, o Estúdio e os testes esperam por ele. */
 export function carregarGeracao3(): Promise<Geracao3> {
-  carregando ??= import('./geracao3').then(
-    (m) => (modulo = m.GERACAO3),
-    (e: unknown) => {
-      carregando = null; // a próxima tentativa recarrega
-      throw e;
-    },
-  );
-  return carregando;
+  return (carregando ??= import('./geracao3').then((m) => (modulo = m.GERACAO3)));
 }
 
 /** O código da geração 3, ou `null` quando ela está desligada ou ainda não chegou (aí o Mech anda como antes). Não aloca. */
@@ -29,5 +22,5 @@ export const geracao3 = (): Geracao3 | null => (ligado ? modulo : null);
 /** Liga ou desliga a geração 3. Ligar começa a baixar o pedaço sob demanda (falha de rede: segue na geração 2, sem barulho). */
 export function setMovimentoGen3(valor: boolean): void {
   ligado = valor;
-  if (valor) carregarGeracao3().catch(() => undefined);
+  if (valor) carregarGeracao3().catch(() => (carregando = null)); // falha de rede: a próxima tentativa recarrega
 }

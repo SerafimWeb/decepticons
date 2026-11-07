@@ -2076,8 +2076,9 @@ export class Game {
     aoMudarVisibilidade(() => this.prepararRadio());
 
     // P321: a geração 3 do movimento (molejo e pé plantado). Restrita até o Comandante liberar; o `MechBase` lê o interruptor a cada quadro.
-    setMovimentoGen3(funcionalidadeVisivel('mech:gen3'));
-    aoMudarVisibilidade(() => setMovimentoGen3(funcionalidadeVisivel('mech:gen3')));
+    const sincronizarGen3 = (): void => setMovimentoGen3(funcionalidadeVisivel('mech:gen3'));
+    sincronizarGen3();
+    aoMudarVisibilidade(sincronizarGen3);
     // A fase escura (P282): restrita até o Comandante liberar; o chip dele a liga por cima, para testar.
     this.sincronizarFaseEscura();
     aoMudarVisibilidade(() => this.sincronizarFaseEscura());
