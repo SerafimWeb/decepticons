@@ -1,6 +1,11 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## EM BRANCH — NÃO ESTÁ NO AR: a geração 3 do movimento dos Mechs (Claude, P319, branch `claude/movimento-gen3`, sem PR ainda)
+
+**O pedido (06/11):** a skill teardown (peças mecânicas em código) foi o ponto de partida; o Comandante corrigiu o rumo: nada de detalhe miúdo nem geometria nova, só **molejo** e pé plantado, sem pesar a renderização. **Feito:** `passadaGen3.ts` (passada com o pé plantado, alcance limitado pelo comprimento da perna, pelve contínua), `molejo.ts` (mola amortecida para tronco, pelve e coice), `passadaRig.ts` (mede a perna no rig real, serve aos `.glb` também), ligado no `MechBase` atrás de `mech:gen3` (restrito). **Desligado, cada Mech anda como antes.** Sem triângulo, draw call ou material novos.
+**Achados:** a primeira versão tinha um degrau de ~1 rad na pelve (agora o mínimo é contínuo) e afundava 1,2 m no Arara (agora o alcance cabe na perna). Com o pé plantado a 9 m/s, o Vector-09 dá ~2 passos por segundo por perna, mais que hoje: é a consequência física, e o Comandante julga no vídeo.
+**Falta:** bancada de movimento, medida de CPU com 16 Mechs, vídeo antes × depois e o PR. **Próxima sessão começa com:** a bancada de movimento, depois o PR.
 ## EM BRANCH — NÃO ESTÁ NO AR: a higienização e o inacabado dos outros agentes (Claude, P317 e P318, branch `claude/higiene-p317-p318`)
 
 **O pedido (06/11):** *"pega o que está inacabado no gemini, no codex, e até no qwen ou deepseek, e conclua"* e *"será que devemos dar uma higienizada…?"*. **Resposta: sim, onde se mede.** O código está limpo (34 marcadores de pendência em 16 arquivos, 2 supressões de tipo, 429 arquivos de código para 348 de teste, `tsc` estrito limpo, build minificado e o teto de 500 KB cobrado pelo check). O que estava sujo eram arquivos e o ambiente.

@@ -62,6 +62,7 @@ import { diaFromSearch, progressoDaPartida } from '../environment/CicloDoDia';
 import { Vector09 } from '../entities/Vector09';
 import { Android } from '../entities/Android';
 import type { MechBase } from '../entities/MechBase';
+import { setMovimentoGen3 } from '../entities/movimentoGen3';
 import type { DebrisSystem } from '../environment/DebrisSystem';
 import { CtfObjectives } from '../environment/CtfObjectives';
 import { DominioPontos } from '../environment/DominioPontos';
@@ -2032,6 +2033,9 @@ export class Game {
     };
     this.match.setCoordenacao(funcionalidadeVisivel('ia:time'));
     aoMudarVisibilidade(() => this.match.setCoordenacao(funcionalidadeVisivel('ia:time')));
+    // P319: a geração 3 do movimento (molejo e pé plantado). Restrita até o Comandante liberar; o `MechBase` lê o interruptor a cada quadro.
+    setMovimentoGen3(funcionalidadeVisivel('mech:gen3'));
+    aoMudarVisibilidade(() => setMovimentoGen3(funcionalidadeVisivel('mech:gen3')));
     // A fase escura (P282): restrita até o Comandante liberar; o chip dele a liga por cima, para testar.
     this.sincronizarFaseEscura();
     aoMudarVisibilidade(() => this.sincronizarFaseEscura());
