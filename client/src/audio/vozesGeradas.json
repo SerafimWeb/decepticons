@@ -1,7 +1,14 @@
 {
   "_nota": "As falas que já têm .mp3 em client/public/audio/vozes/<sotaque>/. É o `npm run vozes` quem reescreve este arquivo (lista a pasta depois de gerar). Fica dentro do bundle de propósito: o jogo só pede os clipes que existem e não gera 404 a cada abertura.",
   "br": [
-    "combate"
+    "rodada_1",
+    "rodada_2",
+    "rodada_3",
+    "rodada_4",
+    "rodada_5",
+    "combate",
+    "abate_3",
+    "voce_morreu"
   ],
   "en": [
     "combate"
